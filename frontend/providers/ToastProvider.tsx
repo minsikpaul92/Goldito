@@ -1,30 +1,37 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useReduceMotion } from "../components/ui/useReduceMotion";
-import { useThemedStyles } from "./ThemeProvider";
+import { useTheme, useThemedStyles } from "./ThemeProvider";
 import { Theme } from "../theme/themes";
 
 const TOAST_MS = 3000;
 /** Long enough to read and reach Undo (DESIGN.md §7.3). */
 const UNDO_MS = 6000;
 
+type Tone = "success" | "warning" | "error";
+
 type ToastOptions = {
   /** Shows an Undo button; the toast stays a little longer. */
   undo?: () => void;
-  tone?: "default" | "error";
+  tone?: Tone;
 };
 
 type ToastValue = {
-  /** Short status message (DESIGN.md §7.3). Never the only signal for DANGER. */
+  /** Short message (DESIGN.md §7.3). Never the only signal for DANGER. */
   show: (message: string, options?: ToastOptions) => void;
+  /** A pinned footer reports its height so the toast sits above it, not on it. Pass 0 to clear. */
+  setBottomInset: (height: number) => void;
 };
 
-const ToastContext = createContext<ToastValue>({ show: () => {} });
+const ToastContext = createContext<ToastValue>({ show: () => {}, setBottomInset: () => {} });
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const styles = useThemedStyles(makeStyles);
+  const theme = useTheme();
   const reduce = useReduceMotion();
+  const [bottomInset, setBottomInset] = useState(0);
   const [toast, setToast] = useState<{ id: number; message: string; options: ToastOptions } | null>(null);
 
   useEffect(() => {
@@ -34,7 +41,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   const show = useCallback((message: string, options: ToastOptions = {}) => setToast({ id: Date.now(), message, options }), []);
-  const value = useMemo(() => ({ show }), [show]);
+  const value = useMemo(() => ({ show, setBottomInset }), [show]);
   // Web: the toast rises a little and fades in (CSS, so nothing moves under a pointer); Reduce motion shows it in place.
   const enter =
     Platform.OS === "web" && !reduce
@@ -45,6 +52,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         } as object)
       : null;
 
+  const tone: Tone = toast?.options.tone ?? "success";
+  const iconColor = tone === "success" ? theme.color.success : tone === "warning" ? theme.color.warning : theme.color.error;
+
   return (
     <ToastContext.Provider value={value}>
       <View style={styles.root}>
@@ -53,10 +63,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <View
             key={toast.id}
             accessibilityRole="alert"
-            pointerEvents="box-none"
-            style={[styles.toast, toast.options.tone === "error" && styles.error, enter]}
+            pointerEvents={toast.options.undo ? "box-none" : "none"}
+            style={[
+              styles.toast,
+              tone === "warning" && styles.toastWarning,
+              tone === "error" && styles.toastError,
+              { bottom: theme.layout.tabBarHeight + theme.spacing.md + bottomInset },
+              enter,
+            ]}
             testID="toast"
           >
+            <Ionicons name={tone === "success" ? "checkmark-circle" : "alert-circle"} size={theme.icon.sm} color={iconColor} />
             <Text style={styles.text}>{toast.message}</Text>
             {toast.options.undo ? (
               <Pressable
@@ -92,23 +109,30 @@ const makeStyles = (theme: Theme) =>
       position: "absolute",
       left: theme.spacing.md,
       right: theme.spacing.md,
-      // Above the bottom tab bar and the one pinned action.
-      bottom: theme.layout.tabBarHeight + theme.spacing.md,
-      minHeight: 52,
+      // Above the tab bar and any pinned footer (bottom is set at render).
       flexDirection: "row",
       alignItems: "center",
-      gap: theme.spacing.md,
-      paddingVertical: theme.spacing.sm,
-      paddingHorizontal: theme.spacing.md,
-      borderRadius: theme.radius.lg,
-      backgroundColor: theme.color.text,
+      gap: theme.spacing.sm,
+      padding: theme.spacing.md,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.color.success,
+      // Hex + "D9" = 85% opacity: the page shows through a little.
+      backgroundColor: `${theme.color.successSurface}D9`,
     },
-    error: { backgroundColor: theme.color.error },
+    toastWarning: {
+      borderColor: theme.color.warning,
+      backgroundColor: `${theme.color.warningSurface}D9`,
+    },
+    toastError: {
+      borderColor: theme.color.error,
+      backgroundColor: `${theme.color.errorSurface}D9`,
+    },
     text: {
       flex: 1,
       fontSize: theme.fontSize.body,
-      color: theme.color.primaryText,
+      color: theme.color.text,
     },
     undo: { minHeight: 36, justifyContent: "center", paddingHorizontal: theme.spacing.sm },
-    undoText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.gold },
+    undoText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
   });

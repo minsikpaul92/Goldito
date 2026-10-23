@@ -1,22 +1,40 @@
-import { Redirect } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
+import { BackLink } from "../components/ui/BackLink";
 import { Card } from "../components/ui/Card";
 import { EmptyState } from "../components/ui/EmptyState";
 import { LoadingView } from "../components/ui/LoadingView";
 import { Screen } from "../components/ui/Screen";
+import { ScreenHeader } from "../components/ui/ScreenHeader";
 import changelog from "../features/settings/changelog.json";
 import { useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { tokens } from "../theme/tokens";
 
 type Release = { version: string; title: string | null; sections: { heading: string; items: string[] }[] };
 
-const RELEASES = changelog as Release[];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "2026-10-15" → "Oct 15". Null when the heading has no date. */
+function releaseDate(release: Release): string | null {
+  const date = release.title?.match(/^\d{4}-(\d{2})-(\d{2})$/);
+  return date ? `${MONTHS[Number(date[1]) - 1]} ${Number(date[2])}` : null;
+}
+
+// One card per dated heading in docs/CHANGELOG.md; a heading with no date (the hackathon scaffold) stays out.
+const RELEASES = (changelog as Release[]).filter((release) => releaseDate(release) !== null);
+
+/** "Photo request: an owner asks…" → the lead in bold, the rest regular. No colon early on = all regular. */
+function splitLead(item: string): { lead: string; rest: string } {
+  const at = item.indexOf(": ");
+  return at > 0 && at < 60 ? { lead: item.slice(0, at + 1), rest: item.slice(at + 1) } : { lead: "", rest: item };
+}
 
 /**
- * What's new: what people can now do that they could not at launch. docs/CHANGELOG.md, turned into JSON by
- * `node scripts/changelog.mjs` (CI checks they match); only releases from 1.0.0 on are shown, never the build-up to launch.
+ * What's new: small updates in plain words. docs/CHANGELOG.md, turned into JSON by `node scripts/changelog.mjs`
+ * (CI checks they match). The newest entry sits on a butter block.
  */
 export default function WhatsNewScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -26,25 +44,32 @@ export default function WhatsNewScreen() {
 
   return (
     <Screen contentStyle={styles.content} testID="whats-new">
+      <BackLink onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} testID="whats-new-back" />
+      <ScreenHeader title="What's New" subtitle="Small updates, in plain words" />
       {RELEASES.length === 0 ? (
         <EmptyState emoji="✨" title="Nothing new yet" message="New features show here." />
       ) : (
-        RELEASES.map((release) => (
-          <Card key={release.version} testID={`release-${release.version}`}>
-            <Text style={styles.release}>
-              {release.version}
-              {release.title ? ` · ${release.title}` : ""}
-            </Text>
-            {release.sections.map((section) => (
-              <View key={section.heading} style={styles.section}>
-                <Text style={styles.sectionHeading}>{section.heading}</Text>
-                {section.items.map((item) => (
-                  <Text key={item} style={styles.item}>
-                    • {item}
-                  </Text>
-                ))}
+        RELEASES.map((release, i) => (
+          <Card key={`${release.version}-${release.title}`} tone={i === 0 ? "butter" : undefined} style={styles.release} testID={`release-${i}`}>
+            {i === 0 ? (
+              <View style={styles.newPill}>
+                <Text style={styles.newPillLabel}>New</Text>
               </View>
-            ))}
+            ) : null}
+            <Text style={styles.label}>{releaseDate(release)}</Text>
+            <View style={styles.items}>
+              {release.sections
+                .flatMap((section) => section.items)
+                .map((item) => {
+                  const { lead, rest } = splitLead(item);
+                  return (
+                    <Text key={item} style={styles.item}>
+                      {lead ? <Text style={styles.lead}>{lead}</Text> : null}
+                      {rest}
+                    </Text>
+                  );
+                })}
+            </View>
           </Card>
         ))
       )}
@@ -54,9 +79,19 @@ export default function WhatsNewScreen() {
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    content: { gap: theme.spacing.md, paddingBottom: theme.spacing.xl },
-    release: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    section: { gap: theme.spacing.xs, marginTop: theme.spacing.sm },
-    sectionHeading: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
-    item: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: 22 },
+    content: { gap: 12, paddingBottom: theme.spacing.xl },
+    release: { gap: theme.spacing.sm, padding: 18, borderRadius: 28 },
+    label: {
+      fontSize: 11.5,
+      lineHeight: 11.5,
+      fontWeight: "800",
+      letterSpacing: 0.92,
+      textTransform: "uppercase",
+      color: theme.color.textMuted,
+    },
+    newPill: { alignSelf: "flex-start", backgroundColor: tokens.color.gold, borderRadius: theme.ui.radius.tag, paddingHorizontal: 9, paddingVertical: 2 },
+    newPillLabel: { fontSize: 11.5, lineHeight: 16, fontWeight: "800", color: theme.color.text },
+    items: { gap: 6, paddingLeft: 18 },
+    item: { fontSize: theme.fontSize.small, lineHeight: 20.3, color: theme.color.text },
+    lead: { fontWeight: "800" },
   });

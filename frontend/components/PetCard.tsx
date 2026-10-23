@@ -1,9 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Avatar } from "./ui/Avatar";
 import { Tag } from "./ui/Tag";
 import type { InCare } from "../features/care/useInCare";
+import { loadPetPhotos, petPhotoThumb } from "../features/ownerOnboarding/petPhotosApi";
 import { SPECIES_EMOJI, describePet } from "../features/pets/petFormat";
 import { formatInstant } from "../features/schedule/dates";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
@@ -21,6 +23,17 @@ type Props = {
 export function PetCard({ pet, onPress, inCare }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const [cover, setCover] = useState<string | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    loadPetPhotos(pet.id)
+      .then((photos) => live && setCover(photos[0]?.publicId ?? null))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [pet.id]);
 
   return (
     <Pressable
@@ -35,7 +48,11 @@ export function PetCard({ pet, onPress, inCare }: Props) {
           <Text style={styles.inCareLabelText}>In care</Text>
         </View>
       ) : null}
-      <Avatar kind="emoji" emoji={SPECIES_EMOJI[pet.species]} size={56} />
+      {cover ? (
+        <Avatar kind="photo" uri={petPhotoThumb(cover, 112)} size={56} testID={`pet-card-photo-${pet.name}`} />
+      ) : (
+        <Avatar kind="emoji" emoji={SPECIES_EMOJI[pet.species]} size={56} />
+      )}
       <View style={styles.body}>
         <Text style={styles.name}>{pet.name}</Text>
         {inCare ? (

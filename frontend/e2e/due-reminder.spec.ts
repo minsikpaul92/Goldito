@@ -48,7 +48,7 @@ test("an alarm popup for what is due now, a toast when the next one becomes due,
 
   // Four minutes pass with the app open: Snack becomes due → one toast.
   await page.clock.fastForward("04:00");
-  await expect(screen.getByTestId("toast")).toContainText("⏰ Time for Snack · Max");
+  await expect(screen.getByTestId("toast")).toContainText("Time for Snack · Max");
   await expect(screen.getByText("+ 2 more waiting", { exact: false })).toBeVisible();
 
   // Done on the banner finishes Lunch; the banner moves on to Snack.
@@ -103,6 +103,6 @@ test("Remind me in 10 min hides the banner, survives a refresh, and brings it ba
   await page.clock.fastForward("09:00");
   await expect(screen.getByTestId("due-alert")).toHaveCount(0);
   await page.clock.fastForward("02:00");
-  await expect(screen.getByTestId("toast")).toContainText("⏰ Still waiting: Dinner · Max");
+  await expect(screen.getByTestId("toast")).toContainText("Still waiting: Dinner · Max");
   await expect(screen.getByTestId("due-alert-title")).toContainText("Dinner");
 });

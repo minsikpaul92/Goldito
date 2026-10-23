@@ -70,7 +70,7 @@ Every Figma variable carries its code name as **code syntax** (Figma uses kebab-
 | Alert Modal · DANGER | `components/ui/AlertModal.tsx` | ✅ |
 | Toast | `providers/ToastProvider.tsx` (`useToast()`) | ✅ |
 | Logo (brand site) | `components/BrandLogo.tsx` + `assets/brand/` · favicon in `app.json` | ✅ |
-| Booking Card / Stage Card | `components/BookingCard.tsx`, `components/BookingStageBar.tsx` | ✅ |
+| Booking Card / Stage Card | `components/BookingCard.tsx`, `components/BookingStageBar.tsx` (steps Request · M&G · Confirm · Pay · Care; a small word under a step: Scheduled, Trip, Skipped, #237) | ✅ |
 | Stay Summary Card | `components/StaySummaryCard.tsx` | ✅ |
 | Latest Update Row | `components/LiveUpdates.tsx` | ✅ |
 | Pet Mini Card | `components/PetCard.tsx` | ✅ |
@@ -405,7 +405,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | `Avatar` | Round (Figma Avatar): `initial` (`primary` + `primaryText` letter, people), `photo` (pet photo), `emoji` (species / tool emoji on `accent`). Default 40; cards use 56 |
 | `Banner` | Inline notice for an edge state (Figma Banner): icon + title in the tone color + one line on what happens next + optional action. `info` (accent) · `warning` · `error` · `offline`. **Never for DANGER** — that is `AlertModal` (§7.4) |
 | `SegmentedControl` | 2–4 options as 44-tall segments (radio); unselected = `borderStrong` border; selected = `primary` border + `accent` fill; `disabled` for locked values (pet species, D22) |
-| `Toast` (`useToast()`) | Bottom, above the tab bar, auto-hide 3 s. Success after actions ("Max is added 🐶", "Profile saved ✅"). **Never** used alone for DANGER |
+| `Toast` (`useToast()`) | Bottom, above the tab bar and any pinned footer, light green with a check icon (yellow tint with an alert icon for warnings), auto-hide 3 s. Success after actions ("Max is added", "Profile saved"). **Never** used alone for DANGER |
 | `PetCard` (`components/`) | Owner Home: round species avatar (🐶 / 🐱 on `accent`) + name + "Dog · Maltese · 4 yrs · 3.2 kg" + allergy chips; tap → pet profile |
 | `PetForm` (`components/`) | Add pet / Pet profile: species (locked after creation), name, breed, birthday (`YYYY-MM-DD`), weight (kg), allergies (chip input, stored lowercase), notes |
 | `Sheet` | Bottom sheet (RN `Modal`, stays in the phone frame): title + **Close**, backdrop click closes (never use a sheet for DANGER — §7.4), scrolling body, pinned footer for the one primary action. No drag |

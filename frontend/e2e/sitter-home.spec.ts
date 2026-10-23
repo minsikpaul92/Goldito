@@ -70,7 +70,7 @@ test.describe("sitter home dashboard", () => {
     await expect(walk).toContainText("Walk");
     await walk.getByRole("button", { name: "Done" }).click();
     await screen.getByTestId("task-done-confirm").click();
-    await expect(screen.getByTestId("toast")).toContainText("done ✅");
+    await expect(screen.getByTestId("toast")).toContainText("done");
     expect(db.taskCompletions).toHaveLength(1);
     await expect(screen.getByTestId("stat-tasks")).toContainText("1/4");
     await expect(screen.locator("[data-testid^='today-row-']")).toHaveCount(3); // the fourth moved up
@@ -82,7 +82,7 @@ test.describe("sitter home dashboard", () => {
     await screen.getByTestId("dashboard-next-done").click();
     await expect(screen.getByTestId("task-done-sheet")).toBeVisible();
     await screen.getByTestId("task-done-confirm").click();
-    await expect(screen.getByTestId("toast")).toContainText("done ✅");
+    await expect(screen.getByTestId("toast")).toContainText("done");
     expect(db.taskCompletions).toHaveLength(1);
     await expect(screen.getByTestId("stat-tasks")).toContainText("1/4");
   });

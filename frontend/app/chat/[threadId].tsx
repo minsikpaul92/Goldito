@@ -534,7 +534,7 @@ export default function Chat() {
       <View style={styles.stage}>
         {bookingPath ? (
           <Pressable accessibilityRole="button" onPress={() => router.push(bookingPath as never)} testID="chat-stage">
-            <BookingStageBar booking={booking} viewer={header.myRole} chat />
+            <BookingStageBar booking={booking} viewer={header.myRole} chat trips={pairTrips} />
           </Pressable>
         ) : (
           <BookingStageBar booking={null} viewer={header.myRole} chat />

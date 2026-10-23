@@ -7,7 +7,7 @@ import { AlertModal } from "../../components/ui/AlertModal";
 import { Button } from "../../components/ui/Button";
 import { ChoiceChips } from "../../components/ui/ChoiceChips";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { ListGroup, ListRow } from "../../components/ui/ListRow";
+import { List, ListRow } from "../../components/ui/ListRow";
 import { OptionCard } from "../../components/ui/OptionCard";
 import { Pager } from "../../components/ui/Pager";
 import { PriceBreakdown } from "../../components/ui/PriceBreakdown";
@@ -174,14 +174,14 @@ function KitScreen() {
 
       <Section id="layout" title="LAYOUT" onLayout={spy.onSectionLayout("layout")}>
         <SectionTitle>List rows</SectionTitle>
-        <ListGroup>
-          <ListRow title="What's new" detail="Snap, live trips, photo requests" trailing={{ kind: "badge", text: "3 new" }} onPress={() => undefined} />
-          <ListRow title="Robert Park" detail="robert@example.com · Pet owner" onPress={() => undefined} />
-          <ListRow title="Trip updates" detail="On the way, arrived" trailing={{ kind: "switch", value: trip, onChange: setTrip }} />
+        <List>
+          <ListRow title="What's new" subtitle="Snap, live trips, photo requests" badge="3 new" onPress={() => undefined} />
+          <ListRow title="Robert Park" subtitle="robert@example.com · Pet owner" onPress={() => undefined} />
+          <ListRow title="Trip updates" subtitle="On the way, arrived" switchValue={trip} onSwitchChange={setTrip} />
           <ListRow title="Privacy" onPress={() => undefined} />
-          <ListRow title="Phone notifications" detail="These are not available yet" trailing={{ kind: "none" }} disabled />
-          <ListRow title="Sign out" danger onPress={() => undefined} />
-        </ListGroup>
+          <ListRow title="Phone notifications" subtitle="Not available yet" />
+          <ListRow title="Sign out" tone="danger" onPress={() => undefined} />
+        </List>
         <SectionTitle>Summary rows</SectionTitle>
         <View>
           <SummaryRow label="Pets" value="Max and Mochi" onChange={() => undefined} />

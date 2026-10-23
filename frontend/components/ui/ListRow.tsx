@@ -1,104 +1,125 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { ReactNode } from "react";
-import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { Children, Fragment, ReactNode } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
+import { tokens } from "../../theme/tokens";
 import { Theme } from "../../theme/themes";
 
-type Trailing = { kind: "chevron" } | { kind: "switch"; value: boolean; onChange: (v: boolean) => void } | { kind: "badge"; text: string } | { kind: "none" };
+type ListProps = { children: ReactNode; testID?: string };
 
-type Props = {
-  title: string;
-  /** Second line (two-line row). */
-  detail?: string;
-  leading?: ReactNode;
-  trailing?: Trailing;
-  /** Destructive action (Sign out, Delete): red title, no chevron. */
-  danger?: boolean;
-  onPress?: () => void;
-  disabled?: boolean;
-  testID?: string;
-};
-
-/**
- * Figma Expressive List Row (1673:31755): settings and menus. A row that goes somewhere has a chevron; a switch row
- * toggles in place; a danger row is red. Rows sit in a white group card with hairlines between them (ListGroup).
- */
-export function ListRow({ title, detail, leading, trailing = { kind: "chevron" }, danger, onPress, disabled, testID }: Props) {
-  const theme = useTheme();
+/** Figma: Goldito-Design → Settings → list. A white rounded group of ListRows with a hairline between them. */
+export function List({ children, testID }: ListProps) {
   const styles = useThemedStyles(makeStyles);
-  const body = (
-    <>
-      {leading ? <View style={styles.leading}>{leading}</View> : null}
-      <View style={styles.body}>
-        <Text style={[styles.title, danger && styles.danger]}>{title}</Text>
-        {detail ? <Text style={styles.detail}>{detail}</Text> : null}
-      </View>
-      {trailing.kind === "chevron" && !danger ? <Ionicons name="chevron-forward" size={20} color={theme.color.textMuted} /> : null}
-      {trailing.kind === "badge" ? (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{trailing.text}</Text>
-        </View>
-      ) : null}
-      {trailing.kind === "switch" ? (
-        <Switch
-          value={trailing.value}
-          onValueChange={trailing.onChange}
-          accessibilityLabel={title}
-          trackColor={{ true: theme.color.primary, false: theme.color.border }}
-          thumbColor={theme.color.surface}
-        />
-      ) : null}
-    </>
-  );
-  if (trailing.kind === "switch" || !onPress) {
-    return (
-      <View style={[styles.row, detail ? styles.two : null]} testID={testID}>
-        {body}
-      </View>
-    );
-  }
+  const rows = Children.toArray(children);
   return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      disabled={disabled}
-      testID={testID}
-      style={({ pressed }) => [styles.row, detail ? styles.two : null, disabled && styles.disabled, pressed && !disabled && styles.pressed]}
-    >
-      {body}
-    </Pressable>
-  );
-}
-
-/** White group card for ListRows, with hairlines between rows. */
-export function ListGroup({ children, testID }: { children: ReactNode; testID?: string }) {
-  const styles = useThemedStyles(makeStyles);
-  const items = (Array.isArray(children) ? children : [children]).filter(Boolean);
-  return (
-    <View style={styles.group} testID={testID}>
-      {items.map((child, i) => (
-        <View key={i} style={i > 0 ? styles.divider : undefined}>
-          {child}
-        </View>
+    <View style={styles.list} testID={testID}>
+      {rows.map((row, i) => (
+        <Fragment key={i}>
+          {i > 0 ? <View style={styles.divider} /> : null}
+          {row}
+        </Fragment>
       ))}
     </View>
   );
 }
 
+type RowProps = {
+  title: string;
+  subtitle?: string;
+  /** A small gold pill before the chevron (e.g. "3 new"). */
+  badge?: string;
+  /** Red title, no chevron (Sign out). */
+  tone?: "danger";
+  /** Show the chevron. Unset = a chevron only when the row is tappable. */
+  chevron?: boolean;
+  /** Set to show an on/off switch; the whole row toggles it. */
+  switchValue?: boolean;
+  onSwitchChange?: (value: boolean) => void;
+  onPress?: () => void;
+  testID?: string;
+};
+
+/** Figma: Goldito-Design → Settings → List Row (Lines, Trailing, Tone). */
+export function ListRow({ title, subtitle, badge, tone, chevron, switchValue, onSwitchChange, onPress, testID }: RowProps) {
+  const theme = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const isSwitch = switchValue !== undefined;
+  const showChevron = !isSwitch && tone !== "danger" && (chevron ?? Boolean(onPress));
+  const handlePress = isSwitch ? () => onSwitchChange?.(!switchValue) : onPress;
+
+  const content = (
+    <>
+      <View style={styles.text}>
+        <Text style={[styles.title, tone === "danger" && styles.danger]}>{title}</Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      </View>
+      {badge ? (
+        <View style={styles.badge}>
+          <Text style={styles.badgeLabel}>{badge}</Text>
+        </View>
+      ) : null}
+      {showChevron ? <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.text} /> : null}
+      {isSwitch ? (
+        <View style={[styles.track, switchValue && styles.trackOn]}>
+          <View style={[styles.knob, switchValue ? styles.knobOn : styles.knobOff]} />
+        </View>
+      ) : null}
+    </>
+  );
+
+  if (!handlePress) {
+    return (
+      <View style={styles.row} testID={testID}>
+        {content}
+      </View>
+    );
+  }
+  return (
+    <Pressable
+      accessibilityRole={isSwitch ? "switch" : "button"}
+      aria-checked={isSwitch ? switchValue : undefined}
+      accessibilityLabel={title}
+      onPress={handlePress}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      testID={testID}
+    >
+      {content}
+    </Pressable>
+  );
+}
+
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    group: { backgroundColor: theme.color.surface, borderRadius: theme.radius.lg, overflow: "hidden" },
-    divider: { borderTopWidth: 1, borderTopColor: theme.color.border },
-    row: { minHeight: 54, flexDirection: "row", alignItems: "center", gap: theme.spacing.md, paddingHorizontal: theme.spacing.md },
-    two: { minHeight: 64, paddingVertical: theme.spacing.sm },
-    pressed: { backgroundColor: theme.color.background },
-    disabled: { opacity: theme.opacity.disabled },
-    leading: { width: 32, alignItems: "center" },
-    body: { flex: 1, gap: 2 },
-    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
-    detail: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    list: {
+      backgroundColor: theme.color.surface,
+      borderRadius: theme.ui.radius.block,
+      overflow: "hidden",
+    },
+    divider: { height: 1, backgroundColor: theme.color.border },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
+      minHeight: 54,
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: 13,
+    },
+    pressed: { opacity: theme.opacity.pressed },
+    text: { flex: 1, minWidth: 0, gap: 1 },
+    title: { fontSize: 15, lineHeight: 21, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     danger: { color: theme.color.error },
-    badge: { backgroundColor: theme.color.gold, borderRadius: theme.radius.pill, paddingHorizontal: theme.spacing.sm, paddingVertical: 2 },
-    badgeText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    subtitle: { fontSize: 12.5, lineHeight: 17.5, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
+    badge: {
+      backgroundColor: tokens.color.gold,
+      borderRadius: theme.ui.radius.tag,
+      paddingHorizontal: 9,
+      paddingVertical: 2,
+    },
+    badgeLabel: { fontSize: 11.5, lineHeight: 16, fontWeight: "800", color: theme.color.text },
+    track: { width: 42, height: 26, borderRadius: 13, backgroundColor: theme.color.track, justifyContent: "center" },
+    trackOn: { backgroundColor: tokens.color.primary },
+    knob: { position: "absolute", width: 20, height: 20, borderRadius: 10, backgroundColor: tokens.color.surface },
+    knobOn: { right: 3 },
+    knobOff: { left: 3 },
   });

@@ -131,7 +131,7 @@ export default function CheckoutScreen() {
         });
       }
       await payBookingDemo(ready.booking.id);
-      toast.show("You're all set ✅");
+      toast.show("You're all set");
       router.replace(`/owner/bookings/${ready.booking.id}`);
     } catch (err) {
       if (err instanceof BookingError) setError(err.message);

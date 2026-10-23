@@ -1,6 +1,6 @@
 # Phase 02 — Supabase DB + RLS
 
-> **상태 (2026-10-10):** 완료 (2026-10-01). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [TODO](../TODO.md) Phase status이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+> **상태 (2026-10-10):** 완료 (2026-10-01). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [Phase 목록](README.ko.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D5–D11, D21–D24, 쓰기 경로 §6
 > **이 문서의 스키마가 정본**입니다. SQL은 이 문서를 따르고, 둘이 다르면 이 문서를 먼저 고친 뒤 migration을 맞춥니다. ([README.ko.md §9](../README.ko.md#9-데이터-모델-요약)는 요약)
@@ -47,7 +47,7 @@ P0에 필요한 **전체 데이터 모델**을 PostgreSQL migration으로 정의
 | `rls_smoke.sql` + 로컬/CI용 `supabase_stub.sql` | 시드 데이터 (Phase 10) · P1 (Phase 11: 즐겨찾기 시터, 반복 근무 패턴) |
 | | 방문 돌봄(시터가 견주 집에서 돌봄) — P0는 **보딩**만. 지도·주소 검증 — P0 장소는 텍스트 |
 
-### 작업 ID ([TODO.md](../TODO.md)와 같음)
+### 작업 ID ([GitHub issues](https://github.com/minsikpaul92/Goldito/issues)와 같음)
 
 | ID | 작업 | 산출물 |
 | :--- | :--- | :--- |
