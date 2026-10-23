@@ -137,7 +137,7 @@ test.describe("pet room", () => {
     const screen = app(page);
     await screen.getByTestId("home-pager-flip").click();
     await screen.getByTestId("pet-room-Max-open").click();
-    await expect(page).toHaveURL(/\/owner\/diary$/);
+    await expect(page).toHaveURL(/\/owner\/feed\?view=diary$/);
   });
 
   test("the breed picks the head and the weight the size: a small dog takes less of the screen", async ({ page }) => {

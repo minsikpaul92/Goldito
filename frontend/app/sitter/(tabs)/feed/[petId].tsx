@@ -300,7 +300,7 @@ export default function SitterPetFeed() {
           renderItem={({ item }) => (
             <View style={styles.cell}>
               {isDiaryCell(item) ? (
-                <DiaryFeedCell cell={item} onOpen={() => router.push(`/sitter/diary?page=${item.reportId}`)} />
+                <DiaryFeedCell cell={item} onOpen={() => router.push(`/sitter/feed?view=diary&page=${item.reportId}`)} />
               ) : (
                 <FeedCard post={item} onOpen={() => setViewerPostId(item.id)} />
               )}

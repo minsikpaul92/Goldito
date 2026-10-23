@@ -157,7 +157,7 @@ export default function SitterHome() {
       {questions > 0 ? (
         <Pressable
           accessibilityRole="button"
-          onPress={() => router.push("/sitter/bookings")}
+          onPress={() => router.push("/sitter/chat")}
           style={({ pressed }) => [styles.requests, pressed && styles.pressed]}
           testID="today-chats"
         >

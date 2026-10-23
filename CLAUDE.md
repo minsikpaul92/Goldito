@@ -73,7 +73,7 @@ Owner                                  Sitter
   Notifications (bell)
 ```
 
-Tab bar (D47 · D47b · D61): both roles `Home · Bookings · Feed · Diary · Snap`.
+Tab bar (D47 · D47b · D61, D63): both roles `Home · Bookings · Chat · Feed · Snap`; Diary sits inside Feed (Photos · Diary).
 ### UX principles
 
 1. **Mobile-first, single column** — max comfort on phone-width web demo. Design frame **402 × 874**; on desktop browsers the app runs inside a phone frame and **every action must work with a mouse** (click = tap, drag/wheel = swipe) — `DESIGN.md` §2.1 · §7.7, architecture D25.
@@ -280,4 +280,4 @@ Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; c
 
 ---
 
-*Last aligned with repo docs: phases 00–12 (incl. 03C · 06B · 07B · 07C · 12 Snap), full-process.ko.md, P0 playbook, **D47 / D47b · D61** both roles Home · Bookings · Feed · Diary · Snap. If you change process, update this file together with the docs it names.*
+*Last aligned with repo docs: phases 00–12 (incl. 03C · 06B · 07B · 07C · 12 Snap), full-process.ko.md, P0 playbook, **D47 / D47b · D61 · D63** both roles Home · Bookings · Chat · Feed · Snap. If you change process, update this file together with the docs it names.*

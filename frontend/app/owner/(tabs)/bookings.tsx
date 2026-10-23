@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { BookingCard } from "../../../components/BookingCard";
-import { ChatList } from "../../../components/ChatList";
 import { PhotoViewerSheet } from "../../../components/PhotoViewerSheet";
 import { SitterResultCard } from "../../../components/SitterResultCard";
 import { SitterSearchBar } from "../../../components/SitterSearchBar";
@@ -12,7 +11,6 @@ import { TextButton } from "../../../components/ui/TextButton";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
-import { useMyChats } from "../../../features/chat/useMyChats";
 import { ProfilePhoto, loadCoverPhotos, loadProfilePhotos, photoThumb } from "../../../features/profile/profilePhotosApi";
 import { useSitterSearch } from "../../../features/sitters/useSitterSearch";
 import { NearbySitter, OwnerBooking, listOwnerBookings } from "../../../lib/bookings";
@@ -41,7 +39,6 @@ export default function OwnerBookings() {
   const ownerId = profile?.id;
   const [state, setState] = useState<State>({ status: "loading" });
   const search = useSitterSearch();
-  const chats = useMyChats();
   const [viewer, setViewer] = useState<{ name: string; photos: ProfilePhoto[] } | null>(null);
   const [covers, setCovers] = useState<Map<string, ProfilePhoto>>(new Map());
 
@@ -174,14 +171,6 @@ export default function OwnerBookings() {
           )}
         </View>
         <PhotoViewerSheet visible={viewer !== null} title={viewer?.name ?? ""} photos={viewer?.photos ?? []} onClose={() => setViewer(null)} testID="sitter-photos" />
-        {chats.items.length > 0 ? (
-          <View style={styles.section} testID="owner-chats">
-            <Text accessibilityRole="header" style={styles.heading}>
-              Chats
-            </Text>
-            <ChatList items={chats.items} onLeave={(id) => void chats.leave(id)} />
-          </View>
-        ) : null}
         {state.bookings.length === 0 ? (
           <EmptyState emoji="🗓️" title="No bookings yet" message="Your stays show up here once a sitter says yes." />
         ) : null}

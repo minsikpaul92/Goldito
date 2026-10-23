@@ -86,7 +86,7 @@ export function ChatCareCards({ booking, viewer, askSignal = 0 }: Props) {
       <Text style={styles.muted}>{`${i.petName} · ${formatDay(isoToZoned(i.at).day)}`}</Text>
       <Button
         label="Open diary"
-        onPress={() => router.push((owner ? `/owner/diary/${i.reportId}` : "/sitter/diary") as never)}
+        onPress={() => router.push((owner ? `/owner/diary/${i.reportId}` : "/sitter/feed?view=diary") as never)}
         testID="chat-diary-open"
       />
     </Card>

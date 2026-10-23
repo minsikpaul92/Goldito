@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AlbumView } from "../../../components/AlbumView";
 import { DiaryFeedCell } from "../../../components/DiaryFeedCell";
 import { FeedCard } from "../../../components/FeedCard";
+import { FeedSwitch } from "../../../components/FeedSwitch";
 import { FeedViewer } from "../../../components/FeedViewer";
 import { ShareToggle } from "../../../components/ShareToggle";
 import { Button } from "../../../components/ui/Button";
@@ -15,6 +16,7 @@ import { SegmentedControl } from "../../../components/ui/SegmentedControl";
 import { Sheet } from "../../../components/ui/Sheet";
 import { TextButton } from "../../../components/ui/TextButton";
 import { useInCare } from "../../../features/care/useInCare";
+import { OwnerDiaryBook } from "../../../features/diary/OwnerDiaryBook";
 import { DiaryCell, isDiaryCell, listDiaryCells, withDiaryCells } from "../../../features/diary/diaryFeed";
 import { useMyPets } from "../../../features/pets/useMyPets";
 import { UploadError, uploadMedia } from "../../../lib/cloudinary";
@@ -46,7 +48,11 @@ type FeedState =
  * Owner can add their own photos (private by default, optional "Visible to sitter") and
  * delete the posts they made (5.8).
  */
-export default function OwnerFeed() {
+export default function OwnerFeedTab() {
+  return <FeedSwitch photos={<OwnerFeed />} diary={<OwnerDiaryBook />} />;
+}
+
+function OwnerFeed() {
   const styles = useThemedStyles(makeStyles);
   const { feedRevision, diaryRevision } = useNotifications();
   const toast = useToast();

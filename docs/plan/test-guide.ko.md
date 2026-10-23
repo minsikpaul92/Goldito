@@ -108,7 +108,7 @@
 | 시터 Home 대시보드 | ✅ 🤖 | 03B.8 |
 | 견적 · 동의서 · 데모 결제 · 시간 제한 출입 정보 (+ 결제 전 입구 정보 경고, ENTRY-1) | ✅ 🤖 | 03C |
 | **시터 검색 (SS)** — 날짜 · 시간 · 집 / 현재 위치 · 반경 1–100 km(정확히), 머무는 내내 가능한 시터만, 거리는 정수 km | 🟡 화면 · 슬라이더 · 현재 위치 · 빈 상태 · Book 채우기 ✅ 🤖 `sitter-search.spec.ts` · SQL(정확한 반경) smoke는 CI 대기 — 호스팅 DB에는 +2 km 여유가 있는 옛 `014c`가 들어 있어 머지 때 다시 적용 · 사람 확인 대기 | 03B SS |
-| **채팅 허브 (3D.4)** — 오너 · 시터 한 쌍에 채팅 하나(같은 쌍은 늘 같은 스레드), 자유롭게 여러 번 보내기, 맨 위 부킹 진행도 + 첫 카드(날짜 · 시간 · 펫), 부킹 탭 안의 채팅 목록(안 읽은 수, 나가기), 기존 문의는 한 번 스레드로 옮김. 문의 화면과 AI 초안은 #142까지 그대로 | `014j` (호스팅 미적용) | 🤖 `chat` e2e · SQL `rls_smoke` | 사람 확인 대기 |
+| **채팅 허브 (3D.4)** — 오너 · 시터 한 쌍에 채팅 하나(같은 쌍은 늘 같은 스레드), 자유롭게 여러 번 보내기, 맨 위 부킹 진행도 + 첫 카드(날짜 · 시간 · 펫), **Chat 탭**의 채팅 목록(안 읽은 수, 나가기, #329), 기존 문의는 한 번 스레드로 옮김. 문의 화면과 AI 초안은 #142까지 그대로 | `014j` (호스팅 미적용) | 🤖 `chat` e2e · SQL `rls_smoke` | 사람 확인 대기 |
 | **채팅 안의 트립 (3D.8, #145 1단계)** — 이동하는 쪽 Start trip, 양쪽에 on the way · N min away · arrived 카드, 도착 인사 한 번 누르기. 기존 Trip 화면으로 연결 | 없음 | 🤖 `chat-trip` e2e | 사람 확인 대기 |
 | **채팅 안의 케어 카드 (3D.8, #145 2단계)** — 사진 요청(Ask for a photo)과 사진 답장 + 한 줄 캡션, 저녁 알림장 카드가 Diary로 연결. 마이그레이션 없음 | 없음 | 🤖 `chat-trip` e2e | 사람 확인 대기 |
 | **채팅 안의 인계 (3D.8, #145 3단계 · #169)** — 기본 방식(오너 마지막 요청 · 시터 온보딩 답), 드롭오프 + 픽업을 한 쌍으로 제안 · 한 번에 수락, 5분 전 트립 알림(`014r` 호스팅 적용 2026-10-20), 펫 Received · Returned를 채팅 카드로 | `014r` (호스팅 적용) | 🤖 `chat-handoff` · `chat-trip` e2e · SQL `rls_smoke` | 사람 확인 대기 |
@@ -481,7 +481,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | UX-1 | 오너 → 예약 새로 만들기 → Drop-off / Pick-up **날짜를 탭** | **달력 시트**가 뜸. 오늘 이전 날은 비활성(Pick-up은 Drop-off 이전), 월 이동 가능, 날짜를 누르면 그 날로 선택. −/+ 는 여전히 하루씩 | 🤖 `booking` | ➖ |
 | UX-2 | 시터 Home (돌보는 중) | **All tasks / My history**가 숫자 타일과 **달라 보임** (색 테두리 · 연한 배경 · `›`), 누르면 이동 | **👤** (모양) | ➖ |
-| UX-3 | 시터 → Bookings 탭 | **안 읽은 채팅이 있으면 Chats가 먼저(#228, CHATNEW-1)**. 그다음 **진행 중이거나 48시간 안에 시작하는 확정 예약**이 있으면 **Upcoming**으로 열림, 그게 없고 요청이 있으면 **Requests**, 둘 다 없으면 Requests. Requests 개수는 탭에 계속 표시. 직접 고른 탭은 안 덮어씀 | 🤖 `sitter-bookings` | ➖ |
+| UX-3 | 시터 → Bookings 탭 | (채팅은 Chat 탭으로 옮김, #329) **진행 중이거나 48시간 안에 시작하는 확정 예약**이 있으면 **Upcoming**으로 열림, 그게 없고 요청이 있으면 **Requests**, 둘 다 없으면 Requests. Requests 개수는 탭에 계속 표시. 직접 고른 탭은 안 덮어씀 | 🤖 `sitter-bookings` | ➖ |
 | UX-4 | 오너 → Bookings → **Your questions** | 내 문의가 최신순으로, "Waiting for …" / "💬 Reply ready" / "Booking requested" (= INQ-19) | 🤖 `inquiry` | ➖ |
 | UX-5 | 시터 Bookings에 대기 요청 · 답할 문의가 있을 때 (폰 너비 402) | Requests · Questions · Upcoming · Past가 **한 줄**, 숫자는 칸 오른쪽 위 **작은 배지**(괄호 "(1)" 없음) (FB-30) | 🤖 `sitter-bookings` · `inquiry` | ➖ |
 | UX-6 | `pets`로 리셋한 오너(예약 · 문의 · 시터 이력 없음) → Bookings 탭 | 빈 화면 대신 **Sitters on Goldito** — 시터 카드(→ 프로필), 아래 Book care. Book care의 시터 목록에도 각 시터 옆 **Profile** (FB-32) | 🤖 `sitters` | 로컬 ✅ 10/09 민식 · Vercel ➖ |
@@ -610,7 +610,7 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| SNAP-1 | 견주 · 시터로 로그인 → 탭 바 | 탭 5개 `Home · Bookings · Feed · Diary · Snap`(카메라 아이콘), Mood 탭은 없음 | 🤖 `auth.spec.ts` | 사람 확인 대기 |
+| SNAP-1 | 견주 · 시터로 로그인 → 탭 바 | 탭 5개 `Home · Bookings · Chat · Feed · Snap`(카메라 아이콘, #329), Diary · Mood 탭은 없음 | 🤖 `auth.spec.ts` | 사람 확인 대기 |
 | SNAP-2 | **Snap** 탭 → 카드 3개(Treat check · Mood · Sticker) → 각각 클릭 → 뒤로 | 각 도구 화면(`/{역할}/snap/treat` · `mood` · `sticker`)이 열리고(Treat check는 SNAP-5, Mood는 SNAP-11, Sticker는 SNAP-15) 뒤로 가면 Snap 탭. 마우스만으로 가능 | 🤖 `snap.spec.ts` | 사람 확인 대기 |
 | SNAP-3 | (API) 견주가 본인 펫 성분표 사진으로 `POST /api/ai/safety-check` — chicken 알러지 Max에 `chicken breast` 라벨 / 개에게 `raisins` / 고양이에게 `lily extract` / `animal fat` / 평범한 라벨 | 차례로 DANGER(모델이 SAFE라 해도) · DANGER · DANGER · WARNING(숨은 출처 설명) · SAFE. 결과에 신뢰 도메인 출처, Tavily가 안 되면 `sources_unavailable`, Ultra가 안 되면 SAFE 대신 WARNING(`double_checked: false`). 라벨을 못 읽으면 422. 남의 사진 · 다른 펫 · 돌보는 중이 아닌 시터는 403 | 🤖 pytest · 실제 모델은 👤 — 모델 직접 호출 확인(라벨 4장 읽기 · Tavily · Ultra WARNING, 2026-10-14 [model-ids.md](phases/notes/model-ids.md)), 라우트 전체는 배포 백엔드에 이 코드가 올라간 뒤(#90 머지) | ➖ |
 | SNAP-4 | (DB) 시터가 검사한 DANGER / 견주가 검사한 DANGER / WARNING | 시터 DANGER만 견주에게 "Blocked a risky treat for {이름} ⚠️" 알림 1건. 견주도 "I understand"(`acknowledged_at`)를 남길 수 있음, 판정은 앱에서 못 바꿈 | SQL `rls_smoke` 013 — 호스팅 DB에서 전부 PASS | ✅ 2026-10-14 민식 (SQL) |
@@ -872,7 +872,7 @@
 | --- | --- | --- | --- | --- |
 | CHAT-1 | (DB) `rls_smoke.sql`의 014j 블록 | 같은 쌍은 늘 같은 스레드 · 메시지가 없으면 목록에 안 나옴 · 같은 머무름은 첫 카드를 한 번만, 다르면 새 카드 · 둘 다 여러 번 보내기 · 안 읽은 수와 읽음 처리 · 시터는 새 채팅을 시작할 수 없고 있는 채팅은 열 수 있음 · 제3자는 읽기 · 쓰기 · 읽음 표시 모두 불가 · 직접 insert 없음 · 빈 메시지와 2000자 초과 거부 · 나가기는 내 목록에서만, 새 메시지나 다시 열면 돌아옴 · anon 불가 | SQL `rls_smoke` | ➖ |
 | CHAT-2 | 오너 → Bookings → 시터 이름 → 시터 프로필 → **Start chat**(시터 줄에는 채팅 버튼이 없음) | 채팅이 열리고 헤더에 **시터 사진(없으면 이니셜) · 이름**과 그 아래 **펫 아바타**만(날짜는 카드에 있어 헤더에 없음). Stay는 **카드**로, 내가 보낸 것은 오른쪽 · 상대 것은 왼쪽(와츠앱처럼). 입력창은 **한 줄**(오른쪽 보내기 버튼). 같은 시터의 💬를 다시 누르면 같은 채팅(같은 머무름이면 카드는 한 번만) | 🤖 `chat` | 사람 확인 대기 | 날짜를 바꿔 💬를 또 눌렀을 때 아직 아무도 말하지 않았다면 Stay 카드는 **새로 쌓이지 않고 그 카드가 새 날짜로 바뀜**(누군가 말한 뒤에는 새 카드, `014l`)
-| CHAT-3 | 시터 → Bookings → **Chats** 칸 | 오너 이름 · 마지막 메시지 · 안 읽은 수. 열면 가장 최근 메시지에서 시작하고 안 읽은 수가 사라짐. 시터도 계속 답할 수 있음 | 🤖 `chat` | 사람 확인 대기 |
+| CHAT-3 | 시터 → **Chat** 탭(#329) | 오너 이름 · 마지막 메시지 · 안 읽은 수. 열면 가장 최근 메시지에서 시작하고 안 읽은 수가 사라짐. 시터도 계속 답할 수 있음 | 🤖 `chat` | 사람 확인 대기 |
 | CHAT-4 | 한쪽이 보내면 다른 쪽 화면 | 열려 있는 채팅에 새 메시지가 곧바로(Realtime, 안 되면 5초 안에) 나타남. 목록의 미리보기와 숫자도 갱신 | 🤖 `chat`(폴링) · 실제 Realtime은 👤 | 사람 확인 대기 |
 | CHAT-5 | 목록의 채팅 줄을 왼쪽으로 밀기 | 내 목록에서만 사라지고 기록은 남음. 상대 목록에는 그대로. 다시 💬로 열거나 상대가 새로 보내면 돌아옴. 채팅 화면에는 Leave 버튼이 없음(← 가 나가는 길) | 🤖 `chat` | 사람 확인 대기 |
 | CHAT-6 | 채팅 맨 위 | **작은 원 5개**(Request · Meet · Confirm · Pay · Stay)가 이어진 줄이 **스크롤해도 맨 위에 고정**, 부킹의 단계(DB가 계산)를 따라 옮겨가고 아래에 "Your turn" / "Waiting for …". 이미 만난 쌍은 Meet이 체크된 채로 시작, 부킹이 아직 없으면 Request에 있음. 누르면 그 부킹으로 이동 | 🤖 `chat` | 사람 확인 대기 |
@@ -1022,15 +1022,14 @@
 | NOFEE-3 | 최종 견적 → 오너 Confirm → Pay → Checkout | 결제 금액 = 견적 Total(예: $268.13), Checkout에 수수료 줄 없음 | 🤖 `chat` · `checkout` | ➖ |
 | NOFEE-4 | #265 전에 보낸 견적(DB에 수수료 줄이 남은 것) | 수락된 수수료는 일반 줄로 보이고 Total에 포함, 아직 답 안 한 수수료는 버튼 없이 "This older quote has a fee no one can answer now. A new quote replaces it."와 Confirm 비활성(시터가 + 메뉴로 새 견적을 보내면 됨). 거절된 수수료는 안 보임 | 🤖 `chat` | ➖ |
 
-### 3.46 시터 Bookings가 새 채팅을 먼저 보여 줌 (CHATNEW) · #228
+### 3.46 새 채팅 알려 주기 (CHATNEW) · #228 → #329에서 Chat 탭으로
 
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |
-| CHATNEW-1 | 오너가 채팅을 보냄 → 시터가 Home에서 **Bookings** 탭 | 새로고침 없이 **Chats** 탭으로 열리고, 그 채팅 줄 왼쪽에 색 막대 · 옅은 배경(가장 최근의 새 채팅 하나만). 채팅방으로 바로 들어가지는 않음 | 🤖 `chat` | ➖ |
-| CHATNEW-2 | 두 오너가 각각 씀 | 더 최근에 쓴 오너의 채팅이 강조됨 | 🤖 `chat` | ➖ |
-| CHATNEW-3 | 시터가 Bookings(Requests)를 보고 있는데 새 채팅이 옴 | 몇 초 안에 Chats로 바뀌고 그 채팅이 강조됨. 단, 이번 방문에서 시터가 탭을 직접 골랐으면 그대로 둠 | 🤖 `chat` | ➖ |
-| CHATNEW-4 | 새 채팅이 없을 때 Bookings | 예전처럼 진행 중 · 곧 시작하는 예약이면 Upcoming, 아니면 Requests | 🤖 `chat` · `sitter-bookings` | ➖ |
-| CHATNEW-5 | 채팅방 안에서 글을 쓰는 중에 다른 오너가 씀 | 채팅방은 그대로(목록 화면에서만 탭이 바뀜), 입력이 끊기지 않음 | **👤** | ➖ |
+| CHATNEW-1 | 오너가 채팅을 보냄 → 시터 화면 | 새로고침 없이 하단 **Chat** 탭에 안 읽은 수 배지(빨간 원). Chat 탭을 열면 그 채팅 줄 왼쪽에 색 막대 · 옅은 배경(가장 최근의 새 채팅 하나만) | 🤖 `chat` | ➖ |
+| CHATNEW-2 | 두 오너가 각각 씀 | 배지는 합계(예: 3), 더 최근에 쓴 오너의 채팅이 강조됨 | 🤖 `chat` | ➖ |
+| CHATNEW-3 | 다 읽음 | 배지와 강조가 사라짐 | 🤖 `chat` | ➖ |
+| CHATNEW-4 | 시터 → Bookings | Chats 칩이 없음. 진행 중 · 곧 시작하는 예약이면 Upcoming, 아니면 Requests | 🤖 `chat` · `sitter-bookings` | ➖ |
 
 ### 3.47 채팅 첫 카드는 한 줄 요약 (STAYLINE) · #227
 
@@ -1116,6 +1115,17 @@
 | PFOLD-6 | 오너 Profile → **Packing list**(▸) | ☐ 항목을 **+ Add item**으로 늘리고(최대 20) ✕로 지우고 Save. 닫힌 카드는 "3 items"처럼 개수를 보여 줌 | 🤖 `profile.spec.ts` | 사람 확인 대기 |
 | PFOLD-7 | 결제한 예약에서 시터 → 예약 화면 / 오너 → 예약 화면 | 시터에게 **"{펫}'s things"** 카드에 오너가 적은 리스트가 나오고 항목을 눌러 체크(이 기기에 저장, 새로고침해도 유지). 오너에게는 **"Pack for {펫}"** 카드에 본인 리스트(같은 방식으로 체크). 리스트가 비면 카드 없음 | 🤖 `checkout.spec.ts` | 두 기기 사이 동기화는 없음(체크는 기기별) · 사람 확인 대기 |
 | PFOLD-8 | 시터 Profile → **Your answers** | 질문마다 번호 원 + 질문, 아래 **흰 박스에 내 답변**(민트 카드 안). 직접 추가한 질문과 가능한 날도 같은 모양 | 🤖 `sitter-onboarding.spec.ts` | 사람 확인 대기 |
+
+### 3.53 탭: Chat 탭, Diary는 Feed 안 (NAV) · #329
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| NAV-1 | 오너 · 시터로 로그인 → 탭 바 | **Home · Bookings · Chat · Feed · Snap**, 402 px에서 이름이 잘리지 않음. Chat 아이콘은 발바닥이 있는 네모 말풍선 | 🤖 `auth` | 사람 확인 대기 |
+| NAV-2 | 오너 → Bookings | 검색 · 즐겨찾기 · 예약만, **Chats 섹션 없음**. 채팅 목록은 Chat 탭에 | 🤖 `chat` | ➖ |
+| NAV-3 | Chat 탭 | 채팅 목록(이름 · 마지막 메시지 · 시간 · 안 읽은 수), 밀어서 나가기. 채팅이 없으면 "No chats yet" | 🤖 `chat` | ➖ |
+| NAV-4 | Feed 탭 | 맨 위 **Photos · Diary** 전환. Photos는 예전 Feed, Diary는 예전 Diary 탭(오너: 다이어리 책, 시터: Today · Diary book). 주소는 `?view=diary` | 🤖 `report` · `diary-book` | 사람 확인 대기 |
+| NAV-5 | 옛 주소 `/owner/diary` · `/sitter/diary?page=…`, 펫 방 · 반납 시트의 Diary 링크, 리포트 알림 | Feed의 Diary가 열림(시터는 그 페이지로) | 🤖 `pet-room` · `diary-book` | ➖ |
+| NAV-6 | 시터 Home의 **💬 Chats (n)** | Chat 탭으로 감 | **👤** | ➖ |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 

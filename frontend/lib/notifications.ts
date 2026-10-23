@@ -147,14 +147,14 @@ export function hrefForNotification(
       return role === "owner" && notice.petId ? `/owner/pets/${notice.petId}` : null;
     case "care_counter_accepted":
       return role === "sitter" ? "/sitter/tasks" : null;
-    // Old question notices: the conversation lives in the chat now, so they open the Bookings tab.
+    // Old question notices: the conversation lives in the chat now, so they open the Chat tab (#329).
     case "inquiry_replied":
     case "inquiry_received":
     case "inquiry_needs_you":
-      return role === "owner" ? "/owner/bookings" : role === "sitter" ? "/sitter/bookings" : null;
+      return role === "owner" ? "/owner/chat" : role === "sitter" ? "/sitter/chat" : null;
     case "report_sent":
       if (role !== "owner") return null;
-      return notice.refId ? `/owner/diary/${notice.refId}` : "/owner/diary";
+      return notice.refId ? `/owner/diary/${notice.refId}` : "/owner/feed?view=diary";
     case "booking_requested":
       return role === "sitter" ? bookingHref(notice.bookingId) : null;
     case "booking_agree_requested":

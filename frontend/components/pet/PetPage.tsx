@@ -66,7 +66,7 @@ export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => vo
       ) : null}
       <PetRoom
         pet={look}
-        onPress={() => router.push("/owner/diary")}
+        onPress={() => router.push("/owner/feed?view=diary")}
       />
       <View style={styles.wardrobe}>
         {ownedItems(pets.length).map((item) => (
