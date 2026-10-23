@@ -1321,10 +1321,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | ``tile-option-${open}-${option.value ?? option.kind}`` | 112 |
-| Pressable | ``${HOME_TILES[key].label} ${pet.name}`` | ``tile-${key}`` | 128 |
-| Sheet | Send | `tile-memo-send` | 145 |
-| Button | Send | `tile-memo-send` | 150 |
+| Pressable | — | ``tile-option-${open}-${option.value ?? option.kind}`` | 113 |
+| Pressable | ``${HOME_TILES[key].label} ${pet.name}`` | ``tile-${key}`` | 129 |
+| Sheet | Send | `tile-memo-send` | 146 |
+| Button | Send | `tile-memo-send` | 151 |
 
 ### LatestCard — [components/home/LatestCard.tsx](../../frontend/components/home/LatestCard.tsx)
 
@@ -1343,18 +1343,18 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 126 |
-| Pressable | — | `dashboard-next-done` | 157 |
-| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 193 |
-| Pressable | — | ``caring-pet-${p.id}`` | 214 |
-| Pressable | ``Today's checklist, ${done} of ${total}`` | `checklist-toggle` | 232 |
-| Pressable | ``${item.task.title} ${item.pet.name}`` | ``check-box-${item.log.id}`` | 266 |
-| Pressable | — | ``check-open-${item.log.id}`` | 278 |
-| Pressable | — | `action-five-second` | 299 |
-| Pressable | — | `action-treat-check` | 312 |
-| TextButton | All tasks | `shortcut-tasks` | 328 |
-| TextButton | My history | `shortcut-history` | 329 |
-| Sheet | Heads-up | `headsup-sheet` | 334 |
+| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 127 |
+| Pressable | — | `dashboard-next-done` | 158 |
+| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 194 |
+| Pressable | — | ``caring-pet-${p.id}`` | 215 |
+| Pressable | ``Today's checklist, ${done} of ${total}`` | `checklist-toggle` | 233 |
+| Pressable | ``${item.task.title} ${item.pet.name}`` | ``check-box-${item.log.id}`` | 267 |
+| Pressable | — | ``check-open-${item.log.id}`` | 279 |
+| Pressable | — | `action-five-second` | 300 |
+| Pressable | — | `action-treat-check` | 313 |
+| TextButton | All tasks | `shortcut-tasks` | 329 |
+| TextButton | My history | `shortcut-history` | 330 |
+| Sheet | Heads-up | `headsup-sheet` | 335 |
 
 ### StayHero — [components/home/StayHero.tsx](../../frontend/components/home/StayHero.tsx)
 

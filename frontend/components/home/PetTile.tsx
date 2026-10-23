@@ -63,7 +63,7 @@ export function PetTile({ pet, index, onPress }: { pet: Pet; index: number; onPr
         {photos.length > 0 ? (
           <Image source={{ uri: petPhotoThumb(photos[0].publicId, 104) }} style={styles.photo} testID={`pet-card-photo-${pet.name}`} accessibilityIgnoresInvertColors />
         ) : (
-          <HomeArt name="paw" size={30} color={theme.color.text} />
+          <HomeArt name="paw" art={pet.species === "cat" ? "owner/pet-cat" : "owner/pet-dog"} size={52} color={theme.color.text} />
         )}
       </Pressable>
       <View style={styles.body}>
@@ -91,7 +91,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     tile: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderRadius: theme.radius.xl },
     pressed: { opacity: 0.85 },
-    face: { width: 52, height: 52, borderRadius: 26, overflow: "hidden", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.6)" },
+    face: { width: 52, height: 52, borderRadius: 26, overflow: "hidden", alignItems: "center", justifyContent: "center" },
     photo: { width: "100%", height: "100%" },
     body: { flex: 1, minWidth: 0 },
     name: { fontSize: HOME_TEXT.name, lineHeight: 23.8, fontWeight: theme.fontWeight.bold, letterSpacing: -0.17, color: theme.color.text },

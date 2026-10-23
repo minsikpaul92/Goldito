@@ -25,6 +25,7 @@ import { sectionTitleStyle } from "../ui/SectionTitle";
 import { Sheet } from "../ui/Sheet";
 import { TextButton } from "../ui/TextButton";
 import { CheckinTiles } from "./CheckinTiles";
+import { Art } from "../art/Art";
 import { HomeArt } from "./HomeArt";
 import { HOME_TEXT } from "./homeType";
 
@@ -141,7 +142,7 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
           <View style={styles.hero} testID="dashboard-next">
             <View style={styles.heroTop}>
               <Text style={styles.heroKicker} testID="tasks-next-time">{`${dueNow ? "Due now" : "Next"} · ${formatTime(isoToZoned(next.log.due_at).time)}`}</Text>
-              <HomeArt name={TASK_ART[next.task.type] ?? "paw"} size={44} color={tokens.color.onMedia} />
+              <HomeArt name={TASK_ART[next.task.type] ?? "paw"} art={next.task.type === "medication" ? "sitter/pill" : undefined} size={next.task.type === "medication" ? 64 : 44} color={tokens.color.onMedia} />
             </View>
             <Text style={styles.heroTitle} numberOfLines={2} testID="tasks-next">
               {`${next.pet.name} · ${next.task.title}`}
@@ -160,7 +161,7 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
               style={({ pressed }) => [styles.heroButton, pressed && styles.pressed]}
               testID="dashboard-next-done"
             >
-              <Icon name="camera" size={20} color={tokens.color.text} />
+              <Art name="sitter/camera-small" size={20} />
               <Text style={styles.heroButtonText}>Complete with photo</Text>
             </Pressable>
           </View>
@@ -302,7 +303,7 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
             style={({ pressed }) => [styles.act, pressed && styles.pressed]}
             testID="action-five-second"
           >
-            <HomeArt name="camera" size={30} color={tokens.color.text} />
+            <HomeArt name="camera" art="sitter/five-second" size={48} color={tokens.color.text} />
             <View style={styles.actText}>
               <Text style={styles.actTitle}>5-second check</Text>
               <Text style={styles.actSub} numberOfLines={1}>{`Today's note for ${pet.ownerName}`}</Text>
@@ -315,7 +316,7 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
             style={({ pressed }) => [styles.act, pressed && styles.pressed]}
             testID="action-treat-check"
           >
-            <HomeArt name="treat" size={30} color={tokens.color.text} />
+            <HomeArt name="treat" art="sitter/treat-bowl" size={48} color={tokens.color.text} />
             <View style={styles.actText}>
               <Text style={styles.actTitle}>Treat check</Text>
               <Text style={styles.actSub} numberOfLines={1}>{`In Snap · checks ${pet.name}'s allergies`}</Text>
