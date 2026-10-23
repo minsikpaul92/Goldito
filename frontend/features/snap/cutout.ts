@@ -1,4 +1,4 @@
-import { Mask, TASKS_VISION, hooks, importUrl } from "./vision";
+import { Mask, TASKS_VISION, hooks, importUrl, silenceMediapipeInfo } from "./vision";
 
 /**
  * Snap → Sticker cut-out (Phase 12.3a; 12.S2 spike): MediaPipe Magic Touch (v2 `.task`, Apache-2.0) finds the pet
@@ -93,6 +93,7 @@ let mainThread: Promise<Segmenter> | null = null;
 
 async function onMainThread(frame: HTMLCanvasElement, point: { x: number; y: number }): Promise<Mask> {
   if (!mainThread) {
+    silenceMediapipeInfo();
     mainThread = (async () => {
       const vision = await importUrl(`${TASKS_VISION}/vision_bundle.mjs`);
       const files = await vision.FilesetResolver.forVisionTasks(`${TASKS_VISION}/wasm`);

@@ -51,8 +51,25 @@ export const importUrl = new Function("url", "return import(url)") as (url: stri
 
 let detector: Promise<Detector> | null = null;
 
+/**
+ * MediaPipe's WASM reports "INFO: Created TensorFlow Lite XNNPACK delegate for CPU." through `console.error`, which the
+ * dev overlay and the error log show as a failure. It is a status line, so that one message is dropped; every other
+ * error still goes through.
+ */
+let infoSilenced = false;
+export function silenceMediapipeInfo() {
+  if (infoSilenced) return;
+  infoSilenced = true;
+  const original = console.error.bind(console);
+  console.error = (...args: unknown[]) => {
+    if (typeof args[0] === "string" && args[0].startsWith("INFO:") && args[0].includes("TensorFlow Lite")) return;
+    original(...args);
+  };
+}
+
 function loadDetector(): Promise<Detector> {
   if (!detector) {
+    silenceMediapipeInfo();
     detector = (async () => {
       const vision = await importUrl(`${TASKS_VISION}/vision_bundle.mjs`);
       const fileset = await vision.FilesetResolver.forVisionTasks(`${TASKS_VISION}/wasm`);
