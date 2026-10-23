@@ -799,7 +799,7 @@ const makeStyles = (theme: Theme) =>
     row: { flexDirection: "row", gap: theme.spacing.sm, alignItems: "center" },
     rowInput: { flex: 1 },
     countRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: theme.spacing.xs },
-    countLabel: { fontSize: 18, lineHeight: 24, color: theme.color.text },
+    countLabel: { fontSize: theme.fontSize.lead, lineHeight: theme.lineHeight.lead, color: theme.color.text },
     summaryRow: {
       flexDirection: "row",
       alignItems: "center",
