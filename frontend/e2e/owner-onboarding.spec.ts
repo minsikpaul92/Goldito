@@ -318,12 +318,59 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByText("Location is off for Goldito in this browser")).toBeVisible();
     await screen.getByTestId("own-use-location").click();
     await expect(screen.getByTestId("own-pin-ok")).toBeVisible();
+    await expect(screen.getByText("No address found here. The pin is kept.")).toBeVisible();
     await screen.getByTestId("own-next").click();
     await expect(screen.getByTestId("own-row-home")).toContainText("Pin set");
     await screen.getByTestId("own-save").click();
     await expect(page).toHaveURL(/\/owner$/);
     expect(db.owner_profiles.find((p) => p.id === OWNER.id)).toMatchObject({ home_lat: 43.6477, home_lng: -79.4194 });
     expect(db.owner_profiles.find((p) => p.id === OWNER.id)?.home_address).toBeNull();
+  });
+
+  test("the current location fills the address field (#284)", async ({ page }) => {
+    const db = await newOwner(page);
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "geolocation", {
+        configurable: true,
+        value: {
+          getCurrentPosition(ok: (p: unknown) => void) {
+            ok({ coords: { latitude: 43.6477, longitude: -79.4194 } });
+          },
+          watchPosition: () => 1,
+          clearWatch: () => undefined,
+        },
+      });
+    });
+    await page.route("**/api/geo/reverse", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ found: true, label: "Trinity Bellwoods, Toronto", postal: "M6J", address: "Dundas St W, Toronto, M6J" }),
+      }),
+    );
+    await signIn(page, OWNER);
+    const screen = app(page);
+    await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-name").fill("Pip");
+    await screen.getByTestId("own-next").click();
+    for (const id of ["photos", "voice", "breed", "coat", "age", "weight", "petIntro"]) await screen.getByTestId("own-skip").click();
+    await screen.getByTestId("own-next").click();
+    await expect(screen.getByTestId("own-step-q:d1")).toBeVisible();
+    for (let i = 0; i < 12 + 5 + 2; i++) await screen.getByTestId("own-skip").click();
+    await expect(screen.getByTestId("own-step-location")).toBeVisible();
+    await screen.getByTestId("own-use-location").click();
+    await expect(screen.getByTestId("own-address")).toHaveValue("Dundas St W, Toronto, M6J");
+    await expect(screen.getByTestId("own-pin-ok")).toHaveCount(0);
+    await screen.getByTestId("own-next").click();
+    await expect(screen.getByTestId("own-row-home")).toContainText("Dundas St W, Toronto");
+    await screen.getByTestId("own-save").click();
+    await expect(page).toHaveURL(/\/owner$/);
+    expect(db.owner_profiles.find((p) => p.id === OWNER.id)).toMatchObject({
+      home_lat: 43.6477,
+      home_lng: -79.4194,
+      home_address: "Dundas St W, Toronto, M6J",
+    });
   });
 
   test("voice: the recording becomes text the owner fixes, facts are suggested, and safety answers are never picked for them", async ({ page }) => {
