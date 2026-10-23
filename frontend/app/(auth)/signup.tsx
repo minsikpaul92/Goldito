@@ -18,11 +18,24 @@ import {
 } from "../../lib/supabase";
 import { Role } from "../../providers/SessionProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
 
 const MIN_PASSWORD_LENGTH = 6;
 // Shape only (name@domain.tld) — whether the inbox exists is Supabase "Confirm email".
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/** 0 to 4 bars: length, then mixed case, a digit, a symbol. */
+function passwordStrength(pw: string): number {
+  if (pw === "") return 0;
+  let score = pw.length >= MIN_PASSWORD_LENGTH ? 1 : 0;
+  if (pw.length >= 10) score += 1;
+  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score += 1;
+  if (/\d/.test(pw) && /[^A-Za-z0-9]/.test(pw)) score += 1;
+  return Math.max(score, 1);
+}
+
+const STRENGTH_LABELS = ["", "Weak", "Okay", "Good", "Strong"];
 
 /** Back to where the visitor came from, or Welcome on a direct link (OB.1). */
 function goBack() {
@@ -32,6 +45,7 @@ function goBack() {
 
 export default function SignupScreen() {
   const styles = useThemedStyles(makeStyles);
+  const toast = useToast();
   const [role, setRole] = useState<Role | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -43,6 +57,7 @@ export default function SignupScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   // Shown as soon as the second password is typed, not only on submit.
+  const strength = passwordStrength(password);
   const mismatch =
     confirm !== "" && confirm !== password ? "Passwords don't match." : null;
 
@@ -123,6 +138,27 @@ export default function SignupScreen() {
         />
       </View>
 
+      <View style={styles.social}>
+        <Button
+          label="Continue with Apple"
+          variant="secondary"
+          onPress={() => toast.show("Coming soon")}
+          testID="signup-apple"
+        />
+        <Button
+          label="Continue with Google"
+          variant="secondary"
+          onPress={() => toast.show("Coming soon")}
+          testID="signup-google"
+        />
+      </View>
+
+      <View style={styles.divider}>
+        <View style={styles.rule} />
+        <View style={styles.rule} />
+        <Text style={styles.dividerLabel}>or with email</Text>
+      </View>
+
       <View style={styles.form}>
         <View style={styles.nameRow}>
           <View style={styles.nameField}>
@@ -150,7 +186,6 @@ export default function SignupScreen() {
           label="Email"
           value={email}
           onChangeText={setEmail}
-          placeholder="you@example.com"
           autoCapitalize="none"
           autoComplete="email"
           keyboardType="email-address"
@@ -162,17 +197,28 @@ export default function SignupScreen() {
           label="Password"
           value={password}
           onChangeText={setPassword}
-          placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
           secureTextEntry
           autoComplete="new-password"
           textContentType="newPassword"
           testID="signup-password"
         />
+        {strength > 0 ? (
+          <View style={styles.strength} testID="signup-strength">
+            <View style={styles.meter}>
+              {[1, 2, 3, 4].map((n) => (
+                <View
+                  key={n}
+                  style={[styles.bar, n <= strength && styles.barOn]}
+                />
+              ))}
+            </View>
+            <Text style={styles.strengthLabel}>{STRENGTH_LABELS[strength]}</Text>
+          </View>
+        ) : null}
         <TextField
           label="Confirm password"
           value={confirm}
           onChangeText={setConfirm}
-          placeholder="Type it again"
           secureTextEntry
           autoComplete="new-password"
           textContentType="newPassword"
@@ -198,9 +244,14 @@ export default function SignupScreen() {
         />
       </View>
 
+      <Text style={styles.terms}>
+        By continuing you agree to the Terms and Privacy Policy.
+      </Text>
+
       <TextButton
         label="Already have an account? Sign in"
         onPress={() => router.replace("/login")}
+        style={styles.login}
         testID="go-login"
       />
     </Screen>
@@ -227,6 +278,23 @@ const makeStyles = (theme: Theme) =>
     roles: {
       gap: theme.spacing.sm,
     },
+    social: {
+      gap: theme.spacing.sm,
+    },
+    divider: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
+    },
+    rule: {
+      flex: 1,
+      height: 1,
+      backgroundColor: theme.color.border,
+    },
+    dividerLabel: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.textMuted,
+    },
     form: {
       gap: theme.spacing.md,
     },
@@ -240,6 +308,35 @@ const makeStyles = (theme: Theme) =>
     error: {
       fontSize: theme.fontSize.small,
       color: theme.color.error,
+    },
+    strength: {
+      gap: theme.spacing.xs,
+      marginTop: -theme.spacing.xs,
+    },
+    meter: {
+      flexDirection: "row",
+      gap: theme.spacing.xs,
+    },
+    strengthLabel: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.textMuted,
+    },
+    bar: {
+      flex: 1,
+      height: 4,
+      borderRadius: 999,
+      backgroundColor: theme.color.track,
+    },
+    barOn: {
+      backgroundColor: theme.color.success,
+    },
+    terms: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.textMuted,
+      textAlign: "center",
+    },
+    login: {
+      marginTop: -theme.spacing.sm,
     },
     notice: {
       fontSize: theme.fontSize.small,

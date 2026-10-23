@@ -385,9 +385,11 @@ Shows: `BrandLogo` · `RoleCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `signup-back` | 96 |
-| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 193 |
-| TextButton | Already have an account? Sign in | `go-login` | 201 |
+| BackLink | — | `signup-back` | 111 |
+| Button | Continue with Apple | `signup-apple` | 142 |
+| Button | Continue with Google | `signup-google` | 148 |
+| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 239 |
+| TextButton | Already have an account? Sign in | `go-login` | 251 |
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 
@@ -1559,4 +1561,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-461 actions · 460 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+463 actions · 462 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
