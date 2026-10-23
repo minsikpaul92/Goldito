@@ -2,13 +2,14 @@ import { router, useFocusEffect } from "expo-router";
 import { ReactNode, useCallback, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { PetCaution, completeTaskLog, listPetAllergies, listPetCautions } from "../../features/care/careApi";
+import { PetCaution, completeTaskLog, listCareTasks, listPetAllergies, listPetCautions } from "../../features/care/careApi";
 import { ChangeRequest, listPendingChangeRequests } from "../../features/care/carePlanApi";
 import { useDueReminder } from "../../features/care/useDueReminder";
 import { TaskItem, useTodayTasks } from "../../features/care/useTodayTasks";
 import type { CaringPet } from "../../features/feed/caringPets";
 import { SPECIES_EMOJI } from "../../features/pets/petFormat";
-import { formatTime, isoToZoned } from "../../features/schedule/dates";
+import { appToday, formatTime, isoToZoned, zonedToIso } from "../../features/schedule/dates";
+import type { CareTaskRow } from "../../types/db";
 import { careTypeMeta } from "../../features/care/careFormat";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useNotifications } from "../../providers/NotificationsProvider";
@@ -41,6 +42,7 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
   const [finishing, setFinishing] = useState<TaskItem | null>(null);
   const [selected, setSelected] = useState(pets[0]?.id);
   const [cautions, setCautions] = useState<PetCaution[]>([]);
+  const [careTasks, setCareTasks] = useState<Record<string, CareTaskRow[]>>({});
   const [allergies, setAllergies] = useState<Record<string, string[]>>({});
   const [showCautions, setShowCautions] = useState(false);
   const [requests, setRequests] = useState<(ChangeRequest & { petName: string })[]>([]);
@@ -73,6 +75,9 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
       void listPendingChangeRequests()
         .then((list) => live && setRequests(list))
         .catch(() => undefined);
+      void Promise.all(pets.map(async (p) => [p.id, await listCareTasks(p.id)] as const))
+        .then((entries) => live && setCareTasks(Object.fromEntries(entries)))
+        .catch(() => undefined);
       void listPetAllergies(pets.map((p) => p.id))
         .then((map) => live && setAllergies(map))
         .catch(() => undefined);
@@ -89,6 +94,19 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
   const items = state.status === "ready" ? state.items : [];
   const reminder = useDueReminder(items, state.status === "ready", reload);
   const open = items.filter((i) => i.log.status === "pending");
+  // Daily tasks with no log today are outside the stay hours (before drop-off, after pick-up): nobody can tick them,
+  // but they are part of the day, so the count matches the owner's Today's care.
+  const logged = new Set(items.map((i) => i.log.task_id));
+  const outside = pets.flatMap((p) =>
+    (careTasks[p.id] ?? [])
+      .filter((t) => t.active && t.repeat_daily && !logged.has(t.id))
+      .map((task) => ({ task, pet: { id: p.id, name: p.name }, dueAt: zonedToIso(appToday(), task.scheduled_time.slice(0, 5)) })),
+  );
+  const total = items.length + outside.length;
+  const rows = [
+    ...items.map((item) => ({ key: item.log.id, dueAt: item.log.due_at, item, outside: null })),
+    ...outside.map((o) => ({ key: `out-${o.task.id}`, dueAt: o.dueAt, item: null, outside: o })),
+  ].sort((a, b) => a.dueAt.localeCompare(b.dueAt));
   const done = items.length - open.length;
   const next = open[0];
   const petName = (id: string) => pets.find((p) => p.id === id)?.name ?? "";
@@ -128,7 +146,7 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
               {`${next.pet.name} · ${next.task.title}`}
             </Text>
             <Text style={styles.heroSub}>
-              {[next.task.dose, `From ${next.pet.ownerName}'s checklist`, `${done} of ${items.length} done today`].filter(Boolean).join(" · ")}
+              {[next.task.dose, `From ${next.pet.ownerName}'s checklist`, `${done} of ${total} done today`].filter(Boolean).join(" · ")}
             </Text>
             {reminder.snoozedUntil[next.log.id] ? (
               <Text style={styles.heroSub} testID="tasks-snoozed">
@@ -145,11 +163,11 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
               <Text style={styles.heroButtonText}>Complete with photo</Text>
             </Pressable>
           </View>
-        ) : items.length > 0 ? (
+        ) : total > 0 ? (
           <View style={styles.hero} testID="tasks-all-done">
             <Text style={styles.heroKicker}>Today</Text>
-            <Text style={styles.heroTitle}>All done for today</Text>
-            <Text style={styles.heroSub}>{`${done} of ${items.length} done`}</Text>
+            <Text style={styles.heroTitle}>{outside.length > 0 ? "All done for your hours" : "All done for today"}</Text>
+            <Text style={styles.heroSub}>{`${done} of ${total} done`}</Text>
           </View>
         ) : null}
 
@@ -208,15 +226,30 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
         ) : null}
         <CheckinTiles key={pet.id} pet={pet} onSent={reload} />
 
-        {items.length > 0 ? (
+        {total > 0 ? (
           <View style={styles.checklist} testID="checklist">
             <Text accessibilityRole="header" style={styles.heading}>
-              {`Today's checklist · ${done} of ${items.length}`}
+              {`Today's checklist · ${done} of ${total}`}
             </Text>
-            {items.map((item) => {
+            {rows.map((row) => {
+              if (row.outside) {
+                const { task, pet: owner } = row.outside;
+                return (
+                  <View key={row.key} style={[styles.checkRow, styles.checkRowDone]} testID={`check-outside-${task.id}`}>
+                    <View style={styles.box} />
+                    <View style={styles.checkText}>
+                      <Text style={styles.checkTitle} numberOfLines={1}>{`${careTypeMeta(task.type).emoji} ${task.title}`}</Text>
+                      <Text style={styles.checkMeta} numberOfLines={1}>
+                        {[owner.name, formatTime(task.scheduled_time), "Outside the stay hours"].join(" · ")}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              }
+              const item = row.item;
               const isDone = item.log.status === "done";
               return (
-                <View key={item.log.id} style={[styles.checkRow, isDone && styles.checkRowDone]} testID={`check-row-${item.log.id}`}>
+                <View key={row.key} style={[styles.checkRow, isDone && styles.checkRowDone]} testID={`check-row-${item.log.id}`}>
                   <Pressable
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: isDone }}

@@ -1331,17 +1331,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 107 |
-| Pressable | — | `dashboard-next-done` | 138 |
-| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 174 |
-| Pressable | — | ``caring-pet-${p.id}`` | 195 |
-| Pressable | ``${item.task.title} ${item.pet.name}`` | ``check-box-${item.log.id}`` | 220 |
-| Pressable | — | ``check-open-${item.log.id}`` | 232 |
-| Pressable | — | `action-five-second` | 253 |
-| Pressable | — | `action-treat-check` | 266 |
-| TextButton | All tasks | `shortcut-tasks` | 282 |
-| TextButton | My history | `shortcut-history` | 283 |
-| Sheet | Heads-up | `headsup-sheet` | 288 |
+| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 125 |
+| Pressable | — | `dashboard-next-done` | 156 |
+| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 192 |
+| Pressable | — | ``caring-pet-${p.id}`` | 213 |
+| Pressable | ``${item.task.title} ${item.pet.name}`` | ``check-box-${item.log.id}`` | 253 |
+| Pressable | — | ``check-open-${item.log.id}`` | 265 |
+| Pressable | — | `action-five-second` | 286 |
+| Pressable | — | `action-treat-check` | 299 |
+| TextButton | All tasks | `shortcut-tasks` | 315 |
+| TextButton | My history | `shortcut-history` | 316 |
+| Sheet | Heads-up | `headsup-sheet` | 321 |
 
 ### StayHero — [components/home/StayHero.tsx](../../frontend/components/home/StayHero.tsx)
 
