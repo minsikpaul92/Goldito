@@ -46,6 +46,11 @@ test.describe("sitter onboarding", () => {
     // One question on the screen; a single pick goes on by itself.
     await expect(screen.getByTestId("onboarding-q-multiple_owners")).toBeVisible();
     await expect(screen.getByTestId("own-title")).toHaveText("Do you look after pets from more than one household at the same time?");
+    // Back on the left and Skip on the right, in one row of buttons.
+    const backBox = (await screen.getByTestId("own-back-bottom").boundingBox())!;
+    const skipBox = (await screen.getByTestId("onboarding-skip").boundingBox())!;
+    expect(Math.abs(backBox.y - skipBox.y)).toBeLessThan(2);
+    expect(backBox.x).toBeLessThan(skipBox.x);
     await screen.getByTestId("onboarding-choice-multiple_owners-yes").click();
     await expect(screen.getByTestId("onboarding-q-max_pets")).toBeVisible();
     await expect(screen.getByTestId("onboarding-choice-max_pets-5")).toContainText("5+");

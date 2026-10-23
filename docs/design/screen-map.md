@@ -67,24 +67,23 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Skip | `own-skip` | 174 |
-| Button | Next | `own-next` | 176 |
-| Button | Next | `own-next` | 226 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 227 |
-| Banner | `error` | — | 239 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 279 |
-| Stepper | Age | `own-age` | 373 |
-| Button | Next | `own-next` | 386 |
-| SegmentedControl | — | `own-weight-unit` | 405 |
-| LinkButton | `source.label` | ``own-source-${i + 1}`` | 457 |
-| Button | Start | `own-next` | 462 |
-| TextButton | Skip questions | `own-skip-questions` | 463 |
-| CheckRow | I checked this list | `own-foods-checked` | 581 |
-| Button | Add | `own-food-other-add` | 599 |
-| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 655 |
-| Banner | `error` | `own-error` | 712 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 713 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 731 |
+| Button | Next | `own-next` | 173 |
+| Button | Next | `own-next` | 224 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 225 |
+| Banner | `error` | — | 237 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 276 |
+| Stepper | Age | `own-age` | 369 |
+| Button | Next | `own-next` | 381 |
+| SegmentedControl | — | `own-weight-unit` | 400 |
+| LinkButton | `source.label` | ``own-source-${i + 1}`` | 450 |
+| Button | Start | `own-next` | 455 |
+| TextButton | Skip questions | `own-skip-questions` | 456 |
+| CheckRow | I checked this list | `own-foods-checked` | 575 |
+| Button | Add | `own-food-other-add` | 593 |
+| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 646 |
+| Banner | `error` | `own-error` | 701 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 702 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 720 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -1218,16 +1217,15 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Skip | `onboarding-skip` | 86 |
-| Button | Next | `onboarding-next` | 87 |
-| TextButton | Skip all for now | `onboarding-skip-all` | 120 |
-| TextButton | noteOpen ? "Hide note" : "+ Add a note" | ``onboarding-note-toggle-${q.key}`` | 192 |
-| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 238 |
-| Button | Add a question | `onboarding-custom-add` | 246 |
-| Button | Set weekly availability | `onboarding-availability-open` | 264 |
-| Button | Review | `onboarding-review` | 298 |
-| Button | Finish | `onboarding-finish` | 372 |
-| Button | Back to edit | `onboarding-back` | 373 |
+| Button | Next | `onboarding-next` | 86 |
+| TextButton | Skip all for now | `onboarding-skip-all` | 119 |
+| TextButton | noteOpen ? "Hide note" : "+ Add a note" | ``onboarding-note-toggle-${q.key}`` | 187 |
+| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 233 |
+| Button | Add a question | `onboarding-custom-add` | 241 |
+| Button | Set weekly availability | `onboarding-availability-open` | 259 |
+| Button | Review | `onboarding-review` | 293 |
+| Button | Finish | `onboarding-finish` | 367 |
+| Button | Back to edit | `onboarding-back` | 368 |
 
 ### SitterCard — [components/SitterCard.tsx](../../frontend/components/SitterCard.tsx)
 
@@ -1346,22 +1344,23 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Skip all | `own-skip-all` | 33 |
-| Pressable | Back | `own-back` | 37 |
-| TextButton | Back | `own-back-bottom` | 55 |
+| TextButton | Skip all | `own-skip-all` | 37 |
+| Pressable | Back | `own-back` | 41 |
+| Button | Back | `own-back-bottom` | 62 |
+| Button | Skip | `skipTestID` | 65 |
 
 ### VoiceInterview — [components/ownerOnboarding/VoiceInterview.tsx](../../frontend/components/ownerOnboarding/VoiceInterview.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | parsing ? "Reading…" : "Fill in the answers" | `own-voice-fill` | 166 |
-| TextButton | Record again | `own-voice-again` | 172 |
-| Banner | `problem` | `own-voice-problem` | 188 |
-| Banner | `parseError` | `own-voice-error` | 189 |
-| Button | Use these | `own-voice-use` | 203 |
-| Pressable | recordingNow ? "Stop recording" : "Start recording" | `own-mic` | 241 |
-| Button | Or type it | `own-voice-type` | 259 |
-| Banner | `problem` | `own-voice-problem` | 274 |
+| Button | parsing ? "Reading…" : "Fill in the answers" | `own-voice-fill` | 172 |
+| TextButton | Record again | `own-voice-again` | 178 |
+| Banner | `problem` | `own-voice-problem` | 194 |
+| Banner | `parseError` | `own-voice-error` | 195 |
+| Button | Use these | `own-voice-use` | 209 |
+| Pressable | recordingNow ? "Stop recording" : "Start recording" | `own-mic` | 248 |
+| Button | Or type it | `own-voice-type` | 272 |
+| Banner | `problem` | `own-voice-problem` | 287 |
 
 ### VoiceStep — [components/ownerOnboarding/VoiceStep.tsx](../../frontend/components/ownerOnboarding/VoiceStep.tsx)
 
@@ -1556,4 +1555,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-457 actions · 456 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+456 actions · 455 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

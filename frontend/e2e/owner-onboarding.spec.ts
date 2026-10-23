@@ -394,6 +394,17 @@ test.describe("owner onboarding", () => {
     // Only the microphone to start with: the questions are not shown until it is tapped.
     await expect(screen.getByTestId("own-voice-questions")).toHaveCSS("opacity", "0");
     await expect(screen.getByText("We don't keep the recording.")).toBeVisible();
+    // Everything of the first view is on one screen (no scrolling to reach Back and Skip), Back on the left and Skip
+    // on the right in one row. Measured inside the phone frame.
+    const row = await screen.getByTestId("own-step-voice").evaluate(() => {
+      const rect = (id: string) => document.querySelector(`[data-testid="${id}"]`)!.getBoundingClientRect();
+      const skip = rect("own-skip");
+      const back = rect("own-back-bottom");
+      return { height: window.innerHeight, skipBottom: skip.bottom, skipTop: skip.top, skipLeft: skip.left, backTop: back.top, backLeft: back.left };
+    });
+    expect(row.skipBottom).toBeLessThanOrEqual(row.height);
+    expect(Math.abs(row.backTop - row.skipTop)).toBeLessThan(2);
+    expect(row.backLeft).toBeLessThan(row.skipLeft);
     await screen.getByTestId("own-mic").click();
     await expect(screen.getByTestId("own-mic-status")).toContainText("of 1:00");
     // The mic slides down and the questions are written out above it, in order, with a waveform.

@@ -83,7 +83,6 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
     });
   };
 
-  const skip = <TextButton label="Skip" onPress={next} testID="onboarding-skip" />;
   const nextButton = <Button label="Next" onPress={next} testID="onboarding-next" />;
 
   if (step === "voice") {
@@ -114,11 +113,10 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
         progress={0}
         title="Tell us how you look after pets"
         hint="Say it in your own words, or type it."
+        onSkip={next}
+        skipTestID="onboarding-skip"
         footer={
-          <>
-            {skip}
-            {onSkipAll ? <TextButton label="Skip all for now" onPress={onSkipAll} disabled={saving} testID="onboarding-skip-all" /> : null}
-          </>
+          onSkipAll ? <TextButton label="Skip all for now" onPress={onSkipAll} disabled={saving} testID="onboarding-skip-all" /> : undefined
         }
         testID="onboarding-step-voice"
       >
@@ -157,12 +155,9 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
         title={q.prompt}
         hint={q.multi ? "Pick all that fit." : undefined}
         onBack={back}
-        footer={
-          <>
-            {answered ? nextButton : null}
-            {skip}
-          </>
-        }
+        onSkip={next}
+        skipTestID="onboarding-skip"
+        footer={answered ? nextButton : undefined}
         testID={`onboarding-q-${q.key}`}
       >
         {heard[q.key] ? (

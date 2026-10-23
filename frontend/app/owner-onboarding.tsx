@@ -170,9 +170,6 @@ export default function OwnerOnboarding() {
     }
   };
 
-  const skipLink = (
-    <TextButton label="Skip" onPress={next} testID="own-skip" />
-  );
   const nextButton = (disabled = false) => <Button label="Next" onPress={next} disabled={disabled} testID="own-next" />;
   /** "You said: “…”" under a field the voice filled in or an option it suggested. */
   const heard = (fact: { quote: string } | null | undefined, show: boolean, id: string, lead = "You said") =>
@@ -195,12 +192,13 @@ export default function OwnerOnboarding() {
     goTo("summary");
   };
 
-  const frame = (title: string, body: React.ReactNode, footer?: React.ReactNode, hint?: string) => (
+  const frame = (title: string, body: React.ReactNode, footer?: React.ReactNode, hint?: string, skippable = false) => (
     <StepFrame
       progress={progress(ids, step)}
       title={title}
       hint={hint}
       onBack={index > 0 || fromSummary ? back : undefined}
+      onSkip={skippable ? next : undefined}
       onSkipAll={canSkipAll ? skipAll : undefined}
       footer={footer}
       testID={`own-step-${step}`}
@@ -275,11 +273,9 @@ export default function OwnerOnboarding() {
     return frame(
       `Add photos of ${petName}`,
       <PetPhotosStep photos={draft.photos} onChange={changePhotos} onBusy={setPhotoBusy} />,
-      <>
-        <Button label={photoBusy ? "Uploading…" : "Next"} onPress={next} disabled={photoBusy || draft.photos.length === 0} testID="own-next" />
-        {skipLink}
-      </>,
+      <Button label={photoBusy ? "Uploading…" : "Next"} onPress={next} disabled={photoBusy || draft.photos.length === 0} testID="own-next" />,
       "The first one is the cover.",
+      true,
     );
   }
 
@@ -301,8 +297,9 @@ export default function OwnerOnboarding() {
           next();
         }}
       />,
-      skipLink,
+      undefined,
       "Answer the questions in order.",
+      true,
     );
   }
 
@@ -336,11 +333,9 @@ export default function OwnerOnboarding() {
         />
         {heard(draft.voice.breed, draft.breed.trim() === draft.voice.breed?.value, "breed")}
       </>,
-      <>
-        {nextButton(draft.breed.trim() === "")}
-        {skipLink}
-      </>,
+      nextButton(draft.breed.trim() === ""),
       "A mix is fine. Write what you think.",
+      true,
     );
   }
 
@@ -360,8 +355,9 @@ export default function OwnerOnboarding() {
           />
         ))}
       </View>,
-      skipLink,
+      undefined,
       "The main color of the coat.",
+      true,
     );
   }
 
@@ -382,17 +378,16 @@ export default function OwnerOnboarding() {
         />
         {heard(draft.voice.age_years, draft.ageYears === draft.voice.age_years?.value, "age")}
       </View>,
-      <>
-        <Button
-          label="Next"
-          onPress={() => {
-            if (draft.ageYears === null) update({ ageYears: years });
-            next();
-          }}
-          testID="own-next"
-        />
-        {skipLink}
-      </>,
+      <Button
+        label="Next"
+        onPress={() => {
+          if (draft.ageYears === null) update({ ageYears: years });
+          next();
+        }}
+        testID="own-next"
+      />,
+      undefined,
+      true,
     );
   }
 
@@ -422,10 +417,9 @@ export default function OwnerOnboarding() {
         />
         {heard(heardKg, kg !== null && heardKg !== null && Math.abs(kg - heardKg.value) < 0.06, "weight")}
       </>,
-      <>
-        {nextButton(draft.weight.trim() === "")}
-        {skipLink}
-      </>,
+      nextButton(draft.weight.trim() === ""),
+      undefined,
+      true,
     );
   }
 
@@ -439,10 +433,9 @@ export default function OwnerOnboarding() {
         accessibilityLabel={`About ${petName}`}
         testID="own-pet-intro"
       />,
-      <>
-        {nextButton(draft.petIntro.trim() === "")}
-        {skipLink}
-      </>,
+      nextButton(draft.petIntro.trim() === ""),
+      undefined,
+      true,
     );
   }
 
@@ -490,10 +483,9 @@ export default function OwnerOnboarding() {
           />
         ))}
       </>,
-      <>
-        {answered ? nextButton() : null}
-        {skipLink}
-      </>,
+      answered ? nextButton() : null,
+      undefined,
+      true,
     );
   }
 
@@ -517,7 +509,9 @@ export default function OwnerOnboarding() {
           />
         ))}
       </>,
-      skipLink,
+      undefined,
+      undefined,
+      true,
     );
   }
 
@@ -600,10 +594,9 @@ export default function OwnerOnboarding() {
           </View>
         ) : null}
       </>,
-      <>
-        {nextButton(!draft.foodsChecked || (foods.length === 0 && draft.safety.s6 !== "none"))}
-        {skipLink}
-      </>,
+      nextButton(!draft.foodsChecked || (foods.length === 0 && draft.safety.s6 !== "none")),
+      undefined,
+      true,
     );
   }
 
@@ -617,11 +610,9 @@ export default function OwnerOnboarding() {
         accessibilityLabel="About you"
         testID="own-intro"
       />,
-      <>
-        {nextButton(draft.intro.trim() === "")}
-        {skipLink}
-      </>,
+      nextButton(draft.intro.trim() === ""),
       "Your sitter reads this.",
+      true,
     );
   }
 
@@ -665,11 +656,9 @@ export default function OwnerOnboarding() {
         ) : null}
         {locationNote ? <Text style={styles.note}>{locationNote}</Text> : null}
       </>,
-      <>
-        {nextButton(!draft.home)}
-        {skipLink}
-      </>,
+      nextButton(!draft.home),
       "Sitters only see a rough distance.",
+      true,
     );
   }
 

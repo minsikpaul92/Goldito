@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { BigInput } from "./BigInput";
 import { Banner } from "../ui/Banner";
@@ -24,14 +24,18 @@ type Props = {
 
 type Phase = "idle" | "recording" | "reading" | "transcript" | "parsing" | "form";
 
-const STAGE_HEIGHT = 440;
+// The stage (mic, questions) takes what is left of the screen under the title and above the Back and Skip row, so
+// the first view needs no scrolling: it shrinks on a short screen and never goes past 420.
+const STAGE_MIN = 250;
+const STAGE_MAX = 420;
+const STAGE_CHROME = 388;
 const MIC = 96;
-// Waveform bars above the mic, the mic, its status line.
-const MIC_BLOCK = 44 + MIC + 40;
+// The mic with the waveform on both sides of it, and its status line.
+const MIC_BLOCK = MIC + 40;
 // "Or type it" hangs under the mic while it sits in the middle; the pair is centered together.
 const TYPE_GAP = 16;
-const TYPE_BUTTON = 56;
-const BARS = 21;
+const TYPE_BUTTON = 48;
+const BARS = 10;
 const MAX_TEXT = 1500;
 
 const clock = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.floor((ms % 60_000) / 1000)).padStart(2, "0")}`;
@@ -45,6 +49,8 @@ const clock = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.floor((m
 export function VoiceInterview({ items, parse, onSubmit }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const { height: screenHeight } = useWindowDimensions();
+  const stageHeight = Math.min(STAGE_MAX, Math.max(STAGE_MIN, screenHeight - STAGE_CHROME));
   const [phase, setPhase] = useState<Phase>(isVoiceSupported() ? "idle" : "form");
   const [transcript, setTranscript] = useState("");
   const [values, setValues] = useState<Record<string, string>>({});
@@ -206,11 +212,11 @@ export function VoiceInterview({ items, parse, onSubmit }: Props) {
   }
 
   const recordingNow = phase === "recording";
-  const micTop = slide.interpolate({ inputRange: [0, 1], outputRange: [(STAGE_HEIGHT - MIC_BLOCK - TYPE_GAP - TYPE_BUTTON) / 2, STAGE_HEIGHT - MIC_BLOCK] });
+  const micTop = slide.interpolate({ inputRange: [0, 1], outputRange: [(stageHeight - MIC_BLOCK - TYPE_GAP - TYPE_BUTTON) / 2, stageHeight - MIC_BLOCK] });
   const micScale = level.interpolate({ inputRange: [0, 1], outputRange: [1, 1.14] });
   return (
     <View style={styles.root}>
-      <View style={[styles.stage, { height: STAGE_HEIGHT }]}>
+      <View style={[styles.stage, { height: stageHeight }]}>
         <Animated.View
           style={[styles.questions, { opacity: slide, bottom: MIC_BLOCK + theme.spacing.md }]}
           pointerEvents={stageOpen ? "auto" : "none"}
@@ -232,23 +238,30 @@ export function VoiceInterview({ items, parse, onSubmit }: Props) {
         </Animated.View>
 
         <Animated.View style={[styles.micBlock, { top: micTop }]}>
-          <View style={[styles.wave, { opacity: recordingNow ? 1 : 0 }]} testID="own-wave">
-            {levels.map((value, i) => (
-              <View key={i} style={[styles.bar, { height: 6 + value * 34 }]} />
-            ))}
+          <View style={styles.micRow}>
+            <View style={[styles.wave, { opacity: recordingNow ? 1 : 0 }]} testID="own-wave">
+              {levels.map((value, i) => (
+                <View key={i} style={[styles.bar, { height: 6 + value * 40 }]} />
+              ))}
+            </View>
+            <Animated.View style={{ transform: [{ scale: micScale }] }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={recordingNow ? "Stop recording" : "Start recording"}
+                onPress={() => void toggle()}
+                disabled={phase === "reading"}
+                style={[styles.mic, recordingNow && styles.micOn, phase === "reading" && styles.micOff]}
+                testID="own-mic"
+              >
+                <Ionicons name={recordingNow ? "stop" : "mic"} size={42} color={theme.color.primaryText} />
+              </Pressable>
+            </Animated.View>
+            <View style={[styles.wave, { opacity: recordingNow ? 1 : 0 }]}>
+              {[...levels].reverse().map((value, i) => (
+                <View key={i} style={[styles.bar, { height: 6 + value * 40 }]} />
+              ))}
+            </View>
           </View>
-          <Animated.View style={{ transform: [{ scale: micScale }] }}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={recordingNow ? "Stop recording" : "Start recording"}
-              onPress={() => void toggle()}
-              disabled={phase === "reading"}
-              style={[styles.mic, recordingNow && styles.micOn, phase === "reading" && styles.micOff]}
-              testID="own-mic"
-            >
-              <Ionicons name={recordingNow ? "stop" : "mic"} size={42} color={theme.color.primaryText} />
-            </Pressable>
-          </Animated.View>
           <Text style={styles.status} testID="own-mic-status">
             {phase === "reading" ? "Reading what you said…" : recordingNow ? `${clock(elapsed)} of ${clock(MAX_RECORDING_MS)}` : "Tap to talk"}
           </Text>
@@ -286,8 +299,9 @@ const makeStyles = (theme: Theme) =>
     question: { fontSize: 26, lineHeight: 34, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     micBlock: { position: "absolute", left: 0, right: 0, alignItems: "center", gap: theme.spacing.xs },
     typeWrap: { position: "absolute", top: MIC_BLOCK + TYPE_GAP, left: 0, right: 0, alignItems: "center" },
-    typeButton: { minWidth: 220, minHeight: TYPE_BUTTON },
-    wave: { height: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4 },
+    typeButton: { minHeight: TYPE_BUTTON, paddingHorizontal: theme.spacing.lg },
+    micRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: theme.spacing.md },
+    wave: { width: 80, height: MIC, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4 },
     bar: { width: 5, borderRadius: 3, backgroundColor: theme.color.primary },
     mic: {
       width: MIC,
@@ -303,5 +317,5 @@ const makeStyles = (theme: Theme) =>
     heading: { fontSize: 24, lineHeight: 32, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     field: { gap: theme.spacing.xs },
     label: { fontSize: 22, lineHeight: 30, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
-    note: { fontSize: 18, lineHeight: 24, color: theme.color.textMuted },
+    note: { fontSize: 13, lineHeight: 18, color: theme.color.textMuted },
   });
