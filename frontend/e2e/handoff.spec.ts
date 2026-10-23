@@ -115,7 +115,7 @@ test.describe("handoff check", () => {
     await expect(screen.getByTestId("return-tasks-left")).toContainText("1 care task still open today");
     await expect(screen.getByTestId("return-note-missing")).toContainText("You haven't sent today's note for Max");
     await screen.getByTestId("return-send-note").click();
-    await expect(page).toHaveURL(/\/sitter\/diary$/);
+    await expect(page).toHaveURL(/\/sitter\/feed\?view=diary$/); // the Diary is inside Feed (#329)
     expect(db.completions).toEqual([]);
   });
 
