@@ -385,9 +385,9 @@ Shows: `BrandLogo` · `RoleCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `signup-back` | 87 |
-| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 177 |
-| TextButton | Already have an account? Sign in | `go-login` | 185 |
+| BackLink | — | `signup-back` | 96 |
+| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 193 |
+| TextButton | Already have an account? Sign in | `go-login` | 201 |
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 
@@ -1166,7 +1166,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `testID` | 23 |
+| Pressable | — | `testID` | 30 |
 
 ### RoleTabs — [components/RoleTabs.tsx](../../frontend/components/RoleTabs.tsx)
 

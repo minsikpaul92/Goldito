@@ -8,14 +8,21 @@ import { Theme } from "../theme/themes";
 type Props = {
   icon: IconName;
   title: string;
-  description: string;
+  description?: string;
   selected: boolean;
   onPress: () => void;
   testID?: string;
 };
 
 /** Big tappable role choice on Sign up (and later Welcome, OB.2). */
-export function RoleCard({ icon, title, description, selected, onPress, testID }: Props) {
+export function RoleCard({
+  icon,
+  title,
+  description,
+  selected,
+  onPress,
+  testID,
+}: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
 
@@ -30,7 +37,9 @@ export function RoleCard({ icon, title, description, selected, onPress, testID }
       <Icon name={icon} size={theme.icon.md} color={theme.color.primary} />
       <View style={styles.text}>
         <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
+        {description ? (
+          <Text style={styles.description}>{description}</Text>
+        ) : null}
       </View>
       <Icon
         name={selected ? "radioOn" : "radioOff"}
@@ -47,8 +56,9 @@ const makeStyles = (theme: Theme) =>
       flexDirection: "row",
       alignItems: "center",
       gap: theme.spacing.md,
-      minHeight: 72,
-      padding: theme.spacing.md,
+      minHeight: 48,
+      paddingVertical: 10,
+      paddingHorizontal: theme.spacing.md,
       borderRadius: theme.radius.lg,
       borderWidth: 1,
       borderColor: theme.color.border,
