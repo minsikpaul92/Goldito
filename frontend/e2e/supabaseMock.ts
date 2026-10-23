@@ -2060,7 +2060,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const { p_pet, p_kind, p_value, p_note_text, p_media_id } = request.postDataJSON();
     const note = typeof p_note_text === "string" && p_note_text.trim() ? p_note_text.trim() : null;
     const pet = db.pets.find((p) => p.id === p_pet);
-    if (p_kind === "note" && !note) return json(route, 400, { code: "P0001", message: "note_required" });
+    if ((p_kind === "note" || p_value === "other") && !note) return json(route, 400, { code: "P0001", message: "note_required" });
     if (p_kind === "walk" && pet?.species === "cat") {
       return json(route, 400, { code: "P0001", message: "checkin_not_allowed_for_species" });
     }
