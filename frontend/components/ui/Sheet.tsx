@@ -24,12 +24,14 @@ type Props = {
 /** Drag the handle or title this far (px) or this fast (px/ms) and the sheet goes: down closes, up fills the screen. */
 const DRAG_DISTANCE = 110;
 const DRAG_VELOCITY = 0.8;
+const FULL_CLOSE_DISTANCE = 260;
+const FULL_CLOSE_VELOCITY = 1.6;
 /** A short pull springs back; the sheet follows the finger meanwhile. */
 const OFF_SCREEN = 700;
 
 /**
  * Bottom sheet with a visible Close; tapping the backdrop closes it too. Grab the handle or the title bar:
- * pull down to close (from full screen, down first goes back to the normal height), pull up for full screen.
+ * pull down to close (from full screen a short pull goes back to the normal height, a long one closes), pull up for full screen.
  * Inside the desktop frame it stays in the phone, because the app runs in the frame's iframe.
  */
 export function Sheet({ visible, title, onClose, children, footer, scrollbar, testID }: Props) {
@@ -58,7 +60,8 @@ export function Sheet({ visible, title, onClose, children, footer, scrollbar, te
         onPanResponderRelease: (_e, g) => {
           const back = () => Animated.spring(dragY, { toValue: 0, useNativeDriver: false, bounciness: 0 }).start();
           if (g.dy > DRAG_DISTANCE || g.vy > DRAG_VELOCITY) {
-            if (fullRef.current) {
+            // From full screen a short pull steps down to the normal height; a long one closes.
+            if (fullRef.current && g.dy < FULL_CLOSE_DISTANCE && g.vy < FULL_CLOSE_VELOCITY) {
               setFull(false);
               back();
             } else {
