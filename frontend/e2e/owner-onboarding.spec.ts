@@ -144,14 +144,14 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-next").click();
 
     // The 12 chart questions: the name is in every question, a tap goes on by itself.
-    await expect(screen.getByTestId("own-title")).toHaveText("When a visitor comes in, Pip…");
+    await expect(screen.getByTestId("own-title")).toHaveText("When a guest visits, Pip…");
     for (let i = 1; i <= 12; i++) {
       await expect(screen.getByTestId(`own-step-q:d${i}`)).toBeVisible();
       await screen.getByTestId(i <= 6 ? "own-opt-4" : "own-opt-2").click();
     }
 
     // Safety: bites once, not sure about others, the rest skipped.
-    await expect(screen.getByTestId("own-title")).toHaveText("Has Pip ever bitten or snapped at a person?");
+    await expect(screen.getByTestId("own-title")).toHaveText("Ever bitten or snapped at a person?");
     await screen.getByTestId("own-safe-once").click();
     await expect(screen.getByTestId("own-step-s:s2")).toBeVisible();
     await screen.getByTestId("own-safe-unsure").click();
