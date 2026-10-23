@@ -52,6 +52,8 @@ import Wind from "lucide-react-native/icons/wind";
 import X from "lucide-react-native/icons/x";
 import Zap from "lucide-react-native/icons/zap";
 
+import { ChatPawIcon } from "./ChatPawIcon";
+
 // One file per icon: the package root would pull all of Lucide into the bundle.
 
 /**
@@ -65,6 +67,7 @@ const ICONS = {
   feed: Images,
   diary: BookOpen,
   camera: Camera,
+  chats: ChatPawIcon as unknown as LucideIcon,
   // header and menu
   bell: Bell,
   menu: Menu,

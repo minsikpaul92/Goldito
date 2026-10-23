@@ -6,8 +6,8 @@ import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 // Sign in, sign up, and role routing inside the desktop phone frame (phase-03 3.1–3.3).
 
 // Bottom tabs per role (phase-03b 3B.0, architecture §3; Snap replaced Mood, D61).
-const OWNER_TABS = ["Home", "Bookings", "Feed", "Diary", "Snap"];
-const SITTER_TABS = ["Home", "Bookings", "Feed", "Diary", "Snap"];
+const OWNER_TABS = ["Home", "Bookings", "Chat", "Feed", "Snap"];
+const SITTER_TABS = ["Home", "Bookings", "Chat", "Feed", "Snap"];
 
 /** Exactly these tabs, in order, and no label cut off in height or width. */
 async function expectTabs(page: Page, labels: string[]) {

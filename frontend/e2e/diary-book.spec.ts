@@ -183,7 +183,7 @@ test.describe("diary book", () => {
     await page.goto(`/sitter/feed/${MAX.id}`);
     const screen = app(page);
     await screen.getByTestId("feed-diary-p1").click();
-    await expect(page).toHaveURL(/\/sitter\/diary\?page=p1$/);
+    await expect(page).toHaveURL(/\/sitter\/feed\?view=diary&page=p1$/);
     await expect(screen.getByTestId("sitter-book-where")).toContainText("Max · Oct 5");
   });
 

@@ -92,14 +92,14 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 Owner Bookings tab: a hotel-style search line on top (place, dates, pets), the favorite sitters free for those dates (everyone nearby after Search) as photo and name, a tap opens the sitter, then my bookings with status badges (3B.3).
 
-Shows: `BookingCard` · `ChatList` · `PhotoViewerSheet` · `SitterResultCard` · `SitterSearchBar`
+Shows: `BookingCard` · `PhotoViewerSheet` · `SitterResultCard` · `SitterSearchBar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 99 |
-| TextButton | Open Profile | `search-open-profile` | 139 |
-| TextButton | Try again | `search-retry` | 147 |
-| EmptyState | No bookings yet | — | 186 |
+| EmptyState | Couldn't load your bookings | — | 96 |
+| TextButton | Open Profile | `search-open-profile` | 136 |
+| TextButton | Try again | `search-retry` | 144 |
+| EmptyState | No bookings yet | — | 175 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -166,11 +166,15 @@ Shows: `HandoffDraft` · `HandoffPicker`
 | TextButton | showPartial ? "Hide other options" : `Other options (${otherPartial.length})` | `toggle-partial` | 399 |
 | Button | sending ? "Sending…" : sitterName ? `Request booking with ${sitterName}` : "Request booking" | `request-booking` | 433 |
 
-### `/owner/diary` — [app/owner/(tabs)/diary.tsx](../../frontend/app/owner/(tabs)/diary.tsx)
+### `/owner/chat` — [app/owner/(tabs)/chat.tsx](../../frontend/app/owner/(tabs)/chat.tsx)
 
-Owner Diary tab (D47 · Diary book): the pages the sitters sent, as a book — all pets or one, oldest → newest, opening on the newest. Live updates are on Home, and everything they did is in History.
+Owner Chat tab (#329): the chats with sitters, out of Bookings.
 
-Shows: `OwnerDiaryBook`
+Shows: `ChatsTab`
+
+### `/owner/diary` — [app/owner/diary/index.tsx](../../frontend/app/owner/diary/index.tsx)
+
+The Diary tab moved into Feed (#329): an old link to /owner/diary opens the diary there.
 
 ### `/owner/diary/[entryId]` — [app/owner/diary/[entryId].tsx](../../frontend/app/owner/diary/[entryId].tsx)
 
@@ -182,21 +186,21 @@ Shows: `OwnerDiaryBook`
 
 Owner Feed tab (phase-05): Instagram 3-col album. ▶ = play in cell; tap photo = full-screen viewer (swipe / arrows). Owner can add their own photos (private by default, optional "Visible to sitter") and delete the posts they made (5.8).
 
-Shows: `AlbumView` · `DiaryFeedCell` · `FeedCard` · `FeedViewer` · `ShareToggle`
+Shows: `AlbumView` · `DiaryFeedCell` · `FeedCard` · `FeedSwitch` · `FeedViewer` · `ShareToggle` · `OwnerDiaryBook`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 235 |
-| EmptyState | No pets yet | — | 248 |
-| SegmentedControl | — | `feed-pet` | 278 |
-| Button | openRequest ? "Requested · waiting for a photo" : requesting ? "…" : "📷 Request photo" | `feed-request-photo` | 288 |
-| SegmentedControl | — | `feed-mode` | 299 |
-| EmptyState | Couldn't load the feed | — | 315 |
-| EmptyState | No posts yet | — | 322 |
-| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 331 |
-| Pressable | Add photo | `feed-add-photo` | 359 |
-| Sheet | deleting ? "…" : "🗑️" | `feed-delete-sheet` | 385 |
-| Button | deleting ? "…" : "🗑️" | `feed-delete-confirm` | 393 |
+| EmptyState | Couldn't load your pets | — | 241 |
+| EmptyState | No pets yet | — | 254 |
+| SegmentedControl | — | `feed-pet` | 284 |
+| Button | openRequest ? "Requested · waiting for a photo" : requesting ? "…" : "📷 Request photo" | `feed-request-photo` | 294 |
+| SegmentedControl | — | `feed-mode` | 305 |
+| EmptyState | Couldn't load the feed | — | 321 |
+| EmptyState | No posts yet | — | 328 |
+| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 337 |
+| Pressable | Add photo | `feed-add-photo` | 365 |
+| Sheet | deleting ? "…" : "🗑️" | `feed-delete-sheet` | 391 |
+| Button | deleting ? "…" : "🗑️" | `feed-delete-confirm` | 399 |
 
 ### `/owner/history` — [app/owner/history.tsx](../../frontend/app/owner/history.tsx)
 
@@ -426,15 +430,15 @@ Shows: `SitterAnswersForm`
 
 ### `/sitter/bookings` — [app/sitter/(tabs)/bookings.tsx](../../frontend/app/sitter/(tabs)/bookings.tsx)
 
-Sitter Bookings tab (phase-03b 3B.4): Chats · Requests · In progress · Upcoming · Past → booking detail.
+Sitter Bookings tab (phase-03b 3B.4): Requests · In progress · Upcoming · Past → booking detail. Chats have their own tab (#329).
 
-Shows: `BookingCard` · `ChatList`
+Shows: `BookingCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 108 |
-| SegmentedControl | — | `sitter-bookings-tabs` | 125 |
-| EmptyState | — | — | 142 |
+| EmptyState | Couldn't load your bookings | — | 89 |
+| SegmentedControl | — | `sitter-bookings-tabs` | 106 |
+| EmptyState | — | — | 122 |
 
 ### `/sitter/bookings/[bookingId]` — [app/sitter/bookings/[bookingId]/index.tsx](../../frontend/app/sitter/bookings/[bookingId]/index.tsx)
 
@@ -483,6 +487,12 @@ The sitter reads an owner's care request while a stay is on, then approves or de
 | Button | busy ? "Working…" : "Send counter-request" | `counter-send` | 203 |
 | Button | busy ? "Working…" : "Decline" | `decline-confirm` | 207 |
 
+### `/sitter/chat` — [app/sitter/(tabs)/chat.tsx](../../frontend/app/sitter/(tabs)/chat.tsx)
+
+Sitter Chat tab (#329): the chats with owners, out of Bookings.
+
+Shows: `ChatsTab`
+
 ### `/sitter/checkin/[petId]` — [app/sitter/checkin/[petId].tsx](../../frontend/app/sitter/checkin/[petId].tsx)
 
 One pet's 5-second check-in (opened from the pet chips on Home).
@@ -494,30 +504,21 @@ Shows: `QuickCheckIn`
 | EmptyState | state.status === "error" ? "Couldn't load this pet" : "Not in your care right now" | — | 19 |
 | Button | ``📸 Photos of ${pet.name}`` | `checkin-photos` | 32 |
 
-### `/sitter/diary` — [app/sitter/(tabs)/diary.tsx](../../frontend/app/sitter/(tabs)/diary.tsx)
+### `/sitter/diary` — [app/sitter/diary.tsx](../../frontend/app/sitter/diary.tsx)
 
-Sitter Diary (D47b · Diary book): **Today** — the page for each pet in care, written by hand or by Goldito from the day's chips, checked and sent (phase-07 7.3; with more than one pet the sitter picks the pet first, FB-19, and each composer keeps its page while switching). **Diary book** — every page this sitter sent, all pets they have cared for or one, oldest → newest.
-
-Shows: `ReportComposer` · `ReportStatus` · `DiaryBook` · `PageActions`
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 75 |
-| SegmentedControl | — | `sitter-diary-view` | 87 |
-| EmptyState | Diary | — | 102 |
-| Pressable | ``${pet.name}${status ? `, ${STATUS_LABEL[status]}` : ""}`` | ``diary-pet-${pet.id}`` | 110 |
-| EmptyState | Couldn't load the diary | — | 138 |
-| EmptyState | No pages yet | — | 140 |
+The Diary tab moved into Feed (#329): an old link to /sitter/diary (with its page) opens the diary there.
 
 ### `/sitter/feed` — [app/sitter/(tabs)/feed/index.tsx](../../frontend/app/sitter/(tabs)/feed/index.tsx)
 
 Sitter Feed tab (D47b / phase-05): pets in care → `/sitter/feed/[petId]` (+ Photo FAB).
 
+Shows: `FeedSwitch` · `SitterDiary`
+
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load pets | — | 52 |
-| EmptyState | Share a moment | — | 65 |
-| Pressable | ``${pet.name}, share photos`` | ``sitter-feed-pet-${pet.id}`` | 78 |
+| EmptyState | Couldn't load pets | — | 58 |
+| EmptyState | Share a moment | — | 71 |
+| Pressable | ``${pet.name}, share photos`` | ``sitter-feed-pet-${pet.id}`` | 84 |
 
 ### `/sitter/feed/[petId]` — [app/sitter/(tabs)/feed/[petId].tsx](../../frontend/app/sitter/(tabs)/feed/[petId].tsx)
 
@@ -880,6 +881,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | paused ? "Play" : "Pause" | ``feed-inline-toggle-${post.id}`` | 107 |
 | Pressable | ``${post.caption ?? "Photo"} from ${post.authorName}, ${formatFeedTime(post.createdAt)}`` | ``feed-open-${post.id}`` | 119 |
 | Pressable | Play video here | ``feed-play-${post.id}`` | 143 |
+
+### FeedSwitch — [components/FeedSwitch.tsx](../../frontend/components/FeedSwitch.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| SegmentedControl | — | `feed-view` | 27 |
 
 ### FeedViewer — [components/FeedViewer.tsx](../../frontend/components/FeedViewer.tsx)
 
@@ -1447,6 +1454,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | — | ``caring-pet-${p.id}`` | 33 |
 | Pressable | ``${action.label} ${pet.name}`` | ``pet-action-${pet.id}-${action.key}`` | 87 |
 
+### ChatsTab — [features/chat/ChatsTab.tsx](../../frontend/features/chat/ChatsTab.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| EmptyState | No chats yet | — | 23 |
+
 ### DiaryBook — [features/diary/DiaryBook.tsx](../../frontend/features/diary/DiaryBook.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1485,6 +1498,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | TextButton | hide ? "Hide page" : "Delete page" | `testID` | 51 |
 | Sheet | hide ? "Hide this page?" : "Delete this page?" | ``${testID}-sheet`` | 52 |
 | Button | busy ? "Please wait…" : hide ? "Hide" : "Delete" | ``${testID}-confirm`` | 63 |
+
+### SitterDiary — [features/diary/SitterDiary.tsx](../../frontend/features/diary/SitterDiary.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| EmptyState | Couldn't load your pets | — | 75 |
+| SegmentedControl | — | `sitter-diary-view` | 87 |
+| EmptyState | Diary | — | 102 |
+| Pressable | ``${pet.name}${status ? `, ${STATUS_LABEL[status]}` : ""}`` | ``diary-pet-${pet.id}`` | 110 |
+| EmptyState | Couldn't load the diary | — | 138 |
+| EmptyState | No pages yet | — | 140 |
 
 ### NotificationsCenter — [features/notifications/NotificationsCenter.tsx](../../frontend/features/notifications/NotificationsCenter.tsx)
 
@@ -1610,4 +1634,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-479 actions · 477 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+480 actions · 478 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
