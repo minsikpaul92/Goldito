@@ -68,24 +68,24 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Button | Next | `own-next` | 176 |
-| Stepper | `plural` | ``own-count-${kind}`` | 229 |
-| Button | Next | `own-next` | 249 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 250 |
-| Banner | `error` | — | 262 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 301 |
-| Stepper | Age | `own-age` | 394 |
-| Button | Next | `own-next` | 406 |
-| SegmentedControl | — | `own-weight-unit` | 425 |
-| LinkButton | `source.label` | ``own-source-${i + 1}`` | 475 |
-| Button | Start | `own-next` | 480 |
-| TextButton | Skip questions | `own-skip-questions` | 481 |
-| CheckRow | I checked this list | `own-foods-checked` | 600 |
-| Button | Add | `own-food-other-add` | 618 |
-| Button | locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location" | `own-use-location` | 676 |
-| Banner | `error` | `own-error` | 732 |
-| Button | saving ? "Saving…" : draft.pending.length > 0 ? `Save ${petName} and add the next pet` : `Save ${petName}` | `own-save` | 733 |
-| Button | Save and finish later | `own-save-later` | 740 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 765 |
+| Stepper | `plural` | ``own-count-${kind}`` | 231 |
+| Button | Next | `own-next` | 251 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 252 |
+| Banner | `error` | — | 264 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 303 |
+| Stepper | Age | `own-age` | 396 |
+| Button | Next | `own-next` | 408 |
+| SegmentedControl | — | `own-weight-unit` | 427 |
+| LinkButton | `source.label` | ``own-source-${i + 1}`` | 477 |
+| Button | Start | `own-next` | 482 |
+| TextButton | Skip questions | `own-skip-questions` | 483 |
+| CheckRow | I checked this list | `own-foods-checked` | 602 |
+| Button | Add | `own-food-other-add` | 620 |
+| Button | locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location" | `own-use-location` | 679 |
+| Banner | `error` | `own-error` | 735 |
+| Button | Save and finish later | `own-save-later` | 737 |
+| Button | saving ? "Saving…" : draft.pending.length > 0 ? "Save, add next" : `Save ${petName}` | `own-save` | 748 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 770 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -1348,10 +1348,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Skip all | `own-skip-all` | 37 |
-| Pressable | Back | `own-back` | 41 |
-| Button | Back | `own-back-bottom` | 62 |
-| Button | Skip | `skipTestID` | 65 |
+| Button | Back | `own-back-bottom` | 43 |
+| Button | Skip | `skipTestID` | 46 |
+| TextButton | Skip all | `own-skip-all` | 57 |
+| Pressable | Back | `own-back` | 61 |
 
 ### VoiceInterview — [components/ownerOnboarding/VoiceInterview.tsx](../../frontend/components/ownerOnboarding/VoiceInterview.tsx)
 

@@ -876,10 +876,10 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-skip-all")).toBeVisible();
     await expect(screen.getByTestId("own-skip-questions")).toBeVisible();
     await screen.getByTestId("own-skip-questions").click();
-    await expect(screen.getByTestId("own-step-summary")).toBeVisible();
+    await expect(screen.getByTestId("own-step-s:s5")).toBeVisible();
   });
 
-  test("skip all button in the header corner skips remaining questions to summary", async ({ page }) => {
+  test("skip all button in the header corner skips the personality questions to the health question", async ({ page }) => {
     await newOwner(page);
     await signIn(page, OWNER);
     const screen = app(page);
@@ -896,6 +896,6 @@ test.describe("owner onboarding", () => {
     // Now on first question step
     await expect(screen.getByTestId("own-skip-all")).toBeVisible();
     await screen.getByTestId("own-skip-all").click();
-    await expect(screen.getByTestId("own-step-summary")).toBeVisible();
+    await expect(screen.getByTestId("own-step-s:s5")).toBeVisible();
   });
 });
