@@ -22,8 +22,10 @@ type Props = {
 };
 
 /** Drag the handle or title this far (px) or this fast (px/ms) and the sheet goes: down closes, up fills the screen. */
-const DRAG_DISTANCE = 70;
-const DRAG_VELOCITY = 0.6;
+const DRAG_DISTANCE = 110;
+const DRAG_VELOCITY = 0.8;
+/** A short pull springs back; the sheet follows the finger meanwhile. */
+const OFF_SCREEN = 700;
 
 /**
  * Bottom sheet with a visible Close; tapping the backdrop closes it too. Grab the handle or the title bar:
@@ -52,17 +54,22 @@ export function Sheet({ visible, title, onClose, children, footer, scrollbar, te
       PanResponder.create({
         // Only a mostly vertical drag takes over, so a tap on Close still works.
         onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx),
-        onPanResponderMove: (_e, g) => dragY.setValue(Math.max(-40, g.dy)),
+        onPanResponderMove: (_e, g) => dragY.setValue(g.dy < 0 ? g.dy / 3 : g.dy),
         onPanResponderRelease: (_e, g) => {
-          const down = g.dy > DRAG_DISTANCE || g.vy > DRAG_VELOCITY;
-          const up = g.dy < -DRAG_DISTANCE / 2 || g.vy < -DRAG_VELOCITY;
-          dragY.setValue(0);
-          if (down) {
-            if (fullRef.current) setFull(false);
-            else closeRef.current();
-          } else if (up) setFull(true);
+          const back = () => Animated.spring(dragY, { toValue: 0, useNativeDriver: false, bounciness: 0 }).start();
+          if (g.dy > DRAG_DISTANCE || g.vy > DRAG_VELOCITY) {
+            if (fullRef.current) {
+              setFull(false);
+              back();
+            } else {
+              Animated.timing(dragY, { toValue: OFF_SCREEN, duration: 160, useNativeDriver: false }).start(() => closeRef.current());
+            }
+          } else if (g.dy < -DRAG_DISTANCE / 2 || g.vy < -DRAG_VELOCITY) {
+            setFull(true);
+            back();
+          } else back();
         },
-        onPanResponderTerminate: () => dragY.setValue(0),
+        onPanResponderTerminate: () => Animated.spring(dragY, { toValue: 0, useNativeDriver: false }).start(),
       }),
     [dragY],
   );
@@ -148,16 +155,17 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "flex-end",
       backgroundColor: theme.color.overlay,
     },
-    dragWrap: { width: "100%", maxWidth: 480, alignSelf: "center" },
-    dragFull: { height: "100%" },
+    // The wrapper holds the height limit (a percentage needs a parent with a height), the sheet shrinks inside it.
+    dragWrap: { width: "100%", maxWidth: 480, maxHeight: "90%", alignSelf: "center" },
+    dragFull: { height: "100%", maxHeight: "100%" },
     sheet: {
-      maxHeight: "90%",
+      flexShrink: 1,
       width: "100%",
       backgroundColor: theme.color.surface,
       borderTopLeftRadius: theme.radius.xl,
       borderTopRightRadius: theme.radius.xl,
     },
-    sheetFull: { maxHeight: "100%", flex: 1, borderTopLeftRadius: 0, borderTopRightRadius: 0 },
+    sheetFull: { flex: 1, borderTopLeftRadius: 0, borderTopRightRadius: 0 },
     // Grab handle: pull it down to close, up for full screen.
     handle: { alignSelf: "center", width: 40, height: 5, borderRadius: 3, backgroundColor: theme.color.border, marginTop: theme.spacing.sm },
     header: {

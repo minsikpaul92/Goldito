@@ -1035,7 +1035,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | cover ? "Change photo" : "Add photo" | `pet-avatar` | 70 |
+| Pressable | Add photo | `pet-avatar` | 85 |
+| Pressable | ``Delete photo ${i + 1}`` | ``pet-photo-delete-${i + 1}`` | 106 |
+| Pressable | Add photo | `pet-photo-add` | 119 |
 
 ### PetForm — [components/PetForm.tsx](../../frontend/components/PetForm.tsx)
 
@@ -1331,7 +1333,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${stay.sitterName}'s photos`` | `stay-sitter-photo` | 50 |
+| Pressable | ``${stay.sitterName}'s photos`` | `stay-sitter-photo` | 53 |
 
 ### BigOption — [components/ownerOnboarding/BigOption.tsx](../../frontend/components/ownerOnboarding/BigOption.tsx)
 
@@ -1565,4 +1567,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-463 actions · 461 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+465 actions · 463 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).

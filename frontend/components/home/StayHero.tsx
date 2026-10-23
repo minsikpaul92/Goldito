@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { StayToday } from "../../features/care/useStayToday";
@@ -23,7 +24,8 @@ export function StayHero({ stay }: { stay: StayToday }) {
   const [viewing, setViewing] = useState(false);
   const sitterId = stay.sitterId;
 
-  useEffect(() => {
+  // Read again whenever Home comes back into view, and when the photos are opened: the sitter may have added some.
+  const refresh = useCallback(() => {
     let live = true;
     loadProfilePhotos(sitterId)
       .then((list) => live && setPhotos(list))
@@ -32,6 +34,7 @@ export function StayHero({ stay }: { stay: StayToday }) {
       live = false;
     };
   }, [sitterId]);
+  useFocusEffect(refresh);
 
   return (
     <View style={styles.card} testID="stay-hero">
@@ -51,7 +54,10 @@ export function StayHero({ stay }: { stay: StayToday }) {
           accessibilityRole={photos.length > 0 ? "button" : undefined}
           accessibilityLabel={`${stay.sitterName}'s photos`}
           disabled={photos.length === 0}
-          onPress={() => setViewing(true)}
+          onPress={() => {
+            refresh();
+            setViewing(true);
+          }}
           style={styles.photo}
           testID="stay-sitter-photo"
         >
