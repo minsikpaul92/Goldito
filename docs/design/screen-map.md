@@ -67,23 +67,25 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Next | `own-next` | 174 |
-| Button | Next | `own-next` | 225 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 226 |
-| Banner | `error` | — | 238 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 277 |
-| Stepper | Age | `own-age` | 370 |
-| Button | Next | `own-next` | 382 |
-| SegmentedControl | — | `own-weight-unit` | 401 |
-| LinkButton | `source.label` | ``own-source-${i + 1}`` | 451 |
-| Button | Start | `own-next` | 456 |
-| TextButton | Skip questions | `own-skip-questions` | 457 |
-| CheckRow | I checked this list | `own-foods-checked` | 576 |
-| Button | Add | `own-food-other-add` | 594 |
-| Button | locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location" | `own-use-location` | 652 |
-| Banner | `error` | `own-error` | 708 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 709 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 727 |
+| Button | Next | `own-next` | 176 |
+| Stepper | `plural` | ``own-count-${kind}`` | 229 |
+| Button | Next | `own-next` | 249 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 250 |
+| Banner | `error` | — | 262 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 301 |
+| Stepper | Age | `own-age` | 394 |
+| Button | Next | `own-next` | 406 |
+| SegmentedControl | — | `own-weight-unit` | 425 |
+| LinkButton | `source.label` | ``own-source-${i + 1}`` | 475 |
+| Button | Start | `own-next` | 480 |
+| TextButton | Skip questions | `own-skip-questions` | 481 |
+| CheckRow | I checked this list | `own-foods-checked` | 600 |
+| Button | Add | `own-food-other-add` | 618 |
+| Button | locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location" | `own-use-location` | 676 |
+| Banner | `error` | `own-error` | 732 |
+| Button | saving ? "Saving…" : draft.pending.length > 0 ? `Save ${petName} and add the next pet` : `Save ${petName}` | `own-save` | 733 |
+| Button | Save and finish later | `own-save-later` | 740 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 765 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -1557,4 +1559,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-459 actions · 458 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+461 actions · 460 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

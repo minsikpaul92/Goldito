@@ -28,11 +28,12 @@ import {
   confirmedFoods,
   foodsFromDraft,
   loadDraft,
-  pickedSpecies,
+  MAX_PETS_PER_KIND,
+  petCounts,
   profileFromDraft,
   saveDraft,
   weightFromDraft,
-  withPickedSpecies,
+  withPetCounts,
 } from "../features/ownerOnboarding/draft";
 import { MAX_PET_INTRO, applyVoiceForm, formFromFacts, voiceItems } from "../features/ownerOnboarding/applyVoice";
 import { useBreedNeeds } from "../features/ownerOnboarding/breedNeedsApi";
@@ -145,12 +146,13 @@ export default function OwnerOnboarding() {
     goTo(id);
   };
 
-  const finish = async (petId: string | null) => {
+  const finish = async (petId: string | null, finishLater = false) => {
     if (!userId) return;
     setSaving(true);
     setError(null);
     try {
-      const last = draft.pending.length === 0;
+      // "Finish later" ends here: the pets still to come are not asked about now.
+      const last = draft.pending.length === 0 || finishLater;
       if (petId) await saveOwnerOnboarding(userId, draft, petId, last);
       else await markOwnerOnboarded(userId);
       if (petId) toast.show(`${petName} is added`);
@@ -209,20 +211,42 @@ export default function OwnerOnboarding() {
   );
 
   if (step === "species") {
-    // Both kinds can be ticked: the questions then run once per pet, the first kind first.
-    const picked = pickedSpecies(draft);
-    const toggleSpecies = (value: Species) => {
-      const on = picked.includes(value);
-      const nextDraft = withPickedSpecies(draft, on ? picked.filter((s) => s !== value) : [...picked, value]);
-      update(nextDraft);
-    };
+    // Each kind has a count: the questions then run once per pet, dogs first.
+    const counts = petCounts(draft);
+    const setCount = (kind: Species, n: number) => update(withPetCounts(draft, { ...counts, [kind]: n }));
+    const total = counts.dog + counts.cat;
+    const kindRow = (kind: Species, label: string, plural: string) => (
+      <>
+        <BigOption
+          label={label}
+          selected={counts[kind] > 0}
+          onPress={() => setCount(kind, counts[kind] > 0 ? 0 : 1)}
+          testID={`own-species-${kind}`}
+        />
+        {counts[kind] > 0 ? (
+          <View style={styles.countRow}>
+            <Text style={styles.countLabel}>{`How many ${plural}?`}</Text>
+            <Stepper
+              label={plural}
+              value={String(counts[kind])}
+              onDecrease={() => setCount(kind, counts[kind] - 1)}
+              onIncrease={() => setCount(kind, counts[kind] + 1)}
+              canDecrease={counts[kind] > 1}
+              canIncrease={counts[kind] < MAX_PETS_PER_KIND}
+              actions={["fewer", "more"]}
+              testID={`own-count-${kind}`}
+            />
+          </View>
+        ) : null}
+      </>
+    );
     return (
       <StepFrame
         progress={0}
         title="What kind of pet do you have?"
         footer={
           <>
-            <Button label="Next" onPress={() => goTo("name")} disabled={picked.length === 0} testID="own-next" />
+            <Button label="Next" onPress={() => goTo("name")} disabled={total === 0} testID="own-next" />
             <TextButton
               label={saving ? "Saving…" : "Add a pet later"}
               onPress={() => void finish(null)}
@@ -233,8 +257,8 @@ export default function OwnerOnboarding() {
         }
         testID="own-step-species"
       >
-        <BigOption label="Dog" selected={picked.includes("dog")} onPress={() => toggleSpecies("dog")} testID="own-species-dog" />
-        <BigOption label="Cat" selected={picked.includes("cat")} onPress={() => toggleSpecies("cat")} testID="own-species-cat" />
+        {kindRow("dog", "Dog", "dogs")}
+        {kindRow("cat", "Cat", "cats")}
         {error ? <Banner tone="error" body={error} /> : null}
       </StepFrame>
     );
@@ -706,7 +730,21 @@ export default function OwnerOnboarding() {
       footer={
         <>
           {error ? <Banner tone="error" body={error} testID="own-error" /> : null}
-          <Button label={saving ? "Saving…" : `Save ${petName}`} onPress={() => void finish(draft.petId ?? ensurePetId())} disabled={saving} testID="own-save" />
+          <Button
+            label={saving ? "Saving…" : draft.pending.length > 0 ? `Save ${petName} and add the next pet` : `Save ${petName}`}
+            onPress={() => void finish(draft.petId ?? ensurePetId())}
+            disabled={saving}
+            testID="own-save"
+          />
+          {draft.pending.length > 0 ? (
+            <Button
+              label="Save and finish later"
+              variant="secondary"
+              onPress={() => void finish(draft.petId ?? ensurePetId(), true)}
+              disabled={saving}
+              testID="own-save-later"
+            />
+          ) : null}
         </>
       }
       testID="own-step-summary"
@@ -756,6 +794,8 @@ const makeStyles = (theme: Theme) =>
     half: { flexBasis: "47%", flexGrow: 1 },
     row: { flexDirection: "row", gap: theme.spacing.sm, alignItems: "center" },
     rowInput: { flex: 1 },
+    countRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: theme.spacing.xs },
+    countLabel: { fontSize: theme.fontSize.lead, lineHeight: theme.lineHeight.lead, color: theme.color.text },
     summaryRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -764,7 +804,8 @@ const makeStyles = (theme: Theme) =>
       paddingHorizontal: theme.spacing.md,
       paddingVertical: theme.spacing.sm,
       backgroundColor: theme.color.surface,
-      borderRadius: theme.ui.radius.button,
+      // A box, not a pill: a long answer (About) would turn a pill into an oval.
+      borderRadius: theme.ui.radius.card,
       borderWidth: 1,
       borderColor: theme.color.border,
     },

@@ -1,7 +1,7 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useCallback, useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, View } from "react-native";
 
+import { Icon } from "./ui/Icon";
 import { PhotoCropSheet } from "./PhotoCropSheet";
 import { Avatar } from "./ui/Avatar";
 import { completePetPhoto, deletePetPhoto, loadPetPhotos, petPhotoThumb, uploadPetPhotoFile } from "../features/ownerOnboarding/petPhotosApi";
@@ -80,7 +80,7 @@ export function PetAvatarEditor({ pet, onChanged }: { pet: Pet; onChanged: () =>
           <Avatar kind="emoji" emoji={SPECIES_EMOJI[pet.species]} size={SIZE} />
         )}
         <View style={styles.badge} testID="pet-avatar-edit">
-          <Ionicons name="camera" size={theme.icon.sm} color={theme.color.primaryText} />
+          <Icon name="camera" size={theme.icon.sm} color={theme.color.primaryText} />
         </View>
       </Pressable>
       <PhotoCropSheet

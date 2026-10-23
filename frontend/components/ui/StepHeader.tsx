@@ -1,6 +1,6 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "./Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
@@ -28,7 +28,7 @@ export function StepHeader({ flow, step, total, onBack, help, testID }: Props) {
       <View style={styles.top}>
         {onBack ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} hitSlop={theme.spacing.sm} style={styles.back}>
-            <Ionicons name="chevron-back" size={24} color={theme.color.text} />
+            <Icon name="back" size={24} color={theme.color.text} />
           </Pressable>
         ) : (
           <View style={styles.back} />
