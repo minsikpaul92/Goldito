@@ -2,17 +2,17 @@ import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { EmptyState } from "../../../components/ui/EmptyState";
-import { LoadingView } from "../../../components/ui/LoadingView";
-import { Screen } from "../../../components/ui/Screen";
-import { SegmentedControl } from "../../../components/ui/SegmentedControl";
-import { ReportComposer, type ReportStatus } from "../../../components/ReportComposer";
-import { useCaringPets } from "../../../features/care/useCaringPets";
-import { DiaryBook } from "../../../features/diary/DiaryBook";
-import { PageActions } from "../../../features/diary/PageActions";
-import { SentReport, listBookPages } from "../../../features/diary/reportApi";
-import { useThemedStyles } from "../../../providers/ThemeProvider";
-import { Theme } from "../../../theme/themes";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { LoadingView } from "../../components/ui/LoadingView";
+import { Screen } from "../../components/ui/Screen";
+import { SegmentedControl } from "../../components/ui/SegmentedControl";
+import { ReportComposer, type ReportStatus } from "../../components/ReportComposer";
+import { useCaringPets } from "../care/useCaringPets";
+import { DiaryBook } from "./DiaryBook";
+import { PageActions } from "./PageActions";
+import { SentReport, listBookPages } from "./reportApi";
+import { useThemedStyles } from "../../providers/ThemeProvider";
+import { Theme } from "../../theme/themes";
 
 const STATUS_LABEL: Record<NonNullable<ReportStatus>, string> = { sent: "Sent ✓", draft: "Draft" };
 
@@ -24,7 +24,7 @@ type View_ = "today" | "book";
  * composer keeps its page while switching). **Diary book** — every page this sitter sent, all pets they have cared
  * for or one, oldest → newest.
  */
-export default function SitterDiary() {
+export function SitterDiary() {
   const styles = useThemedStyles(makeStyles);
   const { state, reload } = useCaringPets();
   const [selected, setSelected] = useState<string | null>(null);

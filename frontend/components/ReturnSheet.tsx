@@ -79,7 +79,7 @@ export function ReturnSheet({ visible, booking, ownerName, onConfirm, onClose }:
             label="Send today's note first"
             onPress={() => {
               onClose();
-              router.push("/sitter/diary");
+              router.push("/sitter/feed?view=diary");
             }}
             testID="return-send-note"
           />
