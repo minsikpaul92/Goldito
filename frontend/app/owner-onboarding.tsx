@@ -808,7 +808,8 @@ const makeStyles = (theme: Theme) =>
       paddingHorizontal: theme.spacing.md,
       paddingVertical: theme.spacing.sm,
       backgroundColor: theme.color.surface,
-      borderRadius: theme.ui.radius.button,
+      // A box, not a pill: a long answer (About) would turn a pill into an oval.
+      borderRadius: theme.ui.radius.card,
       borderWidth: 1,
       borderColor: theme.color.border,
     },
