@@ -46,7 +46,7 @@ export default function SitterCalendarScreen() {
   if (sitter === null) {
     return (
       <Screen>
-        <EmptyState emoji="🔍" title="Sitter not found" message="This sitter may have left Goldito." />
+        <EmptyState emoji="🐾" title="Sitter not found" message="This sitter may have left Goldito." />
       </Screen>
     );
   }

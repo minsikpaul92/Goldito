@@ -141,7 +141,7 @@ export default function OwnerBookingDetail() {
   if (state.status === "missing") {
     return (
       <Screen>
-        <EmptyState emoji="🔍" title="Booking not found" message="It may have been removed." />
+        <EmptyState emoji="📅" title="Booking not found" message="It may have been removed." />
       </Screen>
     );
   }

@@ -235,7 +235,7 @@ export default function Chat() {
   if (error && loaded === undefined) {
     return (
       <Screen>
-        <EmptyState emoji="💬" title="Couldn't load this chat" message={error} action={{ label: "Try again", onPress: () => void load() }} />
+        <EmptyState emoji="📡" title="Couldn't load this chat" message={error} action={{ label: "Try again", onPress: () => void load() }} />
       </Screen>
     );
   }
@@ -243,7 +243,7 @@ export default function Chat() {
   if (loaded === null) {
     return (
       <Screen>
-        <EmptyState emoji="💬" title="Chat not found" message="This chat isn't available." />
+        <EmptyState emoji="✉️" title="Chat not found" message="This chat isn't available." />
       </Screen>
     );
   }

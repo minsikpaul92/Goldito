@@ -227,7 +227,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
   } else if (status === "agreed") {
     body = (
       <>
-        <Text style={styles.title}>Meet & Greet set ✅</Text>
+        <Text style={styles.title}>Meet & Greet set</Text>
         <Text style={styles.body}>{summary}</Text>
         {mg.mode === "video" ? (
           mg.link ? (

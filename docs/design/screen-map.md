@@ -437,25 +437,25 @@ Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChange
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 167 |
-| EmptyState | Couldn't load this booking | — | 174 |
-| Tag | `b.label` | — | 272 |
-| TextButton | Suggest drop-off time | `suggest-drop_off` | 332 |
-| TextButton | Suggest pick-up time | `suggest-pick_up` | 337 |
-| TextButton | Change time or place | `change-booking` | 345 |
-| CheckRow | `item` | ``pack-${item}`` | 359 |
-| Tag | `a` | — | 394 |
-| Button | busy ? "Saving…" : "Next" | `interest-booking` | 422 |
-| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 437 |
-| TextButton | Decline | `decline-booking` | 445 |
-| Button | busy ? "Saving…" : "Received" | `handoff-received` | 456 |
-| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 466 |
-| TextButton | Cancel booking | `cancel-booking` | 485 |
-| Sheet | Cancel booking | `cancel-sheet` | 504 |
-| Button | Cancel booking | `cancel-confirm` | 510 |
-| Sheet | Decline request | `decline-sheet` | 548 |
-| Button | Decline request | `decline-confirm` | 554 |
-| TextButton | Suggest another time instead | `decline-suggest` | 593 |
+| EmptyState | Booking not found | — | 169 |
+| EmptyState | Couldn't load this booking | — | 176 |
+| Tag | `b.label` | — | 274 |
+| TextButton | Suggest drop-off time | `suggest-drop_off` | 334 |
+| TextButton | Suggest pick-up time | `suggest-pick_up` | 339 |
+| TextButton | Change time or place | `change-booking` | 347 |
+| CheckRow | `item` | ``pack-${item}`` | 361 |
+| Tag | `a` | — | 399 |
+| Button | busy ? "Saving…" : "Next" | `interest-booking` | 427 |
+| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 442 |
+| TextButton | Decline | `decline-booking` | 450 |
+| Button | busy ? "Saving…" : "Received" | `handoff-received` | 461 |
+| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 471 |
+| TextButton | Cancel booking | `cancel-booking` | 490 |
+| Sheet | Cancel booking | `cancel-sheet` | 509 |
+| Button | Cancel booking | `cancel-confirm` | 515 |
+| Sheet | Decline request | `decline-sheet` | 553 |
+| Button | Decline request | `decline-confirm` | 559 |
+| TextButton | Suggest another time instead | `decline-suggest` | 598 |
 
 ### `/sitter/bookings/[bookingId]/trip` — [app/sitter/bookings/[bookingId]/trip.tsx](../../frontend/app/sitter/bookings/[bookingId]/trip.tsx)
 
