@@ -82,6 +82,8 @@ export function applyVoiceForm(
     .filter(Boolean);
   if (allergies.length > 0) {
     patch.foods = [...new Set([...draft.foods, ...allergies])];
+    // Allergies always get one more look on the foods screen before they count.
+    patch.foodsChecked = false;
     // The foods question is answered as "listed", the same as tapping a chip.
     patch.safety = { ...draft.safety, s6: "listed" };
   }

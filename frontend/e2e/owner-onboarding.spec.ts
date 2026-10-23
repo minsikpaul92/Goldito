@@ -154,6 +154,10 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-food-else").click();
     await screen.getByTestId("own-food-other-input").fill("Grapes");
     await screen.getByTestId("own-food-other-add").click();
+    // The list counts only after the owner says they checked it.
+    await expect(screen.getByTestId("own-next")).toBeDisabled();
+    await screen.getByTestId("own-foods-checked").click();
+    await expect(screen.getByTestId("own-next")).toBeEnabled();
     await screen.getByTestId("own-next").click();
 
     // About the owner, then where they live (a real address picked from the check).
@@ -454,6 +458,16 @@ test.describe("owner onboarding", () => {
     // The allergy the owner kept on the voice form is already a chosen chip.
     await expect(screen.getByTestId("own-step-foods")).toBeVisible();
     await expect(screen.getByTestId("own-food-chicken")).toHaveAttribute("aria-pressed", "true");
+    // Allergies always get one more look: Next waits for the check, and a change takes the check back.
+    await expect(screen.getByTestId("own-foods-checked")).toHaveAttribute("aria-checked", "false");
+    await expect(screen.getByTestId("own-next")).toBeDisabled();
+    await screen.getByTestId("own-foods-checked").click();
+    await expect(screen.getByTestId("own-next")).toBeEnabled();
+    await screen.getByTestId("own-food-dairy").click();
+    await expect(screen.getByTestId("own-foods-checked")).toHaveAttribute("aria-checked", "false");
+    await expect(screen.getByTestId("own-next")).toBeDisabled();
+    await screen.getByTestId("own-food-dairy").click();
+    await screen.getByTestId("own-foods-checked").click();
     await screen.getByTestId("own-next").click();
     for (const id of ["ownerIntro", "location"]) {
       await expect(screen.getByTestId(`own-step-${id}`)).toBeVisible();

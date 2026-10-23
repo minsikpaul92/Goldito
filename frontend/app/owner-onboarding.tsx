@@ -12,6 +12,7 @@ import { StepFrame } from "../components/ownerOnboarding/StepFrame";
 import { AddressInput } from "../components/AddressInput";
 import { Banner } from "../components/ui/Banner";
 import { Button } from "../components/ui/Button";
+import { CheckRow } from "../components/ui/CheckRow";
 import { LoadingView } from "../components/ui/LoadingView";
 import { LinkButton } from "../components/ui/LinkButton";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
@@ -24,6 +25,7 @@ import {
   clearDraft,
   convertWeight,
   draftForNextPet,
+  confirmedFoods,
   foodsFromDraft,
   loadDraft,
   pickedSpecies,
@@ -525,11 +527,11 @@ export default function OwnerOnboarding() {
       const key = normalizeAllergen(food);
       const on = foods.includes(key);
       const nextFoods = on ? foods.filter((f) => f !== key) : [...foods, key];
-      update({ foods: nextFoods, safety: { ...draft.safety, s6: nextFoods.length > 0 ? "listed" : "" } });
+      update({ foods: nextFoods, foodsChecked: false, safety: { ...draft.safety, s6: nextFoods.length > 0 ? "listed" : "" } });
     };
     const addOther = () => {
       const key = normalizeAllergen(otherFood);
-      if (key && !foods.includes(key)) update({ foods: [...foods, key], safety: { ...draft.safety, s6: "listed" } });
+      if (key && !foods.includes(key)) update({ foods: [...foods, key], foodsChecked: false, safety: { ...draft.safety, s6: "listed" } });
       setOtherFood("");
       setShowOtherFood(false);
     };
@@ -569,13 +571,19 @@ export default function OwnerOnboarding() {
           <BigOption
             label="None"
             selected={foods.length === 0 && draft.safety.s6 === "none"}
-            onPress={() => update({ foods: [], safety: { ...draft.safety, s6: "none" } })}
+            onPress={() => update({ foods: [], foodsChecked: false, safety: { ...draft.safety, s6: "none" } })}
             style={styles.half}
             testID="own-food-none"
           />
           <BigOption label="Something else" onPress={() => setShowOtherFood(true)} style={styles.half} testID="own-food-else" />
         </View>
         {heardFoods.length > 0 ? heard(heardFoods[0], true, "foods", "We heard") : null}
+        <CheckRow
+          label="I checked this list"
+          checked={draft.foodsChecked}
+          onChange={(foodsChecked) => update({ foodsChecked })}
+          testID="own-foods-checked"
+        />
         {showOtherFood ? (
           <View style={styles.row}>
             <View style={styles.rowInput}>
@@ -593,7 +601,7 @@ export default function OwnerOnboarding() {
         ) : null}
       </>,
       <>
-        {nextButton(foods.length === 0 && draft.safety.s6 !== "none")}
+        {nextButton(!draft.foodsChecked || (foods.length === 0 && draft.safety.s6 !== "none"))}
         {skipLink}
       </>,
     );
@@ -666,7 +674,7 @@ export default function OwnerOnboarding() {
   }
 
   // Summary: what will be saved. Tap a row to change it.
-  const foods = foodsFromDraft(draft);
+  const foods = confirmedFoods(draft);
   const profile = profileFromDraft(draft);
   const chartTotal = species ? chartQuestions(species).length : 0;
   const answered = Object.keys(profile.answers).length;
@@ -685,7 +693,7 @@ export default function OwnerOnboarding() {
     { id: "petIntro", label: "About", value: draft.petIntro.trim() || "Not shared yet" },
     { id: species ? `q:${chartQuestions(species)[0].key}` : "name", label: "Personality", value: `${answered} of ${chartTotal} answered` },
     { id: `s:${SAFETY_QUESTIONS[0].key}`, label: "Safety", value: `${safeAnswered} of ${SAFETY_QUESTIONS.length} answered` },
-    { id: "foods", label: "Foods to avoid", value: foods.length ? foods.join(", ") : draft.safety.s6 === "none" ? "None" : "Not shared yet" },
+    { id: "foods", label: "Foods to avoid", value: foods.length ? foods.join(", ") : draft.foodsChecked && draft.safety.s6 === "none" ? "None" : "Not shared yet" },
     // The owner's own answers are asked with the first pet only.
     ...(draft.ownerDone
       ? []

@@ -2,7 +2,16 @@ import { expect, test } from "@playwright/test";
 
 import { applyVoiceForm, formFromFacts, introFromForm, voiceItems } from "../features/ownerOnboarding/applyVoice";
 import { NO_FACTS, openQuestions } from "../features/ownerOnboarding/voiceApi";
-import { birthdateFromAge, convertWeight, foodsFromDraft, EMPTY_DRAFT, weightFromDraft, weightText } from "../features/ownerOnboarding/draft";
+import {
+  EMPTY_DRAFT,
+  birthdateFromAge,
+  confirmedFoods,
+  convertWeight,
+  foodsFromDraft,
+  profileFromDraft,
+  weightFromDraft,
+  weightText,
+} from "../features/ownerOnboarding/draft";
 import { CAT_QUESTIONS, DOG_QUESTIONS, SAFETY_QUESTIONS, chartAxes, fill } from "../features/ownerOnboarding/questions";
 import { axisLevels, glance, missingAxes, parseProfile, safetyChips } from "../features/ownerOnboarding/scoring";
 
@@ -182,5 +191,26 @@ test.describe("voice answers in the draft", () => {
     expect(keys).not.toContain("s1");
     expect(keys).toContain("s2");
     expect(questions.find((q) => q.key === "s2")?.prompt).toContain("Pip");
+  });
+});
+
+test.describe("foods need the owner's check", () => {
+  const listed = { ...EMPTY_DRAFT, foods: ["Chicken", "dairy"], safety: { s1: "never", s6: "listed" } };
+
+  test("an unchecked list saves nothing: no allergies and no foods answer", () => {
+    expect(confirmedFoods(listed)).toEqual([]);
+    expect(profileFromDraft(listed).safety).toEqual({ s1: "never" });
+  });
+
+  test("a checked list is saved with its foods answer", () => {
+    const checked = { ...listed, foodsChecked: true };
+    expect(confirmedFoods(checked)).toEqual(["chicken", "dairy"]);
+    expect(profileFromDraft(checked).safety).toEqual({ s1: "never", s6: "listed" });
+  });
+
+  test("allergies from the voice form start unchecked, even if the list was checked before", () => {
+    const patch = applyVoiceForm({ ...listed, foodsChecked: true }, { allergies: "fish" }, null);
+    expect(patch.foods).toEqual(["Chicken", "dairy", "fish"]);
+    expect(patch.foodsChecked).toBe(false);
   });
 });
