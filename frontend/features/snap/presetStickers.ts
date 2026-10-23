@@ -1,8 +1,8 @@
 import { Asset } from "expo-asset";
 
 /**
- * Goldito's own stickers for the picture diary (Phase 12.4): bundled PNGs, so they work without an upload. These are
- * placeholders drawn in code — replace a file under `assets/stickers/` with the designed one of the same name.
+ * Goldito's own stickers for the picture diary (Phase 12.4): bundled PNGs, so they work without an upload. The designed
+ * pixel set (#114); to change one, replace the file under `assets/stickers/` with one of the same name.
  * A preset is stored in a decor item as `preset:<id>` (both `sticker_id` and `public_id`).
  */
 export type PresetSticker = { id: string; label: string; source: number };
