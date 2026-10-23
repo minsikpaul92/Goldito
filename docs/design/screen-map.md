@@ -67,23 +67,23 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Skip | `own-skip` | 173 |
-| Button | Next | `own-next` | 175 |
-| Button | Next | `own-next` | 225 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 226 |
-| Banner | `error` | — | 238 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 278 |
-| Stepper | Age | `own-age` | 372 |
-| Button | Next | `own-next` | 385 |
-| SegmentedControl | — | `own-weight-unit` | 404 |
-| LinkButton | `source.label` | ``own-source-${i + 1}`` | 456 |
-| Button | Start | `own-next` | 461 |
-| TextButton | Skip questions | `own-skip-questions` | 462 |
-| Button | Add | `own-food-other-add` | 592 |
-| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 648 |
-| Banner | `error` | `own-error` | 705 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 706 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 724 |
+| TextButton | Skip | `own-skip` | 172 |
+| Button | Next | `own-next` | 174 |
+| Button | Next | `own-next` | 224 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 225 |
+| Banner | `error` | — | 237 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 277 |
+| Stepper | Age | `own-age` | 377 |
+| Button | Next | `own-next` | 390 |
+| SegmentedControl | — | `own-weight-unit` | 409 |
+| LinkButton | `source.label` | ``own-source-${i + 1}`` | 461 |
+| Button | Start | `own-next` | 466 |
+| TextButton | Skip questions | `own-skip-questions` | 467 |
+| Button | Add | `own-food-other-add` | 597 |
+| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 653 |
+| Banner | `error` | `own-error` | 710 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 711 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 729 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -1353,11 +1353,11 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | recordingNow ? "Stop recording" : "Start recording" | `own-mic` | 104 |
-| Banner | `problem` | `own-voice-problem` | 120 |
-| TextButton | Or type it | `own-voice-type` | 132 |
-| Banner | `error` | `own-voice-error` | 135 |
-| Button | busy ? "Looking…" : "Use this" | `own-voice-use` | 137 |
+| Pressable | recordingNow ? "Stop recording" : "Start recording" | `own-mic` | 113 |
+| Banner | `problem` | `own-voice-problem` | 129 |
+| TextButton | Or type it | `own-voice-type` | 141 |
+| Banner | `error` | `own-voice-error` | 144 |
+| Button | busy ? "Looking…" : "Use this" | `own-voice-use` | 146 |
 
 ### MedalButtons — [components/pet/MedalButtons.tsx](../../frontend/components/pet/MedalButtons.tsx)
 

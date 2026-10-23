@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { applyVoiceFacts } from "../features/ownerOnboarding/applyVoice";
+import { applyVoiceFacts, introFromNotes } from "../features/ownerOnboarding/applyVoice";
 import { openQuestions } from "../features/ownerOnboarding/voiceApi";
 import { birthdateFromAge, convertWeight, foodsFromDraft, EMPTY_DRAFT, weightFromDraft, weightText } from "../features/ownerOnboarding/draft";
 import { CAT_QUESTIONS, DOG_QUESTIONS, SAFETY_QUESTIONS, chartAxes, fill } from "../features/ownerOnboarding/questions";
@@ -106,15 +106,25 @@ test.describe("voice facts in the draft", () => {
     weight_kg: { value: 5.9, quote: "13 pounds" },
     foods: [{ value: "chicken", quote: "allergic to chicken" }],
     answers: {
-      d4: { value: "3", quote: "gets nervous" },
-      d1: { value: "9", quote: "x" },
       s1: { value: "once", quote: "once snapped" },
+    },
+    notes: {
+      personality: { value: "she is a sweet girl", quote: "she is a sweet girl" },
+      eats: { value: "wet food twice a day", quote: "wet food twice a day" },
+      careful: { value: "no jumping", quote: "no jumping" },
     },
   };
 
-  test("empty fields are filled, chart answers are marked suggested, safety and foods are never filled", () => {
+  test("empty fields are filled, the intro is the owner's own words, safety and foods are never filled", () => {
     const patch = applyVoiceFacts(EMPTY_DRAFT, facts);
-    expect(patch).toMatchObject({ breed: "Maltese", ageYears: 4, weight: "5.9", answers: { d4: 3 }, suggested: ["d4"] });
+    expect(patch).toMatchObject({
+      breed: "Maltese",
+      ageYears: 4,
+      weight: "5.9",
+      petIntro: "she is a sweet girl\nEats: wet food twice a day\nCareful with: no jumping",
+    });
+    expect(patch.answers).toBeUndefined();
+    expect(patch.suggested).toBeUndefined();
     expect(patch.safety).toBeUndefined();
     expect(patch.foods).toBeUndefined();
     expect(patch.voice).toBe(facts);
@@ -125,22 +135,24 @@ test.describe("voice facts in the draft", () => {
   });
 
   test("what the owner already picked is kept", () => {
-    const patch = applyVoiceFacts({ ...EMPTY_DRAFT, breed: "Poodle", ageYears: 9, weight: "3", answers: { d4: 1 } }, facts);
+    const patch = applyVoiceFacts({ ...EMPTY_DRAFT, breed: "Poodle", ageYears: 9, weight: "3", petIntro: "My own words" }, facts);
     expect(patch.breed).toBeUndefined();
     expect(patch.ageYears).toBeUndefined();
     expect(patch.weight).toBeUndefined();
-    expect(patch.answers).toEqual({ d4: 1 });
-    expect(patch.suggested).toEqual([]);
+    expect(patch.petIntro).toBeUndefined();
   });
 
-  test("the open questions list only what is not answered, with the pet's name in the wording", () => {
-    const questions = openQuestions("dog", "Pip", { d1: 2 }, { s1: "never" });
+  test("a note is cut to the intro limit and an empty one adds nothing", () => {
+    expect(introFromNotes({}, 500)).toBe("");
+    expect(introFromNotes({ likes: { value: "x".repeat(600), quote: "x" } }, 500)).toHaveLength(500);
+  });
+
+  test("only the safety questions still open go to the server, never the personality chart", () => {
+    const questions = openQuestions("Pip", { s1: "never" });
     const keys = questions.map((q) => q.key);
-    expect(keys).not.toContain("d1");
+    expect(keys.some((k) => /^[dc]\d+$/.test(k))).toBe(false);
     expect(keys).not.toContain("s1");
-    expect(keys).toContain("d2");
     expect(keys).toContain("s2");
-    expect(questions.find((q) => q.key === "d2")?.prompt).toContain("Pip");
-    expect(questions.find((q) => q.key === "d2")?.options.map((o) => o.value)).toEqual(["1", "2", "3", "4"]);
+    expect(questions.find((q) => q.key === "s2")?.prompt).toContain("Pip");
   });
 });

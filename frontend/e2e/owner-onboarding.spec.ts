@@ -326,7 +326,7 @@ test.describe("owner onboarding", () => {
     expect(db.owner_profiles.find((p) => p.id === OWNER.id)?.home_address).toBeNull();
   });
 
-  test("voice: the recording becomes text the owner fixes, facts are suggested, and safety answers are never picked for them", async ({ page }) => {
+  test("voice: the recording becomes text the owner fixes, the intro is filled from it, and safety answers are never picked for them", async ({ page }) => {
     const db = await newOwner(page);
     await page.addInitScript(() => {
       Object.defineProperty(navigator, "mediaDevices", {
@@ -367,7 +367,11 @@ test.describe("owner onboarding", () => {
           age_years: { value: 4, quote: "4 year old" },
           weight_kg: { value: 5.9, quote: "13 pounds" },
           foods: [{ value: "chicken", quote: "allergic to chicken" }],
-          answers: { d4: { value: "3", quote: "gets nervous with thunder" }, s1: { value: "once", quote: "once snapped at a groomer" } },
+          answers: { s1: { value: "once", quote: "once snapped at a groomer" } },
+          notes: {
+            personality: { value: "He is a sweet boy", quote: "He is a sweet boy" },
+            careful: { value: "He gets nervous with thunder", quote: "He gets nervous with thunder" },
+          },
           model: "nano",
           latency_ms: 300,
         }),
@@ -383,6 +387,10 @@ test.describe("owner onboarding", () => {
 
     await expect(screen.getByTestId("own-title")).toHaveText("Tell us about Pip");
     await expect(screen.getByTestId("own-mic-status")).toHaveText("Tap to talk");
+    // The numbered list to read from, in order.
+    await expect(screen.getByTestId("own-voice-guide")).toContainText("1. Breed");
+    await expect(screen.getByTestId("own-voice-guide")).toContainText("5. Allergies");
+    await expect(screen.getByTestId("own-voice-guide")).toContainText("9. Be careful with");
     await expect(screen.getByText("We don't keep the recording.")).toBeVisible();
     await screen.getByTestId("own-mic").click();
     await expect(screen.getByTestId("own-mic-status")).toContainText("of 1:00");
@@ -397,7 +405,9 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-breed")).toHaveValue("Maltese");
     expect(asked!.transcript).toContain("gets nervous with thunder");
     expect(asked!.species).toBe("dog");
-    expect(asked!.questions.map((q) => q.key)).toEqual(expect.arrayContaining(["d1", "d12", "s1", "s5"]));
+    // Only the safety questions go along: the personality chart is tapped, not spoken.
+    expect(asked!.questions.map((q) => q.key)).toEqual(expect.arrayContaining(["s1", "s5"]));
+    expect(asked!.questions.some((q) => /^[dc]\d+$/.test(q.key))).toBe(false);
     await expect(screen.getByTestId("own-heard-breed")).toContainText("4 year old Maltese");
     await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-skip").click(); // color
@@ -405,22 +415,15 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-next").click();
     await expect(screen.getByTestId("own-weight")).toHaveValue("5.9");
     await screen.getByTestId("own-next").click();
-    await screen.getByTestId("own-skip").click(); // about the pet
+    // The intro is the owner's own words for the free-text items, ready to fix.
+    await expect(screen.getByTestId("own-pet-intro")).toHaveValue("He is a sweet boy\nCareful with: He gets nervous with thunder");
+    await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-next").click(); // where the questions come from
 
-    // A chart answer arrives chosen and marked, and Next keeps it.
-    await expect(screen.getByTestId("own-step-q:d1")).toBeVisible();
-    await screen.getByTestId("own-skip").click();
-    for (const key of ["d2", "d3"]) {
-      await expect(screen.getByTestId(`own-step-q:${key}`)).toBeVisible();
-      await screen.getByTestId("own-skip").click();
-    }
-    await expect(screen.getByTestId("own-step-q:d4")).toBeVisible();
-    await expect(screen.getByTestId("own-opt-3")).toContainText("✨ suggested");
-    await expect(screen.getByTestId("own-heard-q")).toContainText("gets nervous with thunder");
-    await screen.getByTestId("own-next").click();
-    for (let i = 5; i <= 12; i++) {
+    // The personality chart is tapped: nothing in it arrives chosen.
+    for (let i = 1; i <= 12; i++) {
       await expect(screen.getByTestId(`own-step-q:d${i}`)).toBeVisible();
+      await expect(screen.getByTestId("own-opt-3")).not.toContainText("✨ suggested");
       await screen.getByTestId("own-skip").click();
     }
 
@@ -450,7 +453,8 @@ test.describe("owner onboarding", () => {
     const pet = db.pets.find((p) => p.owner_id === OWNER.id)!;
     expect(pet).toMatchObject({ breed: "Maltese", weight_kg: 5.9 });
     expect(pet.profile).toMatchObject({ safety: { s1: "once", s6: "listed" } });
-    expect((pet.profile as { answers: Record<string, number> }).answers).toEqual({ d4: 3 });
+    expect((pet.profile as { answers: Record<string, number> }).answers).toEqual({});
+    expect(pet.notes).toBe("He is a sweet boy\nCareful with: He gets nervous with thunder");
     expect(db.pet_allergies.map((a) => a.allergen)).toEqual(["chicken"]);
   });
 

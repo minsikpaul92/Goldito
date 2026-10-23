@@ -32,10 +32,10 @@ import {
   weightFromDraft,
   withPickedSpecies,
 } from "../features/ownerOnboarding/draft";
-import { applyVoiceFacts } from "../features/ownerOnboarding/applyVoice";
+import { MAX_PET_INTRO, applyVoiceFacts } from "../features/ownerOnboarding/applyVoice";
 import { useBreedNeeds } from "../features/ownerOnboarding/breedNeedsApi";
 import { guessFromPhoto } from "../features/ownerOnboarding/photoGuessApi";
-import { extractFacts, openQuestions } from "../features/ownerOnboarding/voiceApi";
+import { VOICE_GUIDE, extractFacts, openQuestions } from "../features/ownerOnboarding/voiceApi";
 import { markOwnerOnboarded, newPetId, saveOwnerOnboarding } from "../features/ownerOnboarding/ownerOnboardingApi";
 import {
   COATS,
@@ -59,7 +59,6 @@ import type { Species } from "../types/db";
 /** Shown once to a new owner (owner_profiles.onboarded_at is null, 014v): their first pet, one question per screen. */
 const PICK_DELAY_MS = 200;
 const MAX_NAME = 40;
-const MAX_PET_INTRO = 200;
 const MAX_OWNER_INTRO = 500;
 
 export default function OwnerOnboarding() {
@@ -288,7 +287,7 @@ export default function OwnerOnboarding() {
       setVoiceBusy(true);
       setVoiceError(null);
       try {
-        const facts = await extractFacts(species, petName, text, openQuestions(species, petName, draft.answers, draft.safety));
+        const facts = await extractFacts(species, petName, text, openQuestions(petName, draft.safety));
         update(applyVoiceFacts(draft, facts));
         next();
       } catch (e) {
@@ -299,9 +298,15 @@ export default function OwnerOnboarding() {
     };
     return frame(
       `Tell us about ${petName}`,
-      <VoiceStep placeholder={`What is ${petName} like?`} onUse={read} error={voiceError} busy={voiceBusy} />,
+      <VoiceStep
+        placeholder={`What is ${petName} like?`}
+        guide={VOICE_GUIDE}
+        onUse={read}
+        error={voiceError}
+        busy={voiceBusy}
+      />,
       skipLink,
-      `What is ${petName} like? Brag a little!`,
+      "Read these in order.",
     );
   }
 
