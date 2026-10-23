@@ -120,7 +120,7 @@ export function PhotoViewerSheet({ visible, title, photos, onClose, testID }: Pr
             ))}
           </View>
         ) : null}
-        {photos.length > 1 ? <Text style={styles.count}>{`${index + 1} of ${photos.length}, swipe for more`}</Text> : null}
+        {photos.length > 1 ? <Text style={styles.count}>{`${index + 1} of ${photos.length}`}</Text> : null}
       </View>
     </Sheet>
   );

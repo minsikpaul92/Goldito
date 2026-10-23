@@ -136,7 +136,7 @@ export function PetAvatarEditor({ pet, onChanged }: { pet: Pet; onChanged: () =>
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    root: { alignItems: "center", gap: theme.spacing.md },
+    root: { alignItems: "center", gap: theme.spacing.md, marginBottom: theme.spacing.md },
     row: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: theme.spacing.sm },
     tileWrap: { width: TILE, height: TILE },
     tile: { width: TILE, height: TILE, borderRadius: TILE / 2, backgroundColor: theme.color.border },

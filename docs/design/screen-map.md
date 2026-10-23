@@ -671,14 +671,15 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Remove this line | ``line-remove-${line.key}`` | 90 |
-| Pressable | — | ``line-kind-${k.kind}`` | 110 |
-| Pressable | — | ``line-mode-${m}`` | 143 |
-| Pressable | ``Time ${formatTime(time)}, tap to change`` | `line-time` | 156 |
-| Stepper | Times | `line-count` | 168 |
-| Pressable | — | ``line-span-${s}`` | 183 |
-| Button | Add line | `line-add` | 198 |
-| TextButton | Cancel | `line-cancel` | 199 |
+| Pressable | Remove this line | ``line-remove-${line.key}`` | 94 |
+| Pressable | — | ``line-preset-${p.id}`` | 114 |
+| Pressable | — | ``line-kind-${k.kind}`` | 134 |
+| Pressable | — | ``line-mode-${m}`` | 167 |
+| Pressable | ``Time ${formatTime(time)}, tap to change`` | `line-time` | 180 |
+| Stepper | Times | `line-count` | 192 |
+| Pressable | — | ``line-span-${s}`` | 207 |
+| Button | Add line | `line-add` | 222 |
+| TextButton | Cancel | `line-cancel` | 223 |
 
 ### CareTasksSection — [components/CareTasksSection.tsx](../../frontend/components/CareTasksSection.tsx)
 
@@ -1567,4 +1568,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-465 actions · 463 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+466 actions · 464 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).

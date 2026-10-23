@@ -89,3 +89,17 @@ export function lineToTasks(line: Line): DraftTask[] {
 }
 
 export const CAUTION_MAX = 100;
+
+export type Preset = { id: string; label: string; line: Omit<Line, "key"> };
+
+/** One-tap lines for the care request: the usual meals, a walk or a pill, and two heads-ups. Each adds a finished line. */
+export function presetLines(species: Species): Preset[] {
+  const meal = (id: string, label: string, time: string, text: string): Preset => ({ id, label, line: { kind: "meal", text, when: { mode: "time", time }, span: "day" } });
+  const headsUp = (id: string, label: string, text: string): Preset => ({ id, label, line: { kind: "headsup", text, when: { mode: "time", time: "08:00" }, span: "day" } });
+  const food = species === "cat" ? "Half a can of wet food" : "1 cup of kibble";
+  const walk = (id: string, label: string, time: string): Preset => ({ id, label, line: { kind: "walk", text: "20 minutes around the block", when: { mode: "time", time }, span: "day" } });
+  const pill: Preset = { id: "pill", label: "Pill 8 AM", line: { kind: "medication", text: "1 pill, hidden in a lickable treat", when: { mode: "time", time: "08:00" }, span: "day" } };
+  return species === "cat"
+    ? [meal("breakfast", "Breakfast 8 AM", "08:00", food), meal("dinner", "Dinner 6 PM", "18:00", food), pill, headsUp("knock", "No knocking", "Text me instead of knocking"), headsUp("door", "Door closed", "Keep the front door closed")]
+    : [meal("breakfast", "Breakfast 8 AM", "08:00", food), meal("dinner", "Dinner 6 PM", "18:00", food), walk("walk-am", "Walk 8:30 AM", "08:30"), walk("walk-pm", "Walk 5 PM", "17:00"), headsUp("knock", "No knocking", "Text me instead of knocking")];
+}

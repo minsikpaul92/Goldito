@@ -11,6 +11,7 @@ import {
   kindMeta,
   kindsForSpecies,
   lineSummary,
+  presetLines,
   presetText,
 } from "../features/care/careLines";
 import { formatTime } from "../features/schedule/dates";
@@ -80,6 +81,9 @@ export function CareLineBuilder({ species, lines, onLines, disabled }: Props) {
     reset();
   };
 
+  // Ready-made lines: one tap adds it; a line already added is not offered again.
+  const presets = presetLines(species).filter((p) => !lines.some((l) => l.key === `preset-${p.id}`));
+
   return (
     <View style={styles.root} testID="line-builder">
       {lines.length > 0 ? (
@@ -100,6 +104,26 @@ export function CareLineBuilder({ species, lines, onLines, disabled }: Props) {
             </View>
           ))}
         </View>
+      ) : null}
+
+      {presets.length > 0 && lines.length < LINE_MAX ? (
+        <>
+          <Text style={styles.label}>Quick add</Text>
+          <View style={styles.chips} testID="line-presets">
+            {presets.map((p) => (
+              <Pressable
+                key={p.id}
+                accessibilityRole="button"
+                disabled={disabled}
+                onPress={() => onLines([...lines, { key: `preset-${p.id}`, ...p.line }])}
+                style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
+                testID={`line-preset-${p.id}`}
+              >
+                <Text style={styles.chipText}>{`${kindMeta(p.line.kind).emoji} ${p.label}`}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
       ) : null}
 
       <Text style={styles.label}>{lines.length === 0 ? "What does your sitter need to know?" : "Add another line"}</Text>

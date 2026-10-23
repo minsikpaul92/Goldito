@@ -112,6 +112,8 @@ export function Sheet({ visible, title, onClose, children, footer, scrollbar, te
           testID={testID ? `${testID}-backdrop` : undefined}
         />
         <Animated.View style={[styles.dragWrap, full && styles.dragFull, { transform: [{ translateY: dragY }] }]}>
+        {/* Pulled up, the sheet lifts off the bottom edge: this white keeps growing under it instead of showing a gap. */}
+        <View pointerEvents="none" style={styles.below} />
         <Animated.View
           accessibilityViewIsModal
           role="dialog"
@@ -157,6 +159,7 @@ const makeStyles = (theme: Theme) =>
     },
     // The wrapper holds the height limit (a percentage needs a parent with a height), the sheet shrinks inside it.
     dragWrap: { width: "100%", maxWidth: 480, maxHeight: "90%", alignSelf: "center" },
+    below: { position: "absolute", top: "100%", left: 0, right: 0, height: 400, backgroundColor: theme.color.surface },
     dragFull: { height: "100%", maxHeight: "100%" },
     sheet: {
       flexShrink: 1,
