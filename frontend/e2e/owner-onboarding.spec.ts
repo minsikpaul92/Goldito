@@ -134,7 +134,7 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-next").click();
 
     // The 12 chart questions: the name is in every question, a tap goes on by itself.
-    await expect(screen.getByTestId("own-title")).toHaveText("When a visitor comes in, Pip…");
+    await expect(screen.getByTestId("own-title")).toHaveText("When a guest visits, Pip…");
     for (let i = 1; i <= 12; i++) {
       await expect(screen.getByTestId(`own-step-q:d${i}`)).toBeVisible();
       await screen.getByTestId(i <= 6 ? "own-opt-4" : "own-opt-2").click();

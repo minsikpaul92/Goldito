@@ -44,11 +44,15 @@ test.describe("sitter onboarding", () => {
     await screen.getByTestId("onboarding-skip").click();
 
     // One question on the screen; a single pick goes on by itself.
+    await expect(screen.getByTestId("onboarding-q-custom_1")).toBeVisible();
+    await expect(screen.getByTestId("own-title")).toHaveText("Do you have your own pets at home?");
+    await screen.getByTestId("onboarding-choice-custom_1-yes").click();
+
     await expect(screen.getByTestId("onboarding-q-multiple_owners")).toBeVisible();
-    await expect(screen.getByTestId("own-title")).toHaveText("Do you look after pets from more than one household at the same time?");
+    await expect(screen.getByTestId("own-title")).toHaveText("Do you take pets from different families at the same time?");
     await screen.getByTestId("onboarding-choice-multiple_owners-yes").click();
     await expect(screen.getByTestId("onboarding-q-max_pets")).toBeVisible();
-    await expect(screen.getByTestId("onboarding-choice-max_pets-5")).toContainText("5+");
+    await expect(screen.getByTestId("onboarding-choice-max_pets-3")).toContainText("3+");
     await screen.getByTestId("onboarding-choice-max_pets-3").click();
 
     // A note stays behind the "+"; with a note open the screen waits for Next.
@@ -84,10 +88,10 @@ test.describe("sitter onboarding", () => {
     await screen.getByTestId("onboarding-intro").fill("Hi, I am Chloe.");
 
     await screen.getByTestId("onboarding-review").click();
-    await expect(screen.getByTestId("onboarding-review-dog_sizes")).toContainText("Small, Large");
+    await expect(screen.getByTestId("onboarding-review-dog_sizes")).toContainText("Small (<15 lbs / 7 kg), Large (41+ lbs / 18+ kg)");
     await expect(screen.getByTestId("onboarding-review-walks_per_day")).toContainText("Three, one long");
     await expect(screen.getByTestId("onboarding-review-handoff")).toContainText("I pick up, Owner brings");
-    await expect(screen.getByTestId("onboarding-skipped")).toContainText("5 skipped");
+    await expect(screen.getByTestId("onboarding-skipped")).toContainText("3 skipped");
     await expect(screen.getByTestId("onboarding-review-intro")).toContainText("Hi, I am Chloe.");
 
     // Back to edit keeps what was typed.

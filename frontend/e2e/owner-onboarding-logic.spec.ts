@@ -31,7 +31,7 @@ test.describe("owner onboarding logic", () => {
   });
 
   test("a prompt carries the pet's name, or a plain word when it is empty", () => {
-    expect(fill("When a visitor comes in, {name}…", "Max")).toBe("When a visitor comes in, Max…");
+    expect(fill("When a guest visits, {name}…", "Max")).toBe("When a guest visits, Max…");
     expect(fill("{name} is fine", "  ")).toBe("your pet is fine");
   });
 
