@@ -50,6 +50,7 @@ import { glanceFacts } from "../features/ownerOnboarding/petGlanceApi";
 import { progress, stepIds, stepIndex } from "../features/ownerOnboarding/steps";
 import { normalizeAllergen } from "../features/pets/petValidation";
 import { LocationError, getCurrentPosition } from "../lib/location";
+import { reverseGeocode } from "../lib/transit";
 import { useSession } from "../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -623,7 +624,12 @@ export default function OwnerOnboarding() {
       setLocating(true);
       setLocationNote(null);
       try {
-        update({ home: await getCurrentPosition(), homeAddress: "" });
+        const point = await getCurrentPosition();
+        update({ home: point, homeAddress: "" });
+        // The address found fills the field so the person can see it was read right; the pin stays either way.
+        const place = await reverseGeocode(point);
+        if (place?.address) update({ homeAddress: place.address });
+        else setLocationNote("No address found here. The pin is kept.");
       } catch (e) {
         setLocationNote(
           e instanceof LocationError && e.reason === "denied"
