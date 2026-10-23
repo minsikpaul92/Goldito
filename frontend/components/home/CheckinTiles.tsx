@@ -12,6 +12,7 @@ import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
 import { tokens } from "../../theme/tokens";
 import { Button } from "../ui/Button";
+import type { ArtName } from "../../assets/art/artSvgs";
 import { Icon, IconName } from "../ui/Icon";
 import { Sheet } from "../ui/Sheet";
 import { TextField } from "../ui/TextField";
@@ -21,12 +22,12 @@ import { HOME_TEXT } from "./homeType";
 /** A second tap on the same tile this soon after the first sends the first choice. */
 const DOUBLE_TAP_MS = 400;
 
-const TILE_LOOK: Record<HomeTileKey, { icon: IconName; ground: string }> = {
-  ate: { icon: "meal", ground: tokens.color.blockPeach },
-  potty: { icon: "potty", ground: tokens.color.blockMint },
-  walk: { icon: "walk", ground: tokens.color.blockButter },
+const TILE_LOOK: Record<HomeTileKey, { icon: IconName; art?: ArtName; ground: string }> = {
+  ate: { icon: "meal", art: "sitter/ate", ground: tokens.color.blockPeach },
+  potty: { icon: "potty", art: "sitter/potty", ground: tokens.color.blockMint },
+  walk: { icon: "walk", art: "sitter/walk", ground: tokens.color.blockButter },
   nap: { icon: "nap", ground: tokens.color.blockButter },
-  mood: { icon: "heart", ground: tokens.color.blockBlush },
+  mood: { icon: "heart", art: "sitter/mood", ground: tokens.color.blockBlush },
 };
 
 /**
@@ -134,7 +135,7 @@ export function CheckinTiles({ pet, onSent }: { pet: CaringPet; onSent?: () => v
             style={({ pressed }) => [styles.tile, { backgroundColor: TILE_LOOK[key].ground }, open === key && styles.tileOpen, pressed && styles.pressed]}
             testID={`tile-${key}`}
           >
-            <HomeArt name={TILE_LOOK[key].icon} size={30} color={tokens.color.text} />
+            <HomeArt name={TILE_LOOK[key].icon} art={TILE_LOOK[key].art} size={40} color={tokens.color.text} />
             <Text style={styles.label}>{HOME_TILES[key].label}</Text>
             {lastOf(key) ? (
               <Text style={styles.sentMark} testID={`tile-sent-${key}`}>{`✓ ${formatTime(isoToZoned(lastOf(key)!.at).time)}`}</Text>

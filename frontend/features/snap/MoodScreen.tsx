@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -61,7 +62,9 @@ export function MoodScreen({ role }: { role: Role }) {
 function Mood({ role, pets }: { role: Role; pets: PetsState }) {
   const styles = useThemedStyles(makeStyles);
   const errorDialog = useErrorDialog();
-  const [petId, setPetId] = useState<string | null>(null);
+  // The Snap tab passes the pet it had picked (`?pet=`).
+  const { pet: petParam } = useLocalSearchParams<{ pet?: string }>();
+  const [petId, setPetId] = useState<string | null>(petParam ?? null);
   const [step, setStep] = useState<Step | null>(null);
   const [shown, setShown] = useState<Shown | null>(null);
   const [selected, setSelected] = useState(0);

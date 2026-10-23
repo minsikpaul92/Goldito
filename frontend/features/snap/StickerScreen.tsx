@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -69,7 +69,9 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
   const me = session.status === "signedIn" ? session.profile.id : null;
   const photoRef = useRef<View>(null);
 
-  const [petId, setPetId] = useState<string | null>(null);
+  // The Snap tab passes the pet it had picked (`?pet=`).
+  const { pet: petParam } = useLocalSearchParams<{ pet?: string }>();
+  const [petId, setPetId] = useState<string | null>(petParam ?? null);
   const [step, setStep] = useState<Step | null>(null);
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [point, setPoint] = useState<Point | null>(null);

@@ -8,6 +8,8 @@ export const HOME_TEXT = {
   body: 12.5, // tokens-ok: Figma Home body line
   name: 17, // tokens-ok: Figma Home pet name
   hero: 25, // tokens-ok: Figma Home hero title
+  chip: 13, // tokens-ok: Figma Snap chip and card line
+  row: 15, // tokens-ok: Figma Snap recent check name
   stat: 30, // tokens-ok: Figma Home tile number
 } as const;
 

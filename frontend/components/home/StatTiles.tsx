@@ -4,11 +4,12 @@ import { StayToday } from "../../features/care/useStayToday";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { tokens } from "../../theme/tokens";
+import type { ArtName } from "../../assets/art/artSvgs";
 import { IconName } from "../ui/Icon";
 import { HomeArt } from "./HomeArt";
 import { HOME_TEXT } from "./homeType";
 
-type Tile = { key: string; icon: IconName; value: string; label: string; ground: string };
+type Tile = { key: string; icon: IconName; art: ArtName; value: string; label: string; ground: string };
 
 /** 75 -> "1h 15m", 40 -> "40m", 0 -> "0m". */
 export function walkLabel(minutes: number): string {
@@ -21,9 +22,9 @@ export function walkLabel(minutes: number): string {
 export function StatTiles({ stay }: { stay: StayToday }) {
   const styles = useThemedStyles(makeStyles);
   const tiles: Tile[] = [
-    { key: "care", icon: "meal", value: `${stay.care.done}/${stay.care.total}`, label: "care done", ground: tokens.color.blockMint },
-    { key: "photos", icon: "camera", value: String(stay.photos), label: "photos today", ground: tokens.color.blockPeach },
-    { key: "walks", icon: "walk", value: walkLabel(stay.walkMinutes), label: "of walks", ground: tokens.color.blockButter },
+    { key: "care", icon: "meal", art: "owner/care-bowl", value: `${stay.care.done}/${stay.care.total}`, label: "care done", ground: tokens.color.blockMint },
+    { key: "photos", icon: "camera", art: "owner/camera", value: String(stay.photos), label: "photos today", ground: tokens.color.blockPeach },
+    { key: "walks", icon: "walk", art: "owner/tree", value: walkLabel(stay.walkMinutes), label: "of walks", ground: tokens.color.blockButter },
   ];
 
   return (
@@ -31,7 +32,7 @@ export function StatTiles({ stay }: { stay: StayToday }) {
       {tiles.map((t) => (
         <View key={t.key} style={[styles.tile, { backgroundColor: t.ground }]} testID={`stat-tile-${t.key}`}>
           <View style={styles.art}>
-            <HomeArt name={t.icon} size={34} color={tokens.color.text} />
+            <HomeArt name={t.icon} art={t.art} size={46} color={tokens.color.text} />
           </View>
           <Text style={styles.value}>{t.value}</Text>
           <Text style={styles.label}>{t.label}</Text>

@@ -46,7 +46,7 @@ test.describe("snap tab", () => {
     await expect(screen.getByTestId("sticker-no-pets")).toContainText("No pet in your care right now");
   });
 
-  test("the newest three treat checks are listed, and a row opens that check", async ({ page }) => {
+  test("the newest two treat checks of the pet are listed with why, See all lists them, and a row opens that check", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     const MAX = "00000000-0000-4000-8000-0000000000aa";
     db.pets.push({ id: MAX, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
@@ -67,9 +67,16 @@ test.describe("snap tab", () => {
     const screen = app(page);
     await screen.getByRole("tab").getByText("Snap", { exact: true }).click();
     const rows = screen.getByTestId("snap-recent-row");
-    await expect(rows).toHaveCount(3);
+    await expect(rows).toHaveCount(2);
     await expect(rows.first()).toContainText("Treat 04");
-    await expect(rows.last()).toContainText("Treat 02");
+    await expect(rows.first()).toContainText("Nothing on Max's list");
+    await expect(rows.first()).toContainText("SAFE");
+    await expect(rows.last()).toContainText("Treat 03");
+
+    await screen.getByTestId("snap-see-all").click();
+    await expect(page).toHaveURL(/\/owner\/snap\/checks\?pet=/);
+    await expect(screen.getByTestId("snap-checks-row")).toHaveCount(4);
+    await page.goBack();
 
     await rows.first().click();
     await expect(page).toHaveURL(/\/owner\/snap\/treat\?check=/);
@@ -79,6 +86,27 @@ test.describe("snap tab", () => {
     addCheck("05", 4);
     await page.goBack();
     await expect(rows.first()).toContainText("Treat 05");
+  });
+
+  test("the pet picked names the cards and goes on to the tool", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    const MAX = "00000000-0000-4000-8000-0000000000aa";
+    const MOCHI = "00000000-0000-4000-8000-0000000000bb";
+    db.pets.push(
+      { id: MAX, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null, created_at: "2026-10-01T09:00:00Z" },
+      { id: MOCHI, owner_id: OWNER.id, species: "cat", name: "Mochi", breed: null, notes: null, created_at: "2026-10-02T09:00:00Z" },
+    );
+    await signIn(page, OWNER);
+    const screen = app(page);
+    await screen.getByRole("tab").getByText("Snap", { exact: true }).click();
+    await expect(screen.getByTestId("snap-card-treat")).toContainText("Max's allergies");
+    // The drawing from the Figma frame and the arrow are both drawn.
+    await expect(screen.getByTestId("snap-card-treat").locator("svg")).toHaveCount(2);
+    await screen.getByTestId(`snap-pet-${MOCHI}`).click();
+    await expect(screen.getByTestId("snap-card-treat")).toContainText("Mochi's allergies");
+    await expect(screen.getByTestId("snap-card-sticker")).toContainText("Cut Mochi out");
+    await screen.getByTestId("snap-card-mood").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/snap/mood\\?pet=${MOCHI}$`));
   });
 
   test("no checks yet: the Snap tab shows no Recent checks", async ({ page }) => {

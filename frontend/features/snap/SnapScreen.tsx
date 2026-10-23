@@ -2,95 +2,142 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Art } from "../../components/art/Art";
+import { HOME_TEXT } from "../../components/home/homeType";
 import { Screen } from "../../components/ui/Screen";
+import { TextButton } from "../../components/ui/TextButton";
+import { sectionTitleStyle } from "../../components/ui/SectionTitle";
 import { useThemedStyles } from "../../providers/ThemeProvider";
-import { formatDay, isoToZoned } from "../schedule/dates";
 import { Theme } from "../../theme/themes";
+import { tokens } from "../../theme/tokens";
 import { PetOption, Role, SnapPets } from "./SnapPets";
 import { SnapToolCard } from "./SnapToolCard";
-import { StatusBadge } from "./TreatCheckScreen";
-import { SNAP_TOOLS } from "./tools";
+import { SNAP_TOOLS, SnapTool } from "./tools";
+import { CheckRow } from "./CheckRow";
 import { SafetyCheck, listRecentChecksForPets } from "./treatApi";
 
-/** The Snap tab for both roles (Phase 12, D61): treat check, mood and sticker, each starting from a photo. */
-export function SnapScreen({ role }: { role: Role }) {
-  const styles = useThemedStyles(makeStyles);
+/** The look of each card: its tint and its drawing (Figma 1730:104290). */
+const LOOK: Record<SnapTool, { ground: string; art: React.ReactNode }> = {
+  treat: { ground: tokens.color.blockPeach, art: <Art name="snap/treat-bowl" size={64} /> },
+  mood: { ground: tokens.color.blockMint, art: <Art name="snap/mood-heart" size={64} /> },
+  // The paw is drawn smaller than its 64 x 64 slot: the Figma frame insets it.
+  sticker: { ground: tokens.color.blockButter, art: <Art name="snap/sticker-paw" size={38.93} height={37.33} /> },
+};
 
+/** The Snap tab for both roles (Phase 12, D61): pick the pet, then treat check, mood or sticker, each starting from a photo. */
+export function SnapScreen({ role }: { role: Role }) {
   return (
-    <Screen contentStyle={styles.content} testID="snap">
-      <Text style={styles.intro}>Check a treat, see a mood, make a sticker.</Text>
-      {SNAP_TOOLS.map((tool) => (
-        <SnapToolCard
-          key={tool.key}
-          emoji={tool.emoji}
-          title={tool.title}
-          blurb={tool.blurb}
-          onPress={() => router.push(`/${role}/snap/${tool.key}`)}
-          testID={`snap-card-${tool.key}`}
-        />
-      ))}
-      <SnapPets role={role}>{(pets) => (pets.status === "ready" ? <RecentChecks role={role} pets={pets.pets} /> : null)}</SnapPets>
+    <Screen contentStyle={contentStyle} testID="snap">
+      <SnapPets role={role}>{(pets) => <SnapBody key={pets.status === "ready" ? "ready" : "wait"} role={role} pets={pets.status === "ready" ? pets.pets : []} />}</SnapPets>
     </Screen>
   );
 }
 
-/** The last three treat checks across the role's pets; a row opens that check on the Treat check screen. */
-function RecentChecks({ role, pets }: { role: Role; pets: PetOption[] }) {
+const contentStyle = { gap: 14 } as const;
+
+function SnapBody({ role, pets }: { role: Role; pets: PetOption[] }) {
+  const styles = useThemedStyles(makeStyles);
+  const [selectedId, setSelectedId] = useState<string | null>(pets[0]?.id ?? null);
+  const pet = pets.find((p) => p.id === selectedId) ?? pets[0] ?? null;
+  const name = pet?.name ?? "your pet";
+  const query = pet ? `?pet=${pet.id}` : "";
+
+  return (
+    <>
+      {pets.length > 1 ? (
+        <View style={styles.chips} testID="snap-pets">
+          {pets.map((p) => {
+            const on = p.id === pet?.id;
+            return (
+              <Pressable
+                key={p.id}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                onPress={() => setSelectedId(p.id)}
+                style={[styles.chip, on && styles.chipOn]}
+                testID={`snap-pet-${p.id}`}
+              >
+                <Art name={p.species === "cat" ? "snap/chip-cat" : "snap/chip-dog"} size={28} />
+                <Text style={[styles.chipText, on && styles.chipTextOn]}>{p.name}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+
+      {SNAP_TOOLS.map((tool) => (
+        <SnapToolCard
+          key={tool.key}
+          art={LOOK[tool.key].art}
+          ground={LOOK[tool.key].ground}
+          title={tool.title}
+          blurb={tool.blurb(name)}
+          onPress={() => router.push(`/${role}/snap/${tool.key}${query}`)}
+          testID={`snap-card-${tool.key}`}
+        />
+      ))}
+
+      {pet ? <RecentChecks role={role} pet={pet} /> : null}
+    </>
+  );
+}
+
+/** The last two treat checks of the pet picked; a row opens that check, See all lists more. */
+function RecentChecks({ role, pet }: { role: Role; pet: PetOption }) {
   const styles = useThemedStyles(makeStyles);
   const [checks, setChecks] = useState<SafetyCheck[]>([]);
-  const key = pets.map((p) => p.id).join(",");
 
-  // Every time the Snap tab is shown again (after a check on the Treat check screen), not only when the pets change.
+  // Every time the Snap tab is shown again (after a check on the Treat check screen), not only when the pet changes.
   useFocusEffect(
     useCallback(() => {
       let live = true;
-      listRecentChecksForPets(key ? key.split(",") : [])
+      listRecentChecksForPets([pet.id], 2)
         .then((list) => live && setChecks(list))
         .catch(() => live && setChecks([])); // A bonus list: the tools above work without it.
       return () => {
         live = false;
       };
-    }, [key]),
+    }, [pet.id]),
   );
 
   if (checks.length === 0) return null;
   return (
     <View style={styles.section} testID="snap-recent">
-      <Text style={styles.label}>Recent checks</Text>
-      {checks.map((c) => (
-        <Pressable
-          key={c.id}
-          accessibilityRole="button"
-          onPress={() => router.push(`/${role}/snap/treat?check=${c.id}`)}
-          style={styles.row}
-          testID="snap-recent-row"
-        >
-          <StatusBadge status={c.safety_status} />
-          <Text style={styles.name} numberOfLines={1}>
-            {c.product_name || "Treat label"}
-            {pets.length > 1 ? ` · ${pets.find((p) => p.id === c.petId)?.name ?? ""}` : ""}
-          </Text>
-          <Text style={styles.date}>{formatDay(isoToZoned(c.createdAt).day)}</Text>
-        </Pressable>
-      ))}
+      <View style={styles.sectionHead}>
+        <Text accessibilityRole="header" style={styles.sectionTitle}>
+          Recent checks
+        </Text>
+        <TextButton label="See all" onPress={() => router.push(`/${role}/snap/checks?pet=${pet.id}`)} testID="snap-see-all" />
+      </View>
+      <View style={styles.list}>
+        {checks.map((c) => (
+          <CheckRow key={c.id} check={c} petName={pet.name} onPress={() => router.push(`/${role}/snap/treat?check=${c.id}`)} testID="snap-recent-row" />
+        ))}
+      </View>
     </View>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    content: { gap: theme.spacing.md },
-    intro: { fontSize: theme.fontSize.body, color: theme.color.textMuted },
-    section: { gap: theme.spacing.xs },
-    label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
-    row: {
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    chip: {
       flexDirection: "row",
       alignItems: "center",
-      gap: theme.spacing.sm,
-      paddingVertical: theme.spacing.sm,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.color.border,
+      gap: 6,
+      paddingLeft: 6,
+      paddingRight: 12,
+      paddingVertical: 6,
+      borderRadius: theme.radius.pill,
+      borderWidth: 1,
+      borderColor: theme.color.borderStrong,
+      backgroundColor: theme.color.surface,
     },
-    name: { flex: 1, fontSize: theme.fontSize.body, color: theme.color.text },
-    date: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    chipOn: { backgroundColor: theme.color.text, borderColor: theme.color.text },
+    chipText: { fontSize: HOME_TEXT.chip, lineHeight: 18.2, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    chipTextOn: { color: theme.color.primaryText },
+    section: { gap: 10 },
+    sectionHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
+    sectionTitle: sectionTitleStyle(theme),
+    list: { gap: 10 },
   });
