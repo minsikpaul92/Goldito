@@ -47,16 +47,26 @@ async function newOwner(page: import("@playwright/test").Page) {
   return db;
 }
 
+/** Foods has no Skip: tap None, tick the check, go on. */
+async function passFoods(page: import("@playwright/test").Page) {
+  const screen = app(page);
+  await screen.getByTestId("own-food-none").click();
+  await screen.getByTestId("own-foods-checked").click();
+  await screen.getByTestId("own-next").click();
+}
+
 /** Skips every optional screen after the name until the summary (the question screens all have a Skip). */
 async function skipToSummary(page: import("@playwright/test").Page) {
   const screen = app(page);
   const skip = screen.getByTestId("own-skip");
   const summary = screen.getByTestId("own-step-summary");
   const about = screen.getByTestId("own-step-about");
+  const foods = screen.getByTestId("own-step-foods");
   for (let i = 0; i < 80; i++) {
-    await expect(skip.or(summary).or(about)).toBeVisible();
+    await expect(skip.or(summary).or(about).or(foods)).toBeVisible();
     if (await summary.isVisible()) return;
     if (await about.isVisible()) await screen.getByTestId("own-next").click();
+    else if (await foods.isVisible()) await passFoods(page);
     else await skip.click();
   }
 }
@@ -242,7 +252,10 @@ test.describe("owner onboarding", () => {
       await expect(screen.getByTestId(`own-step-s:${key}`)).toBeVisible();
       await screen.getByTestId("own-skip").click();
     }
-    for (const id of ["foods", "ownerIntro", "location"]) {
+    await expect(screen.getByTestId("own-step-foods")).toBeVisible();
+    await expect(screen.getByTestId("own-skip")).toHaveCount(0);
+    await passFoods(page);
+    for (const id of ["ownerIntro", "location"]) {
       await expect(screen.getByTestId(`own-step-${id}`)).toBeVisible();
       await screen.getByTestId("own-skip").click();
     }
@@ -254,7 +267,7 @@ test.describe("owner onboarding", () => {
     await expect(page).toHaveURL(/\/owner$/);
     const pet = db.pets.find((p) => p.owner_id === OWNER.id)!;
     expect(pet).toMatchObject({ species: "cat", name: "Mochi", breed: null, birthdate: null, weight_kg: null, notes: null });
-    expect(pet.profile).toEqual({ v: 1, answers: {}, safety: {} });
+    expect(pet.profile).toEqual({ v: 1, answers: {}, safety: { s6: "none" } });
     // Nothing was written to the owner's own profile besides the done mark.
     expect(db.owner_profiles.find((p) => p.id === OWNER.id)).not.toHaveProperty("intro");
   });
@@ -316,7 +329,9 @@ test.describe("owner onboarding", () => {
     for (const id of ["photos", "voice", "breed", "coat", "age", "weight", "petIntro"]) await screen.getByTestId("own-skip").click();
     await screen.getByTestId("own-next").click(); // where the questions come from
     await expect(screen.getByTestId("own-step-q:d1")).toBeVisible();
-    for (let i = 0; i < 12 + 5 + 2; i++) await screen.getByTestId("own-skip").click();
+    for (let i = 0; i < 12 + 5; i++) await screen.getByTestId("own-skip").click();
+    await passFoods(page);
+    await screen.getByTestId("own-skip").click(); // about you
     await expect(screen.getByTestId("own-step-location")).toBeVisible();
     await screen.getByTestId("own-use-location").click();
     await expect(screen.getByText("Location is off for Goldito in this browser")).toBeVisible();
@@ -361,7 +376,9 @@ test.describe("owner onboarding", () => {
     for (const id of ["photos", "voice", "breed", "coat", "age", "weight", "petIntro"]) await screen.getByTestId("own-skip").click();
     await screen.getByTestId("own-next").click();
     await expect(screen.getByTestId("own-step-q:d1")).toBeVisible();
-    for (let i = 0; i < 12 + 5 + 2; i++) await screen.getByTestId("own-skip").click();
+    for (let i = 0; i < 12 + 5; i++) await screen.getByTestId("own-skip").click();
+    await passFoods(page);
+    await screen.getByTestId("own-skip").click(); // about you
     await expect(screen.getByTestId("own-step-location")).toBeVisible();
     await screen.getByTestId("own-use-location").click();
     await expect(screen.getByTestId("own-address")).toHaveValue("Dundas St W, Toronto, M6J");
@@ -860,7 +877,7 @@ test.describe("owner onboarding", () => {
     expect(db.pets).toHaveLength(1);
   });
 
-  test("skipping all questions from the about screen jumps straight to summary", async ({ page }) => {
+  test("skipping the questions from the about screen jumps to the health question", async ({ page }) => {
     await newOwner(page);
     await signIn(page, OWNER);
     const screen = app(page);
