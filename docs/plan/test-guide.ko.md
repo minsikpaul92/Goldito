@@ -276,6 +276,7 @@
 | FEED-4 | 영상 샘플 (Fetch play) 재생 | 오너 전체화면에서 재생 | 👤 | ➖ |
 | FEED-5 | 시터가 **자기 사진** 열기 → 🗑️ → 확인 | "Photo deleted", 오너 Feed에서도 사라짐. 오너 화면에는 시터 글의 🗑️ **없음** | 🤖 `feed` · 파일 삭제는 pytest | ➖ |
 | FEED-6 | 사진 업로드가 **실패**하면 | 빨간 팝업이 남고 Try again | 🤖 `media-picker` | ➖ |
+| FEED-7 | 샘플 트레이: 사진을 고르는 곳을 연다(시터 · 오너 Feed, Diary 오너 글, 작업 사진, 알림장, 프로필, Snap Mood · Sticker) | 같은 사진 모음이 보인다: 일상 3장 + 영상(Fetch play), 강아지 6장, **고양이 5장**(Orange cat · Wary cat · Blank stare · Curious cat · Belly up). Mood는 영상 · 강아지 · 고양이 · 일상 순, Sticker · 프로필은 영상 없이. Treat check는 라벨 4장만. 트레이가 길면 스크롤 | 👤 | ➖ |
 | VIS-1 | 시터: **Share with Robert** 칩 끄기("Only you") → 사진 올리기 | "Saved just for you", 🔒 배지. **오너는 못 봄**, 알림 없음 | 🤖 `media-picker` · SQL | ➖ |
 | VIS-2 | 오너: Feed → **+ Photo** (기본 "Only you") | "Saved just for you". 시터는 못 봄 | 🤖 `media-picker` · SQL | ➖ |
 | VIS-3 | 오너: "Visible to sitter" 켜고 올림 | 당직 시터가 알림 "Robert shared a photo of Max 📸" → 탭 → 시터 Feed → Max, 사진 보임 | 🤖 SQL · e2e (알림 이동) | ➖ |
@@ -1151,7 +1152,7 @@
 - 체크인은 **전송 후 취소할 수 없다** (연타 잠금만 있음). 필요해지면 "10초 취소"를 추가한다.
 - 알림을 지워도 History에는 남는다 (알림 = 지우는 것, 기록 = 남는 것).
 - AI 기능: 문의 응대(07B) · 알림장(07) · 캡션(09) · Life Record(07C)는 main에 머지됐다(#55~#58, 수정 #60). 안전 검사(08)는 아직이다. 알려진 문제는 [review-2026-10-08.ko.md](review-2026-10-08.ko.md).
-- 샘플 사진 트레이는 **데스크톱 프레임 / 데모 계정**에서만 보인다. 실제 폰 + 일반 계정에서는 **Take photo / Choose from library**.
+- 샘플 사진 트레이는 **데스크톱 프레임 / 데모 계정**에서만 보인다. 실제 폰 + 일반 계정에서는 **Take photo / Choose from library**. 사진 샘플은 라벨 · 영상 · 알림장 그림을 뺀 모든 사진 선택에서 같은 모음(강아지 · 고양이 · 일상)이다. 고양이 사진은 `frontend/assets/demo/mood/` = `backend/tests/fixtures/mood/`, 설명은 `cat_notes.json`. 호랑이 무늬 고양이 사진은 키보드 글자와 사탕 포장지를 흐리게 가렸다.
 - 사진 · 영상 업로드와 피드 삭제는 **백엔드가 떠 있어야** 한다.
 - 안 읽은 알림 숫자는 벨이 있는 화면에서만 보인다 (Welcome · 로그인 화면 제외).
 - 데모 예약의 **픽업 시각이 지나면** 시터 화면의 할 일 · 체크인이 막힌다 (1.3).

@@ -1,0 +1,42 @@
+[
+  {
+    "file": "orange_cat_lying_relaxed.jpg",
+    "caption_ko": "편한상태",
+    "mood_en": "relaxed",
+    "scene_en": "Orange cat lying on a blanket, body loose.",
+    "by": "seulgilet",
+    "taken": "2026-10-23"
+  },
+  {
+    "file": "cream_cat_wary_hallway.jpg",
+    "caption_ko": "살짝 경계하는 중",
+    "mood_en": "slightly wary",
+    "scene_en": "Cream cat standing in a hallway, looking at the camera, back a little arched.",
+    "by": "seulgilet",
+    "taken": "2026-10-23"
+  },
+  {
+    "file": "gray_cat_blank_stare.jpg",
+    "caption_ko": "무념무상",
+    "mood_en": "blank, zoned out",
+    "scene_en": "Gray cat close up, flat ears, steady stare.",
+    "by": "seulgilet",
+    "taken": "2026-10-23"
+  },
+  {
+    "file": "black_cat_startled_curious.jpg",
+    "caption_ko": "살짝 놀랐는데 호기심있는 상태",
+    "mood_en": "startled but curious",
+    "scene_en": "Black cat standing with the tail straight up, looking back over its shoulder.",
+    "by": "seulgilet",
+    "taken": "2026-10-23"
+  },
+  {
+    "file": "tortoiseshell_cat_belly_up_trusting.jpg",
+    "caption_ko": "편안하고 신뢰함 (배보이고 발라당)",
+    "mood_en": "relaxed and trusting",
+    "scene_en": "Tortoiseshell cat on its back showing the belly; the keyboard wordmark and a candy wrapper are blurred.",
+    "by": "seulgilet",
+    "taken": "2026-10-23"
+  }
+]
