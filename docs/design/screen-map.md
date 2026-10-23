@@ -897,24 +897,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Stepper | ``${title} time`` | ``${kind}-time`` | 70 |
 | CheckRow | `option.label` | ``${kind}-place-${option.value}`` | 102 |
 
-### HeaderActions — [components/HeaderActions.tsx](../../frontend/components/HeaderActions.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Tag | profile.role === "owner" ? "Owner" : "Sitter" | `role-chip` | 20 |
-| Pressable | ``${profile.displayName \|\| "You"}, Profile`` | `header-profile-avatar` | 24 |
-
 ### HeaderMenu — [components/HeaderMenu.tsx](../../frontend/components/HeaderMenu.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `label` | `testID` | 50 |
-| Pressable | Menu | `open-menu` | 65 |
-| Pressable | Close menu | `header-menu-close` | 86 |
-| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 97 |
-| Button | Sign out | `log-out-confirm` | 119 |
-| Button | Cancel | `log-out-cancel` | 120 |
-| Pressable | — | `log-out` | 140 |
+| Pressable | `label` | `testID` | 53 |
+| Pressable | ``${name}, ${role.toLowerCase()} account. Menu`` | `open-menu` | 68 |
+| Pressable | Close menu | `header-menu-close` | 95 |
+| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 106 |
+| Button | Sign out | `log-out-confirm` | 128 |
+| Button | Cancel | `log-out-cancel` | 129 |
+| Pressable | — | `log-out` | 149 |
 
 ### HeadsUpSection — [components/HeadsUpSection.tsx](../../frontend/components/HeadsUpSection.tsx)
 
@@ -1542,4 +1535,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-451 actions · 450 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+450 actions · 449 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

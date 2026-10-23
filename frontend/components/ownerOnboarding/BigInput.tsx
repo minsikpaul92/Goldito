@@ -9,7 +9,7 @@ export function BigInput(props: Omit<TextInputProps, "style">) {
   const styles = useThemedStyles(makeStyles);
   return (
     <TextInput
-      placeholderTextColor={`${theme.color.textMuted}80`}
+      placeholderTextColor={theme.color.placeholder}
       style={[styles.input, props.multiline && styles.multiline]}
       {...props}
     />
