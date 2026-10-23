@@ -499,7 +499,7 @@ Anyone should tell in under a second what they can tap. One rule for every scree
 | **Information** (status, facts, labels) | `Tag`: tinted surface, no outline, not 44 tall | Outlined or filled chips for facts (they look tappable) |
 | **A result** (mood, safety) | A meter or result card | Chips that look selectable |
 
-Buttons carry text and, if needed, a line icon — no emoji in button labels (§7.6).
+Buttons carry text and, if needed, a line icon or an emoji that says what the button does and is not on the AI list (§7.6).
 
 ---
 
@@ -534,7 +534,9 @@ Always explain what will appear and who adds it.
 
 ### 7.6 Copy & emoji
 - Short, warm, specific. Use the pet's name ("Max had breakfast on time 🍽️").
-- At most **2 emoji** per message; none in buttons except the status ones above.
+- At most **2 emoji** per message.
+- **Avoid the emoji AI text uses all the time**, in copy, buttons, rows, chips and empty states: ✨ 🚀 💡 🔥 ✅ ❌ ⚠️ 🎯 📌 🌟 🎉 👋 🙌 💪 🤖 🔍 📝 ⭐ 💬. Use plain words, a line icon, or nothing instead.
+- Any other emoji is fine, in a button too, when it helps (📍 on a "use my current location" button, a pet's 🐶 / 🐱). Swapping one for a line icon is optional.
 - Times shown in the app timezone (America/Toronto) with AM/PM.
 
 ### 7.7 Works with a mouse
@@ -614,7 +616,7 @@ Counts (number of pets, times a day) are the only thing that still uses the plai
 
 - **Logo:** the gold coin symbol (`frontend/assets/brand/goldito-symbol.svg`, PNG copy for native). In the app use `<BrandLogo />` (`components/BrandLogo.tsx`): the symbol + "Goldito" in the display face. Never re-type the name as text with an emoji. Favicon and app icons still use the gold tag (`goldito-favicon-48.png`, `app.json`) until they are redrawn.
 - Real pet photos are the hero; keep chrome minimal around them.
-- Icons: one outline icon set (Figma will choose); emoji are fine in notifications, chips, and empty states.
+- Icons: one outline icon set (Figma will choose); emoji are fine in notifications, chips, and empty states, except the ones listed in §7.6.
 - Stickers and report themes (P1, Phase 11.8): `sunny`, `cozy`, `playful`, `calm` — assets from the designer.
 - Sample photos for the demo tray (Phase 04.7): dog and cat daily photos plus treat labels with fictional brands (the same label images as the Phase 08 test fixtures). No people, faces, or addresses.
 
