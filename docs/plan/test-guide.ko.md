@@ -252,11 +252,15 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| HOME-1 | 돌보는 중에 시터 Home | **스크롤 없이 한 화면**: 숫자 칩 · **Today 카드(오늘 남은 할 일 최대 3줄, 시간 전에도 보임; 나머지는 "+ N more")** · **펫 방(작은 픽셀 펫 + 밥 · 산책 · 응가 · 낮잠 버튼, 펫이 여럿이면 이름 칩으로 하나씩, 펫을 누르면 체크인 화면)** · 바로가기 2개 | 🤖 `sitter-home` | ➖ |
-| HOME-2 | Today 카드 줄의 **Done** (시간 전이어도 가능) | 팝업 → Done → 숫자(예: 1/4)가 바로 올라가고 다음 할 일이 올라옴. 지난 건 ⚠️ Overdue, 시간이 된 건 ⏰ Due now 표시 | 🤖 `sitter-home` | ➖ |
-| HOME-3 | 바로가기 **All tasks · My history** (Photos · Bookings는 탭과 중복이라 뺌), 펫 칩 | 각각 해당 화면으로. 펫 칩 → 그 펫의 체크인 화면 + 📸 Photos 버튼 | 🤖 `sitter-home` | ➖ |
+| HOME-1 | 돌보는 중에 시터 Home | 앞면이 **Today**(기본): 초록 히어로(**Next · 시각** · "Max · Breakfast" · N of M done today · **Complete with photo**) · Heads-up 알약 한 줄(펫이 여럿이면 "Max: …", "+N") · **Quick check-in · 펫 이름** 타일 4개(Ate · Potty · Walk · Mood, 고양이는 Walk 대신 Nap) · **5-second check** · **Treat check** 카드 · All tasks / My history 링크. 펫이 여럿이면 이름 칩으로 대상 선택. 회전 버튼으로 뒷면 **픽셀 펫 방**(밥 · 산책 · 응가 · 낮잠). 돌보는 중이 아니면 Pager 없이 요청 · 오늘 인계 · 다가오는 예약 | 🤖 `sitter-home` · `pet-room-sitter` | 사람 확인 대기 |
+| HOME-2 | 히어로의 **Complete with photo** | 완료 시트(메모 · 사진) → Done → "1 of 4 done today"로 오르고 다음 할 일이 히어로로. 시간이 된 건 "Due now" · 알람 팝업 | 🤖 `sitter-home` · `due-reminder` | ➖ |
+| HOME-3 | 링크 **All tasks · My history**, 카드 **5-second check · Treat check** | 각각 해당 화면으로(5-second check는 고른 펫의 체크인 화면 + 📸 Photos, Treat check는 Snap의 Treat check) | 🤖 `sitter-home` | ➖ |
 | HOME-4 | **My history** | 내가 끝낸 할 일 · 보낸 체크인(펫 이름 포함)이 최신순. 시간이 지난 미완료는 ⚠️ Missed로 | 🤖 `sitter-home` | ➖ |
-| HOME-6 | 할 일 💤 스누즈 중에 Home | Next up 카드에 **"💤 Snoozed until 11:43 AM"** (할 일의 예정 시각은 그대로) | 🤖 `due-reminder` | ➖ |
+| HOME-6 | 할 일 💤 스누즈 중에 Home | 히어로에 **"💤 Snoozed until 11:43 AM"** (할 일의 예정 시각은 그대로) | 🤖 `due-reminder` | ➖ |
+| HOME-7 | Quick check-in 타일을 **한 번 탭** | 타일 위에 선택지가 뜸(첫 번째가 강조). Ate: Ate everything · Left a little · Didn't eat · Other / Potty: All done · Soft stool · Other / Walk: Short ~5분 · Mid ~15분 · Long 30분+ / Nap: Nap · Awake / Mood: 8개(Happy · Playful · Excited · Calm · Tired · Missing you · Sad · Anxious). 하나 누르면 바로 전송 + "Sent. Robert was told" | 🤖 `sitter-home` | 사람 확인 대기 |
+| HOME-8 | 같은 타일을 **빠르게 두 번 탭** (0.4초 안) | 첫 번째 선택지가 바로 전송됨(Ate = Ate everything, Potty = All done, Walk = Short, Mood = Happy). 느리게 두 번째를 누르면 선택지만 닫힘 | 🤖 `sitter-home` | 사람 확인 대기 (터치 · 마우스) |
+| HOME-9 | **Other** 선택 | 메모 시트(최대 120자). 비어 있으면 Send 비활성. 보낸 글이 보호자 알림 본문이 됨 | 🤖 `sitter-home` · SQL smoke `015i` | ➖ |
+| HOME-10 | 산책 시작/종료로 거리 · 장소 기록 | **아직 없음** (#339). 지금 Walk는 Short / Mid / Long 기록만 | ➖ | ➖ |
 | REM-1 | 시터 Home을 연 상태에서, 시간이 된(지난 지 1시간 안) 할 일이 있음 | **"⏰ Due now" 알람 팝업**이 화면 가운데 뜸(소리 · 진동 시도). **Done**으로 바로 완료, 팝업 뒤 Home엔 Today 목록이 그대로 | 🤖 `due-reminder` · 소리/진동 **👤** | ➖ |
 | REM-2 | 앱을 켜 둔 채로 다음 할 일 시간이 됨 (30초마다 확인) | **"⏰ Time for Dinner · Max"** 토스트가 한 번 뜸. 이미 시간이 지난 할 일들 때문에 앱을 켤 때 토스트가 쏟아지지는 않음 | 🤖 `due-reminder` · **실제 시계 👤** | ➖ |
 | REM-3 | 팝업의 **Dismiss** | 다음 할 일 팝업으로 넘어감. 1시간 넘게 지난 것은 **"⚠️ Overdue"**. 모두 닫으면 팝업 사라짐 | 🤖 `due-reminder` | ➖ |

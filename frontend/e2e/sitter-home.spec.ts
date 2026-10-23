@@ -4,7 +4,7 @@ import { caring, task as fixtureTask } from "./careFixtures";
 import { app, petRoomOnFirstScreen, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
-// Sitter Home as a one-screen dashboard (phase 06 follow-up): numbers, next task, pets, shortcuts.
+// Sitter Home (Figma 1730:104473): next task, Quick check-in tiles, action cards; the pixel pet room is the back side.
 
 const MAX = { id: "00000000-0000-4000-8000-0000000000aa", name: "Max", species: "dog" } as const;
 const MOCHI = { id: "00000000-0000-4000-8000-0000000000bb", name: "Mochi", species: "cat" } as const;
@@ -38,45 +38,32 @@ async function home(page: import("@playwright/test").Page) {
 }
 
 test.describe("sitter home dashboard", () => {
-  test("shows today's numbers, the next task and the pets in care, the pet room whole on the first screen", async ({ page }) => {
+  test("shows the next task, today's count, the tiles for the pet picked, and the pixel pet room on the back", async ({ page }) => {
     await home(page);
     const screen = app(page);
 
-    await expect(screen.getByTestId("stat-tasks")).toContainText("0/4");
-    await expect(screen.getByTestId("stat-checkins")).toContainText("0");
-    await expect(screen.getByTestId("tasks-next")).toBeVisible();
-    await expect(screen.getByTestId("today-caring")).toContainText("Max");
-    // The Feed and Bookings tabs already cover those; Home keeps only the two extra shortcuts.
-    await expect(screen.getByTestId("shortcut-photos")).toHaveCount(0);
-    await expect(screen.getByTestId("shortcut-bookings")).toHaveCount(0);
+    await expect(screen.getByTestId("tasks-next")).toContainText("Max · Breakfast");
+    await expect(screen.getByTestId("dashboard-next")).toContainText("0 of 4 done today");
+    await expect(screen.getByTestId("quick-heading")).toContainText("Quick check-in · Max");
+    await expect(screen.getByTestId("tile-walk")).toBeVisible();
     await expect(screen.getByTestId(`caring-pet-${MAX.id}`)).toBeVisible();
     await expect(screen.getByTestId(`caring-pet-${MOCHI.id}`)).toBeVisible();
+    // The Feed and Bookings tabs already cover those; Home keeps only the two extra links.
+    await expect(screen.getByTestId("shortcut-photos")).toHaveCount(0);
+    await expect(screen.getByTestId("shortcut-bookings")).toHaveCount(0);
 
-    // The pet room is the biggest thing on Home, whole without scrolling; the rest may scroll below it.
-    expect(await petRoomOnFirstScreen(screen)).toBe(true);
+    // A cat does not walk: its tiles have a Nap instead.
+    await screen.getByTestId(`caring-pet-${MOCHI.id}`).click();
+    await expect(screen.getByTestId("quick-heading")).toContainText("Quick check-in · Mochi");
+    await expect(screen.getByTestId("tile-walk")).toHaveCount(0);
+    await expect(screen.getByTestId("tile-nap")).toBeVisible();
+
+    // The pixel pet room is the other side of the card.
+    await screen.getByTestId("home-pager-flip").click();
+    await expect(screen.getByTestId("today-caring")).toContainText("Max");
   });
 
-  test("today's tasks are listed before they are due, and one can be marked Done early", async ({ page }) => {
-    const db = await home(page);
-    const screen = app(page);
-    await expect(screen.getByTestId("dashboard-next")).toContainText("Today · 4 to do");
-    // Three rows (earliest first) and a link for the fourth.
-    await expect(screen.locator("[data-testid^='today-row-']")).toHaveCount(3);
-    await expect(screen.getByTestId("today-more")).toContainText("+ 1 more");
-    await expect(screen.getByText("Overdue")).toHaveCount(0);
-
-    // Not due yet, still doable now: the Walk (second row).
-    const walk = screen.locator("[data-testid^='today-row-']").nth(1);
-    await expect(walk).toContainText("Walk");
-    await walk.getByRole("button", { name: "Done" }).click();
-    await screen.getByTestId("task-done-confirm").click();
-    await expect(screen.getByTestId("toast")).toContainText("done");
-    expect(db.taskCompletions).toHaveLength(1);
-    await expect(screen.getByTestId("stat-tasks")).toContainText("1/4");
-    await expect(screen.locator("[data-testid^='today-row-']")).toHaveCount(3); // the fourth moved up
-  });
-
-  test("Done on the next-task card opens the popup and updates the numbers", async ({ page }) => {
+  test("Complete with photo on the next task opens the sheet and moves the count", async ({ page }) => {
     const db = await home(page);
     const screen = app(page);
     await screen.getByTestId("dashboard-next-done").click();
@@ -84,10 +71,49 @@ test.describe("sitter home dashboard", () => {
     await screen.getByTestId("task-done-confirm").click();
     await expect(screen.getByTestId("toast")).toContainText("done");
     expect(db.taskCompletions).toHaveLength(1);
-    await expect(screen.getByTestId("stat-tasks")).toContainText("1/4");
+    await expect(screen.getByTestId("dashboard-next")).toContainText("1 of 4 done today");
+    await expect(screen.getByTestId("tasks-next")).toContainText("Max · Walk"); // the next one moved up
   });
 
-  test("shortcuts open the bigger screens; a pet chip opens its check-in", async ({ page }) => {
+  test("a tile opens its choices; one tap on a choice sends it", async ({ page }) => {
+    const db = await home(page);
+    const screen = app(page);
+    await screen.getByTestId("tile-ate").click();
+    await expect(screen.getByTestId("tile-options-ate")).toContainText("Ate everything");
+    await expect(screen.getByTestId("tile-options-ate")).toContainText("Other");
+    await screen.getByTestId("tile-option-ate-most").click();
+    await expect(screen.getByTestId("toast")).toContainText("was told");
+    expect(db.care_checkins.map((c) => [c.kind, c.value])).toEqual([["meal", "most"]]);
+    await expect(screen.getByTestId("tile-options-ate")).toHaveCount(0);
+  });
+
+  test("two quick taps send the first choice", async ({ page }) => {
+    const db = await home(page);
+    const screen = app(page);
+    await screen.getByTestId("tile-potty").dblclick();
+    await expect(screen.getByTestId("toast")).toContainText("was told");
+    expect(db.care_checkins.map((c) => [c.kind, c.value])).toEqual([["potty", "normal"]]);
+  });
+
+  test("Other needs a few words, and they are what is sent; the moods offer eight", async ({ page }) => {
+    const db = await home(page);
+    const screen = app(page);
+    await screen.getByTestId("tile-ate").click();
+    await screen.getByTestId("tile-option-ate-other").click();
+    await expect(screen.getByTestId("tile-memo-send")).toBeDisabled();
+    await screen.getByTestId("tile-memo-text").fill("Only ate the chicken bits");
+    await screen.getByTestId("tile-memo-send").click();
+    await expect(screen.getByTestId("toast")).toContainText("was told");
+    expect(db.care_checkins[0]).toMatchObject({ kind: "meal", value: "other", note_text: "Only ate the chicken bits" });
+
+    await screen.getByTestId("tile-mood").click();
+    await expect(screen.locator("[data-testid^='tile-option-mood-']")).toHaveCount(8);
+    await screen.getByTestId("tile-option-mood-missing").click();
+    await expect(screen.getByTestId("toast")).toContainText("was told");
+    expect(db.care_checkins[1]).toMatchObject({ kind: "mood", value: "missing" });
+  });
+
+  test("the action cards and links open the bigger screens", async ({ page }) => {
     await home(page);
     const screen = app(page);
 
@@ -98,10 +124,14 @@ test.describe("sitter home dashboard", () => {
     await screen.getByTestId("sitter-dashboard").waitFor();
 
     await screen.getByTestId(`caring-pet-${MOCHI.id}`).click();
-    await screen.getByTestId("pet-room-Mochi-open").click();
+    await screen.getByTestId("action-five-second").click();
     await expect(page).toHaveURL(new RegExp(`/sitter/checkin/${MOCHI.id}$`));
     await expect(screen.getByTestId(`checkin-${MOCHI.id}`)).toBeVisible();
     await expect(screen.getByTestId("checkin-photos")).toBeVisible();
+
+    await page.goto("/sitter");
+    await screen.getByTestId("action-treat-check").click();
+    await expect(page).toHaveURL(/\/sitter\/snap\/treat$/);
 
     await page.goto("/sitter");
     await screen.getByTestId("shortcut-history").click();

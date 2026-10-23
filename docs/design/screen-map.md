@@ -396,17 +396,17 @@ Shows: `BrandLogo` · `RoleCard`
 
 Sitter Home dashboard (D47b; was Today / 3B.8): **Now caring** when on duty, else **Requests** · **Today** (drop/pick due today) · **Upcoming** by time. Pets in care show as pixel pets with feed / walk / poop / nap taps (11.12).
 
-Shows: `ActiveTripCard` · `SitterDashboard`
+Shows: `ActiveTripCard` · `SitterToday` · `SitterPetRoom`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load today | — | 82 |
-| EmptyState | No pets in your care today | — | 114 |
-| Pressable | — | `home-photo-request` | 135 |
-| Pressable | — | `today-requests` | 147 |
+| EmptyState | Couldn't load today | — | 84 |
+| EmptyState | No pets in your care today | — | 116 |
+| Pressable | — | `home-photo-request` | 136 |
+| Pressable | — | `today-requests` | 148 |
 | Pressable | — | `today-chats` | 158 |
-| Pressable | — | ``handoff-row-${b.id}-${kind}`` | 178 |
-| Pressable | — | ``request-row-${b.id}`` | 198 |
+| Pressable | — | ``handoff-row-${b.id}-${kind}`` | 181 |
+| Pressable | — | ``request-row-${b.id}`` | 201 |
 
 ### `/sitter-onboarding` — [app/sitter-onboarding.tsx](../../frontend/app/sitter-onboarding.tsx)
 
@@ -1219,18 +1219,6 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | [sitter.displayName, meta, note].filter(Boolean).join(", ") | ``sitter-card-${sitter.displayName}`` | 24 |
 
-### SitterDashboard — [components/SitterDashboard.tsx](../../frontend/components/SitterDashboard.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Pressable | — | `id` | 79 |
-| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 101 |
-| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 115 |
-| Tag | `tag` | — | 155 |
-| Button | Done | `index === 0 ? "dashboard-next-done" : `today-done-${item.log.id}`` | 158 |
-| TextButton | ``+ ${open.length - TODAY_ROWS} more`` | `today-more` | 168 |
-| Sheet | Heads-up | `headsup-sheet` | 185 |
-
 ### SitterResultCard — [components/SitterResultCard.tsx](../../frontend/components/SitterResultCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1317,6 +1305,15 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Button | Use this part | `trim-confirm` | 197 |
 | Button | playing ? "Pause" : "Play selection" | `trim-play` | 223 |
 
+### CheckinTiles — [components/home/CheckinTiles.tsx](../../frontend/components/home/CheckinTiles.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | ``tile-option-${open}-${option.value ?? option.kind}`` | 92 |
+| Pressable | ``${HOME_TILES[key].label} ${pet.name}`` | ``tile-${key}`` | 107 |
+| Sheet | Send | `tile-memo-send` | 122 |
+| Button | Send | `tile-memo-send` | 127 |
+
 ### LatestCard — [components/home/LatestCard.tsx](../../frontend/components/home/LatestCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1329,6 +1326,20 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 47 |
 | Pressable | ``${pet.name}'s photos`` | ``pet-card-face-${pet.name}`` | 55 |
+
+### SitterToday — [components/home/SitterToday.tsx](../../frontend/components/home/SitterToday.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 82 |
+| Pressable | — | `dashboard-next-done` | 113 |
+| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 133 |
+| Pressable | — | ``caring-pet-${p.id}`` | 154 |
+| Pressable | — | `action-five-second` | 171 |
+| Pressable | — | `action-treat-check` | 184 |
+| TextButton | All tasks | `shortcut-tasks` | 200 |
+| TextButton | My history | `shortcut-history` | 201 |
+| Sheet | Heads-up | `headsup-sheet` | 206 |
 
 ### StayHero — [components/home/StayHero.tsx](../../frontend/components/home/StayHero.tsx)
 
@@ -1568,4 +1579,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-466 actions · 464 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+472 actions · 470 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).

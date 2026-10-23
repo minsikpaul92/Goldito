@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react-native";
 import ArrowUp from "lucide-react-native/icons/arrow-up";
 import Bell from "lucide-react-native/icons/bell";
+import Bone from "lucide-react-native/icons/bone";
 import BookOpen from "lucide-react-native/icons/book-open";
 import Calendar from "lucide-react-native/icons/calendar";
 import Camera from "lucide-react-native/icons/camera";
@@ -21,12 +22,15 @@ import LogOut from "lucide-react-native/icons/log-out";
 import MapPin from "lucide-react-native/icons/map-pin";
 import Menu from "lucide-react-native/icons/menu";
 import MessageCircleMore from "lucide-react-native/icons/message-circle-more";
+import Moon from "lucide-react-native/icons/moon";
 import Mic from "lucide-react-native/icons/mic";
 import Minus from "lucide-react-native/icons/minus";
 import PawPrint from "lucide-react-native/icons/paw-print";
+import Pill from "lucide-react-native/icons/pill";
 import Plus from "lucide-react-native/icons/plus";
 import RefreshCw from "lucide-react-native/icons/refresh-cw";
 import Settings from "lucide-react-native/icons/settings";
+import Sprout from "lucide-react-native/icons/sprout";
 import Sparkles from "lucide-react-native/icons/sparkles";
 import Square from "lucide-react-native/icons/square";
 import SquareCheck from "lucide-react-native/icons/square-check";
@@ -95,6 +99,10 @@ const ICONS = {
   warning: TriangleAlert,
   meal: Utensils,
   walk: TreePine,
+  potty: Sprout,
+  nap: Moon,
+  pill: Pill,
+  treat: Bone,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

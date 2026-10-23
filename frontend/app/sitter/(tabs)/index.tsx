@@ -4,7 +4,9 @@ import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from "react-nati
 
 import { ActiveTripCard } from "../../../components/ActiveTripCard";
 import { placeLabel } from "../../../components/BookingCard";
-import { SitterDashboard } from "../../../components/SitterDashboard";
+import { SitterToday } from "../../../components/home/SitterToday";
+import { SitterPetRoom } from "../../../components/pet/SitterPetRoom";
+import { Pager } from "../../../components/ui/Pager";
 import { Card } from "../../../components/ui/Card";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
@@ -124,86 +126,117 @@ export default function SitterHome() {
   const open = (b: BookingSummary) => router.push(`/sitter/bookings/${b.id}`);
   const caringPets = caringPetsFromBookings(confirmed, now);
 
-  return (
-    <View style={styles.page} onLayout={measure}>
-      <Screen contentStyle={styles.content} testID="sitter-home">
-        <ActiveTripCard role="sitter" />
-        {state.photoRequests.map((r) => {
-          const pet = caringPets.find((p) => p.id === r.pet_id);
-          if (!pet) return null;
-          return (
-            <Pressable
-              key={r.id}
-              accessibilityRole="button"
-              onPress={() => router.push(`/sitter/feed/${pet.id}`)}
-              style={({ pressed }) => [styles.requests, pressed && styles.pressed]}
-              testID="home-photo-request"
-            >
-              <Text style={styles.requestsText}>{`📷 ${pet.ownerName} asked for a photo of ${pet.name}`}</Text>
-            </Pressable>
-          );
-        })}
-        {requests > 0 ? (
+  const banners = (
+    <>
+      <ActiveTripCard role="sitter" />
+      {state.photoRequests.map((r) => {
+        const pet = caringPets.find((p) => p.id === r.pet_id);
+        if (!pet) return null;
+        return (
           <Pressable
+            key={r.id}
             accessibilityRole="button"
-            onPress={() => router.push("/sitter/bookings")}
+            onPress={() => router.push(`/sitter/feed/${pet.id}`)}
             style={({ pressed }) => [styles.requests, pressed && styles.pressed]}
-            testID="today-requests"
+            testID="home-photo-request"
           >
-            <Text style={styles.requestsText}>{`📬 Requests (${requests})`}</Text>
+            <Text style={styles.requestsText}>{`📷 ${pet.ownerName} asked for a photo of ${pet.name}`}</Text>
           </Pressable>
-        ) : null}
+        );
+      })}
+      {requests > 0 ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/sitter/bookings")}
+          style={({ pressed }) => [styles.requests, pressed && styles.pressed]}
+          testID="today-requests"
+        >
+          <Text style={styles.requestsText}>{`📬 Requests (${requests})`}</Text>
+        </Pressable>
+      ) : null}
+      {questions > 0 ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/sitter/bookings")}
+          style={({ pressed }) => [styles.requests, pressed && styles.pressed]}
+          testID="today-chats"
+        >
+          <Text style={styles.requestsText}>{`💬 Chats (${questions})`}</Text>
+        </Pressable>
+      ) : null}
+    </>
+  );
 
-        {questions > 0 ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push("/sitter/bookings")}
-            style={({ pressed }) => [styles.requests, pressed && styles.pressed]}
-            testID="today-chats"
-          >
-            <Text style={styles.requestsText}>{`💬 Chats (${questions})`}</Text>
-          </Pressable>
-        ) : null}
-
-        {caringPets.length > 0 ? <SitterDashboard pets={caringPets} roomHeight={pageHeight > 0 ? Math.round(pageHeight * ROOM_SHARE) : ROOM_FALLBACK} /> : null}
-
-        {due.length > 0 ? (
-          <View style={styles.section} testID="today-due">
-            <Text accessibilityRole="header" style={styles.heading}>
-              Today
-            </Text>
-            {due.slice(0, 2).map(({ booking: b, kind, at }) => {
-              const h = kind === "drop_off" ? b.dropOff : b.pickUp;
-              return (
-                <Pressable key={`${b.id}-${kind}`} accessibilityRole="button" onPress={() => open(b)} testID={`handoff-row-${b.id}-${kind}`}>
-                  <Card style={styles.card}>
-                    <Text style={styles.title}>
-                      {`${formatTime(isoToZoned(at).time)} · ${kind === "drop_off" ? "Drop-off" : "Pick-up"}`}
-                    </Text>
-                    <Text style={styles.body}>{`${pets(b)} · ${b.ownerName}`}</Text>
-                    {h ? <Text style={styles.muted}>{placeLabel(h.locationType, h.note, b, "sitter")}</Text> : null}
-                  </Card>
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : null}
-
-        {upcoming.length > 0 ? (
-          <View style={styles.section} testID="today-upcoming">
-            <Text accessibilityRole="header" style={styles.heading}>
-              Upcoming
-            </Text>
-            {upcoming.slice(0, 2).map((b) => (
-              <Pressable key={b.id} accessibilityRole="button" onPress={() => open(b)} testID={`request-row-${b.id}`}>
+  // Handoffs due today and the next bookings: what is still to do, on both sides of Home.
+  const lists = (
+    <>
+      {due.length > 0 ? (
+        <View style={styles.section} testID="today-due">
+          <Text accessibilityRole="header" style={styles.heading}>
+            Today
+          </Text>
+          {due.slice(0, 2).map(({ booking: b, kind, at }) => {
+            const h = kind === "drop_off" ? b.dropOff : b.pickUp;
+            return (
+              <Pressable key={`${b.id}-${kind}`} accessibilityRole="button" onPress={() => open(b)} testID={`handoff-row-${b.id}-${kind}`}>
                 <Card style={styles.card}>
-                  <Text style={styles.title}>{`${b.ownerName} · ${b.dropOff ? formatInstant(b.dropOff.at) : ""}`}</Text>
-                  <Text style={styles.body}>{pets(b)}</Text>
+                  <Text style={styles.title}>
+                    {`${formatTime(isoToZoned(at).time)} · ${kind === "drop_off" ? "Drop-off" : "Pick-up"}`}
+                  </Text>
+                  <Text style={styles.body}>{`${pets(b)} · ${b.ownerName}`}</Text>
+                  {h ? <Text style={styles.muted}>{placeLabel(h.locationType, h.note, b, "sitter")}</Text> : null}
                 </Card>
               </Pressable>
-            ))}
-          </View>
-        ) : null}
+            );
+          })}
+        </View>
+      ) : null}
+
+      {upcoming.length > 0 ? (
+        <View style={styles.section} testID="today-upcoming">
+          <Text accessibilityRole="header" style={styles.heading}>
+            Upcoming
+          </Text>
+          {upcoming.slice(0, 2).map((b) => (
+            <Pressable key={b.id} accessibilityRole="button" onPress={() => open(b)} testID={`request-row-${b.id}`}>
+              <Card style={styles.card}>
+                <Text style={styles.title}>{`${b.ownerName} · ${b.dropOff ? formatInstant(b.dropOff.at) : ""}`}</Text>
+                <Text style={styles.body}>{pets(b)}</Text>
+              </Card>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+    </>
+  );
+
+  // On duty: Today is the front, the pixel pet room the back (the flip button, like the owner's Home).
+  if (caringPets.length > 0) {
+    return (
+      <View style={styles.page} onLayout={measure}>
+        <Pager
+          testID="home-pager"
+          pages={[
+            { label: "Today", content: <SitterToday pets={caringPets} top={banners} bottom={lists} /> },
+            {
+              label: "Pet",
+              content: (
+                <Screen contentStyle={styles.content}>
+                  <SitterPetRoom pets={caringPets} height={pageHeight > 0 ? Math.round(pageHeight * ROOM_SHARE) : ROOM_FALLBACK} />
+                </Screen>
+              ),
+            },
+          ]}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.page}>
+      <Screen contentStyle={styles.content} testID="sitter-home">
+        {banners}
+        {lists}
       </Screen>
     </View>
   );
