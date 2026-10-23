@@ -114,7 +114,7 @@ test.describe("pickMedia", () => {
     await app(page).getByTestId("feed-add-photo").click();
     await expect(app(page).getByTestId("media-picker")).toBeVisible();
     // Photo + video samples (pet FAB allows both).
-    for (const id of ["meal", "walk", "nap", "play_fetch"]) {
+    for (const id of ["meal", "walk", "nap", "play_fetch", "mumu_kitchen", "mumu_party_hat", "mumu_blossom_basket"]) {
       await expect(app(page).getByTestId(`sample-${id}`)).toBeVisible();
     }
     await app(page).getByTestId("sample-walk").click();
