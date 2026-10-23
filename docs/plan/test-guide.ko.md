@@ -306,7 +306,7 @@
 | LIVE-1 | 시터가 할 일 · 체크인 · 사진을 남긴 뒤 오너 Home (돌보는 중) | 초록 히어로 아래 **Latest from 시터** 카드 한 장(최신 1건). 탭하면 그 항목이 **History에서 바로 열림**(사진이면 큰 사진 시트), 알림장이면 그 알림장. Home에 Live updates 목록은 없음(벨 → Notifications) | 🤖 `live-updates` | ➖ |
 | LIVE-2 | 벨 → Notifications | 읽지 않은 알림은 굵게, 밀어서 삭제 · Mark all as read · Clear all, **History** 링크(알림이 없을 때도 있음) | 🤖 `live-updates` | ➖ |
 | LIVE-6 | 시터가 아무것도 기록하지 않은 날 오너 Home (돌보는 중) | 타일이 **0/0 care done · 0 photos today · 0m of walks** | 🤖 `live-updates` | ➖ |
-| LIVE-7 | 오너 Home (돌보는 중) | 초록 히어로 "Max is with Chloe" · Day N of M · 오른쪽 **시터 사진**(없으면 이니셜), 탭하면 시터가 올린 사진 전부(여러 장은 옆으로 넘김) · **Today's care N of M done** 진행바(할 일 개수만큼 칸, 개수에 따라 칸 너비가 늘고 줄어듦; 할 일이 없으면 0 of 0). 집에 있는 펫은 히어로에 안 나옴. 돌봄 중이 아니면 히어로 · 타일 · Latest 없이 Your pets만 | 🤖 `live-updates` | ➖ |
+| LIVE-7 | 오너 Home (돌보는 중) | 초록 히어로 "Max is with Chloe" · Day N of M · 오른쪽 **시터 사진**(없으면 이니셜), 탭하면 시터가 올린 사진 전부(여러 장은 옆으로 넘김) · **Today's care N of M done** 진행바(할 일 개수만큼 칸, 개수에 따라 칸 너비가 늘고 줄어듦; 할 일이 없으면 0 of 0. 총 개수 = 맡은 모든 펫의 오늘 할 일 합계(맡기기 전 시각 포함), Heads-up은 할 일이 아니라 안 셈). 집에 있는 펫은 히어로에 안 나옴. 돌봄 중이 아니면 히어로 · 타일 · Latest 없이 Your pets만 | 🤖 `live-updates` | ➖ |
 | LIVE-8 | 시터가 요청을 **Decline** 함 | 오너 **Notifications**에 읽지 않은 알림. 탭 → 노트 시트(**Close는 그냥 닫힘**). 답은 펫 화면 빨간 상자에 남음. (Home에 고정되던 카드는 없어짐) | 🤖 `care-request` | ➖ |
 | LIVE-9 | 시터가 **Counter-request** 를 보냄 | Notifications에 알림. 탭 → 노트 시트 → 펫 화면에서 Accept/Decline | 🤖 `care-request` | ➖ |
 | LIVE-5 | **두 브라우저**: 오너가 Home을 연 채 시터가 체크인 | 오너 Home에 **새로고침 없이** 카드 추가 | **👤만** (실시간) | ➖ |
