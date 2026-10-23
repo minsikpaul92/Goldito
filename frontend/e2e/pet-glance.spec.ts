@@ -98,4 +98,23 @@ test.describe("pet at a glance", () => {
     await expect(card).toContainText("Max at a glance");
     await expect(card.getByTestId(`glance-${MAX.id}-needs`)).toHaveCount(0);
   });
+  test("the owner can change the photo from the avatar and retakes the personality questions on the pet", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [MAX]);
+    Object.assign(db.pets[0], { profile: PROFILE });
+    db.pet_photos.push({ id: "ph1", pet_id: MAX.id, public_id: "goldito/pet-profile/x/1", position: 0 });
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto(`/owner/pets/${MAX.id}`);
+    const screen = app(page);
+    await expect(screen.getByTestId("pet-avatar-photo")).toBeVisible();
+    await expect(screen.getByTestId("pet-avatar-edit")).toBeVisible();
+
+    await screen.getByTestId("open-personality").click();
+    await expect(screen.getByTestId("personality-d1-4")).toHaveAttribute("aria-pressed", "true");
+    await screen.getByTestId("personality-d1-1").click();
+    await screen.getByTestId("personality-save").click();
+    await expect(screen.getByTestId("open-personality")).toBeVisible();
+    expect((db.pets[0].profile as { answers: Record<string, number> }).answers.d1).toBe(1);
+  });
 });

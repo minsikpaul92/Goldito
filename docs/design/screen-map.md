@@ -51,7 +51,7 @@ Shows: `BrandLogo`
 
 ### `/owner` — [app/owner/(tabs)/index.tsx](../../frontend/app/owner/(tabs)/index.tsx)
 
-Owner Home: two swipe pages (11.12). Today: live updates from the sitter (swipe to dismiss) and my pets. Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
+Owner Home: two sides of a card, flipped with a button (#286). Today: live updates from the sitter (swipe to dismiss) and my pets. Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
 
 Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard` · `PetPage`
 
@@ -228,12 +228,13 @@ Shows: `NotificationsCenter`
 
 ### `/owner/pets/[petId]` — [app/owner/pets/[petId].tsx](../../frontend/app/owner/pets/[petId].tsx)
 
-Shows: `CareTasksSection` · `HeadsUpSection` · `PetForm` · `PetGlance`
+Shows: `CareTasksSection` · `HeadsUpSection` · `PetForm` · `PetGlance` · `PetAvatarEditor`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | state.status === "missing" ? "Pet not found" : "Couldn't load this pet" | — | 44 |
-| TextButton | Life Record | `open-life-record` | 74 |
+| EmptyState | state.status === "missing" ? "Pet not found" : "Couldn't load this pet" | — | 49 |
+| TextButton | Retake personality | `open-personality` | 69 |
+| TextButton | Life Record | `open-life-record` | 81 |
 
 ### `/owner/pets/[petId]/care-request` — [app/owner/pets/[petId]/care-request.tsx](../../frontend/app/owner/pets/[petId]/care-request.tsx)
 
@@ -249,6 +250,17 @@ Shows: `CareLineBuilder` · `ChecklistCard`
 | Button | busy === "sending" ? "Sending…" : `Send request to ${stay.sitterName}` | `care-request-send` | 314 |
 | Button | Done | `care-request-done` | 322 |
 | Pressable | — | `undo-restore` | 330 |
+
+### `/owner/pets/[petId]/personality` — [app/owner/pets/[petId]/personality.tsx](../../frontend/app/owner/pets/[petId]/personality.tsx)
+
+Answer the personality questions again for a saved pet (the same ones as sign-up).
+
+Shows: `BigOption`
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| EmptyState | Pet not found | — | 37 |
+| Button | Save | `personality-save` | 67 |
 
 ### `/owner/pets/[petId]/record` — [app/owner/pets/[petId]/record.tsx](../../frontend/app/owner/pets/[petId]/record.tsx)
 
@@ -1030,12 +1042,18 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | Booked and paid. Tap to dismiss | `paid-confirmation` | 26 |
 
+### PetAvatarEditor — [components/PetAvatarEditor.tsx](../../frontend/components/PetAvatarEditor.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | cover ? "Change photo" : "Add photo" | `pet-avatar` | 70 |
+
 ### PetCard — [components/PetCard.tsx](../../frontend/components/PetCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 26 |
-| Tag | `allergy.allergen` | — | 51 |
+| Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 39 |
+| Tag | `allergy.allergen` | — | 68 |
 
 ### PetForm — [components/PetForm.tsx](../../frontend/components/PetForm.tsx)
 
@@ -1524,4 +1542,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-448 actions · 447 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+451 actions · 450 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
