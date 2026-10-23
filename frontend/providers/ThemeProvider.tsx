@@ -4,6 +4,10 @@ import { ReactNode, createContext, useContext, useMemo, useState } from "react";
 import { Platform } from "react-native";
 
 import { Theme, ThemeName, buildTheme, isThemeName } from "../theme/themes";
+import { loadBodyFont } from "../theme/bodyFont";
+
+// Body text face (web): Plus Jakarta Sans, before the first render so text doesn't jump twice.
+loadBodyFont();
 
 /** The app's look. `default` is the earlier look, kept for debugging (`?skin=default`). */
 const DEFAULT_SKIN: ThemeName = "expressive";
