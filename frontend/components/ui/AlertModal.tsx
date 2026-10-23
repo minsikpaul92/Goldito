@@ -1,6 +1,6 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "./Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
@@ -33,7 +33,7 @@ export function AlertModal({ visible, title, message, chips = [], actionLabel, o
         {/* Figma 1673:44181: a red band says DANGER at a glance; the cream body keeps the details readable (audit F26). */}
         <View style={styles.band}>
           <View style={styles.badge}>
-            <Ionicons name="warning" size={34} color={theme.color.error} />
+            <Icon name="warning" size={34} color={theme.color.error} />
           </View>
           <Text accessibilityRole="header" style={styles.title}>
             {title}

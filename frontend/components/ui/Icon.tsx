@@ -6,6 +6,7 @@ import Calendar from "lucide-react-native/icons/calendar";
 import Camera from "lucide-react-native/icons/camera";
 import Car from "lucide-react-native/icons/car";
 import ChevronDown from "lucide-react-native/icons/chevron-down";
+import Check from "lucide-react-native/icons/check";
 import ChevronLeft from "lucide-react-native/icons/chevron-left";
 import ChevronRight from "lucide-react-native/icons/chevron-right";
 import Circle from "lucide-react-native/icons/circle";
@@ -24,11 +25,13 @@ import Mic from "lucide-react-native/icons/mic";
 import Minus from "lucide-react-native/icons/minus";
 import PawPrint from "lucide-react-native/icons/paw-print";
 import Plus from "lucide-react-native/icons/plus";
+import RefreshCw from "lucide-react-native/icons/refresh-cw";
 import Settings from "lucide-react-native/icons/settings";
 import Sparkles from "lucide-react-native/icons/sparkles";
 import Square from "lucide-react-native/icons/square";
 import SquareCheck from "lucide-react-native/icons/square-check";
 import Tag from "lucide-react-native/icons/tag";
+import TriangleAlert from "lucide-react-native/icons/triangle-alert";
 import User from "lucide-react-native/icons/user";
 import Users from "lucide-react-native/icons/users";
 import Video from "lucide-react-native/icons/video";
@@ -66,7 +69,9 @@ const ICONS = {
   quick: Zap,
   mic: Mic,
   stop: Square,
+  refresh: RefreshCw,
   // choices
+  check: Check,
   selected: CircleCheck,
   radioOn: CircleDot,
   radioOff: Circle,
@@ -85,6 +90,7 @@ const ICONS = {
   returned: LogOut,
   photo: Image,
   video: Video,
+  warning: TriangleAlert,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;
