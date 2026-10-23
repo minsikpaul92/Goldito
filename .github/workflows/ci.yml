@@ -126,6 +126,8 @@ jobs:
         run: node scripts/changelog.mjs --check && node --test scripts/
       - name: Screen map matches the code (docs/design/screen-map.md)
         run: node scripts/screen-map.mjs --check
+      - name: Art module matches the .svg files (assets/art)
+        run: node scripts/art.mjs --check
       - name: Design tokens (no new raw colours, font sizes or emoji labels; design site ds-status.html)
         run: node scripts/check-tokens.mjs
       - name: Typecheck

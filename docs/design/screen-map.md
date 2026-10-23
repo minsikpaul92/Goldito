@@ -320,6 +320,12 @@ Owner Snap tab (D61): treat check · mood · sticker.
 
 Shows: `SnapScreen`
 
+### `/owner/snap/checks` — [app/owner/snap/checks.tsx](../../frontend/app/owner/snap/checks.tsx)
+
+Owner Snap → See all treat checks.
+
+Shows: `ChecksScreen`
+
 ### `/owner/snap/mood` — [app/owner/snap/mood.tsx](../../frontend/app/owner/snap/mood.tsx)
 
 Owner Snap → Mood (12.2b).
@@ -565,6 +571,12 @@ Shows: `ClosingRulesSheet` · `ScheduleDraft` · `ScheduleSheet` · `SlotCalenda
 Sitter Snap tab (D61): treat check · mood · sticker.
 
 Shows: `SnapScreen`
+
+### `/sitter/snap/checks` — [app/sitter/snap/checks.tsx](../../frontend/app/sitter/snap/checks.tsx)
+
+Sitter Snap → See all treat checks.
+
+Shows: `ChecksScreen`
 
 ### `/sitter/snap/mood` — [app/sitter/snap/mood.tsx](../../frontend/app/sitter/snap/mood.tsx)
 
@@ -1487,6 +1499,20 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Sheet | clearing ? "Clearing…" : `Clear ${items.length} notification${items.length === 1 ? "" : "s"}` | `clear-all-sheet` | 242 |
 | Button | clearing ? "Clearing…" : `Clear ${items.length} notification${items.length === 1 ? "" : "s"}` | `clear-all-confirm` | 250 |
 
+### CheckRow — [features/snap/CheckRow.tsx](../../frontend/features/snap/CheckRow.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | `testID` | 24 |
+
+### ChecksScreen — [features/snap/ChecksScreen.tsx](../../frontend/features/snap/ChecksScreen.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| EmptyState | No pet yet | — | 35 |
+| EmptyState | No checks yet | — | 39 |
+| CheckRow | — | `snap-checks-row` | 42 |
+
 ### DecoratedReport — [features/snap/DecoratedReport.tsx](../../frontend/features/snap/DecoratedReport.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1504,10 +1530,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Mood | — | 54 |
-| Button | shown \|\| noPet ? "Try another photo" : "Pick a photo or clip" | `mood-pick` | 175 |
-| Pressable | ``${tag(index)}: ${p.top}`` | ``mood-box-${index}`` | 214 |
-| Pressable | — | ``mood-pet-${index}`` | 237 |
+| EmptyState | Mood | — | 55 |
+| Button | shown \|\| noPet ? "Try another photo" : "Pick a photo or clip" | `mood-pick` | 178 |
+| Pressable | ``${tag(index)}: ${p.top}`` | ``mood-box-${index}`` | 217 |
+| Pressable | — | ``mood-pet-${index}`` | 240 |
 
 ### SharePageSheet — [features/snap/SharePageSheet.tsx](../../frontend/features/snap/SharePageSheet.tsx)
 
@@ -1528,44 +1554,46 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `snap-recent-row` | 61 |
+| Pressable | — | ``snap-pet-${p.id}`` | 52 |
+| TextButton | See all | `snap-see-all` | 110 |
+| CheckRow | — | `snap-recent-row` | 114 |
 
 ### SnapToolCard — [features/snap/SnapToolCard.tsx](../../frontend/features/snap/SnapToolCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${title}. ${blurb}`` | `testID` | 22 |
+| Pressable | ``${title}. ${blurb}`` | `testID` | 26 |
 
 ### StickerScreen — [features/snap/StickerScreen.tsx](../../frontend/features/snap/StickerScreen.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Sticker | — | 57 |
-| EmptyState | No pet in your care right now | — | 208 |
-| EmptyState | Add a pet first | — | 210 |
-| Pressable | Tap your pet to cut it out | `sticker-photo` | 241 |
-| Button | Save sticker | `sticker-save` | 291 |
-| TextButton | ⬇ Download sticker | `sticker-download` | 292 |
-| TextButton | Pick another photo | `sticker-pick-again` | 293 |
-| Button | photo ? "Pick another photo" : "Pick a photo" | `sticker-pick` | 296 |
-| Pressable | Download sticker | `sticker-tile-download` | 320 |
-| Pressable | Delete sticker | `sticker-delete` | 331 |
-| Sheet | Delete sticker | `sticker-delete-sheet` | 347 |
-| Button | Delete sticker | `sticker-delete-confirm` | 348 |
+| EmptyState | No pet in your care right now | — | 210 |
+| EmptyState | Add a pet first | — | 212 |
+| Pressable | Tap your pet to cut it out | `sticker-photo` | 243 |
+| Button | Save sticker | `sticker-save` | 293 |
+| TextButton | ⬇ Download sticker | `sticker-download` | 294 |
+| TextButton | Pick another photo | `sticker-pick-again` | 295 |
+| Button | photo ? "Pick another photo" : "Pick a photo" | `sticker-pick` | 298 |
+| Pressable | Download sticker | `sticker-tile-download` | 322 |
+| Pressable | Delete sticker | `sticker-delete` | 333 |
+| Sheet | Delete sticker | `sticker-delete-sheet` | 349 |
+| Button | Delete sticker | `sticker-delete-confirm` | 350 |
 
 ### TreatCheckScreen — [features/snap/TreatCheckScreen.tsx](../../frontend/features/snap/TreatCheckScreen.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 157 |
-| EmptyState | No pet in your care right now | — | 166 |
-| EmptyState | Add a pet first | — | 172 |
-| Button | !pet ? "Pick a pet first" : unreadable \|\| result?.partial_label ? "Retake photo" : result ? "Check another treat" : "Snap a label" | `treat-snap` | 232 |
-| Pressable | — | `treat-recent-row` | 243 |
-| AlertModal | ``Don't give this to ${name}`` | `treat-danger` | 269 |
-| Tag | `status` | — | 284 |
-| Pressable | ``${s.title} (${s.domain})`` | `treat-source` | 368 |
-| TextButton | showIngredients ? "Hide ingredients" : `Ingredients we read (${result.detected_ingredients.length})` | `treat-ingredients-toggle` | 393 |
+| EmptyState | Couldn't load your pets | — | 158 |
+| EmptyState | No pet in your care right now | — | 167 |
+| EmptyState | Add a pet first | — | 173 |
+| Button | !pet ? "Pick a pet first" : unreadable \|\| result?.partial_label ? "Retake photo" : result ? "Check another treat" : "Snap a label" | `treat-snap` | 233 |
+| Pressable | — | `treat-recent-row` | 244 |
+| AlertModal | ``Don't give this to ${name}`` | `treat-danger` | 270 |
+| Tag | `status` | — | 285 |
+| Pressable | ``${s.title} (${s.domain})`` | `treat-source` | 369 |
+| TextButton | showIngredients ? "Hide ingredients" : `Ingredients we read (${result.detected_ingredients.length})` | `treat-ingredients-toggle` | 394 |
 
 ### TripScreen — [features/transit/TripScreen.tsx](../../frontend/features/transit/TripScreen.tsx)
 
@@ -1582,4 +1610,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-475 actions · 473 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+479 actions · 477 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).

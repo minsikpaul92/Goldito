@@ -10,6 +10,7 @@
     "web": "expo start --web",
     "test:e2e": "playwright test",
     "changelog": "node scripts/changelog.mjs",
+    "art": "node scripts/art.mjs",
     "check:tokens": "node scripts/check-tokens.mjs",
     "prepare": "git config core.hooksPath .githooks || true"
   },

@@ -39,9 +39,10 @@ export function TreatCheckScreen({ role }: { role: Role }) {
 function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
   const styles = useThemedStyles(makeStyles);
   const errorDialog = useErrorDialog();
-  const { check: checkParam } = useLocalSearchParams<{ check?: string }>();
+  const { check: checkParam, pet: petParam } = useLocalSearchParams<{ check?: string; pet?: string }>();
 
-  const [petId, setPetId] = useState<string | null>(null);
+  // The Snap tab passes the pet it had picked (`?pet=`).
+  const [petId, setPetId] = useState<string | null>(petParam ?? null);
   const [step, setStep] = useState<Step | null>(null);
   const [result, setResult] = useState<SafetyCheck | null>(null);
   const [unreadable, setUnreadable] = useState(false);

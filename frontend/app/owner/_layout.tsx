@@ -51,6 +51,7 @@ export default function OwnerLayout() {
         <Stack.Screen name="diary/[entryId]" options={{ title: "Diary" }} />
         <Stack.Screen name="history" options={{ title: "History" }} />
         <Stack.Screen name="snap/treat" options={{ title: "Treat check" }} />
+        <Stack.Screen name="snap/checks" options={{ title: "Recent checks" }} />
         <Stack.Screen name="snap/mood" options={{ title: "Mood" }} />
         <Stack.Screen name="snap/sticker" options={{ title: "Sticker" }} />
       </RoleStack>
