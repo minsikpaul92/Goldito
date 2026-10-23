@@ -1,7 +1,7 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "./Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { selectable } from "./selectable";
@@ -46,7 +46,7 @@ export function OptionCard({ title, detail, leading, selected, onPress, multi, d
         {detail ? <Text style={styles.detail}>{detail}</Text> : null}
       </View>
       <View style={[styles.check, selected && styles.checkOn]}>
-        {selected ? <Ionicons name="checkmark" size={20} color={theme.color.primaryText} /> : null}
+        {selected ? <Icon name="check" size={20} color={theme.color.primaryText} /> : null}
       </View>
     </Pressable>
   );

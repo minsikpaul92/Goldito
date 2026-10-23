@@ -1,7 +1,7 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Children, Fragment, ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "./Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { tokens } from "../../theme/tokens";
 import { Theme } from "../../theme/themes";
@@ -59,7 +59,7 @@ export function ListRow({ title, subtitle, badge, tone, chevron, switchValue, on
           <Text style={styles.badgeLabel}>{badge}</Text>
         </View>
       ) : null}
-      {showChevron ? <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.text} /> : null}
+      {showChevron ? <Icon name="forward" size={theme.icon.sm} color={theme.color.text} /> : null}
       {isSwitch ? (
         <View style={[styles.track, switchValue && styles.trackOn]}>
           <View style={[styles.knob, switchValue ? styles.knobOn : styles.knobOff]} />

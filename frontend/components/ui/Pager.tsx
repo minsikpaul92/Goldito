@@ -1,7 +1,7 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { ReactNode, useMemo, useRef, useState } from "react";
 import { Animated, Easing, PanResponder, Platform, Pressable, StyleSheet, View } from "react-native";
 
+import { Icon } from "./Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
@@ -84,7 +84,7 @@ export function Pager({ pages, testID }: Props) {
           style={({ pressed }) => [styles.flip, pressed && styles.pressed]}
           testID={testID ? `${testID}-flip` : undefined}
         >
-          <Ionicons name="sync-outline" size={theme.icon.sm} color={theme.color.primary} />
+          <Icon name="refresh" size={theme.icon.sm} color={theme.color.primary} />
         </Pressable>
       </View>
       <View

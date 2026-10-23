@@ -1,6 +1,6 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "./Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { Button } from "./Button";
@@ -21,7 +21,7 @@ export function ResultState({ title, message, action, testID }: Props) {
   return (
     <View style={styles.wrap} testID={testID} accessibilityLiveRegion="polite">
       <View style={styles.check}>
-        <Ionicons name="checkmark" size={36} color={theme.color.primary} />
+        <Icon name="check" size={36} color={theme.color.primary} />
       </View>
       <Text accessibilityRole="header" style={styles.title}>
         {title}
