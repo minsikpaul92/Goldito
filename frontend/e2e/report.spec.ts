@@ -283,7 +283,7 @@ test.describe("daily report", () => {
 
     await screen.getByRole("tab", { name: /Home/ }).click();
     served.push({ id: "note-c-new", kind: "episode", label: "Threw up a little", source: "checkin", check: null, media_id: null });
-    await screen.getByRole("tab", { name: /Diary/ }).click();
+    await screen.getByRole("tab", { name: /Feed/ }).click(); // the Diary is inside Feed (#329) and stays open there
 
     await expect(chip("note-c-new")).toBeVisible();
     await expect(chip("rec-walk")).toHaveAttribute("aria-pressed", "false");

@@ -66,6 +66,16 @@ async function openBookings(page: Page, user: MockUser, home: "owner" | "sitter"
   return screen;
 }
 
+/** The Chat tab (#329): the list of chats has its own tab, out of Bookings. */
+async function openChats(page: Page, user: MockUser, home: "owner" | "sitter") {
+  await signIn(page, user);
+  await expect(page).toHaveURL(new RegExp(`/${home}$`));
+  const screen = app(page);
+  await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/${home}/chat$`));
+  return screen;
+}
+
 /** Bookings, the sitter's name, the profile, Start chat: a chat starts only from the profile. */
 async function startChatFromRow(page: Page, name: string) {
   const screen = app(page);
@@ -115,7 +125,10 @@ test.describe("chat hub", () => {
     await page.goBack();
     await page.goBack();
     await expect(page).toHaveURL(/\/owner\/bookings$/);
+    await expect(screen.getByTestId("chat-row-Chloe")).toHaveCount(0); // chats have their own tab now (#329)
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
     await expect(screen.getByTestId("chat-row-Chloe")).toContainText("Max is welcome!");
+    await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
     await startChatFromRow(page, "Chloe");
     await expect(page).toHaveURL(url);
     await expect(screen.getByTestId("chat-bubble-me")).toHaveCount(3);
@@ -128,7 +141,7 @@ test.describe("chat hub", () => {
     seedThread(db);
     const screen = await openBookings(page, SITTER, "sitter");
 
-    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
     await expect(screen.getByTestId("chat-row-Robert")).toContainText("He eats at 8");
     await expect(screen.getByTestId("chat-unread-Robert")).toHaveText("2");
     await screen.getByTestId("chat-row-Robert").click();
@@ -142,50 +155,55 @@ test.describe("chat hub", () => {
     }
 
     await page.goBack();
-    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
     await expect(screen.getByTestId("chat-row-Robert")).toContainText("And the leash");
     await expect(screen.getByTestId("chat-unread-Robert")).toHaveCount(0);
   });
 
-  test("a sitter with something new in a chat lands on Chats, pointed at the newest one; with nothing new the usual tab (#228)", async ({ page }) => {
+  test("the Chat tab counts what is unread and points at the newest chat with something new (#228, #329)", async ({ page }) => {
     const JOY: MockUser = { id: "00000000-0000-4000-8000-000000000005", email: "joy@goldito.test", password: "coco-and-toto", role: "owner", displayName: "Joy" };
     const JOY_THREAD = "00000000-0000-4000-8000-0000000000f2";
     const { db } = await mockSupabase(page, [OWNER, SITTER, JOY]);
     seedThread(db); // Robert wrote twice, unread, at 10:03
     db.chat_threads.push({ id: JOY_THREAD, owner_id: JOY.id, sitter_id: SITTER.id, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null });
     db.chat_messages.push({ id: "j1", thread_id: JOY_THREAD, sender_id: JOY.id, kind: "text", body: "Hi! Are you free in May?", card: null, created_at: "2026-10-10T10:05:00.000Z" });
-    const screen = await openBookings(page, SITTER, "sitter");
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    const screen = app(page);
+    const chatTab = screen.getByRole("tab").filter({ hasText: "Chat" });
 
-    // Two owners wrote: Chats opens, and the newer chat (Joy) is the one pointed at.
-    await expect(screen.getByTestId("sitter-bookings-tabs-chats")).toHaveAttribute("aria-checked", "true");
+    // Two owners wrote: the tab says 3, and in the list the newer chat (Joy) is the one pointed at.
+    await expect(chatTab).toContainText("3");
+    await chatTab.click();
     await expect(screen.getByTestId("chat-row-Joy-new")).toBeVisible();
     await expect(screen.getByTestId("chat-row-Robert-new")).toHaveCount(0);
+    // Bookings has no chats any more.
+    await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
+    await expect(screen.getByTestId("sitter-bookings-tabs-chats")).toHaveCount(0);
 
-    // A tab picked by hand holds while the sitter stays.
-    await screen.getByTestId("sitter-bookings-tabs-past").click();
-    await expect(screen.getByTestId("sitter-bookings-tabs-past")).toHaveAttribute("aria-checked", "true");
-
-    // Read both chats: back on Bookings there is nothing new, so the usual first tab (Requests) opens.
+    // Read both chats: nothing new, no number on the tab and no row pointed at.
     for (const thread of [THREAD, JOY_THREAD]) {
       await page.goto(`/chat/${thread}`);
       await expect(screen.getByTestId("chat-input")).toBeVisible();
     }
-    await page.goto("/sitter");
-    await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
-    await expect(screen.getByTestId("sitter-bookings-tabs-requests")).toHaveAttribute("aria-checked", "true");
+    await page.goto("/sitter/chat");
+    await expect(screen.getByTestId("chat-row-Robert")).toBeVisible();
     await expect(screen.getByTestId(/^chat-row-.*-new$/)).toHaveCount(0);
+    await expect(chatTab).not.toContainText(/\d/);
   });
 
-  test("a chat that turns unread while the sitter is on Bookings moves them to Chats without a reload (#228)", async ({ page }) => {
+  test("a chat that turns unread while the sitter is elsewhere shows on the Chat tab without a reload (#228, #329)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedThread(db);
     db.chat_threads[0].sitter_read_at = "2026-10-10T10:09:00.000Z"; // everything read
     const screen = await openBookings(page, SITTER, "sitter");
-    await expect(screen.getByTestId("sitter-bookings-tabs-requests")).toHaveAttribute("aria-checked", "true");
+    const chatTab = screen.getByRole("tab").filter({ hasText: "Chat" });
+    await expect(chatTab).not.toContainText(/\d/);
 
-    // Robert writes while Chloe is looking at Requests.
+    // Robert writes while Chloe is looking at Bookings.
     db.chat_messages.push({ id: "m9", thread_id: THREAD, sender_id: OWNER.id, kind: "text", body: "One more thing", card: null, created_at: new Date().toISOString() });
-    await expect(screen.getByTestId("sitter-bookings-tabs-chats")).toHaveAttribute("aria-checked", "true", { timeout: 15_000 });
+    await expect(chatTab).toContainText("1", { timeout: 15_000 });
+    await chatTab.click();
     await expect(screen.getByTestId("chat-row-Robert-new")).toBeVisible();
   });
 
@@ -193,7 +211,7 @@ test.describe("chat hub", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
     seedThread(db);
-    const screen = await openBookings(page, OWNER, "owner");
+    const screen = await openChats(page, OWNER, "owner");
 
     await expect(screen.getByTestId("chat-row-Chloe")).toBeVisible();
     await screen.getByTestId("chat-row-Chloe").click();
@@ -210,7 +228,8 @@ test.describe("chat hub", () => {
     expect(db.chat_threads[0].owner_left_at).not.toBeNull();
     expect(db.chat_threads[0].sitter_left_at).toBeNull();
 
-    // Start it again: the chat is back with its history.
+    // Start it again from Bookings: the chat is back with its history.
+    await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
     await startChatFromRow(page, "Chloe");
     await expect(screen.getByTestId("chat-bubble-me")).toHaveCount(3);
   });
@@ -229,7 +248,7 @@ test.describe("chat hub", () => {
       created_at: "2026-10-02T18:00:00Z",
     });
     db.booking_pets.push({ booking_id: BOOKING, pet_id: MAX });
-    const screen = await openBookings(page, OWNER, "owner");
+    const screen = await openChats(page, OWNER, "owner");
 
     await screen.getByTestId("chat-row-Chloe").click();
     await expect(screen.getByTestId("stage-bar")).toBeVisible();
@@ -306,7 +325,7 @@ test.describe("chat hub", () => {
     seedThread(db);
     db.chat_messages.unshift({ id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: { type: "stay", drop_off_at: "2030-10-24T13:00:00Z", pick_up_at: "2030-10-28T21:00:00Z", pets: [{ id: MAX, name: "Max" }] }, created_at: "2026-10-10T09:59:00.000Z" });
     db.profile_photos.push({ id: "ph1", profile_id: SITTER.id, public_id: "goldito/chloe/1" }, { id: "ph2", profile_id: SITTER.id, public_id: "goldito/chloe/2" });
-    const screen = await openBookings(page, OWNER, "owner");
+    const screen = await openChats(page, OWNER, "owner");
     await screen.getByTestId("chat-row-Chloe").click();
 
     await expect(screen.getByTestId("chat-header-name")).toHaveText("Chloe");
@@ -328,7 +347,7 @@ test.describe("chat hub", () => {
     db.sitter_profiles.push({ id: SITTER.id, service_area: "Toronto M4W", services: ["boarding"] });
     db.chat_threads.push({ id: THREAD, owner_id: OWNER.id, sitter_id: SITTER.id, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null });
     db.chat_messages.push({ id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: { type: "stay", drop_off_at: "2030-10-24T13:00:00Z", pick_up_at: "2030-10-28T21:00:00Z", pets: [{ id: MAX, name: "Max" }, { id: MOCHI, name: "Mochi" }] }, created_at: "2026-10-10T09:59:00.000Z" });
-    const screen = await openBookings(page, OWNER, "owner");
+    const screen = await openChats(page, OWNER, "owner");
     await screen.getByTestId("chat-row-Chloe").click();
 
     await screen.getByTestId("chat-request-booking").click();
@@ -396,7 +415,7 @@ test.describe("chat hub", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedThread(db);
     const screen = await openBookings(page, SITTER, "sitter");
-    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
     await screen.getByTestId("chat-row-Robert").click();
 
     await expect(screen.getByTestId("chat-chip-1")).toHaveText("Yes, I can host");
@@ -435,7 +454,7 @@ test.describe("chat hub", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedThread(db);
     const screen = await openBookings(page, SITTER, "sitter");
-    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
     await screen.getByTestId("chat-row-Robert").click();
     await expect(screen.getByTestId("chat-chip-1")).toHaveText("Yes, I can host");
 
@@ -474,7 +493,7 @@ test.describe("chat hub", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedThread(db);
     const screen = await openBookings(page, SITTER, "sitter");
-    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
     await screen.getByTestId("chat-row-Robert").click();
     await expect(screen.getByTestId("chat-chip-1")).toBeVisible();
     await screen.getByTestId("chat-input").fill("anything at all");
@@ -498,7 +517,7 @@ test.describe("chat hub", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedThread(db);
     const screen = await openBookings(page, SITTER, "sitter");
-    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
     await screen.getByTestId("chat-row-Robert").click();
     await expect(screen.getByTestId("chat-chip-1")).toHaveText("Yes, I can host");
 
@@ -519,7 +538,7 @@ test.describe("chat hub", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedThread(db);
     const screen = await openBookings(page, SITTER, "sitter");
-    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
     await screen.getByTestId("chat-row-Robert").click();
     const input = screen.getByTestId("chat-input");
     const empty = (await box(input)).height;
@@ -566,7 +585,7 @@ test.describe("chat hub", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedThread(db);
     const screen = await openBookings(page, SITTER, "sitter");
-    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
     // The list asked for this chat's chips as soon as it saw something new, before the chat was opened.
     await expect.poll(() => calls).toBe(1);
     await screen.getByTestId("chat-row-Robert").click();
@@ -584,7 +603,7 @@ test.describe("chat hub", () => {
 
     // Prefetched before the chat opens: a second visit has them ready with no new ask.
     await page.goBack();
-    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
     await screen.getByTestId("chat-row-Robert").click();
     await expect(screen.getByTestId("chat-chip-1")).toBeVisible();
     expect(calls).toBe(1);
@@ -595,7 +614,7 @@ test.describe("chat hub", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedThread(db);
     const screen = await openBookings(page, SITTER, "sitter");
-    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
     await screen.getByTestId("chat-row-Robert").click();
     await expect(screen.getByTestId("chat-input")).toBeVisible();
     await expect(screen.getByTestId("chat-chips")).toHaveCount(0);
@@ -640,7 +659,7 @@ test.describe("chat hub", () => {
     db.chat_threads.push({ id: THREAD, owner_id: OWNER.id, sitter_id: SITTER.id, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null });
     db.chat_messages.push({ id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: STAY_CARD, created_at: "2026-10-10T09:59:00.000Z" });
     const screen = await openBookings(page, SITTER, "sitter");
-    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
     await screen.getByTestId("chat-row-Robert").click();
 
     await expect(screen.getByTestId("chat-stay-line")).toHaveText(/ · Max$/);
@@ -663,7 +682,7 @@ test.describe("chat hub", () => {
     db.chat_threads.push({ id: THREAD, owner_id: OWNER.id, sitter_id: SITTER.id, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null });
     db.chat_messages.push({ id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: STAY_CARD, created_at: "2026-10-10T09:59:00.000Z" });
     const screen = await openBookings(page, SITTER, "sitter");
-    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
     await screen.getByTestId("chat-row-Robert").click();
 
     // The draft is the server's number; nothing is sent until Send.
@@ -691,7 +710,7 @@ test.describe("chat hub", () => {
     db.chat_threads.push({ id: THREAD, owner_id: OWNER.id, sitter_id: SITTER.id, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null });
     db.chat_messages.push({ id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: STAY_CARD, created_at: "2026-10-10T09:59:00.000Z" });
     const screen = await openBookings(page, SITTER, "sitter");
-    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
     await screen.getByTestId("chat-row-Robert").click();
 
     await screen.getByTestId("chat-plus").click();
@@ -724,7 +743,7 @@ test.describe("chat hub", () => {
         created_at: "2026-10-10T10:00:00.000Z",
       },
     );
-    const screen = await openBookings(page, OWNER, "owner");
+    const screen = await openChats(page, OWNER, "owner");
     await expect(screen.getByTestId("chat-row-Chloe")).toContainText("Quote"); // the list names a quote card
     await screen.getByTestId("chat-row-Chloe").click();
 
@@ -758,7 +777,7 @@ test.describe("chat hub", () => {
     db.quote_error = "rates_not_set";
     db.quote_error_detail = "boarding";
     const screen = await openBookings(page, SITTER, "sitter");
-    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
     await screen.getByTestId("chat-row-Robert").click();
     await screen.getByTestId("chat-send-quote").click();
     // The draft says why before anything is sent.
