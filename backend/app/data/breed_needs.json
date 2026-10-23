@@ -482,6 +482,31 @@
         }
       ],
       "reviewed": false
+    },
+    "french bulldog": {
+      "name": "French Bulldog",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "grooming",
+          "text": "Brush coat weekly",
+          "source": 0,
+          "quote": "The coat needs only occasional brushing, once every week or so, to remove dead hair."
+        },
+        {
+          "kind": "care",
+          "text": "Watch for overheating",
+          "source": 0,
+          "quote": "Extremely prone to overheating because of its flat face."
+        }
+      ],
+      "sources": [
+        {
+          "title": "French Bulldog | VCA Animal Hospitals",
+          "url": "https://vcahospitals.com/willow-creek/know-your-pet/dog-breeds/french-bulldog"
+        }
+      ],
+      "reviewed": false
     }
   },
   "cat": {
@@ -585,6 +610,75 @@
         }
       ],
       "reviewed": false
+    },
+    "siamese": {
+      "name": "Siamese",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "grooming",
+          "text": "Weekly combing removes dead hair",
+          "source": 0,
+          "quote": "Running a quick comb once a week is ample to remove dead hair in the coat"
+        },
+        {
+          "kind": "care",
+          "text": "May develop anxiety when left alone",
+          "source": 0,
+          "quote": "Siamese rarely needs to be bathed. Suggested Nutritional Needs for Siamese [...] Can exhibit anxiety from being left home alone by over grooming, possibly leading to psychogenic alopecia"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Siamese | VCA Animal Hospitals",
+          "url": "https://vcahospitals.com/know-your-pet/cat-breeds/siamese"
+        }
+      ],
+      "reviewed": false
+    },
+    "persian": {
+      "name": "Persian",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "grooming",
+          "text": "Daily grooming with metal comb",
+          "source": 0,
+          "quote": "Persian and Exotic type coats will require daily grooming with a wide, metal comb"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Fluffy Coats and How to Properly Care For Them - The Cat Fanciers' Association",
+          "url": "https://cfa.org/cat-talk/fluffy-coats-and-how-to-properly-care-for-them"
+        }
+      ],
+      "reviewed": false
+    },
+    "british shorthair": {
+      "name": "British Shorthair",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "grooming",
+          "text": "Weekly combing to keep coat mat-free",
+          "source": 0,
+          "quote": "Run a comb through its coat at least weekly to keep it mat-free and looking healthy."
+        },
+        {
+          "kind": "care",
+          "text": "Measure food portions to prevent becoming overweight",
+          "source": 0,
+          "quote": "measure food portions to prevent this breed from becoming overweight."
+        }
+      ],
+      "sources": [
+        {
+          "title": "British Shorthair | VCA Animal Hospitals",
+          "url": "https://vcahospitals.com/know-your-pet/cat-breeds/british-shorthair"
+        }
+      ],
+      "reviewed": true
     }
   }
 }

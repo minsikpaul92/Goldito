@@ -11,7 +11,11 @@ import { Screen } from "../../components/ui/Screen";
 import { TextButton } from "../../components/ui/TextButton";
 import { TextField } from "../../components/ui/TextField";
 import { describeAuthError } from "../../lib/authErrors";
-import { SUPABASE_NOT_CONFIGURED, getSupabase, isSupabaseConfigured } from "../../lib/supabase";
+import {
+  SUPABASE_NOT_CONFIGURED,
+  getSupabase,
+  isSupabaseConfigured,
+} from "../../lib/supabase";
 import { Role } from "../../providers/SessionProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
@@ -39,7 +43,8 @@ export default function SignupScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   // Shown as soon as the second password is typed, not only on submit.
-  const mismatch = confirm !== "" && confirm !== password ? "Passwords don't match." : null;
+  const mismatch =
+    confirm !== "" && confirm !== password ? "Passwords don't match." : null;
 
   const canSubmit =
     isSupabaseConfigured &&
@@ -58,7 +63,9 @@ export default function SignupScreen() {
       return;
     }
     if (password.length < MIN_PASSWORD_LENGTH) {
-      setError(`Use a password with at least ${MIN_PASSWORD_LENGTH} characters.`);
+      setError(
+        `Use a password with at least ${MIN_PASSWORD_LENGTH} characters.`,
+      );
       return;
     }
     setSubmitting(true);
@@ -69,7 +76,9 @@ export default function SignupScreen() {
       email: email.trim(),
       password,
       // One display name for everything that shows or reads a name (the AI takes the first word as the first name).
-      options: { data: { role, display_name: `${firstName.trim()} ${lastName.trim()}` } },
+      options: {
+        data: { role, display_name: `${firstName.trim()} ${lastName.trim()}` },
+      },
     });
     setSubmitting(false);
     if (authError) {
@@ -89,7 +98,6 @@ export default function SignupScreen() {
       <View style={styles.header}>
         <BrandLogo height={32} testID="signup-brand" />
         <Text style={styles.title}>Create your account</Text>
-        <Text style={styles.subtitle}>First, how will you use Goldito?</Text>
       </View>
 
       {!isSupabaseConfigured ? (
@@ -102,7 +110,6 @@ export default function SignupScreen() {
         <RoleCard
           icon="home"
           title="I'm a pet owner"
-          description="Updates and photos arrive while you're away."
           selected={role === "owner"}
           onPress={() => setRole("owner")}
           testID="role-owner"
@@ -110,7 +117,6 @@ export default function SignupScreen() {
         <RoleCard
           icon="heart"
           title="I'm a pet sitter"
-          description="Care, snap, tap. No reports to type."
           selected={role === "sitter"}
           onPress={() => setRole("sitter")}
           testID="role-sitter"
@@ -118,22 +124,28 @@ export default function SignupScreen() {
       </View>
 
       <View style={styles.form}>
-        <TextField
-          label="First name"
-          value={firstName}
-          onChangeText={setFirstName}
-          autoComplete="given-name"
-          textContentType="givenName"
-          testID="signup-first-name"
-        />
-        <TextField
-          label="Last name"
-          value={lastName}
-          onChangeText={setLastName}
-          autoComplete="family-name"
-          textContentType="familyName"
-          testID="signup-last-name"
-        />
+        <View style={styles.nameRow}>
+          <View style={styles.nameField}>
+            <TextField
+              label="First name"
+              value={firstName}
+              onChangeText={setFirstName}
+              autoComplete="given-name"
+              textContentType="givenName"
+              testID="signup-first-name"
+            />
+          </View>
+          <View style={styles.nameField}>
+            <TextField
+              label="Last name"
+              value={lastName}
+              onChangeText={setLastName}
+              autoComplete="family-name"
+              textContentType="familyName"
+              testID="signup-last-name"
+            />
+          </View>
+        </View>
         <TextField
           label="Email"
           value={email}
@@ -169,7 +181,11 @@ export default function SignupScreen() {
           testID="signup-confirm"
         />
         {error ? (
-          <Text accessibilityRole="alert" style={styles.error} testID="signup-error">
+          <Text
+            accessibilityRole="alert"
+            style={styles.error}
+            testID="signup-error"
+          >
             {error}
           </Text>
         ) : null}
@@ -182,7 +198,11 @@ export default function SignupScreen() {
         />
       </View>
 
-      <TextButton label="Already have an account? Sign in" onPress={() => router.replace("/login")} testID="go-login" />
+      <TextButton
+        label="Already have an account? Sign in"
+        onPress={() => router.replace("/login")}
+        testID="go-login"
+      />
     </Screen>
   );
 }
@@ -190,7 +210,7 @@ export default function SignupScreen() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: {
-      gap: theme.spacing.lg,
+      gap: theme.spacing.md,
     },
     header: {
       gap: theme.spacing.xs,
@@ -209,6 +229,13 @@ const makeStyles = (theme: Theme) =>
     },
     form: {
       gap: theme.spacing.md,
+    },
+    nameRow: {
+      flexDirection: "row",
+      gap: theme.spacing.sm,
+    },
+    nameField: {
+      flex: 1,
     },
     error: {
       fontSize: theme.fontSize.small,
