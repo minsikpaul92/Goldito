@@ -651,8 +651,9 @@ export default function OwnerOnboarding() {
           onPick={(s) => update({ homeAddress: s.label, home: s.point })}
           testID="own-address"
         />
-        <TextButton
-          label={locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location"}
+        <Button
+          label={locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location"}
+          variant="secondary"
           onPress={() => void useCurrentLocation()}
           disabled={locating}
           testID="own-use-location"

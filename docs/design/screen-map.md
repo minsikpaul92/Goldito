@@ -80,10 +80,10 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 | Button | Start | `own-next` | 462 |
 | TextButton | Skip questions | `own-skip-questions` | 463 |
 | Button | Add | `own-food-other-add` | 593 |
-| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 654 |
-| Banner | `error` | `own-error` | 711 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 712 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 730 |
+| Button | locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location" | `own-use-location` | 654 |
+| Banner | `error` | `own-error` | 712 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 713 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 731 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
