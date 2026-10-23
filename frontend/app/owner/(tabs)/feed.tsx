@@ -153,7 +153,7 @@ export default function OwnerFeed() {
     setRequesting(true);
     try {
       setOpenRequest(await requestPhoto(petId));
-      toast.show(`Asked ${inCare[petId]?.sitterName ?? "your sitter"} for a photo 📷`);
+      toast.show(`Asked ${inCare[petId]?.sitterName ?? "your sitter"} for a photo`);
     } catch (err) {
       toast.show(err instanceof Error ? err.message : "Couldn't send the request. Try again.");
     } finally {
@@ -194,7 +194,7 @@ export default function OwnerFeed() {
         role: "owner",
         visibility: visibleToSitter ? "shared" : "private",
       });
-      toast.show(visibleToSitter ? "Shared with your sitter 🐾" : "Saved just for you 🔒");
+      toast.show(visibleToSitter ? "Shared with your sitter" : "Saved just for you");
       await loadPage(0, false, true);
     } catch (err) {
       errorDialog.show({

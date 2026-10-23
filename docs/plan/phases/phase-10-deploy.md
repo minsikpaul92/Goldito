@@ -133,7 +133,7 @@ Playbook §12 — seed(10.1) / deploy backend(10.3) / deploy frontend(10.4) 각�
 
 ---
 
-## Open items (남은 후속 작업 — 명세는 여기, 순서는 [TODO](../TODO.md))
+## Open items (남은 후속 작업 — 명세는 여기, 순서는 [GitHub issues](https://github.com/minsikpaul92/Goldito/issues))
 
 | ID | 내용 | 담당 |
 | :--- | :--- | :--- |

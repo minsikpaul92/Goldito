@@ -90,7 +90,6 @@ export default function CheckoutScreen() {
         needsOwnerHomeAccess(booking) ? ownerHasHomeAccess(session.profile.id) : Promise.resolve(true),
       ]);
       setVetClinic(profile.role === "owner" ? profile.fields.vet_clinic_name : null);
-      setSignerName(session.profile.displayName);
       setReady({ booking, quote, required, signed, entryMissing: !hasEntry });
       setLoadError(null);
     } catch (err) {
@@ -131,7 +130,7 @@ export default function CheckoutScreen() {
         });
       }
       await payBookingDemo(ready.booking.id);
-      toast.show("You're all set ✅");
+      toast.show("You're all set");
       router.replace(`/owner/bookings/${ready.booking.id}`);
     } catch (err) {
       if (err instanceof BookingError) setError(err.message);
@@ -201,7 +200,11 @@ export default function CheckoutScreen() {
           label="Type your name to sign"
           value={signerName}
           onChangeText={setSignerName}
+          // Typed by the person, never filled in (#236): the name is only a hint.
+          placeholder={session.profile?.displayName ?? undefined}
           autoCapitalize="words"
+          autoComplete="off"
+          autoCorrect={false}
           testID="checkout-signer"
         />
         <Text style={styles.footer}>{DEMO_CONSENT_FOOTER}</Text>

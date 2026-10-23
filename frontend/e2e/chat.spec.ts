@@ -839,7 +839,7 @@ test.describe("chat hub", () => {
     await expect(page).toHaveURL(/\/sitter$/);
     await page.goto(`/chat/${THREAD}`);
     let screen = app(page);
-    expect(await circles(screen)).toEqual({ label: "Step 1 of 5", labels: ["Request", "Meet", "Confirm", "Pay", "Stay"] });
+    expect(await circles(screen)).toEqual({ label: "Step 1 of 5", labels: ["Request", "M&G", "Confirm", "Pay", "Care"] });
     await expect(screen.getByTestId("chat-next-interest")).toHaveText("Next");
     await screen.getByTestId("chat-next-interest").click();
     await expect(screen.getByTestId("meet-greet")).toBeVisible();
@@ -943,7 +943,7 @@ test.describe("chat hub", () => {
     await expect(page).toHaveURL(/\/sitter$/);
     await page.goto(`/chat/${THREAD}`);
     let screen = app(page);
-    expect(await circles(screen)).toEqual({ label: "Step 3 of 5", labels: ["Request", "Meet", "Confirm", "Pay", "Stay"] });
+    expect(await circles(screen)).toEqual({ label: "Step 3 of 5", labels: ["Request", "M&G", "Confirm", "Pay", "Care"] });
     await expect(screen.getByTestId("chat-next-interest")).toHaveCount(0);
     await expect(screen.getByTestId("meet-greet")).toHaveCount(0);
     await screen.getByTestId("chat-next-accept").click();
@@ -1048,7 +1048,7 @@ test.describe("chat hub", () => {
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
     await page.goto(`/chat/${THREAD}`);
-    expect(await circles(app(page))).toEqual({ label: "Step 1 of 5", labels: ["Request", "Meet", "Confirm", "Pay", "Stay"] });
+    expect(await circles(app(page))).toEqual({ label: "Step 1 of 5", labels: ["Request", "M&G", "Confirm", "Pay", "Care"] });
     await expect(app(page).getByTestId("chat-request-booking")).toBeVisible();
   });
 
@@ -1145,10 +1145,35 @@ test.describe("chat hub", () => {
     const screen = app(page);
 
     await screen.getByTestId("chat-action-chip").click();
-    await expect(screen.getByTestId("meet-skip-sheet")).toContainText("If Chloe says no, this booking will be cancelled.");
+    await expect(screen.getByTestId("meet-skip-sheet")).toContainText("Chloe can accept, ask to meet, or decline.");
     expect(db.meetGreetCalls.find((c) => c.fn === "request_skip_meet_greet")).toBeUndefined();
     await screen.getByTestId("meet-skip-confirm").click();
     await expect.poll(() => db.meetGreetCalls.some((c) => c.fn === "request_skip_meet_greet")).toBe(true);
+  });
+
+  test("right after Request booking the chat's Meet & Greet card offers Request or Skip Meet & Greet (#236)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedBooking(db, true);
+    // post_booking_request_card (015f) posts the Meet & Greet card under the request card.
+    db.chat_messages.push({ id: "mg0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: { type: "meet_greet", booking_id: BOOKING, rev: 0 }, created_at: "2026-10-10T09:59:01.000Z" });
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/chat/${THREAD}`);
+    let screen = app(page);
+    await expect(screen.getByTestId("meet-request")).toBeVisible();
+    await expect(screen.getByTestId("meet-skip")).toBeVisible();
+    await expect(screen.getByTestId("chat-waiting")).toHaveCount(0);
+    await screen.getByTestId("meet-skip").click();
+    await screen.getByTestId("meet-skip-confirm").click();
+    await expect(screen.getByTestId("meet-greet")).toContainText("You asked to skip the Meet & Greet.");
+
+    // Chloe answers from her footer: Accept skip, and the booking moves on without a Meet & Greet.
+    screen = await openChatAs(page, SITTER);
+    await expect(screen.getByTestId("chat-next-meet")).toHaveText("Accept skip");
+    await screen.getByTestId("chat-next-meet").click();
+    await expect(screen.getByTestId("meet-greet")).toContainText("Meet & Greet skipped");
+    expect(db.bookings[0].sitter_interest_at).toBeTruthy();
+    await expect(screen.getByTestId("chat-next-accept")).toHaveText("I accept");
   });
 
   test("someone outside the chat cannot open it", async ({ page }) => {

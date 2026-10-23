@@ -79,6 +79,21 @@ async function openChatAs(page: Page, user: MockUser) {
 }
 
 test.describe("trip in the chat", () => {
+  test("the stage bar shows Scheduled under Care before the drop-off and Trip while on the way (#237)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, 5 * HOUR);
+    let screen = await openChatAs(page, SITTER);
+    await expect(screen.getByTestId("stage-step-4")).toHaveText("Care");
+    await expect(screen.getByTestId("stage-note-4")).toHaveText("Scheduled");
+
+    db.trips.push(runningTrip());
+    screen = await openChatAs(page, SITTER);
+    await expect(screen.getByTestId("stage-note-4")).toHaveText("Trip");
+    // The booking page watches the trips on its own.
+    await page.goto(`/sitter/bookings/${BOOKING}`);
+    await expect(screen.getByTestId("stage-note-4")).toHaveText("Trip");
+  });
+
   test("the owner starts the trip from the chat; the sitter sees it coming, then the arrival, and they say hello", async ({ page }) => {
     test.setTimeout(60_000);
     const { db } = await mockSupabase(page, [OWNER, SITTER]);

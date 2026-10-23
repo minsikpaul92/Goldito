@@ -61,7 +61,7 @@ test.describe("pet medals", () => {
 
     await expect(screen.getByTestId("stay-complete")).toBeVisible();
     await screen.getByTestId(`medal-give-${MAX}`).click();
-    await expect(screen.getByTestId("toast")).toContainText("🏅 Max got a medal. Robert can see it");
+    await expect(screen.getByTestId("toast")).toContainText("Max got a medal. Robert can see it");
     await expect(screen.getByTestId(`medal-given-${MAX}`)).toBeVisible();
     await expect(screen.getByTestId(`medal-give-${MAX}`)).toHaveCount(0);
     // Mochi still waits for hers.
@@ -100,7 +100,7 @@ test.describe("pet medals", () => {
     await signIn(page, OWNER);
     const screen = app(page);
     await screen.getByTestId("home-pager").waitFor();
-    await screen.getByTestId("home-pager-dot-1").click();
+    await screen.getByTestId("home-pager-flip").click();
     await expect(screen.getByTestId("pet-room-Max")).toBeVisible();
     await expect(screen.getByTestId("medal-medal-1")).toContainText("Chloe");
     await expect(screen.getByTestId("medal-medal-1")).toContainText("Oct 6 to Oct 9");

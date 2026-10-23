@@ -181,7 +181,7 @@ test.describe("meet & greet", () => {
     seed(db, {});
     const owner = await openDetail(page, OWNER);
     await owner.getByTestId("meet-skip").click();
-    await expect(owner.getByTestId("meet-skip-sheet")).toContainText("If Chloe says no, this booking will be cancelled.");
+    await expect(owner.getByTestId("meet-skip-sheet")).toContainText("Chloe can accept, ask to meet, or decline.");
     await owner.getByTestId("meet-skip-confirm").click();
     await expect(owner.getByTestId("toast")).toContainText("Asked Chloe to skip the Meet & Greet");
     expect(db.bookings[0].meet_greet_status).toBe("skip_requested");
@@ -197,15 +197,112 @@ test.describe("meet & greet", () => {
     await expect(sitter.getByTestId("accept-booking")).toBeEnabled();
   });
 
-  test("before the sitter's first yes nothing can be planned, and the dates are not held", async ({ page }) => {
+  test("right after the request the owner picks Request or Skip Meet & Greet; nothing is held yet (#236)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, { sitter_interest_at: null, meet_greet_due_at: null });
     const screen = await openDetail(page, OWNER);
-    await expect(screen.getByTestId("meet-greet")).toContainText("Waiting for Chloe to say yes to meeting");
-    await expect(screen.getByTestId("meet-schedule")).toHaveCount(0);
-    await expect(screen.getByTestId("meet-skip")).toHaveCount(0);
-    await expect(screen.getByTestId("stage-caption")).toHaveText("Waiting for Chloe");
+    await expect(screen.getByTestId("meet-request")).toHaveText("Request Meet & Greet");
+    await expect(screen.getByTestId("meet-skip")).toHaveText("Skip Meet & Greet");
     await expect(screen.getByTestId("hold-note")).toHaveCount(0);
+
+    await screen.getByTestId("meet-request").click();
+    await screen.getByTestId("meet-mode-video").click();
+    await screen.getByTestId("meet-send").click();
+    await expect(screen.getByTestId("toast")).toContainText("Meet & Greet sent to Chloe");
+    expect(db.bookings[0]).toMatchObject({ meet_greet_status: "proposed", meet_greet_proposed_by: OWNER.id, sitter_interest_at: null });
+    await expect(screen.getByTestId("meet-greet")).toContainText("Waiting for Chloe");
+  });
+
+  test("the Meet & Greet time stops before the drop-off (#236)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    // Chloe suggested 7 PM on the drop-off day (Oct 5, 2030, drop-off 9:30 AM); Robert suggests another time.
+    seed(db, {
+      meet_greet_status: "proposed",
+      meet_greet_mode: "video",
+      meet_greet_at: "2030-10-05T23:00:00.000Z",
+      meet_greet_proposed_by: SITTER.id,
+    });
+    const screen = await openDetail(page, OWNER);
+    await screen.getByTestId("meet-counter").click();
+    await expect(screen.getByTestId("meet-day-value")).toHaveText("Oct 5");
+    await expect(screen.getByTestId("meet-day-plus")).toBeDisabled();
+    await expect(screen.getByTestId("meet-sheet")).toContainText("Pick a time before the drop-off.");
+    await expect(screen.getByTestId("meet-send")).toBeDisabled();
+    await screen.getByTestId("meet-day-value").click();
+    await expect(screen.getByTestId("meet-calendar-sheet-2030-10-06")).toBeDisabled();
+    await screen.getByTestId("meet-calendar-sheet-2030-10-04").click();
+    await expect(screen.getByTestId("meet-day-value")).toHaveText("Oct 4");
+    await expect(screen.getByTestId("meet-send")).toBeEnabled();
+  });
+
+  test("the sitter answers the owner's time: Accept holds the dates (#236)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, {
+      sitter_interest_at: null,
+      meet_greet_due_at: null,
+      meet_greet_status: "proposed",
+      meet_greet_mode: "video",
+      meet_greet_at: "2030-10-04T23:00:00.000Z",
+      meet_greet_proposed_by: OWNER.id,
+    });
+    const screen = await openDetail(page, SITTER);
+    await expect(screen.getByTestId("meet-greet")).toContainText("Robert suggested a Meet & Greet");
+    await expect(screen.getByTestId("meet-skip")).toHaveText("Request skip");
+    await expect(screen.getByTestId("meet-decline")).toHaveText("Decline");
+    await screen.getByTestId("meet-accept").click();
+    await expect(screen.getByTestId("toast")).toContainText("Meet & Greet set with Robert");
+    expect(db.bookings[0].meet_greet_status).toBe("agreed");
+    expect(db.bookings[0].sitter_interest_at).toBeTruthy();
+  });
+
+  test("the sitter can ask to skip the owner's time instead, which holds the dates (#236)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, {
+      sitter_interest_at: null,
+      meet_greet_due_at: null,
+      meet_greet_status: "proposed",
+      meet_greet_mode: "video",
+      meet_greet_at: "2030-10-04T23:00:00.000Z",
+      meet_greet_proposed_by: OWNER.id,
+    });
+    const screen = await openDetail(page, SITTER);
+    await screen.getByTestId("meet-skip").click();
+    await screen.getByTestId("meet-skip-confirm").click();
+    await expect(screen.getByTestId("toast")).toContainText("Asked Robert to skip the Meet & Greet");
+    expect(db.bookings[0]).toMatchObject({ meet_greet_status: "skip_requested", meet_greet_skip_requested_by: SITTER.id });
+    expect(db.bookings[0].sitter_interest_at).toBeTruthy();
+  });
+
+  test("Decline on a Meet & Greet time asks first and ends the request (#236)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, {
+      sitter_interest_at: null,
+      meet_greet_due_at: null,
+      meet_greet_status: "proposed",
+      meet_greet_mode: "video",
+      meet_greet_at: "2030-10-04T23:00:00.000Z",
+      meet_greet_proposed_by: OWNER.id,
+    });
+    const screen = await openDetail(page, SITTER);
+    await screen.getByTestId("meet-decline").click();
+    await expect(screen.getByTestId("meet-decline-sheet")).toContainText("This ends Robert's booking request.");
+    expect(db.meetGreetCalls.find((c) => c.fn === "decline_meet_greet")).toBeUndefined();
+    await screen.getByTestId("meet-decline-confirm").click();
+    await expect(screen.getByTestId("toast")).toContainText("Request declined");
+    expect(db.bookings[0]).toMatchObject({ status: "cancelled", cancel_reason: "meet_greet_declined", cancelled_by: SITTER.id });
+  });
+
+  test("a skip request can be answered with a new time (#236)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, { meet_greet_status: "skip_requested", meet_greet_skip_requested_by: SITTER.id });
+    const screen = await openDetail(page, OWNER);
+    await expect(screen.getByTestId("meet-greet")).toContainText("Chloe would like to skip the Meet & Greet");
+    await expect(screen.getByTestId("meet-skip-accept")).toHaveText("Accept skip");
+    await screen.getByTestId("meet-skip-counter").click();
+    await screen.getByTestId("meet-mode-video").click();
+    await screen.getByTestId("meet-send").click();
+    await expect(screen.getByTestId("toast")).toContainText("Meet & Greet sent to Chloe");
+    expect(db.bookings[0]).toMatchObject({ meet_greet_status: "proposed", meet_greet_proposed_by: OWNER.id, meet_greet_skip_requested_by: null });
   });
 
   test("the sitter's Next holds the dates and opens the Meet & Greet; a disabled I accept says why (#170)", async ({ page }) => {
@@ -250,14 +347,44 @@ test.describe("meet & greet", () => {
     expect(db.bookings[0].status).toBe("cancelled");
   });
 
-  test("declining a skip asks first and cancels the booking", async ({ page }) => {
+  test("the sitter answers the owner's skip with a time instead, which holds the dates (#236)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, { sitter_interest_at: null, meet_greet_due_at: null, meet_greet_status: "skip_requested", meet_greet_skip_requested_by: OWNER.id });
+    const screen = await openDetail(page, SITTER);
+    await expect(screen.getByTestId("meet-greet")).toContainText("Robert would like to skip the Meet & Greet");
+    await expect(screen.getByTestId("meet-skip-counter")).toHaveText("Request Meet & Greet");
+    await screen.getByTestId("meet-skip-counter").click();
+    await screen.getByTestId("meet-mode-video").click();
+    await screen.getByTestId("meet-send").click();
+    await expect(screen.getByTestId("toast")).toContainText("Meet & Greet sent to Robert");
+    expect(db.bookings[0]).toMatchObject({ meet_greet_status: "proposed", meet_greet_proposed_by: SITTER.id, meet_greet_skip_requested_by: null });
+    expect(db.bookings[0].sitter_interest_at).toBeTruthy();
+  });
+
+  test("the stage bar says Scheduled under Meet & Greet once a time is agreed, and Skipped without a check (#237)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, { meet_greet_status: "agreed", meet_greet_mode: "video", meet_greet_at: "2030-10-04T23:00:00.000Z", meet_greet_proposed_by: SITTER.id });
+    let screen = await openDetail(page, OWNER);
+    await expect(screen.getByTestId("stage-step-1")).toHaveText("M&G");
+    await expect(screen.getByTestId("stage-step-1")).toHaveAttribute("aria-label", "Meet & Greet");
+    await expect(screen.getByTestId("stage-note-1")).toHaveText("Scheduled");
+
+    db.bookings[0].meet_greet_status = "skipped";
+    await page.reload();
+    screen = app(page);
+    await expect(screen.getByTestId("stage-note-1")).toHaveText("Skipped");
+    // The step is passed without a check: "–" in its circle (Request keeps its ✓).
+    await expect(screen.getByTestId("stage-bar")).toContainText("✓Request–M&G");
+  });
+
+  test("declining a skip asks first and ends the request", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, { meet_greet_status: "skip_requested", meet_greet_skip_requested_by: OWNER.id });
     const screen = await openDetail(page, SITTER);
     await screen.getByTestId("meet-skip-decline").click();
-    await expect(screen.getByTestId("meet-decline-sheet")).toContainText("Robert gets a notice and can find another sitter.");
+    await expect(screen.getByTestId("meet-decline-sheet")).toContainText("This ends Robert's booking request.");
     await screen.getByTestId("meet-decline-confirm").click();
-    await expect(screen.getByTestId("toast")).toContainText("Booking cancelled");
+    await expect(screen.getByTestId("toast")).toContainText("Request declined");
     expect(db.bookings[0]).toMatchObject({ status: "cancelled", cancel_reason: "meet_greet_declined" });
   });
 });

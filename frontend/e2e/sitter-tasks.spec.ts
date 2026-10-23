@@ -56,7 +56,7 @@ test.describe("sitter today's tasks", () => {
     expect(db.taskCompletions).toHaveLength(0); // opening is not sending
 
     await screen.getByTestId("task-done-confirm").click();
-    await expect(screen.getByTestId("toast")).toContainText("Breakfast done ✅ Robert was told");
+    await expect(screen.getByTestId("toast")).toContainText("Breakfast done. Robert was told");
     expect(db.taskCompletions).toEqual([{ p_task_log: db.task_logs[0].id, p_media_id: null, p_note_text: null }]);
     expect(db.notifications.filter((n) => n.type === "task_done" && n.user_id === OWNER.id)).toHaveLength(1);
     expect(db.feed_posts).toHaveLength(0);
@@ -79,7 +79,7 @@ test.describe("sitter today's tasks", () => {
     await screen.getByTestId(await firstId(screen, "task-done-")).click();
     await screen.getByTestId("task-done-memo").fill("Hid it in cheese, took it fine");
     await screen.getByTestId("task-done-confirm").click();
-    await expect(screen.getByTestId("toast")).toContainText("Joint pill done ✅");
+    await expect(screen.getByTestId("toast")).toContainText("Joint pill done");
 
     expect(db.taskCompletions[0].p_note_text).toBe("Hid it in cheese, took it fine");
     const notice = db.notifications.find((n) => n.type === "task_done");
@@ -104,7 +104,7 @@ test.describe("sitter today's tasks", () => {
     expect(sign).toHaveLength(0); // nothing uploaded until Done
 
     await screen.getByTestId("task-done-confirm").click();
-    await expect(screen.getByTestId("toast")).toContainText("Walk done ✅");
+    await expect(screen.getByTestId("toast")).toContainText("Walk done");
     expect(sign[0]).toMatchObject({ pet_id: PET, purpose: "task_proof", resource_type: "image" });
     expect(db.taskCompletions[0].p_media_id).toBe("media-proof");
     expect(db.feed_posts).toHaveLength(1);
@@ -150,7 +150,7 @@ test.describe("sitter today's tasks", () => {
     await expect(screen.getByTestId("task-done-memo")).toHaveValue("Pulled on the leash");
 
     await screen.getByTestId("error-dialog-retry").click();
-    await expect(screen.getByTestId("toast")).toContainText("Walk done ✅");
+    await expect(screen.getByTestId("toast")).toContainText("Walk done");
     expect(db.taskCompletions[0]).toMatchObject({ p_media_id: "media-proof", p_note_text: "Pulled on the leash" });
   });
 
@@ -201,7 +201,7 @@ test.describe("on a phone", () => {
     expect(db.taskCompletions).toHaveLength(0);
     await screen.getByTestId("media-confirm-use").click();
     await screen.getByTestId("task-done-confirm").click();
-    await expect(screen.getByTestId("toast")).toContainText("Walk done ✅");
+    await expect(screen.getByTestId("toast")).toContainText("Walk done");
     expect(sign[0]).toMatchObject({ purpose: "task_proof", resource_type: "image" });
     expect(db.taskCompletions[0].p_media_id).toBe("media-proof");
   });
