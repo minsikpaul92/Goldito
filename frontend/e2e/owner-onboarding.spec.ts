@@ -387,28 +387,42 @@ test.describe("owner onboarding", () => {
 
     await expect(screen.getByTestId("own-title")).toHaveText("Tell us about Pip");
     await expect(screen.getByTestId("own-mic-status")).toHaveText("Tap to talk");
-    // The numbered list to read from, in order.
-    await expect(screen.getByTestId("own-voice-guide")).toContainText("1. Breed");
-    await expect(screen.getByTestId("own-voice-guide")).toContainText("5. Allergies");
-    await expect(screen.getByTestId("own-voice-guide")).toContainText("9. Be careful with");
+    // Only the microphone to start with: the questions are not shown until it is tapped.
+    await expect(screen.getByTestId("own-voice-questions")).toHaveCSS("opacity", "0");
     await expect(screen.getByText("We don't keep the recording.")).toBeVisible();
     await screen.getByTestId("own-mic").click();
     await expect(screen.getByTestId("own-mic-status")).toContainText("of 1:00");
+    // The mic slides down and the questions are written out above it, in order, with a waveform.
+    await expect(screen.getByTestId("own-voice-questions")).toHaveCSS("opacity", "1");
+    await expect(screen.getByTestId("own-voice-questions")).toContainText("1. What breed is Pip?");
+    await expect(screen.getByTestId("own-voice-questions")).toContainText("2. How old is Pip?");
+    await expect(screen.getByTestId("own-voice-questions")).toContainText("9. What should we be careful with?");
+    await expect(screen.getByTestId("own-wave")).toBeVisible();
     await screen.getByTestId("own-mic").click();
-    // The words are shown and can be fixed before anything is read from them.
+    // The whole text is shown and can be fixed before anything is read from it.
     await expect(screen.getByTestId("own-voice-text")).toHaveValue("Pip is a 4 year old Maltese, about 13 pounds, allergic to chicken.");
     expect(recordingType).toBe("audio/webm");
     await screen.getByTestId("own-voice-text").fill("Pip is a 4 year old Maltese, about 13 pounds, allergic to chicken. He gets nervous with thunder.");
-    await screen.getByTestId("own-voice-use").click();
+    await screen.getByTestId("own-voice-fill").click();
 
-    // Facts fill the empty fields and show the words they came from.
-    await expect(screen.getByTestId("own-breed")).toHaveValue("Maltese");
+    // One box per question, filled with what was heard, to fix.
+    await expect(screen.getByTestId("own-voice-breed")).toHaveValue("Maltese");
+    await expect(screen.getByTestId("own-voice-age")).toHaveValue("4");
+    await expect(screen.getByTestId("own-voice-weight")).toHaveValue("5.9");
+    await expect(screen.getByTestId("own-voice-allergies")).toHaveValue("chicken");
+    await expect(screen.getByTestId("own-voice-personality")).toHaveValue("He is a sweet boy");
+    await expect(screen.getByTestId("own-voice-careful")).toHaveValue("He gets nervous with thunder");
+    await expect(screen.getByTestId("own-voice-likes")).toHaveValue("");
     expect(asked!.transcript).toContain("gets nervous with thunder");
     expect(asked!.species).toBe("dog");
     // Only the safety questions go along: the personality chart is tapped, not spoken.
     expect(asked!.questions.map((q) => q.key)).toEqual(expect.arrayContaining(["s1", "s5"]));
     expect(asked!.questions.some((q) => /^[dc]\d+$/.test(q.key))).toBe(false);
-    await expect(screen.getByTestId("own-heard-breed")).toContainText("4 year old Maltese");
+    await screen.getByTestId("own-voice-breed").fill("Maltese mix");
+    await screen.getByTestId("own-voice-use").click();
+
+    // What the owner kept fills the next screens.
+    await expect(screen.getByTestId("own-breed")).toHaveValue("Maltese mix");
     await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-skip").click(); // color
     await expect(screen.getByTestId("own-age-value")).toHaveText("4 years");
@@ -437,12 +451,9 @@ test.describe("owner onboarding", () => {
       await expect(screen.getByTestId(`own-step-s:${key}`)).toBeVisible();
       await screen.getByTestId("own-skip").click();
     }
-    // The food it heard is a chip to tap, not added.
+    // The allergy the owner kept on the voice form is already a chosen chip.
     await expect(screen.getByTestId("own-step-foods")).toBeVisible();
-    await expect(screen.getByTestId("own-food-chicken")).toContainText("✨ suggested");
-    await expect(screen.getByTestId("own-food-chicken")).not.toHaveAttribute("aria-pressed", "true");
-    await expect(screen.getByTestId("own-next")).toBeDisabled();
-    await screen.getByTestId("own-food-chicken").click();
+    await expect(screen.getByTestId("own-food-chicken")).toHaveAttribute("aria-pressed", "true");
     await screen.getByTestId("own-next").click();
     for (const id of ["ownerIntro", "location"]) {
       await expect(screen.getByTestId(`own-step-${id}`)).toBeVisible();
@@ -451,19 +462,42 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-save").click();
     await expect(page).toHaveURL(/\/owner$/);
     const pet = db.pets.find((p) => p.owner_id === OWNER.id)!;
-    expect(pet).toMatchObject({ breed: "Maltese", weight_kg: 5.9 });
+    expect(pet).toMatchObject({ breed: "Maltese mix", weight_kg: 5.9 });
     expect(pet.profile).toMatchObject({ safety: { s1: "once", s6: "listed" } });
     expect((pet.profile as { answers: Record<string, number> }).answers).toEqual({});
     expect(pet.notes).toBe("He is a sweet boy\nCareful with: He gets nervous with thunder");
     expect(db.pet_allergies.map((a) => a.allergen)).toEqual(["chicken"]);
   });
 
-  test("voice: a failed reading says so and the owner can answer the questions themselves", async ({ page }) => {
+  test("voice: when the text cannot be read the owner sees why and fills the boxes themselves", async ({ page }) => {
     await newOwner(page);
-    // A browser that cannot record.
     await page.addInitScript(() => {
-      (window as unknown as { MediaRecorder?: unknown }).MediaRecorder = undefined;
+      Object.defineProperty(navigator, "mediaDevices", {
+        configurable: true,
+        value: { getUserMedia: async () => ({ getTracks: () => [{ stop: () => undefined }] }) },
+      });
+      class FakeRecorder {
+        mimeType = "audio/webm";
+        state = "inactive";
+        ondataavailable: ((e: { data: Blob }) => void) | null = null;
+        onstop: (() => void) | null = null;
+        static isTypeSupported() {
+          return true;
+        }
+        start() {
+          this.state = "recording";
+        }
+        stop() {
+          this.state = "inactive";
+          this.ondataavailable?.({ data: new Blob([new Uint8Array(2000)], { type: "audio/webm" }) });
+          this.onstop?.();
+        }
+      }
+      (window as unknown as { MediaRecorder: unknown }).MediaRecorder = FakeRecorder;
     });
+    await page.route("**/api/ai/pet-voice/transcribe", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ transcript: "Mochi hides from visitors." }) }),
+    );
     await page.route("**/api/ai/pet-voice", (route) =>
       route.fulfill({
         status: 503,
@@ -478,13 +512,56 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-name").fill("Mochi");
     await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-skip").click();
-    // No microphone here: only typing is offered.
-    await expect(screen.getByTestId("own-mic")).toHaveCount(0);
-    await screen.getByTestId("own-voice-text").fill("Mochi hides from visitors.");
-    await screen.getByTestId("own-voice-use").click();
+    await screen.getByTestId("own-mic").click();
+    await screen.getByTestId("own-mic").click();
+    await expect(screen.getByTestId("own-voice-text")).toHaveValue("Mochi hides from visitors.");
+    await screen.getByTestId("own-voice-fill").click();
     await expect(screen.getByTestId("own-voice-error")).toContainText("answer the questions yourself");
-    await screen.getByTestId("own-skip").click();
+    await expect(screen.getByTestId("own-voice-breed")).toHaveValue("");
+    await screen.getByTestId("own-voice-personality").fill("Mochi hides from visitors.");
+    await screen.getByTestId("own-voice-use").click();
     await expect(screen.getByTestId("own-step-breed")).toBeVisible();
+  });
+
+  test("voice: with no microphone the owner types one answer per question, with no reading", async ({ page }) => {
+    await newOwner(page);
+    // A browser that cannot record.
+    await page.addInitScript(() => {
+      (window as unknown as { MediaRecorder?: unknown }).MediaRecorder = undefined;
+    });
+    let readCalls = 0;
+    await page.route("**/api/ai/pet-voice", (route) => {
+      readCalls += 1;
+      return route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: "We couldn't read that just now. You can answer the questions yourself." }),
+      });
+    });
+    await signIn(page, OWNER);
+    const screen = app(page);
+    await screen.getByTestId("own-species-cat").click();
+    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-name").fill("Mochi");
+    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-skip").click();
+    // No microphone here: the questions come as empty boxes to type in.
+    await expect(screen.getByTestId("own-mic")).toHaveCount(0);
+    await expect(screen.getByTestId("own-voice-breed")).toHaveValue("");
+    await screen.getByTestId("own-voice-breed").fill("Siamese");
+    await screen.getByTestId("own-voice-age").fill("3 years");
+    await screen.getByTestId("own-voice-allergies").fill("Fish, Dairy");
+    await screen.getByTestId("own-voice-personality").fill("Mochi hides from visitors.");
+    await screen.getByTestId("own-voice-use").click();
+    // Typed answers need no reading: nothing was sent to the model.
+    await expect(screen.getByTestId("own-breed")).toHaveValue("Siamese");
+    expect(readCalls).toBe(0);
+    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-skip").click(); // color
+    await expect(screen.getByTestId("own-age-value")).toHaveText("3 years");
+    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-skip").click(); // weight
+    await expect(screen.getByTestId("own-pet-intro")).toHaveValue("Mochi hides from visitors.");
   });
 
   test("photo: the cover photo is looked at in the background and its breed and color guesses are offered, not chosen", async ({ page }) => {

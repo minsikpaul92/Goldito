@@ -14,8 +14,6 @@ import { Theme } from "../../theme/themes";
 type Props = {
   /** The box's hint, e.g. "What is Max like?". */
   placeholder: string;
-  /** What to say, in order: shown as a numbered list to read from. */
-  guide?: string[];
   /** The (possibly fixed) text, ready to be read for facts. The screen does the rest and moves on. */
   onUse: (text: string) => Promise<void>;
   /** A failure of the reading step, to show under the text. */
@@ -33,7 +31,7 @@ const clock = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.floor((m
  * "Tell us about {name}": a big microphone button, the words it heard (the owner can fix them), or typing instead.
  * The recording goes to a speech-to-text service once and is not kept (11.15 §6.2).
  */
-export function VoiceStep({ placeholder, guide, onUse, error, busy }: Props) {
+export function VoiceStep({ placeholder, onUse, error, busy }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -101,13 +99,6 @@ export function VoiceStep({ placeholder, guide, onUse, error, busy }: Props) {
   const recordingNow = phase === "recording";
   return (
     <View style={styles.root}>
-      {guide ? (
-        <View style={styles.guide} testID="own-voice-guide">
-          {guide.map((item, i) => (
-            <Text key={item} style={styles.guideItem}>{`${i + 1}. ${item}`}</Text>
-          ))}
-        </View>
-      ) : null}
       {isVoiceSupported() ? (
         <View style={styles.micRow}>
           <Pressable
@@ -158,15 +149,6 @@ export function VoiceStep({ placeholder, guide, onUse, error, busy }: Props) {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: { gap: theme.spacing.md },
-    guide: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      rowGap: theme.spacing.xs,
-      padding: theme.spacing.md,
-      borderRadius: theme.ui.radius.card,
-      backgroundColor: theme.color.blockMint,
-    },
-    guideItem: { width: "50%", fontSize: 18, lineHeight: 24, color: theme.color.text, fontWeight: theme.fontWeight.semibold },
     micRow: { alignItems: "center", gap: theme.spacing.sm, paddingVertical: theme.spacing.sm },
     mic: {
       width: 88,

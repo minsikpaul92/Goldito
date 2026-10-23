@@ -63,7 +63,7 @@ Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard` · `PetPage`
 
 ### `/owner-onboarding` — [app/owner-onboarding.tsx](../../frontend/app/owner-onboarding.tsx)
 
-Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `VoiceStep` · `StepFrame` · `AddressInput`
+Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `VoiceInterview` · `StepFrame` · `AddressInput`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
@@ -73,17 +73,17 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 | TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 225 |
 | Banner | `error` | — | 237 |
 | Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 277 |
-| Stepper | Age | `own-age` | 377 |
-| Button | Next | `own-next` | 390 |
-| SegmentedControl | — | `own-weight-unit` | 409 |
-| LinkButton | `source.label` | ``own-source-${i + 1}`` | 461 |
-| Button | Start | `own-next` | 466 |
-| TextButton | Skip questions | `own-skip-questions` | 467 |
-| Button | Add | `own-food-other-add` | 597 |
-| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 653 |
-| Banner | `error` | `own-error` | 710 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 711 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 729 |
+| Stepper | Age | `own-age` | 371 |
+| Button | Next | `own-next` | 384 |
+| SegmentedControl | — | `own-weight-unit` | 403 |
+| LinkButton | `source.label` | ``own-source-${i + 1}`` | 455 |
+| Button | Start | `own-next` | 460 |
+| TextButton | Skip questions | `own-skip-questions` | 461 |
+| Button | Add | `own-food-other-add` | 591 |
+| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 647 |
+| Banner | `error` | `own-error` | 704 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 705 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 723 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -1349,15 +1349,28 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | Back | `own-back` | 37 |
 | TextButton | Back | `own-back-bottom` | 55 |
 
+### VoiceInterview — [components/ownerOnboarding/VoiceInterview.tsx](../../frontend/components/ownerOnboarding/VoiceInterview.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Button | parsing ? "Reading…" : "Fill in the answers" | `own-voice-fill` | 163 |
+| TextButton | Record again | `own-voice-again` | 169 |
+| Banner | `problem` | `own-voice-problem` | 185 |
+| Banner | `parseError` | `own-voice-error` | 186 |
+| Button | Use these | `own-voice-use` | 200 |
+| Pressable | recordingNow ? "Stop recording" : "Start recording" | `own-mic` | 238 |
+| Banner | `problem` | `own-voice-problem` | 255 |
+| TextButton | Or type it | `own-voice-type` | 257 |
+
 ### VoiceStep — [components/ownerOnboarding/VoiceStep.tsx](../../frontend/components/ownerOnboarding/VoiceStep.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | recordingNow ? "Stop recording" : "Start recording" | `own-mic` | 113 |
-| Banner | `problem` | `own-voice-problem` | 129 |
-| TextButton | Or type it | `own-voice-type` | 141 |
-| Banner | `error` | `own-voice-error` | 144 |
-| Button | busy ? "Looking…" : "Use this" | `own-voice-use` | 146 |
+| Pressable | recordingNow ? "Stop recording" : "Start recording" | `own-mic` | 104 |
+| Banner | `problem` | `own-voice-problem` | 120 |
+| TextButton | Or type it | `own-voice-type` | 132 |
+| Banner | `error` | `own-voice-error` | 135 |
+| Button | busy ? "Looking…" : "Use this" | `own-voice-use` | 137 |
 
 ### MedalButtons — [components/pet/MedalButtons.tsx](../../frontend/components/pet/MedalButtons.tsx)
 
@@ -1542,4 +1555,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-451 actions · 450 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+456 actions · 455 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

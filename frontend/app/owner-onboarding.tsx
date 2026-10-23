@@ -7,7 +7,7 @@ import { BigInput } from "../components/ownerOnboarding/BigInput";
 import { BigOption } from "../components/ownerOnboarding/BigOption";
 import { PetGlanceCard } from "../components/PetGlanceCard";
 import { PetPhotosStep } from "../components/ownerOnboarding/PetPhotosStep";
-import { VoiceStep } from "../components/ownerOnboarding/VoiceStep";
+import { VoiceInterview } from "../components/ownerOnboarding/VoiceInterview";
 import { StepFrame } from "../components/ownerOnboarding/StepFrame";
 import { AddressInput } from "../components/AddressInput";
 import { Banner } from "../components/ui/Banner";
@@ -32,10 +32,10 @@ import {
   weightFromDraft,
   withPickedSpecies,
 } from "../features/ownerOnboarding/draft";
-import { MAX_PET_INTRO, applyVoiceFacts } from "../features/ownerOnboarding/applyVoice";
+import { MAX_PET_INTRO, applyVoiceForm, formFromFacts, voiceItems } from "../features/ownerOnboarding/applyVoice";
 import { useBreedNeeds } from "../features/ownerOnboarding/breedNeedsApi";
 import { guessFromPhoto } from "../features/ownerOnboarding/photoGuessApi";
-import { VOICE_GUIDE, extractFacts, openQuestions } from "../features/ownerOnboarding/voiceApi";
+import { type VoiceFacts, extractFacts, openQuestions } from "../features/ownerOnboarding/voiceApi";
 import { markOwnerOnboarded, newPetId, saveOwnerOnboarding } from "../features/ownerOnboarding/ownerOnboardingApi";
 import {
   COATS,
@@ -73,8 +73,8 @@ export default function OwnerOnboarding() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
-  const [voiceBusy, setVoiceBusy] = useState(false);
-  const [voiceError, setVoiceError] = useState<string | null>(null);
+  // What was heard on the voice screen, until the owner keeps the answers.
+  const [spoken, setSpoken] = useState<VoiceFacts | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationNote, setLocationNote] = useState<string | null>(null);
   const [otherFood, setOtherFood] = useState("");
@@ -282,31 +282,25 @@ export default function OwnerOnboarding() {
   }
 
   if (step === "voice") {
-    const read = async (text: string) => {
-      if (!species) return;
-      setVoiceBusy(true);
-      setVoiceError(null);
-      try {
-        const facts = await extractFacts(species, petName, text, openQuestions(petName, draft.safety));
-        update(applyVoiceFacts(draft, facts));
-        next();
-      } catch (e) {
-        setVoiceError((e as Error).message);
-      } finally {
-        setVoiceBusy(false);
-      }
+    const parse = async (text: string) => {
+      if (!species) return {};
+      const facts = await extractFacts(species, petName, text, openQuestions(petName, draft.safety));
+      setSpoken(facts);
+      return formFromFacts(facts, draft.weightUnit);
     };
     return frame(
       `Tell us about ${petName}`,
-      <VoiceStep
-        placeholder={`What is ${petName} like?`}
-        guide={VOICE_GUIDE}
-        onUse={read}
-        error={voiceError}
-        busy={voiceBusy}
+      <VoiceInterview
+        items={voiceItems(petName, draft.weightUnit)}
+        parse={parse}
+        onSubmit={(values) => {
+          update(applyVoiceForm(draft, values, spoken));
+          setSpoken(null);
+          next();
+        }}
       />,
       skipLink,
-      "Read these in order.",
+      "Answer the questions in order.",
     );
   }
 

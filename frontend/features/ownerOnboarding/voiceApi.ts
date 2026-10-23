@@ -18,19 +18,6 @@ export type VoiceFacts = {
 
 export const NO_FACTS: VoiceFacts = { breed: null, age_years: null, weight_kg: null, foods: [], answers: {}, notes: {} };
 
-/** The list the owner reads from while talking, in order. The server reads the answer with the same order in mind. */
-export const VOICE_GUIDE = [
-  "Breed",
-  "Age",
-  "Weight",
-  "What it eats",
-  "Allergies",
-  "What it's like",
-  "Likes",
-  "Dislikes",
-  "Be careful with",
-];
-
 /** The recording to text. The text is shown to the owner, who can fix it. */
 export async function transcribeRecording(recording: Blob): Promise<string> {
   const { transcript } = await apiPostFile<{ transcript: string }>("/api/ai/pet-voice/transcribe", recording);
