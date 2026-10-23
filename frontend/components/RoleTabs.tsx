@@ -202,8 +202,8 @@ export function RoleTabs({ children }: { children: ReactNode }) {
         // The Chat tab's unread count (#329): a small red dot with a white ring, as in the nav trial.
         tabBarBadgeStyle: {
           backgroundColor: theme.color.error,
-          color: "#fff",
-          fontSize: 10,
+          color: theme.color.primaryText,
+          fontSize: theme.fontSize.caption,
           fontWeight: theme.fontWeight.bold,
           minWidth: 18,
           height: 18,
