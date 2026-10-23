@@ -62,43 +62,40 @@ export default function OwnerHome() {
   const rows = Array.from({ length: Math.ceil(pets.length / 2) }, (_, i) => pets.slice(i * 2, i * 2 + 2));
 
   const today = (
-    <Screen
-      contentStyle={styles.list}
-      footer={
-        stay ? (
-          // Brand green like the hero (Figma 1303:6024); the skin's `primary` is the darker ink.
-          <Button
-            label="See today's updates"
-            onPress={() => router.push("/owner/history")}
-            style={styles.updates}
-            testID="see-updates"
-          />
-        ) : undefined
-      }
-    >
-      <ActiveTripCard role="owner" />
-      {stay ? (
-        <>
-          <StayHero stay={stay} />
-          <StatTiles stay={stay} />
-          <LatestCard stay={stay} />
-        </>
-      ) : null}
-      <View style={styles.sectionHead}>
-        <Text accessibilityRole="header" style={styles.section}>
-          Your pets
-        </Text>
-        <TextButton label="+ Add pet" onPress={addPet} testID="add-pet" />
-      </View>
-      {rows.map((row, r) => (
-        <View key={row[0].id} style={styles.petRow}>
-          {row.map((pet, c) => (
-            <PetTile key={pet.id} pet={pet} index={r * 2 + c} onPress={() => router.push(`/owner/pets/${pet.id}`)} />
+    <View style={styles.root}>
+      <View style={styles.scroll}>
+        <Screen contentStyle={styles.list}>
+          <ActiveTripCard role="owner" />
+          {stay ? (
+            <>
+              <StayHero stay={stay} />
+              <StatTiles stay={stay} />
+              <LatestCard stay={stay} />
+            </>
+          ) : null}
+          <View style={styles.sectionHead}>
+            <Text accessibilityRole="header" style={styles.section}>
+              Your pets
+            </Text>
+            <TextButton label="+ Add pet" onPress={addPet} testID="add-pet" />
+          </View>
+          {rows.map((row, r) => (
+            <View key={row[0].id} style={styles.petRow}>
+              {row.map((pet, c) => (
+                <PetTile key={pet.id} pet={pet} index={r * 2 + c} onPress={() => router.push(`/owner/pets/${pet.id}`)} />
+              ))}
+              {row.length === 1 ? <View style={styles.petSpacer} /> : null}
+            </View>
           ))}
-          {row.length === 1 ? <View style={styles.petSpacer} /> : null}
+        </Screen>
+      </View>
+      {stay ? (
+        // Pinned under the scrolling page, not over it (Figma "pin" 1303:6023); brand green like the hero.
+        <View style={styles.pin}>
+          <Button label="See today's updates" onPress={() => router.push("/owner/history")} style={styles.updates} testID="see-updates" />
         </View>
-      ))}
-    </Screen>
+      ) : null}
+    </View>
   );
 
   return (
@@ -128,5 +125,7 @@ const makeStyles = (theme: Theme) =>
     section: sectionTitleStyle(theme),
     petRow: { flexDirection: "row", gap: 10 },
     petSpacer: { flex: 1 },
+    scroll: { flex: 1 },
+    pin: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 12, backgroundColor: theme.color.background },
     updates: { backgroundColor: tokens.color.primary, borderColor: tokens.color.primary },
   });

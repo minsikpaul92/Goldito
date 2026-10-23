@@ -59,8 +59,8 @@ Shows: `ActiveTripCard` · `LatestCard` · `PetTile` · `StatTiles` · `StayHero
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load your pets | — | 38 |
 | EmptyState | No pets yet | — | 51 |
-| Button | See today's updates | `see-updates` | 70 |
-| TextButton | + Add pet | `add-pet` | 91 |
+| TextButton | + Add pet | `add-pet` | 80 |
+| Button | See today's updates | `see-updates` | 95 |
 
 ### `/owner-onboarding` — [app/owner-onboarding.tsx](../../frontend/app/owner-onboarding.tsx)
 
