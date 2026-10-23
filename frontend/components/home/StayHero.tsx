@@ -55,7 +55,7 @@ export function StayHero({ stay }: { stay: StayToday }) {
           )}
         </View>
       </View>
-      {stay.care ? (
+      {stay.care.total > 0 ? (
         <View style={styles.care}>
           <View style={styles.careHead}>
             <Text style={styles.careText}>Today's care</Text>
@@ -63,7 +63,7 @@ export function StayHero({ stay }: { stay: StayToday }) {
           </View>
           <View style={styles.bar} accessibilityLabel={`${stay.care.done} of ${stay.care.total} care tasks done`}>
             {Array.from({ length: stay.care.total }, (_, i) => (
-              <View key={i} style={[styles.seg, i < stay.care!.done ? styles.segOn : styles.segOff]} />
+              <View key={i} style={[styles.seg, i < stay.care.done ? styles.segOn : styles.segOff]} />
             ))}
           </View>
         </View>

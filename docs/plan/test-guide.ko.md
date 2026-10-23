@@ -300,16 +300,14 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| LIVE-1 | 시터가 할 일 · 체크인 · 사진을 남긴 뒤 오너 Home | 맨 위 **Live updates**에 최신 3개 카드(할 일 완료 · 체크인 · 새 사진만; 메모가 있으면 제목 아래에 같이). 예약 알림 등은 안 나옴. **눌러서 확인한(읽은) 카드는 Home에서 사라짐**(알림 목록과 History엔 남음 — 안 읽은 것만 Home에 남음). 3개 넘으면 "N more in notifications" | 🤖 `live-updates` | ➖ |
-| LIVE-2 | 카드를 **왼쪽으로 60% 넘게 밀기** | 카드가 사라지고 알림도 삭제. 다음 카드가 올라옴. **History에는 그대로 남음** | 🤖 `live-updates` | ➖ |
-| LIVE-3 | 카드를 덜 밀기 / 탭 | 덜 밀면 유지. 체크인 · 할 일 카드 탭 → History, 새 사진 카드 → Feed | 🤖 `live-updates` | ➖ |
-| LIVE-6 | 맨 위 카드 오른쪽 **✕** → **Clear all** (Cancel도 있음) | 보이는 Live updates(할 일 · 체크인 · 사진 알림)만 전부 삭제, 예약 알림 등은 남음 | 🤖 `live-updates` | ➖ |
-| LIVE-7 | 오너 Home 펫 카드 | 지금 시터가 맡은 펫은 **카드 배경이 연한 초록 + 굵은 테두리 + 왼쪽 위 테두리에 "In care" 태그**, 이름 아래 "with Chloe · until Oct 7, 1:37 AM". 집에 있는 펫은 평범한 카드 | 🤖 `live-updates` | ➖ |
-| LIVE-8 | 시터가 요청을 **Decline** 함 | 오너 Home 맨 위에 **주황 테두리 카드가 고정**("Tap to read and answer"): 밀어서 못 지움 · Clear all에도 남음 · 새로고침해도 남음. 탭 → 노트 시트(**Close는 그냥 닫힘**) → **읽으면 Home에서 사라짐**(답은 펫 화면 빨간 상자에 남음) | 🤖 `care-request` | ➖ |
-| LIVE-9 | 시터가 **Counter-request** 를 보냄 | 같은 고정 카드. 읽어도 **오너가 Accept/Decline 하기 전까지 Home에 남음**, 답하면 사라짐 | 🤖 `care-request` | ➖ |
-| LIVE-4 | 새 업데이트가 없을 때 | "Nothing new. During a stay, …" 안내 | 🤖 `live-updates` | ➖ |
+| LIVE-1 | 시터가 할 일 · 체크인 · 사진을 남긴 뒤 오너 Home (돌보는 중) | 초록 히어로 아래 **Latest from 시터** 카드 한 장(최신 1건). 탭하면 그 항목이 **History에서 바로 열림**(사진이면 큰 사진 시트), 알림장이면 그 알림장. Home에 Live updates 목록은 없음(벨 → Notifications) | 🤖 `live-updates` | ➖ |
+| LIVE-2 | 벨 → Notifications | 읽지 않은 알림은 굵게, 밀어서 삭제 · Mark all as read · Clear all, **History** 링크(알림이 없을 때도 있음) | 🤖 `live-updates` | ➖ |
+| LIVE-6 | 시터가 아무것도 기록하지 않은 날 오너 Home (돌보는 중) | 타일이 **0/0 care done · 0 photos today · 0m of walks** | 🤖 `live-updates` | ➖ |
+| LIVE-7 | 오너 Home (돌보는 중) | 초록 히어로 "Max is with Chloe" · Day N of M. 집에 있는 펫은 히어로에 안 나옴. 돌봄 중이 아니면 히어로 · 타일 · Latest 없이 Your pets만 | 🤖 `live-updates` | ➖ |
+| LIVE-8 | 시터가 요청을 **Decline** 함 | 오너 **Notifications**에 읽지 않은 알림. 탭 → 노트 시트(**Close는 그냥 닫힘**). 답은 펫 화면 빨간 상자에 남음. (Home에 고정되던 카드는 없어짐) | 🤖 `care-request` | ➖ |
+| LIVE-9 | 시터가 **Counter-request** 를 보냄 | Notifications에 알림. 탭 → 노트 시트 → 펫 화면에서 Accept/Decline | 🤖 `care-request` | ➖ |
 | LIVE-5 | **두 브라우저**: 오너가 Home을 연 채 시터가 체크인 | 오너 Home에 **새로고침 없이** 카드 추가 | **👤만** (실시간) | ➖ |
-| HIST-1 | Home의 **🕘 History** | 오늘 · 어제 · 날짜별 **최신순**, 줄마다 이모지 · 문구 · 시각 · 사람 · 썸네일 | 🤖 `diary` | ➖ |
+| HIST-1 | Home의 **See today's updates** 또는 Notifications의 **History** | 오늘 · 어제 · 날짜별 **최신순**, 줄마다 이모지 · 문구 · 시각 · 사람 · 썸네일 | 🤖 `diary` | ➖ |
 | HIST-2 | 사진과 함께 완료/체크인 | 같은 사진이 **한 줄로만** (Feed 사진과 중복 안 됨) | 🤖 `diary` | ➖ |
 | HIST-3 | 메모가 있는 체크인 / 7일보다 오래된 기록 | 메모가 줄 아래에 보임 / 오래된 건 안 보임 | 🤖 `diary` | ➖ |
 | HIST-4 | 시간이 지난 미완료 할 일 | ⚠️ "… · Missed" | 🤖 `diary` | ➖ |
@@ -504,7 +502,7 @@
 | FLOW-12 | Max → Care tasks → Add → 입력칸 라벨 | 굵은 라벨 + 같은 줄에 **작은 연한 회색 힌트**, 엠대시 없음 (FB-1) | 새로 필요 | ❌ 10/08 민식 |
 | FLOW-13 | 오너가 체크아웃에서 Pay 한 직후 예약 화면 | 맨 위에 **확인 카드**: 결제 금액 · 드롭오프 시각 · "Nothing else to do"; **누르면 사라지고** 새로 고침해도 그대로, 상단 칩 줄에 `Paid` (FB-12) | 🤖 `checkout` (Pay 후 카드 · 닫기 · 새로 고침) | ❌ 10/09 민식 (Paid 칩만 있어 저장됐는지 모름) → 코드 수정됨, 다시 확인 |
 | FLOW-14 | 예약 화면의 준비물(Pack for …) | 준비물에 체크하고 나갔다 와도(새로 고침) 체크가 남음. "saved on this device" 안내 (FB-13, 이 기기에만 저장 · 시터는 못 봄) | 🤖 `checkout` (체크 → 새로 고침) | ❌ 10/09 민식 (체크가 저장 안 됨) → 코드 수정됨, 다시 확인 |
-| FLOW-15 | 시터가 알림장 Send → 오너 Home | **Live updates**에 📓 알림장 카드, 누르면 그 알림장 (FB-21) | 🤖 `live-updates` | ➖ |
+| FLOW-15 | 시터가 알림장 Send → 오너 | 벨 → Notifications에 📓 알림장 알림, 누르면 그 알림장 (FB-21) | 👤 (Home 카드 e2e는 없어짐) | ➖ |
 | FLOW-16 | 시터 Home → **My history** | 보낸 알림장이 📓 "Daily report · Sent"(본문 두 줄, 누르면 전체)로 보임. 초안은 안 보임 (FB-23) | 🤖 `sitter-home` | ➖ |
 | FLOW-17 | Received 뒤 / Returned 뒤 예약 목록 · 상세 (오너 · 시터) | Received 뒤 **In care**, Returned 뒤 **Completed — pets home** (더는 "Confirmed" 아님) (FB-26) | 🤖 `handoff` | ➖ |
 | FLOW-18 | Returned 뒤 오너 Home | ⭐ "How was …'s stay?" 카드가 **리뷰를 남길 때까지** 고정(열어 봐도 남음), 리뷰 후 사라짐 (FB-24) | 🤖 `live-updates` | ➖ |

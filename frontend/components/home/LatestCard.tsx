@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { StayToday } from "../../features/care/useStayToday";
 import { useNoticeMedia } from "../../features/notifications/noticeMedia";
 import { formatTime, isoToZoned } from "../../features/schedule/dates";
-import { AppNotification, listNotifications } from "../../lib/notifications";
+import { AppNotification, hrefForNotification, listNotifications } from "../../lib/notifications";
 import { useNotifications } from "../../providers/NotificationsProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
@@ -15,7 +15,16 @@ import { HOME_TEXT } from "./homeType";
 /** What the sitter did, as one line: the same notices Live updates shows. */
 const SITTER_TYPES = new Set(["task_done", "care_checkin", "feed_post", "report_sent", "photo_request_fulfilled"]);
 
-/** Owner Home: the newest thing the sitter did for these pets (Figma "block.w"). Tap opens History. */
+/** Notice type to the History entry it is about (`diaryApi` ids): a photo opens big instead of landing on the list. */
+const ENTRY_PREFIX: Record<string, string> = { task_done: "task", care_checkin: "checkin", feed_post: "feed" };
+
+function whereTo(n: AppNotification) {
+  const prefix = ENTRY_PREFIX[n.type];
+  if (prefix && n.refId && n.petId) return `/owner/history?pet=${n.petId}&entry=${prefix}-${n.refId}` as const;
+  return hrefForNotification(n, "owner") ?? "/owner/history";
+}
+
+/** Owner Home: the newest thing the sitter did for these pets (Figma "block.w"). Tap opens what it is about (the photo, in History). */
 export function LatestCard({ stay }: { stay: StayToday }) {
   const styles = useThemedStyles(makeStyles);
   const { inboxRevision } = useNotifications();
@@ -44,7 +53,7 @@ export function LatestCard({ stay }: { stay: StayToday }) {
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={() => router.push("/owner/history")}
+      onPress={() => router.push(whereTo(latest))}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       testID="latest-update"
     >

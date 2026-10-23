@@ -51,16 +51,16 @@ Shows: `BrandLogo`
 
 ### `/owner` — [app/owner/(tabs)/index.tsx](../../frontend/app/owner/(tabs)/index.tsx)
 
-Owner Home: two sides of a card, flipped with a button (#286). Today: live updates from the sitter (swipe to dismiss) and my pets. Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
+Owner Home: two sides of a card, flipped with a button (#286). Today: the stay in progress (hero, today's numbers, the latest update) and my pets. Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
 
-Shows: `ActiveTripCard` · `LiveUpdates` · `LatestCard` · `PetTile` · `StatTiles` · `StayHero` · `PetPage`
+Shows: `ActiveTripCard` · `LatestCard` · `PetTile` · `StatTiles` · `StayHero` · `PetPage`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 39 |
-| EmptyState | No pets yet | — | 52 |
-| Button | See today's updates | `see-updates` | 71 |
-| TextButton | + Add pet | `add-pet` | 93 |
+| EmptyState | Couldn't load your pets | — | 38 |
+| EmptyState | No pets yet | — | 51 |
+| Button | See today's updates | `see-updates` | 70 |
+| TextButton | + Add pet | `add-pet` | 91 |
 
 ### `/owner-onboarding` — [app/owner-onboarding.tsx](../../frontend/app/owner-onboarding.tsx)
 
@@ -834,8 +834,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | ``diary-entry-${entry.id}`` | 54 |
-| Sheet | open?.label ?? "" | `diary-detail` | 80 |
+| Pressable | — | ``diary-entry-${entry.id}`` | 63 |
+| Sheet | open?.label ?? "" | `diary-detail` | 89 |
 
 ### DueAlert — [components/DueAlert.tsx](../../frontend/components/DueAlert.tsx)
 
@@ -921,17 +921,6 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Button | Add Heads-up | `heads-up-add` | 105 |
-
-### LiveUpdates — [components/LiveUpdates.tsx](../../frontend/components/LiveUpdates.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| TextButton | History | `open-history` | 177 |
-| TextButton | Clear all | `live-clear-all` | 188 |
-| TextButton | Cancel | `live-clear-cancel` | 189 |
-| Pressable | — | ``live-${n.id}`` | 196 |
-| Pressable | Clear updates | `live-x` | 233 |
-| TextButton | ``${more} more in notifications`` | `live-more` | 249 |
 
 ### MediaConfirm — [components/MediaConfirm.tsx](../../frontend/components/MediaConfirm.tsx)
 
@@ -1328,7 +1317,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `latest-update` | 45 |
+| Pressable | — | `latest-update` | 54 |
 
 ### PetTile — [components/home/PetTile.tsx](../../frontend/components/home/PetTile.tsx)
 
@@ -1466,11 +1455,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load notifications | — | 172 |
 | EmptyState | You're all caught up. | — | 183 |
-| TextButton | markingAll ? "Marking…" : "Mark all as read" | `mark-all-read` | 191 |
-| TextButton | Clear all | `clear-all` | 198 |
-| Pressable | — | ``notification-${item.id}`` | 210 |
-| Sheet | clearing ? "Clearing…" : `Clear ${items.length} notification${items.length === 1 ? "" : "s"}` | `clear-all-sheet` | 236 |
-| Button | clearing ? "Clearing…" : `Clear ${items.length} notification${items.length === 1 ? "" : "s"}` | `clear-all-confirm` | 244 |
+| TextButton | markingAll ? "Marking…" : "Mark all as read" | `mark-all-read` | 196 |
+| TextButton | History | `open-history` | 203 |
+| TextButton | Clear all | `clear-all` | 204 |
+| Pressable | — | ``notification-${item.id}`` | 216 |
+| Sheet | clearing ? "Clearing…" : `Clear ${items.length} notification${items.length === 1 ? "" : "s"}` | `clear-all-sheet` | 242 |
+| Button | clearing ? "Clearing…" : `Clear ${items.length} notification${items.length === 1 ? "" : "s"}` | `clear-all-confirm` | 250 |
 
 ### DecoratedReport — [features/snap/DecoratedReport.tsx](../../frontend/features/snap/DecoratedReport.tsx)
 
@@ -1567,4 +1557,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-465 actions · 464 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+460 actions · 459 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

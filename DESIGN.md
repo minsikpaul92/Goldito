@@ -72,7 +72,7 @@ Every Figma variable carries its code name as **code syntax** (Figma uses kebab-
 | Logo (brand site) | `components/BrandLogo.tsx` + `assets/brand/` · favicon in `app.json` | ✅ |
 | Booking Card / Stage Card | `components/BookingCard.tsx`, `components/BookingStageBar.tsx` (steps Request · M&G · Confirm · Pay · Care; a small word under a step: Scheduled, Trip, Skipped, #237) | ✅ |
 | Stay Summary Card | `components/StaySummaryCard.tsx` | ✅ |
-| Latest Update Row | `components/LiveUpdates.tsx` | ✅ |
+| Latest Update Row | `components/home/LatestCard.tsx` | ✅ |
 | Pet Mini Card | `components/PetCard.tsx` | ✅ |
 | Feed Card | `components/FeedCard.tsx` | ✅ |
 | Grid Photo / Day Header | `components/AlbumView.tsx` | ✅ |

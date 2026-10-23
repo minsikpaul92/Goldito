@@ -18,18 +18,18 @@ export type StayToday = {
   days: number;
   /** "Picked up Fri 7:30 AM": null until the sitter has received the pets. */
   receivedLine: string | null;
-  /** Null when there are no tasks today (or they could not be read): the tile and bar stay hidden. */
-  care: { done: number; total: number } | null;
-  photos: number | null;
-  /** Null when no walk was logged today (cats, or none yet). */
-  walkMinutes: number | null;
+  /** 0 of 0 when there are no tasks today (or they could not be read). */
+  care: { done: number; total: number };
+  /** Zero when nothing was logged (or it could not be read). */
+  photos: number;
+  walkMinutes: number;
 };
 
 const weekday = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: APP_TIMEZONE });
 
 /**
  * Owner Home: the stay in progress today (the same booking `useInCare` marks) and today's numbers for its pets.
- * Every number is read from what the sitter actually logged; one that can't be read is null, never a guess.
+ * Every number is read from what the sitter actually logged; one that is missing or can't be read is 0, never a guess.
  */
 export function useStayToday(): StayToday | null {
   const session = useSession();
@@ -68,9 +68,9 @@ export function useStayToday(): StayToday | null {
         day,
         days,
         receivedLine,
-        care: allLogs.length > 0 ? { done: allLogs.filter((l) => l.status === "done").length, total: allLogs.length } : null,
-        photos: posts ? posts.flat().filter((p) => p.media.resourceType === "image" && isoToZoned(p.createdAt).day === today).length : null,
-        walkMinutes: walks > 0 ? walks : null,
+        care: { done: allLogs.filter((l) => l.status === "done").length, total: allLogs.length },
+        photos: posts ? posts.flat().filter((p) => p.media.resourceType === "image" && isoToZoned(p.createdAt).day === today).length : 0,
+        walkMinutes: walks,
       });
     } catch {
       // The hero is a bonus; Home works without it.

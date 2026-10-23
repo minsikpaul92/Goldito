@@ -2,7 +2,6 @@ import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ActiveTripCard } from "../../../components/ActiveTripCard";
-import { LiveUpdates } from "../../../components/LiveUpdates";
 import { LatestCard } from "../../../components/home/LatestCard";
 import { PetTile } from "../../../components/home/PetTile";
 import { StatTiles } from "../../../components/home/StatTiles";
@@ -22,7 +21,7 @@ import { tokens } from "../../../theme/tokens";
 import { Theme } from "../../../theme/themes";
 
 /**
- * Owner Home: two sides of a card, flipped with a button (#286). Today: live updates from the sitter (swipe to dismiss) and my pets.
+ * Owner Home: two sides of a card, flipped with a button (#286). Today: the stay in progress (hero, today's numbers, the latest update) and my pets.
  * Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
  */
 export default function OwnerHome() {
@@ -85,7 +84,6 @@ export default function OwnerHome() {
           <LatestCard stay={stay} />
         </>
       ) : null}
-      <LiveUpdates />
       <View style={styles.sectionHead}>
         <Text accessibilityRole="header" style={styles.section}>
           Your pets

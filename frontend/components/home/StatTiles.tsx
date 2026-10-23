@@ -10,28 +10,21 @@ import { HOME_TEXT } from "./homeType";
 
 type Tile = { key: string; icon: IconName; value: string; label: string; ground: string };
 
-/** 75 -> "1h 15m", 40 -> "40m". */
+/** 75 -> "1h 15m", 40 -> "40m", 0 -> "0m". */
 export function walkLabel(minutes: number): string {
   if (minutes < 60) return `${minutes}m`;
   const m = minutes % 60;
   return `${Math.floor(minutes / 60)}h${m ? ` ${m}m` : ""}`;
 }
 
-/** Today's numbers from the stay (Figma "tiles"). A number that isn't known is left out, never shown as a guess. */
+/** Today's numbers from the stay (Figma "tiles"). Nothing logged yet reads 0/0, 0 and 0m. */
 export function StatTiles({ stay }: { stay: StayToday }) {
   const styles = useThemedStyles(makeStyles);
   const tiles: Tile[] = [
-    ...(stay.care
-      ? [{ key: "care", icon: "meal" as const, value: `${stay.care.done}/${stay.care.total}`, label: "care done", ground: tokens.color.blockMint }]
-      : []),
-    ...(stay.photos != null
-      ? [{ key: "photos", icon: "camera" as const, value: String(stay.photos), label: "photos today", ground: tokens.color.blockPeach }]
-      : []),
-    ...(stay.walkMinutes != null
-      ? [{ key: "walks", icon: "walk" as const, value: walkLabel(stay.walkMinutes), label: "of walks", ground: tokens.color.blockButter }]
-      : []),
+    { key: "care", icon: "meal", value: `${stay.care.done}/${stay.care.total}`, label: "care done", ground: tokens.color.blockMint },
+    { key: "photos", icon: "camera", value: String(stay.photos), label: "photos today", ground: tokens.color.blockPeach },
+    { key: "walks", icon: "walk", value: walkLabel(stay.walkMinutes), label: "of walks", ground: tokens.color.blockButter },
   ];
-  if (tiles.length === 0) return null;
 
   return (
     <View style={styles.row} testID="stat-tiles">
