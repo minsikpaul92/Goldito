@@ -6,7 +6,7 @@ and a number option is a number the sitter said. Nothing is saved here: the sitt
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.ai.pet_voice import _tokens, numbers_in, quote_in
 
@@ -15,9 +15,22 @@ class RawPick(BaseModel):
     value: Any = None
     quote: str = ""
 
+    @field_validator("quote", mode="before")
+    @classmethod
+    def _null_quote_is_no_quote(cls, value: Any) -> Any:
+        return "" if value is None else value
+
 
 class RawPicks(BaseModel):
     answers: dict[str, RawPick] = {}
+
+    @field_validator("answers", mode="before")
+    @classmethod
+    def _no_empty_entries(cls, value: Any) -> Any:
+        # A question the model has nothing for comes back as null: skip it, keep the rest.
+        if value is None:
+            return {}
+        return {key: item for key, item in value.items() if item is not None} if isinstance(value, dict) else value
 
 
 class Pick(BaseModel):

@@ -1,28 +1,121 @@
+import { normalizeAllergen } from "../pets/petValidation";
 import { type OwnerOnboardingDraft, weightText } from "./draft";
-import type { Score } from "./questions";
-import type { VoiceFacts } from "./voiceApi";
+import { NO_FACTS, type VoiceFacts } from "./voiceApi";
+import type { Species } from "../../types/db";
+import type { InterviewItem } from "../../components/ownerOnboarding/VoiceInterview";
+
+/** Longest intro the owner can keep (the "About" screen cuts typing at the same length). */
+export const MAX_PET_INTRO = 1000;
 
 /**
- * What the owner's words change in the draft. Only empty fields are filled, the owner's own picks stay. Chart answers
- * are filled and marked "suggested". Safety answers and foods are never filled: they stay in `voice` and each screen
- * shows what was heard for the owner to confirm by tapping.
+ * The questions the owner is asked about the pet, in order: read out while talking, and one box each on the form.
+ * A sitter wants to know the safety, the day and how to calm the pet; an owner wants to tell what makes the pet theirs.
+ * The hints under a question name what matters for a dog or for a cat.
  */
-export function applyVoiceFacts(draft: OwnerOnboardingDraft, facts: VoiceFacts): Partial<OwnerOnboardingDraft> {
-  const patch: Partial<OwnerOnboardingDraft> = { voice: facts };
-  if (facts.breed && draft.breed.trim() === "") patch.breed = facts.breed.value;
-  if (facts.age_years && draft.ageYears === null) patch.ageYears = facts.age_years.value;
-  if (facts.weight_kg && draft.weight.trim() === "") patch.weight = weightText(facts.weight_kg.value, draft.weightUnit);
+export function voiceItems(name: string, unit: OwnerOnboardingDraft["weightUnit"], species: Species): InterviewItem[] {
+  const dog = species === "dog";
+  return [
+    { key: "breed", question: `What breed is ${name}?`, placeholder: "A mix is fine" },
+    { key: "age", question: `How old is ${name}?`, placeholder: "Years" },
+    { key: "weight", question: `How much does ${name} weigh?`, placeholder: unit },
+    { key: "personality", question: `What is ${name} like?`, multiline: true },
+    { key: "loves", question: `What does ${name} love?`, multiline: true, hint: dog ? "Treats, toys, walks, spots" : "Treats, toys, windows, spots" },
+    {
+      key: "scares",
+      question: `What scares or upsets ${name}, and how do you calm ${name} down?`,
+      multiline: true,
+      hint: dog ? "Thunder, strangers, baths" : "Visitors, loud noises, the carrier",
+    },
+    {
+      key: "routine",
+      question: `What does a normal day look like for ${name}?`,
+      multiline: true,
+      hint: dog ? "Food, walks, potty, sleep" : "Food, litter box, play, sleep",
+    },
+    { key: "allergies", question: `Is ${name} allergic to anything?`, placeholder: "Foods, with commas" },
+    { key: "health", question: `Any health problems or medicine for ${name}?`, multiline: true },
+    {
+      key: "careful",
+      question: "What should a sitter watch out for?",
+      multiline: true,
+      hint: dog ? "Pulling, other dogs, escaping" : "Hiding, scratching, slipping outside",
+    },
+    { key: "more", question: "Anything else we should know?", multiline: true },
+  ];
+}
 
-  const answers = { ...draft.answers };
-  const suggested = [...draft.suggested];
-  for (const [key, fact] of Object.entries(facts.answers)) {
-    const score = Number(fact.value);
-    // Chart keys are d1..d12 and c1..c10; the safety keys start with s and are left alone.
-    if (!/^[dc]\d+$/.test(key) || ![1, 2, 3, 4].includes(score) || answers[key] !== undefined) continue;
-    answers[key] = score as Score;
-    if (!suggested.includes(key)) suggested.push(key);
+/** The answers read from the words said, one text per question, for the owner to fix. */
+export function formFromFacts(facts: VoiceFacts, unit: OwnerOnboardingDraft["weightUnit"]): Record<string, string> {
+  const note = (key: string) => facts.notes?.[key]?.value ?? "";
+  return {
+    breed: facts.breed?.value ?? "",
+    age: facts.age_years ? String(facts.age_years.value) : "",
+    weight: facts.weight_kg ? weightText(facts.weight_kg.value, unit) : "",
+    personality: note("personality"),
+    loves: note("loves"),
+    scares: note("scares"),
+    routine: note("routine"),
+    allergies: facts.foods.map((food) => food.value).join(", "),
+    health: note("health"),
+    careful: note("careful"),
+    more: note("more"),
+  };
+}
+
+/** The intro the answers make: what the pet is like first, then the other items with a short label, in the order asked. */
+export function introFromForm(values: Record<string, string>, max: number): string {
+  const lines: [key: string, label: string | null][] = [
+    ["personality", null],
+    ["loves", "Loves"],
+    ["scares", "Upset by"],
+    ["routine", "Routine"],
+    ["health", "Health"],
+    ["careful", "Watch out"],
+    ["more", "More"],
+  ];
+  return lines
+    .flatMap(([key, label]) => {
+      const said = (values[key] ?? "").replace(/\s+/g, " ").trim();
+      return said ? [label ? `${label}: ${said}` : said] : [];
+    })
+    .join("\n")
+    .slice(0, max);
+}
+
+/**
+ * What the answers the owner kept change in the draft. A box left empty changes nothing. The owner read and fixed these
+ * boxes, so what is in them is theirs, allergies included. `facts` (null when they typed) stays in `voice`, so the
+ * safety answers heard are shown for the owner to confirm by tapping. The personality chart is tapped, not spoken.
+ */
+export function applyVoiceForm(
+  draft: OwnerOnboardingDraft,
+  values: Record<string, string>,
+  facts: VoiceFacts | null,
+): Partial<OwnerOnboardingDraft> {
+  const patch: Partial<OwnerOnboardingDraft> = { voice: facts ?? NO_FACTS };
+
+  const breed = (values.breed ?? "").trim();
+  if (breed) patch.breed = breed;
+
+  const age = (values.age ?? "").match(/\d{1,2}/);
+  if (age && Number(age[0]) <= 30) patch.ageYears = Number(age[0]);
+
+  const weight = (values.weight ?? "").trim();
+  if (weight) patch.weight = weight;
+
+  const allergies = (values.allergies ?? "")
+    .split(/[,\n]/)
+    .map(normalizeAllergen)
+    .filter(Boolean);
+  if (allergies.length > 0) {
+    patch.foods = [...new Set([...draft.foods, ...allergies])];
+    // Allergies always get one more look on the foods screen before they count.
+    patch.foodsChecked = false;
+    // The foods question is answered as "listed", the same as tapping a chip.
+    patch.safety = { ...draft.safety, s6: "listed" };
   }
-  patch.answers = answers;
-  patch.suggested = suggested;
+
+  const intro = introFromForm(values, MAX_PET_INTRO);
+  if (intro) patch.petIntro = intro;
   return patch;
 }

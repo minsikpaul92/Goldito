@@ -7,11 +7,12 @@ import { BigInput } from "../components/ownerOnboarding/BigInput";
 import { BigOption } from "../components/ownerOnboarding/BigOption";
 import { PetGlanceCard } from "../components/PetGlanceCard";
 import { PetPhotosStep } from "../components/ownerOnboarding/PetPhotosStep";
-import { VoiceStep } from "../components/ownerOnboarding/VoiceStep";
+import { VoiceInterview } from "../components/ownerOnboarding/VoiceInterview";
 import { StepFrame } from "../components/ownerOnboarding/StepFrame";
 import { AddressInput } from "../components/AddressInput";
 import { Banner } from "../components/ui/Banner";
 import { Button } from "../components/ui/Button";
+import { CheckRow } from "../components/ui/CheckRow";
 import { LoadingView } from "../components/ui/LoadingView";
 import { LinkButton } from "../components/ui/LinkButton";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
@@ -24,18 +25,20 @@ import {
   clearDraft,
   convertWeight,
   draftForNextPet,
+  confirmedFoods,
   foodsFromDraft,
   loadDraft,
-  pickedSpecies,
+  MAX_PETS_PER_KIND,
+  petCounts,
   profileFromDraft,
   saveDraft,
   weightFromDraft,
-  withPickedSpecies,
+  withPetCounts,
 } from "../features/ownerOnboarding/draft";
-import { applyVoiceFacts } from "../features/ownerOnboarding/applyVoice";
+import { MAX_PET_INTRO, applyVoiceForm, formFromFacts, voiceItems } from "../features/ownerOnboarding/applyVoice";
 import { useBreedNeeds } from "../features/ownerOnboarding/breedNeedsApi";
 import { guessFromPhoto } from "../features/ownerOnboarding/photoGuessApi";
-import { extractFacts, openQuestions } from "../features/ownerOnboarding/voiceApi";
+import { type VoiceFacts, extractFacts, openQuestions } from "../features/ownerOnboarding/voiceApi";
 import { markOwnerOnboarded, newPetId, saveOwnerOnboarding } from "../features/ownerOnboarding/ownerOnboardingApi";
 import {
   COATS,
@@ -60,7 +63,6 @@ import type { Species } from "../types/db";
 /** Shown once to a new owner (owner_profiles.onboarded_at is null, 014v): their first pet, one question per screen. */
 const PICK_DELAY_MS = 200;
 const MAX_NAME = 40;
-const MAX_PET_INTRO = 200;
 const MAX_OWNER_INTRO = 500;
 
 export default function OwnerOnboarding() {
@@ -75,8 +77,8 @@ export default function OwnerOnboarding() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
-  const [voiceBusy, setVoiceBusy] = useState(false);
-  const [voiceError, setVoiceError] = useState<string | null>(null);
+  // What was heard on the voice screen, until the owner keeps the answers.
+  const [spoken, setSpoken] = useState<VoiceFacts | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationNote, setLocationNote] = useState<string | null>(null);
   const [otherFood, setOtherFood] = useState("");
@@ -144,12 +146,13 @@ export default function OwnerOnboarding() {
     goTo(id);
   };
 
-  const finish = async (petId: string | null) => {
+  const finish = async (petId: string | null, finishLater = false) => {
     if (!userId) return;
     setSaving(true);
     setError(null);
     try {
-      const last = draft.pending.length === 0;
+      // "Finish later" ends here: the pets still to come are not asked about now.
+      const last = draft.pending.length === 0 || finishLater;
       if (petId) await saveOwnerOnboarding(userId, draft, petId, last);
       else await markOwnerOnboarded(userId);
       if (petId) toast.show(`${petName} is added`);
@@ -170,9 +173,6 @@ export default function OwnerOnboarding() {
     }
   };
 
-  const skipLink = (
-    <TextButton label="Skip" onPress={next} testID="own-skip" />
-  );
   const nextButton = (disabled = false) => <Button label="Next" onPress={next} disabled={disabled} testID="own-next" />;
   /** "You said: “…”" under a field the voice filled in or an option it suggested. */
   const heard = (fact: { quote: string } | null | undefined, show: boolean, id: string, lead = "You said") =>
@@ -195,12 +195,13 @@ export default function OwnerOnboarding() {
     goTo("summary");
   };
 
-  const frame = (title: string, body: React.ReactNode, footer?: React.ReactNode, hint?: string) => (
+  const frame = (title: string, body: React.ReactNode, footer?: React.ReactNode, hint?: string, skippable = false) => (
     <StepFrame
       progress={progress(ids, step)}
       title={title}
       hint={hint}
       onBack={index > 0 || fromSummary ? back : undefined}
+      onSkip={skippable ? next : undefined}
       onSkipAll={canSkipAll ? skipAll : undefined}
       footer={footer}
       testID={`own-step-${step}`}
@@ -210,20 +211,42 @@ export default function OwnerOnboarding() {
   );
 
   if (step === "species") {
-    // Both kinds can be ticked: the questions then run once per pet, the first kind first.
-    const picked = pickedSpecies(draft);
-    const toggleSpecies = (value: Species) => {
-      const on = picked.includes(value);
-      const nextDraft = withPickedSpecies(draft, on ? picked.filter((s) => s !== value) : [...picked, value]);
-      update(nextDraft);
-    };
+    // Each kind has a count: the questions then run once per pet, dogs first.
+    const counts = petCounts(draft);
+    const setCount = (kind: Species, n: number) => update(withPetCounts(draft, { ...counts, [kind]: n }));
+    const total = counts.dog + counts.cat;
+    const kindRow = (kind: Species, label: string, plural: string) => (
+      <>
+        <BigOption
+          label={label}
+          selected={counts[kind] > 0}
+          onPress={() => setCount(kind, counts[kind] > 0 ? 0 : 1)}
+          testID={`own-species-${kind}`}
+        />
+        {counts[kind] > 0 ? (
+          <View style={styles.countRow}>
+            <Text style={styles.countLabel}>{`How many ${plural}?`}</Text>
+            <Stepper
+              label={plural}
+              value={String(counts[kind])}
+              onDecrease={() => setCount(kind, counts[kind] - 1)}
+              onIncrease={() => setCount(kind, counts[kind] + 1)}
+              canDecrease={counts[kind] > 1}
+              canIncrease={counts[kind] < MAX_PETS_PER_KIND}
+              actions={["fewer", "more"]}
+              testID={`own-count-${kind}`}
+            />
+          </View>
+        ) : null}
+      </>
+    );
     return (
       <StepFrame
         progress={0}
         title="What kind of pet do you have?"
         footer={
           <>
-            <Button label="Next" onPress={() => goTo("name")} disabled={picked.length === 0} testID="own-next" />
+            <Button label="Next" onPress={() => goTo("name")} disabled={total === 0} testID="own-next" />
             <TextButton
               label={saving ? "Saving…" : "Add a pet later"}
               onPress={() => void finish(null)}
@@ -234,8 +257,8 @@ export default function OwnerOnboarding() {
         }
         testID="own-step-species"
       >
-        <BigOption label="Dog" selected={picked.includes("dog")} onPress={() => toggleSpecies("dog")} testID="own-species-dog" />
-        <BigOption label="Cat" selected={picked.includes("cat")} onPress={() => toggleSpecies("cat")} testID="own-species-cat" />
+        {kindRow("dog", "Dog", "dogs")}
+        {kindRow("cat", "Cat", "cats")}
         {error ? <Banner tone="error" body={error} /> : null}
       </StepFrame>
     );
@@ -275,34 +298,33 @@ export default function OwnerOnboarding() {
     return frame(
       `Add photos of ${petName}`,
       <PetPhotosStep photos={draft.photos} onChange={changePhotos} onBusy={setPhotoBusy} />,
-      <>
-        <Button label={photoBusy ? "Uploading…" : "Next"} onPress={next} disabled={photoBusy || draft.photos.length === 0} testID="own-next" />
-        {skipLink}
-      </>,
+      <Button label={photoBusy ? "Uploading…" : "Next"} onPress={next} disabled={photoBusy || draft.photos.length === 0} testID="own-next" />,
       "The first one is the cover.",
+      true,
     );
   }
 
   if (step === "voice") {
-    const read = async (text: string) => {
-      if (!species) return;
-      setVoiceBusy(true);
-      setVoiceError(null);
-      try {
-        const facts = await extractFacts(species, petName, text, openQuestions(species, petName, draft.answers, draft.safety));
-        update(applyVoiceFacts(draft, facts));
-        next();
-      } catch (e) {
-        setVoiceError((e as Error).message);
-      } finally {
-        setVoiceBusy(false);
-      }
+    const parse = async (text: string) => {
+      if (!species) return {};
+      const facts = await extractFacts(species, petName, text, openQuestions(petName, draft.safety));
+      setSpoken(facts);
+      return formFromFacts(facts, draft.weightUnit);
     };
     return frame(
       `Tell us about ${petName}`,
-      <VoiceStep placeholder={`What is ${petName} like?`} onUse={read} error={voiceError} busy={voiceBusy} />,
-      skipLink,
-      `What is ${petName} like? Brag a little!`,
+      <VoiceInterview
+        items={voiceItems(petName, draft.weightUnit, species ?? "dog")}
+        parse={parse}
+        onSubmit={(values) => {
+          update(applyVoiceForm(draft, values, spoken));
+          setSpoken(null);
+          next();
+        }}
+      />,
+      undefined,
+      "Answer the questions in order.",
+      true,
     );
   }
 
@@ -336,11 +358,9 @@ export default function OwnerOnboarding() {
         />
         {heard(draft.voice.breed, draft.breed.trim() === draft.voice.breed?.value, "breed")}
       </>,
-      <>
-        {nextButton(draft.breed.trim() === "")}
-        {skipLink}
-      </>,
+      nextButton(draft.breed.trim() === ""),
       "A mix is fine. Write what you think.",
+      true,
     );
   }
 
@@ -360,8 +380,9 @@ export default function OwnerOnboarding() {
           />
         ))}
       </View>,
-      skipLink,
+      undefined,
       "The main color of the coat.",
+      true,
     );
   }
 
@@ -382,17 +403,16 @@ export default function OwnerOnboarding() {
         />
         {heard(draft.voice.age_years, draft.ageYears === draft.voice.age_years?.value, "age")}
       </View>,
-      <>
-        <Button
-          label="Next"
-          onPress={() => {
-            if (draft.ageYears === null) update({ ageYears: years });
-            next();
-          }}
-          testID="own-next"
-        />
-        {skipLink}
-      </>,
+      <Button
+        label="Next"
+        onPress={() => {
+          if (draft.ageYears === null) update({ ageYears: years });
+          next();
+        }}
+        testID="own-next"
+      />,
+      undefined,
+      true,
     );
   }
 
@@ -422,10 +442,9 @@ export default function OwnerOnboarding() {
         />
         {heard(heardKg, kg !== null && heardKg !== null && Math.abs(kg - heardKg.value) < 0.06, "weight")}
       </>,
-      <>
-        {nextButton(draft.weight.trim() === "")}
-        {skipLink}
-      </>,
+      nextButton(draft.weight.trim() === ""),
+      undefined,
+      true,
     );
   }
 
@@ -439,10 +458,9 @@ export default function OwnerOnboarding() {
         accessibilityLabel={`About ${petName}`}
         testID="own-pet-intro"
       />,
-      <>
-        {nextButton(draft.petIntro.trim() === "")}
-        {skipLink}
-      </>,
+      nextButton(draft.petIntro.trim() === ""),
+      undefined,
+      true,
     );
   }
 
@@ -490,10 +508,9 @@ export default function OwnerOnboarding() {
           />
         ))}
       </>,
-      <>
-        {answered ? nextButton() : null}
-        {skipLink}
-      </>,
+      answered ? nextButton() : null,
+      undefined,
+      true,
     );
   }
 
@@ -517,7 +534,9 @@ export default function OwnerOnboarding() {
           />
         ))}
       </>,
-      skipLink,
+      undefined,
+      undefined,
+      true,
     );
   }
 
@@ -527,11 +546,11 @@ export default function OwnerOnboarding() {
       const key = normalizeAllergen(food);
       const on = foods.includes(key);
       const nextFoods = on ? foods.filter((f) => f !== key) : [...foods, key];
-      update({ foods: nextFoods, safety: { ...draft.safety, s6: nextFoods.length > 0 ? "listed" : "" } });
+      update({ foods: nextFoods, foodsChecked: false, safety: { ...draft.safety, s6: nextFoods.length > 0 ? "listed" : "" } });
     };
     const addOther = () => {
       const key = normalizeAllergen(otherFood);
-      if (key && !foods.includes(key)) update({ foods: [...foods, key], safety: { ...draft.safety, s6: "listed" } });
+      if (key && !foods.includes(key)) update({ foods: [...foods, key], foodsChecked: false, safety: { ...draft.safety, s6: "listed" } });
       setOtherFood("");
       setShowOtherFood(false);
     };
@@ -571,13 +590,19 @@ export default function OwnerOnboarding() {
           <BigOption
             label="None"
             selected={foods.length === 0 && draft.safety.s6 === "none"}
-            onPress={() => update({ foods: [], safety: { ...draft.safety, s6: "none" } })}
+            onPress={() => update({ foods: [], foodsChecked: false, safety: { ...draft.safety, s6: "none" } })}
             style={styles.half}
             testID="own-food-none"
           />
           <BigOption label="Something else" onPress={() => setShowOtherFood(true)} style={styles.half} testID="own-food-else" />
         </View>
         {heardFoods.length > 0 ? heard(heardFoods[0], true, "foods", "We heard") : null}
+        <CheckRow
+          label="I checked this list"
+          checked={draft.foodsChecked}
+          onChange={(foodsChecked) => update({ foodsChecked })}
+          testID="own-foods-checked"
+        />
         {showOtherFood ? (
           <View style={styles.row}>
             <View style={styles.rowInput}>
@@ -594,10 +619,9 @@ export default function OwnerOnboarding() {
           </View>
         ) : null}
       </>,
-      <>
-        {nextButton(foods.length === 0 && draft.safety.s6 !== "none")}
-        {skipLink}
-      </>,
+      nextButton(!draft.foodsChecked || (foods.length === 0 && draft.safety.s6 !== "none")),
+      undefined,
+      true,
     );
   }
 
@@ -611,11 +635,9 @@ export default function OwnerOnboarding() {
         accessibilityLabel="About you"
         testID="own-intro"
       />,
-      <>
-        {nextButton(draft.intro.trim() === "")}
-        {skipLink}
-      </>,
+      nextButton(draft.intro.trim() === ""),
       "Your sitter reads this.",
+      true,
     );
   }
 
@@ -665,16 +687,14 @@ export default function OwnerOnboarding() {
         ) : null}
         {locationNote ? <Text style={styles.note}>{locationNote}</Text> : null}
       </>,
-      <>
-        {nextButton(!draft.home)}
-        {skipLink}
-      </>,
+      nextButton(!draft.home),
       "Sitters only see a rough distance.",
+      true,
     );
   }
 
   // Summary: what will be saved. Tap a row to change it.
-  const foods = foodsFromDraft(draft);
+  const foods = confirmedFoods(draft);
   const profile = profileFromDraft(draft);
   const chartTotal = species ? chartQuestions(species).length : 0;
   const answered = Object.keys(profile.answers).length;
@@ -693,7 +713,7 @@ export default function OwnerOnboarding() {
     { id: "petIntro", label: "About", value: draft.petIntro.trim() || "Not shared yet" },
     { id: species ? `q:${chartQuestions(species)[0].key}` : "name", label: "Personality", value: `${answered} of ${chartTotal} answered` },
     { id: `s:${SAFETY_QUESTIONS[0].key}`, label: "Safety", value: `${safeAnswered} of ${SAFETY_QUESTIONS.length} answered` },
-    { id: "foods", label: "Foods to avoid", value: foods.length ? foods.join(", ") : draft.safety.s6 === "none" ? "None" : "Not shared yet" },
+    { id: "foods", label: "Foods to avoid", value: foods.length ? foods.join(", ") : draft.foodsChecked && draft.safety.s6 === "none" ? "None" : "Not shared yet" },
     // The owner's own answers are asked with the first pet only.
     ...(draft.ownerDone
       ? []
@@ -710,7 +730,21 @@ export default function OwnerOnboarding() {
       footer={
         <>
           {error ? <Banner tone="error" body={error} testID="own-error" /> : null}
-          <Button label={saving ? "Saving…" : `Save ${petName}`} onPress={() => void finish(draft.petId ?? ensurePetId())} disabled={saving} testID="own-save" />
+          <Button
+            label={saving ? "Saving…" : draft.pending.length > 0 ? `Save ${petName} and add the next pet` : `Save ${petName}`}
+            onPress={() => void finish(draft.petId ?? ensurePetId())}
+            disabled={saving}
+            testID="own-save"
+          />
+          {draft.pending.length > 0 ? (
+            <Button
+              label="Save and finish later"
+              variant="secondary"
+              onPress={() => void finish(draft.petId ?? ensurePetId(), true)}
+              disabled={saving}
+              testID="own-save-later"
+            />
+          ) : null}
         </>
       }
       testID="own-step-summary"
@@ -760,6 +794,8 @@ const makeStyles = (theme: Theme) =>
     half: { flexBasis: "47%", flexGrow: 1 },
     row: { flexDirection: "row", gap: theme.spacing.sm, alignItems: "center" },
     rowInput: { flex: 1 },
+    countRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: theme.spacing.xs },
+    countLabel: { fontSize: theme.fontSize.lead, lineHeight: theme.lineHeight.lead, color: theme.color.text },
     summaryRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -768,7 +804,8 @@ const makeStyles = (theme: Theme) =>
       paddingHorizontal: theme.spacing.md,
       paddingVertical: theme.spacing.sm,
       backgroundColor: theme.color.surface,
-      borderRadius: theme.ui.radius.button,
+      // A box, not a pill: a long answer (About) would turn a pill into an oval.
+      borderRadius: theme.ui.radius.card,
       borderWidth: 1,
       borderColor: theme.color.border,
     },

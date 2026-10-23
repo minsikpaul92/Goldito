@@ -30,6 +30,8 @@ export type OwnerOnboardingDraft = {
   safety: Record<string, string>;
   /** Foods to avoid: chip names and typed ones, lowercase. */
   foods: string[];
+  /** The owner checked the foods list and said it is right. Any change to the list takes it back. Nothing about foods is saved without it. */
+  foodsChecked: boolean;
   intro: string;
   /** What the owner said about the pet (voice sign-up): suggestions with their quotes, kept so a reload still shows them. */
   voice: VoiceFacts;
@@ -62,6 +64,7 @@ export const EMPTY_DRAFT: OwnerOnboardingDraft = {
   answers: {},
   safety: {},
   foods: [],
+  foodsChecked: false,
   intro: "",
   voice: NO_FACTS,
   coat: "",
@@ -101,18 +104,29 @@ export async function clearDraft(userId: string): Promise<void> {
   }
 }
 
-const SPECIES_ORDER: Species[] = ["dog", "cat"];
+/** How many pets of each kind the owner has said they have (this pet and the ones still to come). */
+export type PetCounts = Record<Species, number>;
 
-/** The kinds picked so far, in a fixed order (the first one is the pet filled in first). */
-export function pickedSpecies(draft: OwnerOnboardingDraft): Species[] {
-  return SPECIES_ORDER.filter((s) => s === draft.species || draft.pending.includes(s));
+/** The most pets of one kind the sign-up takes; more can be added later from the pets list. */
+export const MAX_PETS_PER_KIND = 6;
+
+export function petCounts(draft: OwnerOnboardingDraft): PetCounts {
+  const all = draft.species ? [draft.species, ...draft.pending] : [...draft.pending];
+  return { dog: all.filter((s) => s === "dog").length, cat: all.filter((s) => s === "cat").length };
 }
 
-/** The draft after a kind was ticked or unticked. Changing the first kind clears what was answered for the old one. */
-export function withPickedSpecies(draft: OwnerOnboardingDraft, picked: Species[]): OwnerOnboardingDraft {
-  const [species = null, ...pending] = SPECIES_ORDER.filter((s) => picked.includes(s));
+/**
+ * The draft after the counts changed. The pets run dogs first, then cats: the first is filled in now, the rest wait.
+ * Changing the kind of the first pet clears what was answered for the old one.
+ */
+export function withPetCounts(draft: OwnerOnboardingDraft, counts: PetCounts): OwnerOnboardingDraft {
+  const list: Species[] = [
+    ...Array<Species>(Math.min(MAX_PETS_PER_KIND, counts.dog)).fill("dog"),
+    ...Array<Species>(Math.min(MAX_PETS_PER_KIND, counts.cat)).fill("cat"),
+  ];
+  const [species = null, ...pending] = list;
   if (species === draft.species) return { ...draft, pending };
-  return { ...draft, species, pending, answers: {}, safety: {}, voice: NO_FACTS, suggested: [], photoGuess: null, coat: "" };
+  return { ...draft, species, pending, answers: {}, safety: {}, foodsChecked: false, voice: NO_FACTS, suggested: [], photoGuess: null, coat: "" };
 }
 
 /** The draft for the next pet once one is saved: only what the owner said about themselves carries over. */
@@ -138,12 +152,19 @@ export function birthdateFromAge(ageYears: number, today = new Date()): string {
 }
 
 export function profileFromDraft(draft: OwnerOnboardingDraft): PetProfile {
-  return { ...EMPTY_PROFILE, answers: { ...draft.answers }, safety: { ...draft.safety }, ...(draft.coat ? { coat: draft.coat } : {}) };
+  // The foods answer (s6) goes with the foods: without the owner's check it is left out.
+  const safety = Object.fromEntries(Object.entries(draft.safety).filter(([key]) => key !== "s6" || draft.foodsChecked));
+  return { ...EMPTY_PROFILE, answers: { ...draft.answers }, safety, ...(draft.coat ? { coat: draft.coat } : {}) };
 }
 
-/** Lowercase and unique, as `pet_allergies` stores them. */
+/** Lowercase and unique, as the foods step lists them (whether or not the owner has checked the list yet). */
 export function foodsFromDraft(draft: OwnerOnboardingDraft): string[] {
   return [...new Set(draft.foods.map(normalizeAllergen).filter((f) => f !== ""))];
+}
+
+/** The foods that are saved: only a list the owner checked. A skipped or unchecked list saves nothing. */
+export function confirmedFoods(draft: OwnerOnboardingDraft): string[] {
+  return draft.foodsChecked ? foodsFromDraft(draft) : [];
 }
 
 const KG_PER_LB = 0.45359237;

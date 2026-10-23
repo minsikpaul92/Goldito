@@ -7,8 +7,10 @@ import type { MediaKind, PickPurpose } from "./media";
  *
  * Photos/video live in `assets/demo/`. No people or addresses.
  * `safety_label`: made-up treat labels (no brands) for the four Treat check outcomes (phase-08 sample table).
- * `mood`: our own dog photos (metadata removed) + the fetch clip — read in the browser only, never uploaded.
+ * `mood`: our own dog and cat photos (metadata removed) + the fetch clip — read in the browser only, never uploaded.
  * `sticker`: the same photos — only the cut-out PNG is uploaded, never the photo.
+ * Every photo is offered wherever a photo is picked (feed, Diary, tasks, report, Snap, profile); only the treat
+ * labels and the fetch clip are tied to what they are for.
  * `handoff` has none (the in-app photo check was dropped from 06B).
  */
 export type DemoSample = {
@@ -50,16 +52,31 @@ const MOOD: DemoSample[] = [
   { id: "play_fetch", label: "Fetch play", source: require("../assets/demo/play_fetch.mp4"), kind: "video" },
 ];
 
+// Our own cats, one look each: relaxed, wary, blank, startled but curious, relaxed and trusting (cat_notes.json).
+const CATS: DemoSample[] = [
+  { id: "cat_orange", label: "Orange cat", source: require("../assets/demo/mood/orange_cat_lying_relaxed.jpg") },
+  { id: "cat_cream", label: "Wary cat", source: require("../assets/demo/mood/cream_cat_wary_hallway.jpg") },
+  { id: "cat_gray", label: "Blank stare", source: require("../assets/demo/mood/gray_cat_blank_stare.jpg") },
+  { id: "cat_black", label: "Curious cat", source: require("../assets/demo/mood/black_cat_startled_curious.jpg") },
+  { id: "cat_tortie", label: "Belly up", source: require("../assets/demo/mood/tortoiseshell_cat_belly_up_trusting.jpg") },
+];
+
+const isPhoto = (sample: DemoSample) => sample.kind !== "video";
+const PET_PHOTOS = [...MOOD.filter(isPhoto), ...CATS];
+// Daily samples first (the clip stays in its spot), then every pet photo.
+const EVERYDAY = [...DAILY, ...PET_PHOTOS];
+
 const SAMPLES: Record<PickPurpose, DemoSample[]> = {
-  feed: DAILY,
-  task_proof: DAILY,
-  report: DAILY,
+  feed: EVERYDAY,
+  task_proof: EVERYDAY,
+  report: EVERYDAY,
   handoff: [],
   safety_label: LABELS,
-  mood: MOOD,
-  sticker: MOOD.filter((sample) => sample.kind !== "video"),
-  // A profile photo: the same made-up dog photos stand in for a face on the desktop frame and demo accounts.
-  profile: MOOD.filter((sample) => sample.kind !== "video"),
+  // The fetch clip is already in MOOD; add the cats and the daily photos after it.
+  mood: [...MOOD, ...CATS, ...DAILY.filter(isPhoto)],
+  sticker: [...PET_PHOTOS, ...DAILY.filter(isPhoto)],
+  // A profile photo: the same made-up pet photos stand in for a face on the desktop frame and demo accounts.
+  profile: [...PET_PHOTOS, ...DAILY.filter(isPhoto)],
   // A diary page image is drawn by the app (Share → public link), never picked.
   diary_page: [],
 };
