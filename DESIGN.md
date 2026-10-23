@@ -439,7 +439,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | Role label next to a name | The header's **Owner** / **Sitter** is a `brand` `Tag`. Show the same Tag next to a person's name wherever it would otherwise be unclear who they are (booking card and detail, inquiry thread, request cards) — never plain text like "(sitter)" |
 | `Button` variants | Built: `primary`, `secondary`, `danger` (`error` fill, only for destructive confirms). Proposed: `large` (full-width, 56 tall — the one primary action on sitter screens), Figma `Loading` state |
 | `AlertModal` | Safety results — see [§7.4](#74-danger-is-loud) |
-| `TabBar` | Per role; [architecture §3](docs/plan/phases/architecture.ko.md) **D47 / D47b · D61**: both **Home · Bookings · Feed · Diary · Snap** (Snap = treat check · mood · sticker, icon `camera`). Settings (and sitter Earnings later) = header Profile |
+| `TabBar` | Per role; [architecture §3](docs/plan/phases/architecture.ko.md) **D47 / D47b · D61 · D63**: both **Home · Bookings · Chat · Feed · Snap** (Chat = the chats with an unread badge, icon `chats` = square bubble with a paw; Feed = Photos · Diary switch; Snap = treat check · mood · sticker, icon `camera`). Settings (and sitter Earnings later) = header Profile |
 | Pet photo avatars | `Avatar kind="photo"` once pets have photos (11.10); `kind="emoji"` (🐶 / 🐱) until then |
 | `TaskRow` | Checkmark circle + title + time; pending first; tap → "Complete with photo" |
 | `FeedCard` (built: `components/FeedCard.tsx`) | Photo/video (`radius.lg`), caption, time, optional mood chip |
