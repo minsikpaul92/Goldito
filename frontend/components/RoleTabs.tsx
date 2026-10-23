@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Redirect, Stack, Tabs } from "expo-router";
 import { ComponentProps, ReactNode } from "react";
-import { ColorValue, Platform, Pressable, StyleProp, View, ViewStyle } from "react-native";
+import { ColorValue, Platform, Pressable, StyleProp, Text, View, ViewStyle } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -94,6 +94,34 @@ export function headerOptions(theme: Theme) {
   };
 }
 
+/** A tab's header title with "Name · Role" under it, so the header says who is signed in (team pick, Oct 22). */
+function HeaderTitle({ children }: { children: string }) {
+  const theme = useTheme();
+  const { profile } = useSession();
+  const who = profile ? `${profile.displayName || "You"} · ${profile.role === "owner" ? "Owner" : "Sitter"}` : null;
+  return (
+    <View>
+      <Text accessibilityRole="header" style={headerOptions(theme).headerTitleStyle} numberOfLines={1}>
+        {children}
+      </Text>
+      {who ? (
+        <Text
+          style={{ fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted }}
+          numberOfLines={1}
+          testID="header-who"
+        >
+          {who}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+/** `headerTitle` for a tab whose header reads differently from its tab label (sitter Home → "Today"). */
+export function tabTitle(title: string) {
+  return () => <HeaderTitle>{title}</HeaderTitle>;
+}
+
 type StackProps = {
   role: Role;
   children?: ReactNode;
@@ -139,6 +167,7 @@ export function RoleTabs({ children }: { children: ReactNode }) {
     <Tabs
       screenOptions={{
         ...headerOptions(theme),
+        headerTitle: ({ children }) => <HeaderTitle>{children}</HeaderTitle>,
         headerRight: () => <HeaderActions />,
         tabBarActiveTintColor: theme.color.primary,
         tabBarInactiveTintColor: theme.color.textMuted,
