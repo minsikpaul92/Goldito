@@ -23,15 +23,15 @@ import {
   birthdateFromAge,
   clearDraft,
   convertWeight,
-  draftForAnotherPet,
   draftForNextPet,
   foodsFromDraft,
   loadDraft,
-  pickedSpecies,
+  MAX_PETS_PER_KIND,
+  petCounts,
   profileFromDraft,
   saveDraft,
   weightFromDraft,
-  withPickedSpecies,
+  withPetCounts,
 } from "../features/ownerOnboarding/draft";
 import { applyVoiceFacts } from "../features/ownerOnboarding/applyVoice";
 import { useBreedNeeds } from "../features/ownerOnboarding/breedNeedsApi";
@@ -113,7 +113,7 @@ export default function OwnerOnboarding() {
   if (session.status !== "signedIn" || session.profile.role !== "owner") return <Redirect href="/" />;
   if (!draft) return <LoadingView />;
 
-  const ids = stepIds(draft.species, draft.ownerDone, draft.kindFirst);
+  const ids = stepIds(draft.species, draft.ownerDone);
   const index = stepIndex(ids, draft.step);
   const step = ids[index];
   const petName = draft.name.trim();
@@ -145,26 +145,19 @@ export default function OwnerOnboarding() {
     goTo(id);
   };
 
-  const finish = async (petId: string | null, addAnother = false) => {
+  const finish = async (petId: string | null, finishLater = false) => {
     if (!userId) return;
     setSaving(true);
     setError(null);
     try {
-      const last = draft.pending.length === 0;
+      // "Finish later" ends here: the pets still to come are not asked about now.
+      const last = draft.pending.length === 0 || finishLater;
       if (petId) await saveOwnerOnboarding(userId, draft, petId, last);
       else await markOwnerOnboarded(userId);
       if (petId) toast.show(`${petName} is added`);
       if (petId && !last) {
         // The next pet starts from its first question; the owner is not done until the last one is saved.
         const nextDraft = draftForNextPet(draft);
-        await saveDraft(userId, nextDraft);
-        setFromSummary(false);
-        setDraft(nextDraft);
-        return;
-      }
-      if (petId && addAnother) {
-        // One more pet: the kind question again, with the owner's own answers kept.
-        const nextDraft = draftForAnotherPet(draft);
         await saveDraft(userId, nextDraft);
         setFromSummary(false);
         setDraft(nextDraft);
@@ -219,36 +212,54 @@ export default function OwnerOnboarding() {
   );
 
   if (step === "species") {
-    // Both kinds can be ticked: the questions then run once per pet, the first kind first.
-    const picked = pickedSpecies(draft);
-    const toggleSpecies = (value: Species) => {
-      const on = picked.includes(value);
-      const nextDraft = withPickedSpecies(draft, on ? picked.filter((s) => s !== value) : [...picked, value]);
-      update(nextDraft);
-    };
+    // Each kind has a count: the questions then run once per pet, dogs first.
+    const counts = petCounts(draft);
+    const setCount = (kind: Species, n: number) => update(withPetCounts(draft, { ...counts, [kind]: n }));
+    const total = counts.dog + counts.cat;
+    const kindRow = (kind: Species, label: string, plural: string) => (
+      <>
+        <BigOption
+          label={label}
+          selected={counts[kind] > 0}
+          onPress={() => setCount(kind, counts[kind] > 0 ? 0 : 1)}
+          testID={`own-species-${kind}`}
+        />
+        {counts[kind] > 0 ? (
+          <View style={styles.countRow}>
+            <Text style={styles.countLabel}>{`How many ${plural}?`}</Text>
+            <Stepper
+              label={plural}
+              value={String(counts[kind])}
+              onDecrease={() => setCount(kind, counts[kind] - 1)}
+              onIncrease={() => setCount(kind, counts[kind] + 1)}
+              canDecrease={counts[kind] > 1}
+              canIncrease={counts[kind] < MAX_PETS_PER_KIND}
+              actions={["fewer", "more"]}
+              testID={`own-count-${kind}`}
+            />
+          </View>
+        ) : null}
+      </>
+    );
     return (
       <StepFrame
         progress={0}
-        title={draft.kindFirst ? "What kind of pet is next?" : "What kind of pet do you have?"}
+        title="What kind of pet do you have?"
         footer={
           <>
-            <Button label="Next" onPress={() => goTo("name")} disabled={picked.length === 0} testID="own-next" />
-            {draft.kindFirst ? (
-              <Button label={saving ? "Saving…" : "That's all"} variant="secondary" onPress={() => void finish(null)} disabled={saving} testID="own-done" />
-            ) : (
-              <TextButton
-                label={saving ? "Saving…" : "Add a pet later"}
-                onPress={() => void finish(null)}
-                disabled={saving}
-                testID="own-later"
-              />
-            )}
+            <Button label="Next" onPress={() => goTo("name")} disabled={total === 0} testID="own-next" />
+            <TextButton
+              label={saving ? "Saving…" : "Add a pet later"}
+              onPress={() => void finish(null)}
+              disabled={saving}
+              testID="own-later"
+            />
           </>
         }
         testID="own-step-species"
       >
-        <BigOption label="Dog" selected={picked.includes("dog")} onPress={() => toggleSpecies("dog")} testID="own-species-dog" />
-        <BigOption label="Cat" selected={picked.includes("cat")} onPress={() => toggleSpecies("cat")} testID="own-species-cat" />
+        {kindRow("dog", "Dog", "dogs")}
+        {kindRow("cat", "Cat", "cats")}
         {error ? <Banner tone="error" body={error} /> : null}
       </StepFrame>
     );
@@ -723,14 +734,19 @@ export default function OwnerOnboarding() {
       footer={
         <>
           {error ? <Banner tone="error" body={error} testID="own-error" /> : null}
-          <Button label={saving ? "Saving…" : `Save ${petName}`} onPress={() => void finish(draft.petId ?? ensurePetId())} disabled={saving} testID="own-save" />
-          {draft.pending.length === 0 ? (
+          <Button
+            label={saving ? "Saving…" : draft.pending.length > 0 ? `Save ${petName} and add the next pet` : `Save ${petName}`}
+            onPress={() => void finish(draft.petId ?? ensurePetId())}
+            disabled={saving}
+            testID="own-save"
+          />
+          {draft.pending.length > 0 ? (
             <Button
-              label="Save and add another pet"
+              label="Save and finish later"
               variant="secondary"
               onPress={() => void finish(draft.petId ?? ensurePetId(), true)}
               disabled={saving}
-              testID="own-save-more"
+              testID="own-save-later"
             />
           ) : null}
         </>
@@ -782,6 +798,8 @@ const makeStyles = (theme: Theme) =>
     half: { flexBasis: "47%", flexGrow: 1 },
     row: { flexDirection: "row", gap: theme.spacing.sm, alignItems: "center" },
     rowInput: { flex: 1 },
+    countRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: theme.spacing.xs },
+    countLabel: { fontSize: 18, lineHeight: 24, color: theme.color.text },
     summaryRow: {
       flexDirection: "row",
       alignItems: "center",

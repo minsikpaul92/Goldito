@@ -618,8 +618,8 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-title")).toHaveText("Meet Pip");
     await expect(screen.getByTestId("own-row-about-you")).toBeVisible();
     await expect(screen.getByTestId("own-row-home")).toBeVisible();
-    // The cat is still to come, so only Save is offered here.
-    await expect(screen.getByTestId("own-save-more")).toHaveCount(0);
+    // The cat is still to come: continue with it, or finish later.
+    await expect(screen.getByTestId("own-save-later")).toBeVisible();
     await screen.getByTestId("own-save").click();
 
     // The cat starts from its name: no kind question, nothing about the owner again, and the owner is not done yet.
@@ -635,6 +635,8 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-row-about-you")).toHaveCount(0);
     await expect(screen.getByTestId("own-row-home")).toHaveCount(0);
     await expect(screen.getByTestId("own-row-personality")).toContainText("0 of 10 answered");
+    // The last pet: nothing left to postpone.
+    await expect(screen.getByTestId("own-save-later")).toHaveCount(0);
     await screen.getByTestId("own-save").click();
 
     await expect(page).toHaveURL(/\/owner$/);
@@ -642,26 +644,30 @@ test.describe("owner onboarding", () => {
     expect(db.owner_profiles.find((p) => p.id === OWNER.id)?.onboarded_at).not.toBeNull();
   });
 
-  test("an owner adds a second dog right after the first: Save and add another pet, then Save", async ({ page }) => {
+  test("how many: two dogs are asked one after the other, with the counts set on the first screen", async ({ page }) => {
     const db = await newOwner(page);
     await signIn(page, OWNER);
     const screen = app(page);
 
+    // Ticking a kind asks how many; the count goes up and down within 1 to 6.
+    await expect(screen.getByTestId("own-count-dog-value")).toHaveCount(0);
     await screen.getByTestId("own-species-dog").click();
+    await expect(screen.getByTestId("own-count-dog-value")).toHaveText("1");
+    await expect(screen.getByTestId("own-count-dog-minus")).toBeDisabled();
+    await screen.getByTestId("own-count-dog-plus").click();
+    await expect(screen.getByTestId("own-count-dog-value")).toHaveText("2");
     await screen.getByTestId("own-next").click();
+
+    await expect(screen.getByTestId("own-title")).toHaveText("What's your dog's name?");
     await screen.getByTestId("own-name").fill("Pip");
     await screen.getByTestId("own-next").click();
     await skipToSummary(page);
     await expect(screen.getByTestId("own-title")).toHaveText("Meet Pip");
-    await screen.getByTestId("own-save-more").click();
+    await screen.getByTestId("own-save").click();
 
-    // The kind question again for the next pet. The owner's own screens are not asked a second time.
-    await expect(screen.getByTestId("own-title")).toHaveText("What kind of pet is next?");
-    expect(db.pets.map((p) => p.name)).toEqual(["Pip"]);
-    await expect(screen.getByTestId("own-later")).toHaveCount(0);
-    await screen.getByTestId("own-species-dog").click();
-    await screen.getByTestId("own-next").click();
+    // The second dog starts from its name; the owner's own screens are not asked again.
     await expect(screen.getByTestId("own-title")).toHaveText("What's your dog's name?");
+    expect(db.pets.map((p) => p.name)).toEqual(["Pip"]);
     await screen.getByTestId("own-name").fill("Rex");
     await screen.getByTestId("own-next").click();
     await skipToSummary(page);
@@ -671,25 +677,25 @@ test.describe("owner onboarding", () => {
 
     await expect(page).toHaveURL(/\/owner$/);
     expect(db.pets.map((p) => [p.name, p.species])).toEqual([["Pip", "dog"], ["Rex", "dog"]]);
-    expect(db.owner_profiles.find((p) => p.id === OWNER.id)?.onboarded_at).not.toBeNull();
   });
 
-  test("That's all on the kind question for the next pet goes home with the pets saved so far", async ({ page }) => {
+  test("Save and finish later after the first pet goes home, and the pets still to come are not asked", async ({ page }) => {
     const db = await newOwner(page);
     await signIn(page, OWNER);
     const screen = app(page);
 
+    await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-count-dog-plus").click();
     await screen.getByTestId("own-species-cat").click();
     await screen.getByTestId("own-next").click();
-    await screen.getByTestId("own-name").fill("Mochi");
+    await screen.getByTestId("own-name").fill("Pip");
     await screen.getByTestId("own-next").click();
     await skipToSummary(page);
-    await screen.getByTestId("own-save-more").click();
-    await expect(screen.getByTestId("own-title")).toHaveText("What kind of pet is next?");
-    await screen.getByTestId("own-done").click();
+    await screen.getByTestId("own-save-later").click();
 
     await expect(page).toHaveURL(/\/owner$/);
-    expect(db.pets.map((p) => p.name)).toEqual(["Mochi"]);
+    expect(db.pets.map((p) => p.name)).toEqual(["Pip"]);
+    expect(db.owner_profiles.find((p) => p.id === OWNER.id)?.onboarded_at).not.toBeNull();
   });
 
   test("the weight can be typed in kg or lbs, the switch converts it and the pet is saved in kg", async ({ page }) => {
