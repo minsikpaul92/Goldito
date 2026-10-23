@@ -74,6 +74,21 @@ def test_a_fact_with_no_quote_is_dropped():
     assert validate_facts(raw, TEXT, OPTIONS).answers == {}
 
 
+def test_a_null_quote_from_the_model_is_read_as_no_quote_not_as_a_broken_answer():
+    # The model writes "quote": null for what the owner did not say; the whole answer must not be thrown away.
+    raw = RawFacts.model_validate(
+        {
+            "breed": {"value": None, "quote": None},
+            "age_years": {"value": 4, "quote": None},
+            "foods": [{"value": "chicken", "quote": None}, {"value": "chicken", "quote": "allergic to chicken"}],
+            "answers": {"d4": {"value": "3", "quote": None}},
+        }
+    )
+    facts = validate_facts(raw, TEXT, OPTIONS)
+    assert facts.breed is None and facts.age_years is None and facts.answers == {}
+    assert [f.value for f in facts.foods] == ["chicken"]
+
+
 def test_an_answer_outside_the_asked_questions_or_the_options_is_dropped():
     raw = RawFacts(
         answers={

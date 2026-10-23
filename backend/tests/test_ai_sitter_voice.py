@@ -52,6 +52,11 @@ def test_a_pick_without_a_real_quote_or_outside_the_options_is_dropped():
     assert validate_picks(raw, TEXT, OPTIONS) == {}
 
 
+def test_a_null_quote_is_read_as_no_quote():
+    raw = RawPicks.model_validate({"answers": {"s1": {"value": "never", "quote": None}}})
+    assert validate_picks(raw, TEXT, OPTIONS) == {}
+
+
 def test_several_values_only_where_several_are_allowed_and_once_each():
     raw = RawPicks(
         answers={

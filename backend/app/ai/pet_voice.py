@@ -7,7 +7,7 @@ quote is really in the text and that the value fits it. A fact that fails any ch
 import re
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class RawFact(BaseModel):
@@ -15,6 +15,12 @@ class RawFact(BaseModel):
 
     value: Any = None
     quote: str = ""
+
+    @field_validator("quote", mode="before")
+    @classmethod
+    def _null_quote_is_no_quote(cls, value: Any) -> Any:
+        # The model writes "quote": null for what was not said; that is a fact without a quote, not a broken answer.
+        return "" if value is None else value
 
 
 class RawFacts(BaseModel):
