@@ -749,6 +749,18 @@ begin
   perform _t_as(chloe);
   perform _t_ok((select address from get_handoff_details(v_a) where kind = 'pick_up') = '1 Owner Ave',
     'D′: sitter sees owner address for an owner_home pick-up');
+
+  -- 015g: the unit and the postal code join the address the booking parties see.
+  perform _t_as(null);
+  update public.sitter_profiles set home_address_2 = 'Unit 5', home_postal_code = 'm5a 3c4' where id = chloe;
+  perform _t_as(robert);
+  perform _t_ok((select address from get_handoff_details(v_a) where kind = 'drop_off') = 'Unit 5, 100 Example St M5A 3C4',
+    '015g: the owner sees the sitter''s unit and postal code in the address');
+  perform _t_as(null);
+  update public.sitter_profiles set home_address_2 = null, home_postal_code = null where id = chloe;
+  perform _t_ok(public.full_address(null, '55 Mill St, Toronto, ON M5A 3C4', 'M5A 3C4') = '55 Mill St, Toronto, ON M5A 3C4',
+    '015g: a postal code the street already ends with is not repeated');
+  perform _t_ok(public.full_address('  ', null, null) is null, '015g: nothing to show gives null');
   perform _t_as(nora);
   begin
     perform get_handoff_details(v_a);
@@ -1494,9 +1506,9 @@ begin
   perform _t_as(null);
   update public.sitter_profiles
   set visitor_parking = 'Visitor spot B-12',
-      lobby_notes = 'Buzz 1204',
-      packing_list = array['food', 'leash']
+      lobby_notes = 'Buzz 1204'
   where id = chloe;
+  update public.owner_profiles set packing_list = array['food', 'leash'] where id = robert;
 
   v_id := _t_booking(robert, chloe, array[max],
     now() + interval '80 days', now() + interval '83 days', 'confirmed');
@@ -1520,6 +1532,11 @@ begin
     and r.lobby_notes = 'Buzz 1204'
     and r.packing_list = array['food', 'leash'],
     '3C.4: after pay, sitter home + packing list return');
+  perform _t_ok((select packing_list from get_handoff_details(v_id) where kind = 'pick_up') is null,
+    '015h: the packing list rides on the drop-off only');
+  perform _t_as(chloe);
+  perform _t_ok((select packing_list from get_handoff_details(v_id) where kind = 'drop_off') = array['food', 'leash'],
+    '015h: the sitter reads the owner''s packing list');
 
   perform _t_as(null);
 end;

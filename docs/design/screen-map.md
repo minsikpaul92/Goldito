@@ -349,21 +349,24 @@ Public privacy page (10.11): reachable signed out — the Google OAuth consent s
 
 Role profile (phase-03 3.8): edit only. Settings, What's new and Privacy are reached from the menu.
 
-Shows: `DemoTools` · `AddressInput` · `OpenInMapsButton` · `SitterBadges` · `ProfilePhotoGallery` · `SitterAnswersSummary`
+Shows: `DemoTools` · `AddressInput` · `SitterBadges` · `ProfilePhotoGallery` · `SitterAnswersSummary`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 203 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 330 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 418 |
-| TextButton | Edit entry info | `profile-home-access` | 435 |
-| SegmentedControl | — | `profile-ai-mode` | 451 |
-| Button | Edit your answers | `profile-answers-edit` | 480 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 488 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 490 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 507 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 517 |
-| TextButton | + Add a spot | `profile-add-spot` | 541 |
+| EmptyState | Couldn't load your profile | — | 277 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 426 |
+| Button | locating ? "Locating…" : "📍 Use my current location" | `profile-use-location` | 457 |
+| Pressable | Remove item | ``profile-packing-remove-${i + 1}`` | 504 |
+| TextButton | + Add item | `profile-packing-add` | 517 |
+| Pressable | — | `profile-home-access` | 560 |
+| Pressable | ``Remove spot ${i + 1}`` | ``profile-spot-remove-${i + 1}`` | 593 |
+| TextButton | + Add another spot | `profile-add-spot` | 609 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 616 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 626 |
+| SegmentedControl | — | `profile-ai-mode` | 637 |
+| Button | Edit your answers | `profile-answers-edit` | 669 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 677 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 679 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
@@ -432,24 +435,25 @@ Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChange
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 151 |
-| EmptyState | Couldn't load this booking | — | 158 |
-| Tag | `b.label` | — | 256 |
-| TextButton | Suggest drop-off time | `suggest-drop_off` | 316 |
-| TextButton | Suggest pick-up time | `suggest-pick_up` | 321 |
-| TextButton | Change time or place | `change-booking` | 329 |
-| Tag | `a` | — | 358 |
-| Button | busy ? "Saving…" : "Next" | `interest-booking` | 386 |
-| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 401 |
-| TextButton | Decline | `decline-booking` | 409 |
-| Button | busy ? "Saving…" : "Received" | `handoff-received` | 420 |
-| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 430 |
-| TextButton | Cancel booking | `cancel-booking` | 449 |
-| Sheet | Cancel booking | `cancel-sheet` | 468 |
-| Button | Cancel booking | `cancel-confirm` | 474 |
-| Sheet | Decline request | `decline-sheet` | 512 |
-| Button | Decline request | `decline-confirm` | 518 |
-| TextButton | Suggest another time instead | `decline-suggest` | 557 |
+| EmptyState | Booking not found | — | 167 |
+| EmptyState | Couldn't load this booking | — | 174 |
+| Tag | `b.label` | — | 272 |
+| TextButton | Suggest drop-off time | `suggest-drop_off` | 332 |
+| TextButton | Suggest pick-up time | `suggest-pick_up` | 337 |
+| TextButton | Change time or place | `change-booking` | 345 |
+| CheckRow | `item` | ``pack-${item}`` | 359 |
+| Tag | `a` | — | 394 |
+| Button | busy ? "Saving…" : "Next" | `interest-booking` | 422 |
+| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 437 |
+| TextButton | Decline | `decline-booking` | 445 |
+| Button | busy ? "Saving…" : "Received" | `handoff-received` | 456 |
+| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 466 |
+| TextButton | Cancel booking | `cancel-booking` | 485 |
+| Sheet | Cancel booking | `cancel-sheet` | 504 |
+| Button | Cancel booking | `cancel-confirm` | 510 |
+| Sheet | Decline request | `decline-sheet` | 548 |
+| Button | Decline request | `decline-confirm` | 554 |
+| TextButton | Suggest another time instead | `decline-suggest` | 593 |
 
 ### `/sitter/bookings/[bookingId]/trip` — [app/sitter/bookings/[bookingId]/trip.tsx](../../frontend/app/sitter/bookings/[bookingId]/trip.tsx)
 
@@ -1535,4 +1539,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-450 actions · 449 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+454 actions · 453 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

@@ -24,6 +24,9 @@ export type Pet = {
 
 export type OwnerProfile = {
   home_address: string | null;
+  /** Unit, floor, buzzer, and the postal code: kept apart from the street line (015g). */
+  home_address_2?: string | null;
+  home_postal_code?: string | null;
   /** The home point on the map (012, 6B) — where trips to or from this home end; not shown to anyone as numbers. */
   home_lat: number | null;
   home_lng: number | null;
@@ -33,6 +36,8 @@ export type OwnerProfile = {
   vet_clinic_phone: string | null;
   /** Up to 3 public places for a first Meet & Greet (004, D44). */
   meet_spots: string[];
+  /** What goes with the pet; the sitter ticks it at drop-off (015h). */
+  packing_list?: string[];
 };
 
 /** What the sitter sees of their own row via `get_my_sitter_profile()` (includes home_address). */
@@ -42,6 +47,8 @@ export type SitterProfile = {
   experience_years: number | null;
   home_notes: string | null;
   home_address: string | null;
+  home_address_2?: string | null;
+  home_postal_code?: string | null;
   home_lat: number | null;
   home_lng: number | null;
   /** At least one of boarding / house_sitting (004, D28). */
@@ -50,7 +57,6 @@ export type SitterProfile = {
   /** Shared with the owner only after demo pay (03C). */
   visitor_parking: string | null;
   lobby_notes: string | null;
-  packing_list: string[] | null;
   /** One owner at a time (false, the default) or several owners' pets at once, within max_pets (011l, D60). */
   accepts_multiple_owners?: boolean;
   /** House rules & policies — read by the inquiry AI and shown to owners as a source (07B). */

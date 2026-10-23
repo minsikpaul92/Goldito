@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { SitterBadge, listSitterBadges } from "../features/sitters/badgeApi";
+import { Collapsible } from "./ui/Collapsible";
 import { formatDay, isoToZoned } from "../features/schedule/dates";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
@@ -13,6 +14,7 @@ const LOCKED = 4;
 export function SitterBadges({ sitterId }: { sitterId: string }) {
   const styles = useThemedStyles(makeStyles);
   const [badges, setBadges] = useState<SitterBadge[] | null>(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -26,8 +28,7 @@ export function SitterBadges({ sitterId }: { sitterId: string }) {
 
   if (!badges) return null;
   return (
-    <View style={styles.root} testID="sitter-badges">
-      <Text style={styles.heading}>Badges</Text>
+    <Collapsible title="Badges" open={open} onToggle={() => setOpen((on) => !on)} testID="sitter-badges" toggleTestID="sitter-badges-toggle">
       <View style={styles.grid}>
         {badges.map((b) => (
           <View
@@ -54,14 +55,12 @@ export function SitterBadges({ sitterId }: { sitterId: string }) {
           </View>
         ))}
       </View>
-    </View>
+    </Collapsible>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    root: { gap: theme.spacing.sm },
-    heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     grid: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
     badge: {
       width: "31%",
