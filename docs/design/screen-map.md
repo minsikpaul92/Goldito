@@ -67,23 +67,23 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Skip | `own-skip` | 173 |
-| Button | Next | `own-next` | 175 |
-| Button | Next | `own-next` | 225 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 226 |
-| Banner | `error` | — | 238 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 278 |
-| Stepper | Age | `own-age` | 372 |
-| Button | Next | `own-next` | 385 |
-| SegmentedControl | — | `own-weight-unit` | 404 |
-| LinkButton | `source.label` | ``own-source-${i + 1}`` | 456 |
-| Button | Start | `own-next` | 461 |
-| TextButton | Skip questions | `own-skip-questions` | 462 |
-| Button | Add | `own-food-other-add` | 592 |
-| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 648 |
-| Banner | `error` | `own-error` | 705 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 706 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 724 |
+| TextButton | Skip | `own-skip` | 174 |
+| Button | Next | `own-next` | 176 |
+| Button | Next | `own-next` | 226 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 227 |
+| Banner | `error` | — | 239 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 279 |
+| Stepper | Age | `own-age` | 373 |
+| Button | Next | `own-next` | 386 |
+| SegmentedControl | — | `own-weight-unit` | 405 |
+| LinkButton | `source.label` | ``own-source-${i + 1}`` | 457 |
+| Button | Start | `own-next` | 462 |
+| TextButton | Skip questions | `own-skip-questions` | 463 |
+| Button | Add | `own-food-other-add` | 593 |
+| Button | locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location" | `own-use-location` | 654 |
+| Banner | `error` | `own-error` | 712 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 713 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 731 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -901,24 +901,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Stepper | ``${title} time`` | ``${kind}-time`` | 70 |
 | CheckRow | `option.label` | ``${kind}-place-${option.value}`` | 102 |
 
-### HeaderActions — [components/HeaderActions.tsx](../../frontend/components/HeaderActions.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Tag | profile.role === "owner" ? "Owner" : "Sitter" | `role-chip` | 20 |
-| Pressable | ``${profile.displayName \|\| "You"}, Profile`` | `header-profile-avatar` | 24 |
-
 ### HeaderMenu — [components/HeaderMenu.tsx](../../frontend/components/HeaderMenu.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `label` | `testID` | 52 |
-| Pressable | Menu | `open-menu` | 67 |
-| Pressable | Close menu | `header-menu-close` | 88 |
-| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 99 |
-| Button | Sign out | `log-out-confirm` | 121 |
-| Button | Cancel | `log-out-cancel` | 122 |
-| Pressable | — | `log-out` | 142 |
+| Pressable | `label` | `testID` | 55 |
+| Pressable | ``${name}, ${role.toLowerCase()} account. Menu`` | `open-menu` | 70 |
+| Pressable | Close menu | `header-menu-close` | 97 |
+| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 108 |
+| Button | Sign out | `log-out-confirm` | 130 |
+| Button | Cancel | `log-out-cancel` | 131 |
+| Pressable | — | `log-out` | 151 |
 
 ### HeadsUpSection — [components/HeadsUpSection.tsx](../../frontend/components/HeadsUpSection.tsx)
 
@@ -1546,4 +1539,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-455 actions · 454 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+454 actions · 453 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

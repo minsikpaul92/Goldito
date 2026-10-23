@@ -16,7 +16,10 @@ type IconName = ComponentProps<typeof Ionicons>["name"];
 
 const DURATION = 260;
 
-/** Header ≡ (#147): a full-width drawer from the right. You → Profile, Notifications, Schedule (sitters), What's new, Settings, Sign out. */
+/**
+ * Header menu (#147): your avatar opens a full-width drawer from the right, so the header shows who is signed in
+ * (team pick, Oct 22). You → Profile, Notifications, Schedule (sitters), What's new, Settings, Sign out.
+ */
 export function HeaderMenu() {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -66,12 +69,18 @@ export function HeaderMenu() {
     <>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Menu"
+        accessibilityLabel={`${name}, ${role.toLowerCase()} account. Menu`}
         onPress={() => setOpen(true)}
         style={styles.iconButton}
         testID="open-menu"
       >
-        <Ionicons name="menu-outline" size={24} color={theme.color.text} />
+        <View style={styles.avatarRing}>
+          {profile ? (
+            <ProfileAvatar profileId={profile.id} name={name} size={32} testID="header-avatar" />
+          ) : (
+            <Avatar kind="initial" name={name} size={32} testID="header-avatar" />
+          )}
+        </View>
       </Pressable>
       <Modal visible={open} transparent animationType="none" onRequestClose={() => close()}>
         <Animated.View style={[styles.scrim, { opacity: slide }]} />
@@ -110,7 +119,7 @@ export function HeaderMenu() {
             )}
             <View style={styles.youText}>
               <Text style={styles.name} numberOfLines={1}>{name}</Text>
-              <Text style={styles.muted}>{role}</Text>
+              <Text style={styles.muted}>{role} account</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={theme.color.textMuted} />
           </Pressable>
@@ -159,6 +168,8 @@ export function HeaderMenu() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     iconButton: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
+    // A thin ring keeps the avatar reading as a button on the cream header.
+    avatarRing: { padding: 2, borderRadius: 20, borderWidth: 1.5, borderColor: theme.color.primary },
     scrim: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: theme.color.overlay },
     drawer: {
       position: "absolute", top: 0, right: 0, bottom: 0, left: 0,
