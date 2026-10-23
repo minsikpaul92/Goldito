@@ -32,7 +32,16 @@ const WALK_GLOW = HOUR;
 /** Minutes after midnight (app timezone) from which a missing potty is flagged. */
 const POTTY_NUDGE_FROM = 18 * 60;
 
-const MOOD_OF: Record<string, PetMood> = { happy: "excited", calm: "calm", tired: "tired" };
+const MOOD_OF: Record<string, PetMood> = {
+  happy: "excited",
+  playful: "excited",
+  excited: "excited",
+  calm: "calm",
+  anxious: "calm",
+  missing: "calm",
+  tired: "tired",
+  sad: "tired",
+};
 
 /**
  * Today's check-ins (+ tasks still open) → what the pet room shows. Pure: tune the rules here, no schema change.

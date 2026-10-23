@@ -19,6 +19,8 @@ async function setup(page: import("@playwright/test").Page, maxProfile: object =
   caring(db, [MAX, MOCHI], NOON_TORONTO);
   db.pets.find((p) => p.id === MAX.id)!.profile = maxProfile;
   await signIn(page, SITTER);
+  // The pixel pet room is the back of the Home card: flip to it.
+  await app(page).getByTestId("home-pager-flip").click();
   await app(page).getByTestId("pet-room-Max").waitFor();
   return db;
 }
@@ -32,23 +34,24 @@ test.describe("sitter pet room", () => {
     for (const key of ["feed", "walk", "potty", "nap"]) await expect(screen.getByTestId(tap(MAX, key))).toBeVisible();
     // Nothing logged yet: calm.
     await expect(screen.getByTestId("pet-room-Max-mood")).toHaveText("Calm");
-    await screen.getByTestId(`caring-pet-${MOCHI.id}`).click();
+    await screen.getByTestId("today-caring").getByTestId(`caring-pet-${MOCHI.id}`).click();
     await expect(screen.getByTestId("pet-room-Mochi-sprite")).toBeVisible();
     await expect(screen.getByTestId("pet-room-Max")).toHaveCount(0);
     for (const key of ["feed", "potty", "nap"]) await expect(screen.getByTestId(tap(MOCHI, key))).toBeVisible();
     await expect(screen.getByTestId(tap(MOCHI, "walk"))).toHaveCount(0);
   });
 
-  test("the pet room comes first on Home and is the biggest thing on the first screen", async ({ page }) => {
+  test("the pet room is the back of the Home card and the biggest thing on it", async ({ page }) => {
     await setup(page);
     const screen = app(page);
-    const home = await box(screen.getByTestId("sitter-home"));
+    const home = await box(screen.getByTestId("home-pager"));
     const room = await box(screen.getByTestId("pet-room-Max"));
-    const stats = await box(screen.getByTestId("stat-tasks"));
-    expect(room.y).toBeLessThan(stats.y);
     expect(room.y + room.height).toBeLessThanOrEqual(home.y + home.height + 1);
     expect(room.height).toBeGreaterThan(home.height * 0.45);
     expect((await box(screen.getByTestId("pet-room-Max-sprite"))).height).toBeGreaterThan(home.height * 0.15);
+    // The front is the default: flip back and the Quick check-in is there.
+    await screen.getByTestId("home-pager-flip").click();
+    await expect(screen.getByTestId("quick-heading")).toBeVisible();
   });
 
   test("a tap is a check-in: the owner is told and the pet reacts", async ({ page }) => {

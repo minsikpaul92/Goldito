@@ -70,7 +70,7 @@ test.describe("photo request", () => {
     await expect(screen.getByTestId("home-photo-request")).toHaveCount(0);
   });
 
-  test("the owner's answer notice is a live update on Home and opens the pet's feed, like a feed_post", async ({ page }) => {
+  test("the owner's answer notice is in Notifications and opens the pet's feed, like a feed_post", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     caring(db, [{ id: MAX, name: "Max", species: "dog" }]);
     db.notifications.push({
@@ -79,7 +79,8 @@ test.describe("photo request", () => {
     });
     await signIn(page, OWNER);
     const screen = app(page);
-    const card = screen.getByTestId("live-n-answer");
+    await page.goto("/owner/notifications");
+    const card = screen.getByTestId("notification-n-answer");
     await expect(card).toContainText("Here's the photo of Max you asked for");
     // No photo on the notice in this mock, so it goes straight to the feed (with one, the detail sheet says See in Feed).
     await card.click();

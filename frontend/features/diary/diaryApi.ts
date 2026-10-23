@@ -66,8 +66,17 @@ const toMedia = (m: MediaEmbed | MediaEmbed[]): DiaryMedia | null => {
 
 const MEDIA = "media (id, cloudinary_public_id, resource_type)";
 
-const MOODS: Record<string, string> = { happy: "😊 Happy", calm: "😌 Calm", tired: "😴 Tired" };
-const MEALS: Record<string, string> = { all: "All", most: "Most", little: "A little", none: "None" };
+const MOODS: Record<string, string> = {
+  happy: "😊 Happy",
+  playful: "🎾 Playful",
+  excited: "🤩 Excited",
+  calm: "😌 Calm",
+  tired: "😴 Tired",
+  missing: "🥺 Missing you",
+  sad: "😢 Sad",
+  anxious: "😟 Anxious",
+};
+const MEALS: Record<string, string> = { all: "All", most: "Most", little: "A little", none: "None", other: "Other" };
 
 /** "Fed · All", "Walk · 30 min", "Mood · Happy" … */
 export function checkinLabel(kind: CareCheckinKind, value: string | null): { emoji: string; label: string } {
