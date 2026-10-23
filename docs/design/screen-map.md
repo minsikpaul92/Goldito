@@ -1354,14 +1354,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | parsing ? "Reading…" : "Fill in the answers" | `own-voice-fill` | 163 |
-| TextButton | Record again | `own-voice-again` | 169 |
-| Banner | `problem` | `own-voice-problem` | 185 |
-| Banner | `parseError` | `own-voice-error` | 186 |
-| Button | Use these | `own-voice-use` | 200 |
-| Pressable | recordingNow ? "Stop recording" : "Start recording" | `own-mic` | 238 |
-| Banner | `problem` | `own-voice-problem` | 255 |
-| TextButton | Or type it | `own-voice-type` | 257 |
+| Button | parsing ? "Reading…" : "Fill in the answers" | `own-voice-fill` | 166 |
+| TextButton | Record again | `own-voice-again` | 172 |
+| Banner | `problem` | `own-voice-problem` | 188 |
+| Banner | `parseError` | `own-voice-error` | 189 |
+| Button | Use these | `own-voice-use` | 203 |
+| Pressable | recordingNow ? "Stop recording" : "Start recording" | `own-mic` | 241 |
+| Button | Or type it | `own-voice-type` | 259 |
+| Banner | `problem` | `own-voice-problem` | 274 |
 
 ### VoiceStep — [components/ownerOnboarding/VoiceStep.tsx](../../frontend/components/ownerOnboarding/VoiceStep.tsx)
 

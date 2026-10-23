@@ -28,6 +28,9 @@ const STAGE_HEIGHT = 440;
 const MIC = 96;
 // Waveform bars above the mic, the mic, its status line.
 const MIC_BLOCK = 44 + MIC + 40;
+// "Or type it" hangs under the mic while it sits in the middle; the pair is centered together.
+const TYPE_GAP = 16;
+const TYPE_BUTTON = 56;
 const BARS = 21;
 const MAX_TEXT = 1500;
 
@@ -203,7 +206,7 @@ export function VoiceInterview({ items, parse, onSubmit }: Props) {
   }
 
   const recordingNow = phase === "recording";
-  const micTop = slide.interpolate({ inputRange: [0, 1], outputRange: [(STAGE_HEIGHT - MIC_BLOCK) / 2, STAGE_HEIGHT - MIC_BLOCK] });
+  const micTop = slide.interpolate({ inputRange: [0, 1], outputRange: [(STAGE_HEIGHT - MIC_BLOCK - TYPE_GAP - TYPE_BUTTON) / 2, STAGE_HEIGHT - MIC_BLOCK] });
   const micScale = level.interpolate({ inputRange: [0, 1], outputRange: [1, 1.14] });
   return (
     <View style={styles.root}>
@@ -249,21 +252,26 @@ export function VoiceInterview({ items, parse, onSubmit }: Props) {
           <Text style={styles.status} testID="own-mic-status">
             {phase === "reading" ? "Reading what you said…" : recordingNow ? `${clock(elapsed)} of ${clock(MAX_RECORDING_MS)}` : "Tap to talk"}
           </Text>
+          <Animated.View
+            style={[styles.typeWrap, { opacity: slide.interpolate({ inputRange: [0, 0.4], outputRange: [1, 0], extrapolate: "clamp" }) }]}
+            pointerEvents={phase === "idle" ? "auto" : "none"}
+          >
+            <Button
+              label="Or type it"
+              variant="secondary"
+              onPress={() => {
+                setProblem(null);
+                setValues({});
+                setPhase("form");
+              }}
+              style={styles.typeButton}
+              testID="own-voice-type"
+            />
+          </Animated.View>
         </Animated.View>
       </View>
 
       {problem ? <Banner tone="warning" body={problem} testID="own-voice-problem" /> : null}
-      {phase === "idle" ? (
-        <TextButton
-          label="Or type it"
-          onPress={() => {
-            setProblem(null);
-            setValues({});
-            setPhase("form");
-          }}
-          testID="own-voice-type"
-        />
-      ) : null}
       <Text style={styles.note}>Your voice is sent to a speech-to-text service to make text. We don't keep the recording.</Text>
     </View>
   );
@@ -277,6 +285,8 @@ const makeStyles = (theme: Theme) =>
     questionList: { gap: theme.spacing.md, paddingVertical: theme.spacing.xs },
     question: { fontSize: 26, lineHeight: 34, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     micBlock: { position: "absolute", left: 0, right: 0, alignItems: "center", gap: theme.spacing.xs },
+    typeWrap: { position: "absolute", top: MIC_BLOCK + TYPE_GAP, left: 0, right: 0, alignItems: "center" },
+    typeButton: { minWidth: 220, minHeight: TYPE_BUTTON },
     wave: { height: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4 },
     bar: { width: 5, borderRadius: 3, backgroundColor: theme.color.primary },
     mic: {
