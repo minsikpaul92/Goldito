@@ -34,7 +34,7 @@ Every Figma variable carries its code name as **code syntax** (Figma uses kebab-
 | **Color**, any other mode (`Balanced`, later one per pet coat skin) | a preset in `themes.ts` (`balanced`, …) | A mode may change only the `SkinColors` keys (§3.1); status colors are the same in every mode |
 | **Size**: `spacing/*`, `radius/*`, `icon/*`, `font-size/*`, `size/touch-target`, `layout/*` | `tokens.spacing`, `radius`, `icon`, `fontSize`, `layout.touchTarget`, `layout.*` | |
 | **Motion**: `duration/*`, `press/scale`, `press/opacity` | `tokens.motion.fast/base/slow`, `pressScale`, `pressOpacity` | |
-| Text styles `Title`, `Body`, `Body Strong`, `Small`, `Small Strong`, `Caption` | `fontSize.*` + `fontWeight.*` + `lineHeight.*` (§4) | Font family: system font in the app (D6); Inter in Figma is a stand-in |
+| Text styles `Title`, `Section`, `Body`, `Body Strong`, `Small`, `Small Strong`, `Caption`, `Button`, `Eyebrow`, `Placeholder` | `fontSize.*` + `fontWeight.*` + `lineHeight.*` (§4) | Font family: Fredoka for titles, Plus Jakarta Sans for everything else (D11). The Figma text styles use the same families since Oct 23 |
 
 **Code-only tokens — add them to Figma as variables** so both sides have them: `color/media`, `color/on-media`, `color/gold`, `color/gold-on-light`, `color/cream`, `font-weight/*` (400 · 500 · 600 · 700), `line-height/*` (14 · 20 · 22 · 30), `opacity/pressed` (0.7), `opacity/disabled` (0.5).
 
@@ -174,11 +174,14 @@ Each design decision, its reason, and what it replaced. Change a row only with t
 | **D3** | Status text sits on its own light surface (`errorSurface` …) through `Tag` and `Banner` | Faded (opacity) status colors failed 4.5:1 ("red on red") | Opacity tints of `error` / `warning` |
 | **D4** | `borderStrong` outlines every control; `border` is decoration only; `track` is the empty part of progress | `border` is 1.3:1 on white — inputs and chips were nearly invisible (WCAG 1.4.11 needs 3:1) | One `border` for everything |
 | **D5** | When AI is unsure: **safety fails closed** (don't feed), everything else **falls back to a person** (sitter answers, confirm by eye, plain chips) | A wrong "safe" can hurt a pet. A blocked handoff or missing caption only slows people down | One generic error for every AI failure |
-| **D6** | App uses the **system font**; Figma uses Inter as its stand-in. Four sizes: 24 · 16 · 14 · 11 | No font download on the demo, native feel; Inter's metrics are close to SF / Roboto. Card titles use Body Strong, so the 18 px size was never needed | A brand font; `fontSize.subtitle` 18 |
+| **D6** | *Replaced by D11 (Oct 22).* App uses the **system font**; Figma uses Inter as its stand-in. Four sizes: 24 · 16 · 14 · 11 | No font download on the demo, native feel; Inter's metrics are close to SF / Roboto. Card titles use Body Strong, so the 18 px size was never needed | A brand font; `fontSize.subtitle` 18 |
 | **D7** | One press feel (scale 0.97 + opacity 0.85) and three durations (120 · 240 · 420 ms); decorative motion stops under Reduce motion | Consistent, cheap to build, accessible | Per-component animation values |
 | **D8** | Never lose a sitter's tap: offline check-ins and photos queue on the phone and send on their own | Sitters work on walks with weak signal; "No typing for sitters" fails if taps get lost | Error toast + retype |
 | **D9** | Facts the AI learns during a stay enter the Life Record only after the owner confirms; ratings of 1–2 stars stay private | The Life Record feeds future AI replies (RAG) — a wrong fact would repeat forever | Auto-publishing everything |
 | **D10** | A sitter's reply in the inquiry thread shows as the sitter's own message (name + time); the AI warning lives only in the sitter's draft view | Matches D36; owners trust the sitter, not a bot | "Auto-reply from the assistant" label on every bubble |
+| **D11** | **Plus Jakarta Sans** for all text except titles; **Fredoka** (600) for screen, tab and section titles, one-question headings and big numbers (Oct 22, #304) | One friendly family that matches Figma's Expressive parts; Fredoka is the logo's face. Web only for now; native keeps the system font until the native app ships | D6: the system font, with Inter as Figma's stand-in |
+| **D12** | **Lucide** line icons, always through `components/ui/Icon.tsx`, named by meaning (`home`, `bell`, `back`), never by Lucide name (Oct 22, #301, #323) | Friendlier line, has a dog and a cat, covers every concept; one table to change if the set changes | Ionicons (`@expo/vector-icons`) |
+| **D13** | **Header C**: the tab title with "Name · Role" under it, the bell, and your avatar, which opens the menu drawer; no role chip (Oct 22, #294) | Shows who is signed in on every tab, which matters with two roles in split view | #147 option B: role chip, bell and a ≡ menu button |
 
 ---
 
@@ -206,8 +209,8 @@ Goldito is a private care app for **dogs and cats**. Owners hand their pet to a 
 - Screen padding: `spacing.md` (16). Gap between cards: `spacing.md`. Inside a card: `spacing.md`.
 - **Content width: 370** (402 − 2 × 16). Full-width components (cards, rows, banners, fields) are built at 370 in Figma, and everything inside them fills or grows — never a fixed inner width — so they adapt from 360 to 440. Chat bubbles are 80 % of the content width.
 - Bottom tab bar per role (owner / sitter). The primary action sits at the bottom of the screen, within thumb reach.
-- The header shows the role label (**Owner** / **Sitter**) to everyone (#147).
-- **≡ menu** (`components/HeaderMenu.tsx`): a full-width drawer that slides in from the right. You (→ Profile), Notifications with the count, Schedule (sitters), What's new, Settings, and Log out pinned at the bottom with a confirm. Settings has Log out with the same confirm.
+- The header shows who is signed in under the title, for example **Chloe · Sitter** (header C, D13). There is no role chip.
+- **Avatar menu** (`components/HeaderMenu.tsx`): your avatar, in a thin `primary` ring, opens a full-width drawer that slides in from the right. You (→ Profile), Notifications with the count, Schedule (sitters), What's new, Settings, and Sign out pinned at the bottom with a confirm. Settings has Sign out with the same confirm.
 
 ### 2.1 Desktop browsers (judges): phone frame
 
@@ -319,7 +322,7 @@ A **look** is the overall palette the team chooses once for the app; a **skin** 
 
 ## 4. Typography
 
-**Font:** the platform's system font in the app (SF Pro on iOS, Roboto on Android, system UI on web) — no font download (D6). Figma uses **Inter** as the stand-in; its metrics are close enough that Figma line breaks hold in the app.
+**Fonts (D11, Oct 22):** **Fredoka** 600 for titles (`fontFamily.display` in the Expressive skin): screen and tab titles, section titles, one-question headings, big numbers, sheet titles. Never for paragraphs or buttons. **Plus Jakarta Sans** for everything else: body, rows, labels, chips, buttons, fields, toasts and tags. On web, `theme/bodyFont.web.ts` loads five weights (400 to 800) and every text without a named font becomes Jakarta, so `fontWeight` picks the face. Native keeps the platform's system font until the native app ships. Figma's text styles use the same families.
 
 **One exception — the picture-diary page (12.4):** a sent daily report is drawn as a 그림일기 page (date + pet on top, the day's photo in a picture box, the words on ruled lines) in **Gaegu** (Google Fonts, SIL OFL), loaded on web only from `fonts.googleapis.com`; native keeps the system font. Body `fontSize.body + 4` on a 30 px rule. Nowhere else.
 
@@ -331,9 +334,11 @@ A **look** is the overall palette the team chooses once for the app; a **skin** 
 | Small | `fontSize.small` | 14 / 20 | 400 | Timestamps, helper text, banner body |
 | Small Strong | `fontSize.small` | 14 / 20 | 600 | Chips, tags, field labels, banner title |
 | Caption | `fontSize.caption` | 11 / 14 | 500 | Tab labels, slot letters, source tags — never body text |
+| Section | `fontSize.section` | 21 / 26 | 600, Fredoka | Section titles (`SectionTitle`) |
+| Placeholder | `fontSize.body` | 16 / 22 | 400, italic on web | Field placeholders in `color.placeholder` (Expressive `#807160`, 4.7:1); typed text stays upright, in `text` (#269) |
 
 - Four sizes (D6). Whether to add an 18 px subtitle is still open (§0.7); until then card titles use Body Strong.
-- Weights: `fontWeight.regular` (400), `medium` (500, Caption), `semibold` (600, Strong styles), `bold` (700, Title) — never a raw `"600"` / `"700"` in code.
+- Weights: `fontWeight.regular` (400), `medium` (500, Caption), `semibold` (600, Strong styles and row titles), `bold` (700, Title outside the Expressive skin) — never a raw `"600"` / `"700"` in code. With Jakarta: 400 body, 600 labels, 700 buttons, 800 eyebrows.
 - Line height per Figma text style: `lineHeight.title` (30), `body` (22), `small` (20), `caption` (14).
 - Sentence case for buttons and titles ("Complete with photo", not "COMPLETE WITH PHOTO"). Uppercase only for tiny eyebrow labels (Caption + letter spacing).
 - Text must wrap, never clip: no fixed heights on text containers, and no `numberOfLines` on titles or messages (OS text size can reach 200 %). Names and labels may wrap to two lines.
@@ -355,6 +360,8 @@ A **look** is the overall palette the team chooses once for the app; a **skin** 
 | `icon.sm` | 22 | Header and inline icons, radio marks |
 | `icon.md` | 28 | Icons inside cards (role cards) |
 | `icon.hero` | 40 | Emoji / illustration at the top of an empty state |
+
+Line icons are **Lucide**, always through `components/ui/Icon.tsx` by meaning (`<Icon name="bell" />`), 2 px stroke in the colour the caller passes (D12). In Figma: Components › **Icons · Lucide (app set)**, one component per meaning with the same names (`Icon/bell`).
 | `layout.touchTarget` | 44 | Minimum size of anything tappable |
 | `layout.contentMaxWidth` | 480 | `Screen` content column on wide screens |
 
@@ -391,7 +398,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | Component | Rules |
 | :--- | :--- |
 | `Screen` | Wraps every screen: safe area, scroll, `background`, 16 padding, max width 480 |
-| `BackLink` | Standard back control: `chevron-back` + label **Back** (`primary`, 600, 44 min height). Use for login → Welcome, signup → previous, onboarding step-back / exit. Label stays **Back** — never “Back to Onboarding” or other destination names. See [§7.8](#78-back-navigation) |
+| `BackLink` | Standard back control: `<Icon name="back" />` + label **Back** (`primary`, 600, 44 min height). Use for login → Welcome, signup → previous, onboarding step-back / exit. Label stays **Back** — never “Back to Onboarding” or other destination names. See [§7.8](#78-back-navigation) |
 | `MediaPlaceholder` (`components/`) | Onboarding photo/video slot (~4:3, dashed `accent` frame). Centered in leftover tour height; title + brief for Mook’s asset brief. Replace with real media later — see [§7.9](#79-welcome--role-onboarding) |
 | `Card` | `surface`, `radius.lg`, 16 padding, 1 px `border` |
 | `Button` | `primary` (filled) and `secondary` (`surface` + `borderStrong` border, `primary` label); `radius.md`, 44 min height, 8 / 16 padding, semibold label. Pressed = `motion.pressOpacity` + `motion.pressScale`; disabled = `border` fill + `textMuted` label (Figma Button, Style × State) |
@@ -432,7 +439,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | Role label next to a name | The header's **Owner** / **Sitter** is a `brand` `Tag`. Show the same Tag next to a person's name wherever it would otherwise be unclear who they are (booking card and detail, inquiry thread, request cards) — never plain text like "(sitter)" |
 | `Button` variants | Built: `primary`, `secondary`, `danger` (`error` fill, only for destructive confirms). Proposed: `large` (full-width, 56 tall — the one primary action on sitter screens), Figma `Loading` state |
 | `AlertModal` | Safety results — see [§7.4](#74-danger-is-loud) |
-| `TabBar` | Per role; [architecture §3](docs/plan/phases/architecture.ko.md) **D47 / D47b · D61**: both **Home · Bookings · Feed · Diary · Snap** (Snap = treat check · mood · sticker, icon `camera-outline`). Settings (and sitter Earnings later) = header Profile |
+| `TabBar` | Per role; [architecture §3](docs/plan/phases/architecture.ko.md) **D47 / D47b · D61**: both **Home · Bookings · Feed · Diary · Snap** (Snap = treat check · mood · sticker, icon `camera`). Settings (and sitter Earnings later) = header Profile |
 | Pet photo avatars | `Avatar kind="photo"` once pets have photos (11.10); `kind="emoji"` (🐶 / 🐱) until then |
 | `TaskRow` | Checkmark circle + title + time; pending first; tap → "Complete with photo" |
 | `FeedCard` (built: `components/FeedCard.tsx`) | Photo/video (`radius.lg`), caption, time, optional mood chip |
@@ -462,7 +469,7 @@ Sizes in px, from the Figma components (every value is a token). Heights are min
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `Button` | min 44 tall; `large` 56, full width | 8 × 16 | `md` | Body Strong | Default · Pressed (0.97 / 0.85) · Disabled (`border` fill, `textMuted` label — never a faded brand color) · Loading (spinner + label, not tappable) |
 | `TextButton` | min 44 tall | 0 × 8 | — | Body Strong, `primary` (`error` for Danger) | Enabled · Disabled |
-| `TextField` | input min 44 | 8 × 16 | `md` | Label Small Strong `textMuted` above; value Body; helper Small below | Default (`borderStrong`) · Focused (`primary`) · Error (`error` + message, clears on edit). Placeholders start with "e.g." |
+| `TextField` | input min 44 | 8 × 16 | `md` | Label Small Strong `textMuted` above; value Body; helper Small below | Default (`borderStrong`) · Focused (`primary`) · Error (`error` + message, clears on edit). Placeholders start with "e.g.", in `color.placeholder`, italic on web (#269) |
 | `Chip` / filter chip | min 44 tall | 8 × 16 | full | Small Strong | Default (`borderStrong` outline) · Active (`primary` fill, `primaryText`) |
 | Suggestion chip | min 44 tall | 4 × 16 | full | Small Strong | On (`primary` fill) · Off (outline, `textMuted`, struck through) |
 | `SegmentedControl` | segments 44 tall, equal width | — | `md` | Body | Default · Selected (`primary` border + `accent`) · Disabled |
@@ -474,7 +481,7 @@ Sizes in px, from the Figma components (every value is a token). Heights are min
 | Task row | full width; icon 40 | 16 | `lg` | Time Caption, title Body Strong | Pending · Next (2 px `primary` border + the one filled action) · Done (time + ✓ in `success`) |
 | `Toast` | width − 32 | 16 | `md` | Body on `text` fill | Shows 3 s; with **Undo** 5 s. Above the tab bar and pinned footer |
 | `Sheet` | full width | 16, footer 24 | 16 top | Title Body Strong + **Close** | — |
-| Top bar | 56 tall (onboarding 52) | 0 × 16 | — | Title Body Strong (Expressive: 24 display face) | App: title (owner "Home", sitter "Today", else the tab name) + role `Tag` + 🔔 (24, count badge with a 2 px ring) + ≡ menu (#147) · Detail (Back + title) · Onboarding (Back + step dots) |
+| Top bar | 56 tall (onboarding 52) | 0 × 16 | — | Title Body Strong (Expressive: 24 display face) | App: title (owner "Home", sitter "Today", else the tab name) with "Name · Role" under it + 🔔 (24, count badge with a 2 px ring) + your avatar, which opens the menu (#147, D13) · Detail (Back + title) · Onboarding (Back + step dots) |
 | Tab bar | 60 tall (`layout.tabBarHeight`) | 0 × 8 | — | Caption | Active tab: `accent` pill behind the icon + `primary` label |
 | Icon button | 44 × 44 | — | full | — | Default · Badge (8 px `error` dot) |
 | Star · calendar day · stepper button | 44 × 44 | — | `md` (day, stepper) | — | Star Off uses `borderStrong`, On uses `warning` |
@@ -573,7 +580,7 @@ Judges use a computer, so every action must work with a mouse and a trackpad ins
 
 Every screen that leaves a parent flow uses **`BackLink`** (`frontend/components/ui/BackLink.tsx`):
 
-- Visual: Ionicons `chevron-back` + the word **Back** (same row, `primary` color).
+- Visual: `<Icon name="back" />` (Lucide chevron) + the word **Back** (same row, `primary` color).
 - Placement: top of the screen (or the tour top bar), left-aligned, 44 px min hit area.
 - Behavior: go to the previous step or parent route (e.g. Login → `/welcome`, onboarding step 0 → role landing). Prefer `router.push` / `replace` to a known parent over inventing a second marketing link.
 - Label is always **Back** — not “Back to Onboarding”, not icon-only, not a marketing link (“How Goldito works”) for the same job.
@@ -697,8 +704,8 @@ Proposed for later (not in P0): a sitter **Heads-up** quick action with preset r
 Done in Figma and synced: palette incl. `warning` and the `*Surface` tints, the `Balanced` mode, base components (Button, Text Button, Chip, Tag, Avatar, Banner, Text Field, Segment, Checkbox Row, Empty State), the gold tag logo. Still open:
 
 - [ ] Code-only tokens as Figma variables (§0.2)
-- [ ] Final type scale (`subtitle` or not, §0.7); the app keeps the system font (D6)
-- [ ] Icon set
+- [ ] Final type scale (`subtitle` or not, §0.7); the families are settled (D11)
+- [x] Icon set: Lucide (D12), in Figma as Icons · Lucide (app set)
 - [ ] App icon at 1024 px (only the 180 px touch icon and favicons are in `assets/brand/`)
 - [ ] 🟡 / ❌ components in §0.4 (Tab Bar Snap label, Switch, Skeleton, Filter Chip, …), ProposalCard, ReportCard
 - [ ] Expressive: dark mode, the new owner Home (prototype), Figma icon set in the tab bar
