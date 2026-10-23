@@ -1,15 +1,16 @@
 import { Redirect, router } from "expo-router";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { DemoTools } from "../components/DemoTools";
 import { AddressInput } from "../components/AddressInput";
-import { OpenInMapsButton } from "../components/OpenInMapsButton";
 import { SitterBadges } from "../components/SitterBadges";
 import { ProfilePhotoGallery } from "../components/ProfilePhotoGallery";
 import { SitterAnswersSummary } from "../components/SitterAnswersSummary";
 import { Button } from "../components/ui/Button";
+import { Card } from "../components/ui/Card";
 import { CheckRow } from "../components/ui/CheckRow";
+import { Collapsible } from "../components/ui/Collapsible";
 import { EmptyState } from "../components/ui/EmptyState";
 import { LoadingView } from "../components/ui/LoadingView";
 import { Screen } from "../components/ui/Screen";
@@ -28,7 +29,7 @@ import {
 } from "../features/profile/profileApi";
 import { isDemoAccount, isDemoToolsEnabled } from "../lib/demoReset";
 import { LatLng, LocationError, getCurrentPosition } from "../lib/location";
-import { AddressSuggestion, PinPlace, areaFromAddress, reverseGeocode } from "../lib/transit";
+import { AddressSuggestion, PinPlace, reverseGeocode } from "../lib/transit";
 import { homeFor, useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -38,37 +39,98 @@ type Draft = Record<string, string>;
 
 type FieldSpec = { key: string; label: string; placeholder?: string; multiline?: boolean; numeric?: boolean };
 
-const OWNER_FIELDS: FieldSpec[] = [
-  { key: "home_address", label: "Home address", placeholder: "Shown only to a confirmed sitter" },
-  { key: "emergency_contact_name", label: "Emergency contact name" },
-  { key: "emergency_contact_phone", label: "Emergency contact phone" },
-  { key: "vet_clinic_name", label: "Vet clinic" },
-  { key: "vet_clinic_phone", label: "Vet clinic phone" },
+/** `label` null: always shown. Otherwise a card that opens and closes; it starts closed and shows its value. */
+type FieldGroup = { id: string; label: string | null; fields: FieldSpec[] };
+
+const HOME_GROUP: FieldGroup = {
+  id: "home",
+  label: "Home address",
+  fields: [
+    { key: "home_address", label: "Home address", placeholder: "Shown after booking" },
+    { key: "home_address_2", label: "Address details", placeholder: "e.g. Unit 1204, buzz 55" },
+    { key: "home_postal_code", label: "Postal code", placeholder: "e.g. M6J 1A1" },
+  ],
+};
+
+const OWNER_GROUPS: FieldGroup[] = [
+  HOME_GROUP,
+  {
+    id: "emergency",
+    label: "Emergency contact",
+    fields: [
+      { key: "emergency_contact_name", label: "Name" },
+      { key: "emergency_contact_phone", label: "Phone" },
+    ],
+  },
+  {
+    id: "vet",
+    label: "Vet",
+    fields: [
+      { key: "vet_clinic_name", label: "Clinic" },
+      { key: "vet_clinic_phone", label: "Phone" },
+    ],
+  },
+  { id: "packing", label: "Packing list", fields: [{ key: "packing_list", label: "Packing list" }] },
 ];
 
-const SITTER_FIELDS: FieldSpec[] = [
-  { key: "bio", label: "About you", placeholder: "Shown to owners when they look for a sitter", multiline: true },
-  { key: "service_area", label: "Service area", placeholder: "e.g. North York" },
-  { key: "experience_years", label: "Years of experience", numeric: true },
-  { key: "home_notes", label: "About your home", placeholder: "Yard, other pets, stairs…", multiline: true },
-  { key: "home_address", label: "Home address", placeholder: "Shown only to owners with a confirmed booking" },
-  { key: "visitor_parking", label: "Visitor parking", placeholder: "e.g. Spot B-12 behind the building" },
-  { key: "lobby_notes", label: "Lobby / door notes", placeholder: "Buzz #1204, then left at the end of the hall", multiline: true },
+const SITTER_GROUPS: FieldGroup[] = [
   {
-    key: "packing_list",
-    label: "Packing list for owners",
-    placeholder: "One item per line: food, bed, meds…",
-    multiline: true,
+    id: "bio",
+    label: null,
+    fields: [{ key: "bio", label: "About you", placeholder: "A few lines for owners", multiline: true }],
+  },
+  HOME_GROUP,
+  {
+    id: "home_notes",
+    label: "About your home",
+    fields: [{ key: "home_notes", label: "About your home", placeholder: "Yard, other pets, stairs", multiline: true }],
   },
   {
-    key: "policies",
-    label: "House rules & policies",
-    placeholder: "What's included, cancellation, house rules, pets you don't take… Written once; your replies draw on it.",
-    multiline: true,
+    id: "experience",
+    label: "Experience",
+    fields: [{ key: "experience_years", label: "Years of experience", numeric: true }],
+  },
+  {
+    id: "parking",
+    label: "Visitor parking",
+    fields: [{ key: "visitor_parking", label: "Visitor parking", placeholder: "e.g. Spot B-12" }],
+  },
+  {
+    id: "lobby",
+    label: "Lobby notes",
+    fields: [{ key: "lobby_notes", label: "Lobby notes", placeholder: "e.g. Buzz 1204", multiline: true }],
+  },
+  {
+    id: "policies",
+    label: "House rules",
+    fields: [
+      { key: "policies", label: "House rules", placeholder: "Cancellation, pets you don't take", multiline: true },
+    ],
   },
 ];
+
+const POSTAL_END = /[,\s]+([A-Z]\d[A-Z])(?:\s?(\d[A-Z]\d))?$/i;
+
+/** "55 Mill St, Toronto, ON M5A 3C4" -> the street line and the postal code, kept apart. */
+function splitPostal(label: string): { street: string; postal: string | null } {
+  const match = label.match(POSTAL_END);
+  if (!match) return { street: label, postal: null };
+  return {
+    street: label.slice(0, match.index).trim(),
+    postal: (match[2] ? `${match[1]} ${match[2]}` : match[1]).toUpperCase(),
+  };
+}
+
+/** What owners see as the sitter's area: the city (second part of the street line) and the postal area, "Toronto M5A". */
+function serviceAreaOf(address: string | null, postal: string | null): string | null {
+  const city = (address ?? "").split(",").map((part) => part.trim()).filter(Boolean)[1];
+  const code = (postal ?? "").replace(/\s/g, "").slice(0, 3).toUpperCase();
+  const parts = [city && !/^[A-Z]{2}$/.test(city) ? city : null, /^[A-Z]\d[A-Z]$/.test(code) ? code : null].filter(Boolean);
+  return parts.length > 0 ? parts.join(" ") : null;
+}
 
 const MAX_SPOTS = 3;
+const MAX_PACKING = 20;
 
 type Service = "boarding" | "house_sitting";
 
@@ -90,11 +152,8 @@ function toDraft(profile: RoleProfile): Draft {
   );
 }
 
-function packingListFromDraft(text: string): string[] {
-  return text
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
+function cleanItems(items: string[]): string[] {
+  return items.map((x) => x.trim()).filter(Boolean);
 }
 
 function padSpots(spots: string[]): string[] {
@@ -125,6 +184,9 @@ export default function ProfileScreen() {
   const [spots, setSpots] = useState<string[]>(padSpots([]));
   // How many spot fields are showing: one to start, "+" adds up to MAX_SPOTS.
   const [spotFields, setSpotFields] = useState(1);
+  const [packing, setPacking] = useState<string[]>([""]);
+  // Groups the person opened or closed with a header tap (before a tap, a group with a value is open).
+  const [opened, setOpened] = useState<Record<string, boolean>>({});
   const [services, setServices] = useState<Service[]>(["boarding"]);
   const [multiOwner, setMultiOwner] = useState(false);
   const [aiMode, setAiMode] = useState<AiReplyMode>({ mode: "manual", consented: false });
@@ -147,7 +209,14 @@ export default function ProfileScreen() {
     loadRoleProfile(profile.id, profile.role)
       .then((result) => {
         setLoaded(result);
-        setDraft(toDraft(result));
+        // An address saved with its postal code inside it is split: the street here, the code in its own field.
+        const nextDraft = toDraft(result);
+        const split = splitPostal(nextDraft.home_address ?? "");
+        if (split.postal) {
+          nextDraft.home_address = split.street;
+          if (!nextDraft.home_postal_code) nextDraft.home_postal_code = split.postal;
+        }
+        setDraft(nextDraft);
         setSpots(padSpots(result.fields.meet_spots));
         setSpotFields(Math.max(1, Math.min(MAX_SPOTS, result.fields.meet_spots.length)));
         setHome(
@@ -157,9 +226,12 @@ export default function ProfileScreen() {
         );
         setPlacedAddress(
           result.fields.home_address && result.fields.home_lat != null && result.fields.home_lng != null
-            ? result.fields.home_address
+            ? split.postal
+              ? split.street
+              : result.fields.home_address
             : null,
         );
+        if (result.role === "owner" && result.fields.packing_list?.length) setPacking(result.fields.packing_list);
         if (result.role === "sitter") {
           setServices(result.fields.services);
           setMultiOwner(result.fields.accepts_multiple_owners ?? false);
@@ -186,8 +258,10 @@ export default function ProfileScreen() {
       setHomePlace(place);
       // The location fills the home address (street, city, postal area); the person adds the house number.
       if (place?.address) {
-        setDraft((prev) => ({ ...prev, home_address: place.address ?? "" }));
-        setPlacedAddress(place.address);
+        // The street line and the postal code go into their own fields.
+        const street = place.postal && place.address.endsWith(`, ${place.postal}`) ? place.address.slice(0, -(place.postal.length + 2)) : place.address;
+        setDraft((prev) => ({ ...prev, home_address: street, ...(place.postal ? { home_postal_code: place.postal } : {}) }));
+        setPlacedAddress(street);
       }
     });
     return () => {
@@ -206,7 +280,21 @@ export default function ProfileScreen() {
   }
   if (!loaded) return <LoadingView />;
 
-  const fields = loaded.role === "owner" ? OWNER_FIELDS : SITTER_FIELDS;
+  const groups = loaded.role === "owner" ? OWNER_GROUPS : SITTER_GROUPS;
+  const isOpen = (group: FieldGroup) => group.label === null || opened[group.id] === true;
+  const setGroupOpen = (id: string, on: boolean) => setOpened((prev) => ({ ...prev, [id]: on }));
+  const spotsOpen = opened.spots === true;
+  /** What a closed card shows under its title: the value, on one line. */
+  const summaryOf = (group: FieldGroup): string => {
+    if (group.id === "packing") {
+      const n = cleanItems(packing).length;
+      return n === 0 ? "" : n === 1 ? "1 item" : `${n} items`;
+    }
+    const keys = group.id === "home" ? ["home_address", "home_postal_code"] : group.fields.map((f) => f.key);
+    const values = keys.map((key) => (draft[key] ?? "").replace(/\s+/g, " ").trim()).filter(Boolean);
+    if (group.id === "experience" && values[0]) return `${values[0]} years`;
+    return values.join(", ");
+  };
 
   async function save() {
     if (!profile || !loaded) return;
@@ -224,14 +312,17 @@ export default function ProfileScreen() {
       const trimmed = (draft[key] ?? "").trim();
       return trimmed === "" ? null : trimmed;
     };
-    const packing = packingListFromDraft(draft.packing_list ?? "");
+    const packingList = cleanItems(packing);
     // The address is required and has to be one that was found on the map (Check address, or the current location).
     const address = value("home_address");
+    const postal = value("home_postal_code");
     const pin = home;
     let pinNote: string | null = null;
     if (!address) found.home_address = "Add your home address.";
     else if (address !== placedAddress || !pin) found.home_address = "Check your address so it's on the map.";
     setErrors(found);
+    // An error inside a closed group would be invisible.
+    for (const group of groups) if (group.fields.some((f) => found[f.key])) setGroupOpen(group.id, true);
     if (Object.keys(found).length > 0) return;
     if (pinFromGps && pin && homePlace) pinNote = `Pin saved near ${homePlace.label}`;
     const next: RoleProfile =
@@ -240,6 +331,8 @@ export default function ProfileScreen() {
             role: "owner",
             fields: {
               home_address: address,
+              home_address_2: value("home_address_2"),
+              home_postal_code: postal,
               home_lat: pin?.lat ?? null,
               home_lng: pin?.lng ?? null,
               emergency_contact_name: value("emergency_contact_name"),
@@ -247,24 +340,26 @@ export default function ProfileScreen() {
               vet_clinic_name: value("vet_clinic_name"),
               vet_clinic_phone: value("vet_clinic_phone"),
               meet_spots: meetSpots,
+              packing_list: packingList,
             },
           }
         : {
             role: "sitter",
             fields: {
               bio: value("bio"),
-              // Owners see only a rough place: the one typed, else the city and postal area of the checked address.
-              service_area: value("service_area") ?? areaFromAddress(address),
+              // Owners see only a rough place: the city and postal area of the address.
+              service_area: serviceAreaOf(address, postal) ?? loaded.fields.service_area,
               experience_years: experience ? Number(experience) : null,
               home_notes: value("home_notes"),
               home_address: address,
+              home_address_2: value("home_address_2"),
+              home_postal_code: postal,
               home_lat: pin?.lat ?? null,
               home_lng: pin?.lng ?? null,
               services,
               meet_spots: meetSpots,
               visitor_parking: value("visitor_parking"),
               lobby_notes: value("lobby_notes"),
-              packing_list: packing.length > 0 ? packing : [],
               accepts_multiple_owners: multiOwner,
               policies: value("policies"),
             },
@@ -292,8 +387,9 @@ export default function ProfileScreen() {
 
   /** The person picked one of the real addresses: its text and its point become the home address and pin. */
   function pickSuggestion(suggestion: AddressSuggestion) {
-    setDraft((prev) => ({ ...prev, home_address: suggestion.label }));
-    setPlacedAddress(suggestion.label);
+    const { street, postal } = splitPostal(suggestion.label);
+    setDraft((prev) => ({ ...prev, home_address: street, ...(postal ? { home_postal_code: postal } : {}) }));
+    setPlacedAddress(street);
     setHome(suggestion.point);
     setPinFromGps(false);
     setErrors((prev) => ({ ...prev, home_address: "" }));
@@ -309,8 +405,8 @@ export default function ProfileScreen() {
     } catch (error) {
       setHomeNote(
         error instanceof LocationError && error.reason === "denied"
-          ? "Location is off for Goldito in this browser. Allow it in the browser's site settings, or save your address to place the pin from it."
-          : "We couldn't read your location. Try again, or save your address to place the pin from it.",
+          ? "Location is off. Allow it in your browser settings, or check your address instead."
+          : "Couldn't read your location. Try again, or check your address instead.",
       );
     } finally {
       setLocating(false);
@@ -334,11 +430,6 @@ export default function ProfileScreen() {
       <Text style={styles.role}>{profile.role === "owner" ? "Pet owner" : "Pet sitter"}</Text>
       <View style={styles.group} testID="profile-photos-group">
         <Text style={styles.groupTitle}>Your photos</Text>
-        <Text style={styles.muted}>
-          {profile.role === "sitter"
-            ? "A face and photos with pets. The first one is the cover owners see when they look for a sitter."
-            : "Your sitter sees this once you book."}
-        </Text>
         <ProfilePhotoGallery profileId={profile.id} />
       </View>
       {profile.role === "sitter" ? <SitterBadges sitterId={profile.id} /> : null}
@@ -349,104 +440,199 @@ export default function ProfileScreen() {
         error={errors.display_name}
         testID="profile-display_name"
       />
-      {fields.map((field) => (
-        <View key={field.key} style={styles.fieldWithPin}>
-          {field.key === "home_address" ? (
-            <AddressInput
-              label={field.label}
-              value={draft[field.key] ?? ""}
-              onChangeText={(text) => setDraft((prev) => ({ ...prev, [field.key]: text }))}
-              placed={home ? placedAddress : null}
-              onPick={pickSuggestion}
-              placeholder={field.placeholder}
-              error={errors[field.key]}
-              testID="profile-home_address"
-            />
-          ) : (
-            <TextField
-              label={`${field.label} (optional)`}
-              value={draft[field.key] ?? ""}
-              onChangeText={(text) => setDraft((prev) => ({ ...prev, [field.key]: text }))}
-              placeholder={field.placeholder}
-              multiline={field.multiline}
-              inputMode={field.numeric ? "numeric" : undefined}
-              error={errors[field.key]}
-              testID={`profile-${field.key}`}
-            />
-          )}
-          {field.key === "home_address" ? (
-            <View style={styles.group} testID="profile-home-pin">
-              <Text style={styles.groupTitle}>Map pin for trips</Text>
-              {/* Nothing about the pin shows until the person reads their location: an old saved pin (a demo seed, an
-                  address from long ago) would only be a wrong place in the way. */}
-              {locating || pinFromGps ? (
-                <>
-                  <Text style={[styles.muted, locating ? styles.pinBusy : styles.pinSet]} testID="profile-home-pin-status">
-                    {locating
-                      ? "📡 Reading your location… allow it in the browser if it asks."
-                      : "✅ Pin set from your location. Tap Save to keep it."}
-                  </Text>
-                  {!locating && home ? (
-                    <>
-                      <Text style={styles.pinWhere} testID="profile-home-pin-where">
-                        {homePlace
-                          ? `📍 Near ${homePlace.label}${homePlace.postal ? ` · ${homePlace.postal}` : ""}`
-                          : homePlace === undefined
-                            ? "📍 Finding the neighbourhood…"
-                            : "📍 We couldn't name this spot. Check it on the map"}
-                      </Text>
-                      <OpenInMapsButton
-                        place={{ text: null, point: home }}
-                        travelling={false}
-                        style="link"
-                        testID="profile-home-pin-map"
-                      />
-                      <Text style={styles.muted} testID="profile-home-pin-use">
-                        {loaded.role === "owner"
-                          ? "What it's for: the trip map and ETA when you or your sitter travel for a drop-off or pick-up, and finding sitters near you. It isn't shown to anyone as a point."
-                          : "What it's for: the trip map and ETA to owners' homes, and so owners can find sitters near them. Owners only see a rounded distance (like “3 km”), never your pin or address."}
-                      </Text>
-                    </>
-                  ) : null}
-                </>
-              ) : null}
+      {groups.map((group) => {
+        const body =
+          group.id === "home" ? (
+            <>
+              <AddressInput
+                label=""
+                value={draft.home_address ?? ""}
+                onChangeText={(text) => setDraft((prev) => ({ ...prev, home_address: text }))}
+                placed={home ? placedAddress : null}
+                onPick={pickSuggestion}
+                placeholder={group.fields[0].placeholder}
+                error={errors.home_address}
+                testID="profile-home_address"
+              />
+              <Button
+                label={locating ? "Locating…" : "📍 Use my current location"}
+                variant="secondary"
+                onPress={() => void useCurrentLocation()}
+                disabled={locating}
+                testID="profile-use-location"
+              />
               {homeNote ? (
                 <Text style={styles.muted} testID="profile-home-pin-note">
                   {homeNote}
                 </Text>
               ) : null}
-              <TextButton
-                label={locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location"}
-                onPress={() => void useCurrentLocation()}
-                disabled={locating}
-                testID="profile-use-location"
+              <TextField
+                label="Address details"
+                value={draft.home_address_2 ?? ""}
+                onChangeText={(text) => setDraft((prev) => ({ ...prev, home_address_2: text }))}
+                placeholder={group.fields[1].placeholder}
+                maxLength={120}
+                testID="profile-home_address_2"
               />
-              <Text style={styles.muted}>Read once, only to mark your home. Nothing is tracked, and nobody sees the numbers.</Text>
-            </View>
-          ) : null}
-        </View>
-      ))}
+              <TextField
+                label="Postal code"
+                value={draft.home_postal_code ?? ""}
+                onChangeText={(text) => setDraft((prev) => ({ ...prev, home_postal_code: text }))}
+                placeholder={group.fields[2].placeholder}
+                maxLength={10}
+                autoCapitalize="characters"
+                testID="profile-home_postal_code"
+              />
+            </>
+          ) : group.id === "packing" ? (
+            <>
+              {packing.map((item, i) => (
+                <View key={i} style={styles.packingRow}>
+                  <Text style={styles.packingBox}>☐</Text>
+                  <View style={styles.packingField}>
+                    <TextField
+                      label=""
+                      accessibilityLabel={`Item ${i + 1}`}
+                      value={item}
+                      onChangeText={(text) => setPacking((cur) => cur.map((x, k) => (k === i ? text : x)))}
+                      placeholder={i === 0 ? "e.g. Food" : undefined}
+                      maxLength={60}
+                      testID={`profile-packing-${i + 1}`}
+                    />
+                  </View>
+                  {packing.length > 1 || item ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Remove item"
+                      onPress={() => setPacking((cur) => (cur.length > 1 ? cur.filter((_, k) => k !== i) : [""]))}
+                      style={styles.packingRemove}
+                      testID={`profile-packing-remove-${i + 1}`}
+                    >
+                      <Text style={styles.packingRemoveText}>✕</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ))}
+              {packing.length < MAX_PACKING ? (
+                <TextButton
+                  label="+ Add item"
+                  onPress={() => setPacking((cur) => [...cur, ""])}
+                  style={styles.addRow}
+                  testID="profile-packing-add"
+                />
+              ) : null}
+            </>
+          ) : (
+            group.fields.map((field) => (
+              <TextField
+                key={field.key}
+                // A group with one field is already named by its header.
+                label={group.label !== null && group.fields.length === 1 ? "" : field.label}
+                accessibilityLabel={field.label}
+                value={draft[field.key] ?? ""}
+                onChangeText={(text) => setDraft((prev) => ({ ...prev, [field.key]: text }))}
+                placeholder={field.placeholder}
+                multiline={field.multiline}
+                inputMode={field.numeric ? "numeric" : undefined}
+                error={errors[field.key]}
+                testID={`profile-${field.key}`}
+              />
+            ))
+          );
+        if (group.label === null) return <View key={group.id}>{body}</View>;
+        const open = isOpen(group);
+        return (
+          <Collapsible
+            key={group.id}
+            title={group.label}
+            open={open}
+            summary={summaryOf(group)}
+            onToggle={() => setGroupOpen(group.id, !open)}
+            testID={`profile-group-${group.id}`}
+            toggleTestID={`profile-add-${group.id}`}
+          >
+            {body}
+          </Collapsible>
+        );
+      })}
       {loaded.role === "owner" ? (
-        <View style={styles.group} testID="profile-entry-info">
-          <Text style={styles.groupTitle}>Entry info for sitters</Text>
-          <Text style={styles.muted}>
-            Shown to your sitter 2 hours before they arrive.
-          </Text>
-          <TextButton
-            label="Edit entry info"
+        <Card style={styles.navCard}>
+          <Pressable
+            accessibilityRole="button"
             onPress={() => router.push("/owner/home-access")}
+            style={styles.navRow}
             testID="profile-home-access"
+          >
+            <Text style={styles.navTitle}>Entry info</Text>
+            <Text style={styles.navChevron}>›</Text>
+          </Pressable>
+        </Card>
+      ) : null}
+      <Collapsible
+        title="Meeting spots"
+        open={spotsOpen}
+        summary={cleanSpots(spots).join(", ")}
+        onToggle={() => setGroupOpen("spots", !spotsOpen)}
+        testID="profile-spots"
+        toggleTestID="profile-add-spots"
+      >
+        <Text style={styles.muted}>Public places only. Up to 3.</Text>
+        {spots.slice(0, spotFields).map((spot, i) => (
+          <View key={i} style={styles.spotRow}>
+            <View style={styles.packingField}>
+              <TextField
+                label={`Spot ${i + 1}`}
+                value={spot}
+                onChangeText={(text) => setSpots((cur) => cur.map((s, k) => (k === i ? text : s)))}
+                placeholder={i === 0 ? "e.g. Christie Pits, east entrance" : undefined}
+                maxLength={60}
+                testID={`profile-spot-${i + 1}`}
+              />
+            </View>
+            {spotFields > 1 || spot ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Remove spot ${i + 1}`}
+                onPress={() => {
+                  setSpots((cur) => padSpots(cur.filter((_, k) => k !== i)));
+                  setSpotFields((n) => Math.max(1, n - 1));
+                }}
+                style={styles.spotRemove}
+                testID={`profile-spot-remove-${i + 1}`}
+              >
+                <Text style={styles.packingRemoveText}>✕</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ))}
+        {spotFields < MAX_SPOTS ? (
+          <TextButton label="+ Add another spot" onPress={() => setSpotFields((n) => Math.min(MAX_SPOTS, n + 1))} style={styles.addRow} testID="profile-add-spot" />
+        ) : null}
+      </Collapsible>
+      {loaded.role === "sitter" ? (
+        <Card style={styles.card} testID="profile-services">
+          <Text style={styles.groupTitle}>Services you offer</Text>
+          {SERVICES.map((s) => (
+            <CheckRow
+              key={s.value}
+              label={s.label}
+              hint={s.hint}
+              checked={services.includes(s.value)}
+              onChange={(on) => setServices((cur) => (on ? [...cur, s.value] : cur.filter((x) => x !== s.value)))}
+              testID={`profile-service-${s.value}`}
+            />
+          ))}
+          {errors.services ? <Text style={styles.error}>{errors.services}</Text> : null}
+          <CheckRow
+            label="Take pets from more than one owner at a time"
+            checked={multiOwner}
+            onChange={setMultiOwner}
+            testID="profile-multi-owner"
           />
-        </View>
+        </Card>
       ) : null}
       {loaded.role === "sitter" ? (
-        <Text style={styles.muted} testID="profile-ai-notice">
-          Goldito may use AI writing assistance to draft your replies and daily notes in your voice. You approve everything
-          before it is sent.
-        </Text>
-      ) : null}
-      {loaded.role === "sitter" ? (
-        <View style={styles.group} testID="profile-ai-replies">
+        <Card style={styles.card} testID="profile-ai-replies">
           <Text style={styles.groupTitle}>AI replies</Text>
           <SegmentedControl
             options={[
@@ -468,10 +654,13 @@ export default function ProfileScreen() {
           />
           <Text style={styles.muted}>
             {aiMode.mode === "auto"
-              ? "Replies that need nothing from you go out in your name after a short, human-paced delay. Anything that needs your confirmation waits for you."
-              : "You read each drafted reply and tap Send. Nothing goes out without you."}
+              ? "Replies that need nothing from you go out in your name after a short delay."
+              : "You tap Send on every reply."}
           </Text>
-        </View>
+          <Text style={styles.muted} testID="profile-ai-notice">
+            AI drafts your replies and notes. You approve before anything is sent.
+          </Text>
+        </Card>
       ) : null}
       {loaded.role === "sitter" ? (
         <View style={styles.group} testID="profile-answers">
@@ -500,52 +689,11 @@ export default function ProfileScreen() {
           testID="ai-consent-confirm"
         />
       </Sheet>
-      {loaded.role === "sitter" ? (
-        <View style={styles.group} testID="profile-services">
-          <Text style={styles.groupTitle}>Services you offer</Text>
-          {SERVICES.map((s) => (
-            <CheckRow
-              key={s.value}
-              label={s.label}
-              hint={s.hint}
-              checked={services.includes(s.value)}
-              onChange={(on) => setServices((cur) => (on ? [...cur, s.value] : cur.filter((x) => x !== s.value)))}
-              testID={`profile-service-${s.value}`}
-            />
-          ))}
-          {errors.services ? <Text style={styles.error}>{errors.services}</Text> : null}
-          <CheckRow
-            label="Take pets from more than one owner at a time"
-            hint="One owner at a time, or several within your max."
-            checked={multiOwner}
-            onChange={setMultiOwner}
-            testID="profile-multi-owner"
-          />
-        </View>
-      ) : null}
-      <View style={styles.group} testID="profile-spots">
-        <Text style={styles.groupTitle}>Preferred meeting spots</Text>
-        <Text style={styles.muted}>Up to 3 public places for a first Meet & Greet, never a home address.</Text>
-        {spots.slice(0, spotFields).map((spot, i) => (
-          <TextField
-            key={i}
-            label={`Spot ${i + 1}`}
-            value={spot}
-            onChangeText={(text) => setSpots((cur) => cur.map((s, k) => (k === i ? text : s)))}
-            placeholder={i === 0 ? "e.g. Christie Pits, east entrance" : undefined}
-            maxLength={60}
-            testID={`profile-spot-${i + 1}`}
-          />
-        ))}
-        {spotFields < MAX_SPOTS ? (
-          <TextButton label="+ Add a spot" onPress={() => setSpotFields((n) => Math.min(MAX_SPOTS, n + 1))} style={styles.addSpot} testID="profile-add-spot" />
-        ) : null}
-      </View>
       <View style={styles.privacy}>
         <Text style={styles.hint}>
           {profile.role === "owner"
-            ? "Your address and emergency contact are shared only with the sitter of a confirmed booking."
-            : "Your home address and place notes are shared only with owners who have paid for a booking with you."}
+            ? "Your address and emergency contact are shared only after a confirmed booking."
+            : "Your address and home notes are shared only after a paid booking."}
         </Text>
       </View>
       {isDemoToolsEnabled && isDemoAccount(session.session?.user.email) ? <DemoTools /> : null}
@@ -564,14 +712,29 @@ const makeStyles = (theme: Theme) =>
       color: theme.color.textMuted,
       textTransform: "uppercase",
     },
-    fieldWithPin: {
-      gap: theme.spacing.md,
-    },
     checkRow: { alignItems: "flex-start" },
     found: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.success },
     suggestions: { gap: theme.spacing.xs },
     suggestion: { alignSelf: "flex-start", paddingHorizontal: 0, minHeight: 36 },
-    addSpot: { alignSelf: "flex-start", paddingHorizontal: 0 },
+    addRow: { alignSelf: "flex-start", paddingHorizontal: 0 },
+    card: { gap: theme.spacing.sm },
+    navCard: { padding: 0, overflow: "hidden" },
+    navRow: {
+      minHeight: theme.layout.touchTarget,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: theme.spacing.md,
+    },
+    navTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    navChevron: { fontSize: theme.fontSize.body, color: theme.color.textMuted },
+    packingRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
+    packingBox: { fontSize: theme.fontSize.body, color: theme.color.textMuted },
+    packingField: { flex: 1 },
+    spotRow: { flexDirection: "row", alignItems: "flex-end", gap: theme.spacing.sm },
+    spotRemove: { minWidth: 36, minHeight: theme.layout.touchTarget, alignItems: "center", justifyContent: "center" },
+    packingRemove: { minWidth: 36, minHeight: 36, alignItems: "center", justifyContent: "center" },
+    packingRemoveText: { fontSize: theme.fontSize.body, color: theme.color.textMuted },
     group: {
       gap: theme.spacing.sm,
     },
@@ -579,22 +742,6 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.body,
       fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
-    },
-    pinWhere: {
-      fontSize: theme.fontSize.body,
-      fontWeight: theme.fontWeight.semibold,
-      color: theme.color.text,
-    },
-    pinBusy: {
-      color: theme.color.primary,
-      fontWeight: theme.fontWeight.semibold,
-    },
-    pinSet: {
-      color: theme.color.success,
-      fontWeight: theme.fontWeight.semibold,
-      backgroundColor: theme.color.successSurface,
-      borderRadius: theme.radius.sm,
-      padding: theme.spacing.sm,
     },
     muted: {
       fontSize: theme.fontSize.small,

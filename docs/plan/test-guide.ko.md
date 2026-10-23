@@ -174,7 +174,7 @@
 | 로그인 · 회원가입 · 역할별 화면 · Welcome 투어 | ✅ 🤖 | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
 | **Profile의 Save 고정** (스크롤해도 화면 맨 아래에 Save와 저장 에러가 보임, 오너 · 시터 같음 · 시터는 Your photos가 Badges 위) | 🟡 기존 `profile` e2e가 `profile-save`로 저장 확인 · 고정 위치 · 순서는 사람 확인 대기 | #292 |
-| **Profile 정리 (#180)**: 선택 입력 카드 접기 · 주소 상세 · 우편번호 · 오너 패킹 리스트 · 시터 인수 체크 | 🟡 DB(`015g` 주소 상세 · 우편번호, `015h` 오너 패킹 리스트, 호스팅 DB에 적용됨 10/23) · SQL smoke(CI에서 처음 실행, 로컬 Postgres는 못 돌림) | #180 |
+| **Profile 정리 (#180)**: 선택 입력 카드 접기(▸ ▾, 닫힌 카드는 값을 한 줄로) · Home address 카드(주소 · 현재 위치 버튼 · Address details · Postal code) · 서비스 지역 자동 · 오너 패킹 리스트와 시터 인수 체크 · 미팅 스팟 삭제 · Your answers 카드 · 시터 Packing list 제거 | 🟡 DB(`015g` · `015h`, 호스팅 DB에 적용됨 10/23) · 앱 구현 · SQL smoke(CI에서 처음 실행, 로컬 Postgres는 못 돌림) · 사람 확인 대기 | #180 |
 | 데스크톱 폰 프레임 · 마우스=손가락 | ✅ 🤖 | 01 |
 | 데스크톱 Split view, 폰 두 개 나란히 (`?view=split`, 폭 ≥ 900), 각 폰은 로그인 화면에서 시작하고 로그인한 계정이 폰 위에 보임 | ✅ 🤖 `split.spec.ts` · 사람 SPLIT-1은 다시 확인 대기, SPLIT-2 – 5는 ✅ (2026-10-15 Minsik) | 10 / 10.10 |
 
@@ -401,7 +401,7 @@
 | INQ-9 | 시터 정책에 "No dogs over 20 kg." + 25 kg 반려동물로 문의 | 초안이 "확인하겠다"로 안내하고 **⚠️ Check this one** 표시 (자동 발송 안 됨) | pytest d | ➖ |
 | INQ-10 | 질문에 "Are you an AI?" | 사람이라고 답하지 않음 · 시터에게 "reply yourself" 별도 알림 · 자동 발송 안 됨 | pytest i | ➖ |
 | INQ-11 | 오너 **Request booking** | `/owner/bookings/new`에 서비스 · 반려동물 · 시간 · 장소 · 시터가 **채워진 채** 열림. 요청을 보내면 그 문의가 booked | 🤖 `inquiry` | ➖ |
-| INQ-12 | 시터 `/profile` → **House rules & policies** 저장 | 저장되고 백그라운드에서 재색인. 이후 초안이 그 규칙을 근거("From Chloe's policies")로 씀 | 🤖 `inquiry` · pytest · **실제 DB 👤** | ➖ |
+| INQ-12 | 시터 `/profile` → **House rules** 카드에 쓰고 저장 | 저장되고 백그라운드에서 재색인. 이후 초안이 그 규칙을 근거("From Chloe's policies")로 씀 | 🤖 `inquiry` · pytest · **실제 DB 👤** | ➖ |
 | INQ-13 | 시터 `/profile` → **AI replies → Auto-send** | 책임 동의 모달("Replies go out in your name…") 확인 후에만 켜짐. 껐다 켜면 모달 없음 | 🤖 `inquiry` · SQL | ➖ |
 | INQ-14 | **자동 모드 시터에게** 오너가 문의 | 대기 없이 초안 생성 → 오너 화면 "Chloe will reply soon" → **약 4초 뒤 "Chloe is typing…"** → **약 15–40초(보통 ≈ 30초) 뒤 답 말풍선** + 그 시각에 알림. 시터가 스레드를 열기 **전엔 "Read" 표시가 없음**. 시터 화면에는 "Sent automatically" | 🤖 `inquiry` · pytest | ➖ |
 | INQ-15 | 자동 모드인데 초안이 확인이 필요한 경우(정책 충돌 · AI 질문 · 모델 실패) | **자동 발송 안 됨** — 수동 초안으로 시터에게 | pytest | ➖ |
@@ -563,7 +563,7 @@
 | TRIP-4 | 예약 당사자 아닌 계정, 시터 프로필 목록에서 좌표 | `trips` 행이 0건, 시터의 `home_lat` 열은 읽기 거부, 클라이언트가 직접 INSERT · UPDATE 하면 거부 | SQL `rls_smoke` L | ➖ |
 | TRIP-5 | 인수인계 장소 = 견주 집 / 다른 곳 | 시터가 이동(목적지 = 견주 집 좌표) / 둘 다 이동 가능하지만 목적지 없음 → 지도 · ETA 없음, 거리로 도착 판정 안 함 | SQL `rls_smoke` L | ➖ |
 | TRIP-6 | 시터가 인수인계 사진을 올리고 사진 체크를 요청 (강아지 사진 / 동물 없는 방 / 차 안 크레이트 없음) | 강아지가 보이고 종이 맞으면 `ok`, 동물이 없거나 종이 다르면 `warning`, 차 사진은 크레이트나 안전벨트가 보여야 `ok`(모델이 "안전해 보임"이라고 해도 서버 규칙이 우선). 모델이 실패·20초 초과여도 200 `unchecked`로 저장. 예약의 시터가 아니거나 남의 사진이면 403 | 🤖 pytest `test_ai_handoff_check` · SQL `rls_smoke` L(행 읽기·쓰기 권한) · **차 안 크레이트 감지는 진짜 사진으로 확인 대기 👤** | ➖ |
-| TRIP-7 | Profile → Map pin for trips → **Use my current location** | 버튼을 누르기 전에는 위치를 읽지 않고, **화면에는 "Use my current location" 버튼과 한 줄 안내만 보임(이미 저장된 핀의 상태 · 동네 · 지도 링크 · 용도는 숨김 — 데모 계정의 옛 핀 같은 엉뚱한 장소가 먼저 보이지 않게)**. 한 번 누르면 브라우저 권한 창(이미 허용이면 바로). 읽는 동안 상태 줄이 **"📡 Reading your location…"**, 읽으면 **초록 강조 "✅ Pin set from your location. Tap Save to keep it."** + 토스트 **"Location found 📍 Tap Save to keep it"** + 버튼이 **"Read my location again"**으로 바뀜(같은 화면, 모순되는 두 줄 없음). Save하면 저장. 위치를 읽은 뒤에만 **"📍 Near {동네, 도시} · {우편번호 앞 3자리}"**(예: Trinity Bellwoods, Toronto · M6J — 역지오코딩, 번지수 없음, 우편번호는 뭉갠 좌표라 뒤 3자리는 안 보여 줌), **Open in Google Maps** 링크로 핀 위치를 직접 확인, **"What it's for: …"** 한 줄로 핀의 용도(오너: 트립 지도 · ETA · 내 주변 시터 찾기 / 시터: 오너 집으로 가는 트립 · 오너가 가까운 시터를 찾음, 오너는 반올림한 거리만 보고 핀 · 주소는 안 봄)를 보여 줌. 저장하면 토스트가 **"Pin saved near {동네}"**. 이름을 못 찾으면 "We couldn't name this spot — check it on the map" 브라우저가 거절하면 "Location is off for Goldito…" 안내, 핀은 그대로 위치를 읽으면 **Home address**에도 "거리명, 도시, 우편 앞 3자리"가 자동으로 채워짐(집 번호는 사람이 덧붙임, 예: Dundas St W, Toronto, M6J) | 🤖 `home-location.spec.ts` + pytest `test_geo` (reverse) · 실제 폰 👤 | ➖ |
+| TRIP-7 | Profile → **Home address** 카드 → **📍 Use my current location** | 버튼을 누르기 전에는 위치를 읽지 않음(핀 상태 · 동네 · 지도 링크 · 용도 문구는 없음). 한 번 누르면 브라우저 권한 창(이미 허용이면 바로) → 토스트 **"Location found 📍 Tap Save to keep it"**, **Home address**에 "거리명, 도시"(예: Dundas St W, Toronto), **Postal code**에 우편 앞 3자리(예: M6J)가 따로 채워짐(집 번호는 사람이 덧붙임). Save하면 핀과 함께 저장되고 토스트 **"Pin saved near {동네}"**. 브라우저가 거절하면 칸 아래에 "Location is off. Allow it in your browser settings, or check your address instead." 핀은 그대로 | 🤖 `home-location.spec.ts` + pytest `test_geo` (reverse) · 실제 폰 👤 | ➖ |
 | TRIP-8 | 주소를 새로 쓰거나 고치고 Save | 토스트에 한 줄 "Profile saved · Pin placed near {동네, 도시}". 주소를 못 찾거나 조회가 안 되면 "We couldn't place that address on the map — use your current location for the pin"이고 옛 핀은 지워짐. 주소를 안 건드리면 조회하지 않고 핀 유지. 같은 방문에 현재 위치로 찍은 핀은 주소 조회로 덮어쓰지 않음 | 🤖 `home-location.spec.ts` + pytest `test_geo` | ➖ |
 | TRIP-9 | 가상 운전(Simulate the drive)의 경로 | 출발 = 이동하는 쪽 집, 매 단계 목적지에 가까워지고, 마지막 점은 목적지 약 60 m 앞(150 m 도착 규칙 안) | 🤖 `location.spec.ts` | ➖ |
 | TRIP-10 | 견주가 인수인계 2시간 전부터 예약 상세 **Start trip** → 동의 화면 → **Simulate the drive (demo)** | 동의 화면이 먼저 뜨고 그 전에는 trip이 만들어지지 않음. 시작하면 Trip 화면: "Sharing your location with Chloe until you arrive" 배너, "ETA 7:42 AM · 3.2 km", 지도(🚗 · 📍, ± 버튼, © OpenStreetMap contributors). 약 30초 뒤 "You've arrived 🚗", 배너가 사라지고 **Chloe's place**(주소 · Visitor parking · 로비 안내) | 🤖 `transit.spec.ts` | ➖ |
@@ -846,11 +846,11 @@
 | --- | --- | --- | --- | --- |
 | ADDR-1 | 주소를 쓰는 모든 칸(Profile의 Home address, 예약 요청의 Elsewhere)에서 주소나 우편번호를 쓰고 **Check address** | 실제 주소 후보가 최대 5개 나옴(예: "127 Broadway Ave, Toronto, ON M4P 1V9"). 하나를 누르면 칸이 그 주소로 바뀌고 "✓ Found on the map". 입력할 때마다 조회하지 않고 버튼을 누를 때 한 번만(OpenStreetMap 정책) | 🤖 `home-location.spec.ts` (+ pytest `test_geo`) | 사람 확인 대기 | 우편번호는 어떤 철자든(`m4p1v4`) 한 형태로 찾고, 지도에 그 코드가 없으면 **우편 앞 3자리 지역**("M4P, Toronto, ON")으로 대신함(번들한 GeoNames 지역 표, CC BY 4.0)
 | ADDR-2 | 주소를 비우고 / 쓰기만 하고 / 확인한 뒤 고쳐서 **Save** | 주소는 필수: "Add your home address." / "Check your address so it's on the map." 로 막힘. 못 찾은 주소는 "We couldn't find that address…", 조회가 꺼져 있으면 안내 문구, 저장된 주소와 핀은 그대로 | 🤖 `home-location.spec.ts` | 사람 확인 대기 |
-| ADDR-3 | **Use my current location** | 핀이 찍히고 Home address가 "거리명, 도시, 우편 앞 3자리"로 자동으로 채워짐(집 번호는 직접 덧붙이면 다시 Check address) | 🤖 `home-location.spec.ts` | 사람 확인 대기 |
-| ADDR-4 | Profile → **Preferred meeting spots** | 칸은 하나로 시작, **+ Add a spot**으로 늘리고 최대 3개. 저장된 개수만큼 열림 | 🤖 `profile.spec.ts` | 사람 확인 대기 |
+| ADDR-3 | **📍 Use my current location** | 핀이 찍히고 Home address가 "거리명, 도시"로, Postal code가 우편 앞 3자리로 따로 채워짐(집 번호는 직접 덧붙이면 다시 Check address) | 🤖 `home-location.spec.ts` | 사람 확인 대기 |
+| ADDR-4 | Profile → **Meeting spots** 카드(▸) | 열면 칸은 하나로 시작, **+ Add another spot**으로 늘리고 최대 3개, 칸마다 **✕**로 지움(하나뿐이면 내용을 비움). 닫힌 카드는 저장된 장소를 한 줄로 보여 줌 | 🤖 `profile.spec.ts` | 사람 확인 대기 |
 | ADDR-5 | 즐겨찾기가 없는 오너의 Bookings 탭 | Favorites 칸 없이 **Sitters nearby**에 주변 시터가 바로 보임. 반경 안에 없으면 "No sitters within N km for these dates." | 🤖 `sitter-search` | 사람 확인 대기 |
 | ADDR-6 | 데모 계정(`@goldito.test`) 전부 | 계정마다 **자기 주소와 핀**이 있음(토론토 공공 건물 주소, 실제 사람 집 아님): 오너 Robert · Peter · Alex · David, 시터 Chloe · Paul · Allen · Daniel. 서로 0.6 ~ 14 km라 반경 슬라이더로 결과가 달라짐. **Reset demo**나 `seed_demo.py`를 다시 돌려도 이 주소가 유지됨 | 🤖 pytest `test_seed_demo` · `test_reset_demo` | 사람 확인 대기 |
-| ADDR-7 | 시터가 Profile에서 주소를 확인하고 저장 | 직접 쓴 서비스 지역이 없으면 **도시 + 우편 앞 3자리**("Toronto M4W")가 서비스 지역이 됨. 오너의 예약 요청 시트에는 "At Allen's place, Toronto M4W"처럼 대략적인 위치만 나오고 정확한 주소는 결제 뒤에만 공개 | 🤖 `home-location` · `chat` | 사람 확인 대기 |
+| ADDR-7 | 시터가 Profile에서 주소를 확인하고 저장 | 서비스 지역은 입력칸 없이 **도시 + 우편 앞 3자리**("Toronto M4W")로 자동으로 정해짐(도시나 우편번호를 못 뽑으면 기존 값 유지). 오너의 예약 요청 시트에는 "At Allen's place, Toronto M4W"처럼 대략적인 위치만 나오고 정확한 주소는 결제 뒤에만 공개 | 🤖 `home-location` · `chat` | 사람 확인 대기 |
 
 ### 3.32 채팅 허브 (CHAT) — 3D.4 · #141 · *사전: 호스팅 DB에 `014j`(적용은 요청할 때만), 오너와 시터 계정 둘(예: Peter와 Chloe), 두 브라우저나 창*
 
@@ -1093,6 +1093,12 @@
 | --- | --- | --- | --- | --- |
 | PFOLD-1 | (DB) `rls_smoke.sql`의 015g 블록 | 시터의 `home_address_2` · `home_postal_code`가 있으면 오너가 보는 주소가 "Unit 5, 100 Example St M5A 3C4"로 합쳐져 나옴. 거리 주소 끝에 이미 같은 우편번호가 있으면 반복하지 않고, 아무것도 없으면 null. 클라이언트는 `full_address`를 직접 못 부름 | SQL `rls_smoke` (015g) | CI 결과 대기 |
 | PFOLD-2 | (DB) `rls_smoke.sql`의 015h 블록 | 오너의 `packing_list`는 `get_handoff_details`의 **drop_off 행에만** 실리고 pick_up 행은 null. 시터와 오너 둘 다 그 행에서 읽음. 시터 테이블의 옛 `packing_list`는 더 이상 쓰이지 않음 | SQL `rls_smoke` (3C.4 · 015h) | CI 결과 대기 |
+| PFOLD-3 | Profile 열기(오너 · 시터) | 선택 입력 카드는 전부 **닫힘(▸)**이고 제목 아래에 값이 있으면 한 줄로 보임. 항상 보이는 것은 사진 · 이름(시터는 About you도). 헤더를 누르면 ▾로 열리고 다시 누르면 닫힘, 닫아도 쓴 내용은 Save에 그대로 들어감. Save에서 닫힌 카드 안의 에러(예: 주소 없음)가 나면 그 카드가 열림 | 🤖 `profile.spec.ts` | 사람 확인 대기 |
+| PFOLD-4 | 카드 순서 | 시터: About you, Home address, About your home, Experience, Visitor parking, Lobby notes, House rules, 그 아래 Meeting spots · Services · AI replies · Your answers, 위에 접힌 Badges. 오너: Home address, Emergency contact, Vet, Packing list, Entry info(`›`, 다른 화면으로 감), Meeting spots. 시터에는 Packing list · Service area 칸이 없음 | 🤖 `profile.spec.ts` · `sitter-badges.spec.ts` | 사람 확인 대기 |
+| PFOLD-5 | Home address 카드 | 주소(Check address) → 📍 버튼 → **Address details**(예: Unit 1204, buzz 55) → **Postal code**. Check address로 고른 주소 "100 Queen St W, Toronto, ON M5H 2N2"는 거리 주소 "100 Queen St W, Toronto, ON"과 우편번호 "M5H 2N2"로 나뉘어 들어감. 우편번호가 주소 안에 같이 저장돼 있던 옛 주소는 열 때 나뉘어 보이고 저장도 나뉘어서 됨. 예약 확정 뒤 시터 · 오너가 받는 주소는 세 칸이 합쳐진 한 줄 | 🤖 `profile.spec.ts` · `home-location.spec.ts` · SQL(015g) | 사람 확인 대기 |
+| PFOLD-6 | 오너 Profile → **Packing list**(▸) | ☐ 항목을 **+ Add item**으로 늘리고(최대 20) ✕로 지우고 Save. 닫힌 카드는 "3 items"처럼 개수를 보여 줌 | 🤖 `profile.spec.ts` | 사람 확인 대기 |
+| PFOLD-7 | 결제한 예약에서 시터 → 예약 화면 / 오너 → 예약 화면 | 시터에게 **"{펫}'s things"** 카드에 오너가 적은 리스트가 나오고 항목을 눌러 체크(이 기기에 저장, 새로고침해도 유지). 오너에게는 **"Pack for {펫}"** 카드에 본인 리스트(같은 방식으로 체크). 리스트가 비면 카드 없음 | 🤖 `checkout.spec.ts` | 두 기기 사이 동기화는 없음(체크는 기기별) · 사람 확인 대기 |
+| PFOLD-8 | 시터 Profile → **Your answers** | 질문마다 번호 원 + 질문, 아래 **흰 박스에 내 답변**(민트 카드 안). 직접 추가한 질문과 가능한 날도 같은 모양 | 🤖 `sitter-onboarding.spec.ts` | 사람 확인 대기 |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 

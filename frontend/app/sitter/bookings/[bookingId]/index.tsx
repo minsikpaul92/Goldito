@@ -12,6 +12,7 @@ import { ProposalCard, showsProposal } from "../../../../components/ProposalCard
 import { TripEntry } from "../../../../components/TripEntry";
 import { Button } from "../../../../components/ui/Button";
 import { Card } from "../../../../components/ui/Card";
+import { CheckRow } from "../../../../components/ui/CheckRow";
 import { Chip } from "../../../../components/ui/Chip";
 import { Tag } from "../../../../components/ui/Tag";
 import { ChipSuggestions } from "../../../../components/ChipSuggestions";
@@ -25,6 +26,7 @@ import { composeComment } from "../../../../features/completion/reviewPresets";
 import { SPECIES_EMOJI } from "../../../../features/pets/petFormat";
 import { formatDay, formatInstant, formatTime } from "../../../../features/schedule/dates";
 import { SERVICE_LABEL } from "../../../../features/sitters/sitterApi";
+import { loadLocal, saveLocal } from "../../../../lib/localState";
 import { releaseVideoLink } from "../../../../lib/meetGreet";
 import {
   SITTER_DECLINE_REASONS,
@@ -39,7 +41,7 @@ import {
   completeHandoff,
   declinedChange,
   getBooking,
-  getHandoffAddresses,
+  getHandoffDetails,
   loadPetCare,
   meetGreetBlocksAccept,
   proposeHandoff,
@@ -74,9 +76,14 @@ type State =
       booking: BookingSummary;
       pets: PetCare[];
       addresses: Partial<Record<HandoffKind, string>>;
+      /** The owner's packing list, from the drop-off row. */
+      packing: string[];
     }
   | { status: "missing" }
   | { status: "error"; message: string };
+
+/** What the sitter ticked off the owner's packing list on this device. */
+const receivedKey = (bookingId: string) => `goldito:received:${bookingId}`;
 
 const SLOT_LABEL: Record<string, string> = { morning: "Morning", afternoon: "Afternoon", overnight: "Night" };
 
@@ -119,6 +126,7 @@ export default function SitterBookingDetail() {
   const [declineNote, setDeclineNote] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [confirmReturn, setConfirmReturn] = useState(false);
+  const [packChecks, setPackChecks] = useState<Record<string, boolean>>({});
   const [sheet, setSheet] = useState<{ key: number; kind: HandoffKind; mode: "suggest" | "change" } | null>(null);
 
   const load = useCallback(async () => {
@@ -129,11 +137,19 @@ export default function SitterBookingDetail() {
         setState({ status: "missing" });
         return;
       }
-      const [pets, addresses] = await Promise.all([
+      const [pets, details] = await Promise.all([
         loadPetCare(booking.pets.flatMap((p) => (p.id ? [p.id] : []))),
-        booking.status === "confirmed" ? getHandoffAddresses(booking.id) : Promise.resolve({}),
+        booking.status === "confirmed"
+          ? getHandoffDetails(booking.id)
+          : Promise.resolve({ places: {} as Awaited<ReturnType<typeof getHandoffDetails>>["places"] }),
       ]);
-      setState({ status: "ready", booking, pets, addresses });
+      const addresses: Partial<Record<HandoffKind, string>> = {};
+      for (const kind of Object.keys(details.places) as HandoffKind[]) {
+        const addr = details.places[kind]?.address;
+        if (addr) addresses[kind] = addr;
+      }
+      setPackChecks(loadLocal<Record<string, boolean>>(receivedKey(booking.id), {}));
+      setState({ status: "ready", booking, pets, addresses, packing: details.places.drop_off?.packingList ?? [] });
     } catch (err) {
       setState({ status: "error", message: (err as Error).message });
     }
@@ -165,7 +181,7 @@ export default function SitterBookingDetail() {
     );
   }
 
-  const { booking, pets, addresses } = state;
+  const { booking, pets, addresses, packing } = state;
   const owner = booking.ownerName;
   // Paid once, then an agreed change needed a new consent (009d): entry codes wait for the owner.
   const checkoutReopened = booking.status === "confirmed" && !booking.paidAt && booking.priceSnapshot != null;
@@ -334,6 +350,26 @@ export default function SitterBookingDetail() {
             />
           ) : null}
         </Card>
+
+        {packing.length > 0 && booking.status === "confirmed" ? (
+          <Card style={styles.block} testID="packing-list">
+            <Text style={styles.label}>{`${petNames}'s things`}</Text>
+            <Text style={styles.muted}>Tick what you receive.</Text>
+            {packing.map((item) => (
+              <CheckRow
+                key={item}
+                label={item}
+                checked={Boolean(packChecks[item])}
+                onChange={(v) => {
+                  const next = { ...packChecks, [item]: v };
+                  saveLocal(receivedKey(booking.id), next);
+                  setPackChecks(next);
+                }}
+                testID={`pack-${item}`}
+              />
+            ))}
+          </Card>
+        ) : null}
 
         <TripEntry booking={booking} role="sitter" addresses={addresses} />
 
