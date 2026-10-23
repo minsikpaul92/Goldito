@@ -67,23 +67,25 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Skip | `own-skip` | 174 |
-| Button | Next | `own-next` | 176 |
-| Button | Next | `own-next` | 226 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 227 |
-| Banner | `error` | — | 239 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 279 |
-| Stepper | Age | `own-age` | 373 |
-| Button | Next | `own-next` | 386 |
-| SegmentedControl | — | `own-weight-unit` | 405 |
-| LinkButton | `source.label` | ``own-source-${i + 1}`` | 457 |
-| Button | Start | `own-next` | 462 |
-| TextButton | Skip questions | `own-skip-questions` | 463 |
-| Button | Add | `own-food-other-add` | 593 |
-| Button | locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location" | `own-use-location` | 654 |
-| Banner | `error` | `own-error` | 712 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 713 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 731 |
+| TextButton | Skip | `own-skip` | 183 |
+| Button | Next | `own-next` | 185 |
+| Button | Next | `own-next` | 235 |
+| Button | saving ? "Saving…" : "That's all" | `own-done` | 237 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 239 |
+| Banner | `error` | — | 252 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 292 |
+| Stepper | Age | `own-age` | 386 |
+| Button | Next | `own-next` | 399 |
+| SegmentedControl | — | `own-weight-unit` | 418 |
+| LinkButton | `source.label` | ``own-source-${i + 1}`` | 470 |
+| Button | Start | `own-next` | 475 |
+| TextButton | Skip questions | `own-skip-questions` | 476 |
+| Button | Add | `own-food-other-add` | 606 |
+| Button | locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location" | `own-use-location` | 667 |
+| Banner | `error` | `own-error` | 725 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 726 |
+| Button | Save and add another pet | `own-save-more` | 728 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 753 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -1544,4 +1546,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-454 actions · 453 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+456 actions · 455 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

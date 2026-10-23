@@ -7,8 +7,9 @@ import { SAFETY_QUESTIONS, chartQuestions } from "./questions";
  * An owner with more than one pet goes through the list once per pet. The kind of pet and the questions about the owner
  * are asked on the first run only (`ownerDone` is true from the second pet on).
  */
-export function stepIds(species: Species | null, ownerDone = false): string[] {
-  const ids = ownerDone ? [] : ["species"];
+export function stepIds(species: Species | null, ownerDone = false, kindFirst = false): string[] {
+  // A pet that follows a saved one starts at the kind question when the owner chose "add another pet".
+  const ids = ownerDone && !kindFirst ? [] : ["species"];
   if (!species) return ids;
   ids.push("name", "photos", "voice", "breed", "coat", "age", "weight", "petIntro", "about");
   for (const q of chartQuestions(species)) ids.push(`q:${q.key}`);

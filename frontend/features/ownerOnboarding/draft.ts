@@ -14,8 +14,10 @@ export type OwnerOnboardingDraft = {
   species: Species | null;
   /** The kinds still to come after this pet (an owner with a dog and a cat goes through the questions twice). */
   pending: Species[];
-  /** True from the second pet on: the owner's own questions and the kind question were already answered. */
+  /** True from the second pet on: the owner's own questions were already answered. */
   ownerDone: boolean;
+  /** True for a pet the owner added with "Save and add another pet": it starts with the kind question. */
+  kindFirst: boolean;
   name: string;
   breed: string;
   /** Whole years, or null when skipped. Saved as an approximate birthday. */
@@ -52,6 +54,7 @@ export const EMPTY_DRAFT: OwnerOnboardingDraft = {
   species: null,
   pending: [],
   ownerDone: false,
+  kindFirst: false,
   name: "",
   breed: "",
   ageYears: null,
@@ -127,6 +130,19 @@ export function draftForNextPet(draft: OwnerOnboardingDraft): OwnerOnboardingDra
     homeAddress: draft.homeAddress,
     home: draft.home,
     step: "name",
+  };
+}
+
+/** The draft for one more pet after the last one was saved: the kind question first, the owner's own answers kept. */
+export function draftForAnotherPet(draft: OwnerOnboardingDraft): OwnerOnboardingDraft {
+  return {
+    ...EMPTY_DRAFT,
+    ownerDone: true,
+    kindFirst: true,
+    intro: draft.intro,
+    homeAddress: draft.homeAddress,
+    home: draft.home,
+    step: "species",
   };
 }
 

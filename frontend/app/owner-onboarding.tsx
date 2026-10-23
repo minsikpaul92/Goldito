@@ -23,6 +23,7 @@ import {
   birthdateFromAge,
   clearDraft,
   convertWeight,
+  draftForAnotherPet,
   draftForNextPet,
   foodsFromDraft,
   loadDraft,
@@ -112,7 +113,7 @@ export default function OwnerOnboarding() {
   if (session.status !== "signedIn" || session.profile.role !== "owner") return <Redirect href="/" />;
   if (!draft) return <LoadingView />;
 
-  const ids = stepIds(draft.species, draft.ownerDone);
+  const ids = stepIds(draft.species, draft.ownerDone, draft.kindFirst);
   const index = stepIndex(ids, draft.step);
   const step = ids[index];
   const petName = draft.name.trim();
@@ -144,7 +145,7 @@ export default function OwnerOnboarding() {
     goTo(id);
   };
 
-  const finish = async (petId: string | null) => {
+  const finish = async (petId: string | null, addAnother = false) => {
     if (!userId) return;
     setSaving(true);
     setError(null);
@@ -156,6 +157,14 @@ export default function OwnerOnboarding() {
       if (petId && !last) {
         // The next pet starts from its first question; the owner is not done until the last one is saved.
         const nextDraft = draftForNextPet(draft);
+        await saveDraft(userId, nextDraft);
+        setFromSummary(false);
+        setDraft(nextDraft);
+        return;
+      }
+      if (petId && addAnother) {
+        // One more pet: the kind question again, with the owner's own answers kept.
+        const nextDraft = draftForAnotherPet(draft);
         await saveDraft(userId, nextDraft);
         setFromSummary(false);
         setDraft(nextDraft);
@@ -220,16 +229,20 @@ export default function OwnerOnboarding() {
     return (
       <StepFrame
         progress={0}
-        title="What kind of pet do you have?"
+        title={draft.kindFirst ? "What kind of pet is next?" : "What kind of pet do you have?"}
         footer={
           <>
             <Button label="Next" onPress={() => goTo("name")} disabled={picked.length === 0} testID="own-next" />
-            <TextButton
-              label={saving ? "Saving…" : "Add a pet later"}
-              onPress={() => void finish(null)}
-              disabled={saving}
-              testID="own-later"
-            />
+            {draft.kindFirst ? (
+              <Button label={saving ? "Saving…" : "That's all"} variant="secondary" onPress={() => void finish(null)} disabled={saving} testID="own-done" />
+            ) : (
+              <TextButton
+                label={saving ? "Saving…" : "Add a pet later"}
+                onPress={() => void finish(null)}
+                disabled={saving}
+                testID="own-later"
+              />
+            )}
           </>
         }
         testID="own-step-species"
@@ -711,6 +724,15 @@ export default function OwnerOnboarding() {
         <>
           {error ? <Banner tone="error" body={error} testID="own-error" /> : null}
           <Button label={saving ? "Saving…" : `Save ${petName}`} onPress={() => void finish(draft.petId ?? ensurePetId())} disabled={saving} testID="own-save" />
+          {draft.pending.length === 0 ? (
+            <Button
+              label="Save and add another pet"
+              variant="secondary"
+              onPress={() => void finish(draft.petId ?? ensurePetId(), true)}
+              disabled={saving}
+              testID="own-save-more"
+            />
+          ) : null}
         </>
       }
       testID="own-step-summary"
