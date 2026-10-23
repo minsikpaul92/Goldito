@@ -102,9 +102,9 @@ def test_notes_are_the_owners_own_words_kept_only_when_they_are_in_the_text():
     raw = RawFacts.model_validate(
         {
             "notes": {
-                "eats": {"quote": "she eats chicken free kibble"},
-                "likes": {"quote": "she loves squeaky toys"},
-                "dislikes": {"quote": "she loves baths"},  # reworded: not in the text
+                "routine": {"quote": "she eats chicken free kibble"},
+                "loves": {"quote": "she loves squeaky toys"},
+                "scares": {"quote": "she loves baths"},  # reworded: not in the text
                 "careful": {"quote": None},
                 "mood": {"quote": "she is a sweet, greedy girl"},  # not an item of the list
             }
@@ -112,8 +112,8 @@ def test_notes_are_the_owners_own_words_kept_only_when_they_are_in_the_text():
     )
     facts = validate_facts(raw, NUMBERED, {})
     assert {k: v.model_dump() for k, v in facts.notes.items()} == {
-        "eats": {"value": "she eats chicken free kibble", "quote": "she eats chicken free kibble"},
-        "likes": {"value": "she loves squeaky toys", "quote": "she loves squeaky toys"},
+        "routine": {"value": "she eats chicken free kibble", "quote": "she eats chicken free kibble"},
+        "loves": {"value": "she loves squeaky toys", "quote": "she loves squeaky toys"},
     }
 
 
@@ -123,18 +123,18 @@ def test_an_item_the_model_has_nothing_for_can_be_null_without_breaking_the_rest
             "breed": None,
             "foods": [None, {"value": "chicken", "quote": "allergic to chicken"}],
             "answers": {"d4": None, "s1": {"value": "once", "quote": "once snapped"}},
-            "notes": {"eats": "she eats chicken free kibble", "likes": None, "dislikes": None, "careful": None},
+            "notes": {"routine": "she eats chicken free kibble", "loves": None, "scares": None, "careful": None},
         }
     )
     facts = validate_facts(raw, TEXT + " She eats chicken free kibble.", {"s1": {"once", "never"}})
     assert [f.value for f in facts.foods] == ["chicken"]
     assert set(facts.answers) == {"s1"}
-    assert list(facts.notes) == ["eats"]
+    assert list(facts.notes) == ["routine"]
 
 
 def test_a_note_that_only_says_there_is_nothing_is_dropped():
     text = "Nine, nothing special. Eight, none."
-    raw = RawFacts.model_validate({"notes": {"careful": {"quote": "nothing special"}, "dislikes": {"quote": "None."}}})
+    raw = RawFacts.model_validate({"notes": {"careful": {"quote": "nothing special"}, "scares": {"quote": "None."}}})
     assert validate_facts(raw, text, {}).notes == {}
 
 

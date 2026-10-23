@@ -11,7 +11,8 @@ import { transcribeRecording } from "../../features/ownerOnboarding/voiceApi";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
-export type InterviewItem = { key: string; question: string; placeholder?: string; multiline?: boolean };
+/** `hint`: what to think of when answering (shown small under the question and as the box's hint). */
+export type InterviewItem = { key: string; question: string; placeholder?: string; hint?: string; multiline?: boolean };
 
 type Props = {
   /** The questions, in the order they are read out and asked on the form. */
@@ -202,7 +203,7 @@ export function VoiceInterview({ items, parse, onSubmit }: Props) {
               value={values[item.key] ?? ""}
               onChangeText={(value) => setValues((before) => ({ ...before, [item.key]: value.slice(0, MAX_TEXT) }))}
               multiline={item.multiline}
-              placeholder={item.placeholder}
+              placeholder={item.placeholder ?? item.hint}
               accessibilityLabel={item.question}
               testID={`own-voice-${item.key}`}
             />
@@ -242,6 +243,7 @@ export function VoiceInterview({ items, parse, onSubmit }: Props) {
                   ]}
                 >
                   {`${i + 1}. ${item.question}`}
+                {item.hint ? <Text style={styles.questionHint}>{`\n${item.hint}`}</Text> : null}
                 </Animated.Text>
               ))}
             </ScrollView>
@@ -323,6 +325,7 @@ const makeStyles = (theme: Theme) =>
     questionList: { gap: theme.spacing.md, paddingVertical: theme.spacing.xs, paddingRight: theme.spacing.md + 6 },
     track: { position: "absolute", top: 0, bottom: 0, right: 0, width: 6, borderRadius: 3, backgroundColor: theme.color.track },
     thumb: { position: "absolute", left: 0, right: 0, borderRadius: 3, backgroundColor: theme.color.primary },
+    questionHint: { fontSize: 17, lineHeight: 22, fontWeight: theme.fontWeight.regular, color: theme.color.textMuted },
     question: { fontSize: 26, lineHeight: 34, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     micBlock: { position: "absolute", left: 0, right: 0, alignItems: "center", gap: theme.spacing.xs },
     typeWrap: { position: "absolute", top: MIC_BLOCK + TYPE_GAP, left: 0, right: 0, alignItems: "center" },

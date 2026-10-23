@@ -289,7 +289,7 @@ export default function OwnerOnboarding() {
     return frame(
       `Tell us about ${petName}`,
       <VoiceInterview
-        items={voiceItems(petName, draft.weightUnit)}
+        items={voiceItems(petName, draft.weightUnit, species ?? "dog")}
         parse={parse}
         onSubmit={(values) => {
           update(applyVoiceForm(draft, values, spoken));

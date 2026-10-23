@@ -411,7 +411,7 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-voice-questions")).toHaveCSS("opacity", "1");
     await expect(screen.getByTestId("own-voice-questions")).toContainText("1. What breed is Pip?");
     await expect(screen.getByTestId("own-voice-questions")).toContainText("2. How old is Pip?");
-    await expect(screen.getByTestId("own-voice-questions")).toContainText("9. What should we be careful with?");
+    await expect(screen.getByTestId("own-voice-questions")).toContainText("10. What should a sitter watch out for?");
     await expect(screen.getByTestId("own-wave")).toBeVisible();
     // The list is longer than its box, so a scrollbar is drawn to show it scrolls.
     await expect(screen.getByTestId("own-scrollbar")).toBeVisible();
@@ -429,7 +429,7 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-voice-allergies")).toHaveValue("chicken");
     await expect(screen.getByTestId("own-voice-personality")).toHaveValue("He is a sweet boy");
     await expect(screen.getByTestId("own-voice-careful")).toHaveValue("He gets nervous with thunder");
-    await expect(screen.getByTestId("own-voice-likes")).toHaveValue("");
+    await expect(screen.getByTestId("own-voice-loves")).toHaveValue("");
     expect(asked!.transcript).toContain("gets nervous with thunder");
     expect(asked!.species).toBe("dog");
     // Only the safety questions go along: the personality chart is tapped, not spoken.
@@ -447,7 +447,7 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-weight")).toHaveValue("5.9");
     await screen.getByTestId("own-next").click();
     // The intro is the owner's own words for the free-text items, ready to fix.
-    await expect(screen.getByTestId("own-pet-intro")).toHaveValue("He is a sweet boy\nCareful with: He gets nervous with thunder");
+    await expect(screen.getByTestId("own-pet-intro")).toHaveValue("He is a sweet boy\nWatch out: He gets nervous with thunder");
     await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-next").click(); // where the questions come from
 
@@ -492,7 +492,7 @@ test.describe("owner onboarding", () => {
     expect(pet).toMatchObject({ breed: "Maltese mix", weight_kg: 5.9 });
     expect(pet.profile).toMatchObject({ safety: { s1: "once", s6: "listed" } });
     expect((pet.profile as { answers: Record<string, number> }).answers).toEqual({});
-    expect(pet.notes).toBe("He is a sweet boy\nCareful with: He gets nervous with thunder");
+    expect(pet.notes).toBe("He is a sweet boy\nWatch out: He gets nervous with thunder");
     expect(db.pet_allergies.map((a) => a.allergen)).toEqual(["chicken"]);
   });
 

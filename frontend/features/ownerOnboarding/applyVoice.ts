@@ -1,23 +1,46 @@
 import { normalizeAllergen } from "../pets/petValidation";
 import { type OwnerOnboardingDraft, weightText } from "./draft";
 import { NO_FACTS, type VoiceFacts } from "./voiceApi";
+import type { Species } from "../../types/db";
 import type { InterviewItem } from "../../components/ownerOnboarding/VoiceInterview";
 
 /** Longest intro the owner can keep (the "About" screen cuts typing at the same length). */
-export const MAX_PET_INTRO = 500;
+export const MAX_PET_INTRO = 1000;
 
-/** The questions the owner is asked about the pet, in order: read out while talking, and one box each on the form. */
-export function voiceItems(name: string, unit: OwnerOnboardingDraft["weightUnit"]): InterviewItem[] {
+/**
+ * The questions the owner is asked about the pet, in order: read out while talking, and one box each on the form.
+ * A sitter wants to know the safety, the day and how to calm the pet; an owner wants to tell what makes the pet theirs.
+ * The hints under a question name what matters for a dog or for a cat.
+ */
+export function voiceItems(name: string, unit: OwnerOnboardingDraft["weightUnit"], species: Species): InterviewItem[] {
+  const dog = species === "dog";
   return [
     { key: "breed", question: `What breed is ${name}?`, placeholder: "A mix is fine" },
     { key: "age", question: `How old is ${name}?`, placeholder: "Years" },
     { key: "weight", question: `How much does ${name} weigh?`, placeholder: unit },
-    { key: "eats", question: `What does ${name} eat?`, multiline: true },
-    { key: "allergies", question: `Is ${name} allergic to anything?`, placeholder: "Foods, with commas" },
     { key: "personality", question: `What is ${name} like?`, multiline: true },
-    { key: "likes", question: `What does ${name} love?`, multiline: true },
-    { key: "dislikes", question: `What does ${name} dislike?`, multiline: true },
-    { key: "careful", question: "What should we be careful with?", multiline: true },
+    { key: "loves", question: `What does ${name} love?`, multiline: true, hint: dog ? "Treats, toys, walks, spots" : "Treats, toys, windows, spots" },
+    {
+      key: "scares",
+      question: `What scares or upsets ${name}, and how do you calm ${name} down?`,
+      multiline: true,
+      hint: dog ? "Thunder, strangers, baths" : "Visitors, loud noises, the carrier",
+    },
+    {
+      key: "routine",
+      question: `What does a normal day look like for ${name}?`,
+      multiline: true,
+      hint: dog ? "Food, walks, potty, sleep" : "Food, litter box, play, sleep",
+    },
+    { key: "allergies", question: `Is ${name} allergic to anything?`, placeholder: "Foods, with commas" },
+    { key: "health", question: `Any health problems or medicine for ${name}?`, multiline: true },
+    {
+      key: "careful",
+      question: "What should a sitter watch out for?",
+      multiline: true,
+      hint: dog ? "Pulling, other dogs, escaping" : "Hiding, scratching, slipping outside",
+    },
+    { key: "more", question: "Anything else we should know?", multiline: true },
   ];
 }
 
@@ -28,23 +51,27 @@ export function formFromFacts(facts: VoiceFacts, unit: OwnerOnboardingDraft["wei
     breed: facts.breed?.value ?? "",
     age: facts.age_years ? String(facts.age_years.value) : "",
     weight: facts.weight_kg ? weightText(facts.weight_kg.value, unit) : "",
-    eats: note("eats"),
-    allergies: facts.foods.map((food) => food.value).join(", "),
     personality: note("personality"),
-    likes: note("likes"),
-    dislikes: note("dislikes"),
+    loves: note("loves"),
+    scares: note("scares"),
+    routine: note("routine"),
+    allergies: facts.foods.map((food) => food.value).join(", "),
+    health: note("health"),
     careful: note("careful"),
+    more: note("more"),
   };
 }
 
-/** The intro the answers make: what the pet is like first, then the other items with a short label. */
+/** The intro the answers make: what the pet is like first, then the other items with a short label, in the order asked. */
 export function introFromForm(values: Record<string, string>, max: number): string {
   const lines: [key: string, label: string | null][] = [
     ["personality", null],
-    ["eats", "Eats"],
-    ["likes", "Likes"],
-    ["dislikes", "Dislikes"],
-    ["careful", "Careful with"],
+    ["loves", "Loves"],
+    ["scares", "Upset by"],
+    ["routine", "Routine"],
+    ["health", "Health"],
+    ["careful", "Watch out"],
+    ["more", "More"],
   ];
   return lines
     .flatMap(([key, label]) => {

@@ -122,7 +122,8 @@ test.describe("voice answers in the draft", () => {
     },
     notes: {
       personality: { value: "she is a sweet girl", quote: "she is a sweet girl" },
-      eats: { value: "wet food twice a day", quote: "wet food twice a day" },
+      routine: { value: "wet food twice a day", quote: "wet food twice a day" },
+      health: { value: "a joint pill each morning", quote: "a joint pill each morning" },
       careful: { value: "no jumping", quote: "no jumping" },
     },
   };
@@ -132,22 +133,35 @@ test.describe("voice answers in the draft", () => {
       breed: "Maltese",
       age: "4",
       weight: "5.9",
-      eats: "wet food twice a day",
-      allergies: "chicken, beef",
       personality: "she is a sweet girl",
-      likes: "",
-      dislikes: "",
+      loves: "",
+      scares: "",
+      routine: "wet food twice a day",
+      allergies: "chicken, beef",
+      health: "a joint pill each morning",
       careful: "no jumping",
+      more: "",
     });
     expect(formFromFacts(facts, "lbs").weight).toBe("13");
     expect(formFromFacts(NO_FACTS, "kg")).toMatchObject({ breed: "", age: "", weight: "", allergies: "" });
   });
 
   test("the questions use the pet's name and the weight unit", () => {
-    const items = voiceItems("Pip", "lbs");
-    expect(items.map((i) => i.key)).toEqual(["breed", "age", "weight", "eats", "allergies", "personality", "likes", "dislikes", "careful"]);
+    const items = voiceItems("Pip", "lbs", "dog");
+    expect(items.map((i) => i.key)).toEqual([
+      "breed", "age", "weight", "personality", "loves", "scares", "routine", "allergies", "health", "careful", "more",
+    ]);
     expect(items[0].question).toBe("What breed is Pip?");
     expect(items[2].placeholder).toBe("lbs");
+    expect(items.find((i) => i.key === "scares")?.question).toBe("What scares or upsets Pip, and how do you calm Pip down?");
+  });
+
+  test("the hints name what matters for a dog or for a cat", () => {
+    const hint = (species: "dog" | "cat", key: string) => voiceItems("Pip", "kg", species).find((i) => i.key === key)?.hint;
+    expect(hint("dog", "routine")).toContain("walks");
+    expect(hint("cat", "routine")).toContain("litter box");
+    expect(hint("dog", "careful")).toContain("other dogs");
+    expect(hint("cat", "careful")).toContain("scratching");
   });
 
   test("the answers kept fill the draft: the intro is the owner's words, allergies are theirs, safety stays a suggestion", () => {
@@ -158,7 +172,7 @@ test.describe("voice answers in the draft", () => {
       weight: "5.9",
       foods: ["chicken", "beef"],
       safety: { s6: "listed" },
-      petIntro: "she is a sweet girl\nEats: wet food twice a day\nCareful with: no jumping",
+      petIntro: "she is a sweet girl\nRoutine: wet food twice a day\nHealth: a joint pill each morning\nWatch out: no jumping",
     });
     expect(patch.answers).toBeUndefined();
     expect(patch.voice).toBe(facts);
@@ -167,7 +181,7 @@ test.describe("voice answers in the draft", () => {
   test("typed answers: ages and allergies are read from the text, blank boxes change nothing", () => {
     const patch = applyVoiceForm(
       { ...EMPTY_DRAFT, breed: "Poodle", foods: ["dairy"], petIntro: "Kept" },
-      { breed: "", age: "3 years", weight: "", allergies: " Fish, dairy ,", personality: "", eats: "" },
+      { breed: "", age: "3 years", weight: "", allergies: " Fish, dairy ,", personality: "", routine: "" },
       null,
     );
     expect(patch.breed).toBeUndefined();
@@ -181,7 +195,7 @@ test.describe("voice answers in the draft", () => {
 
   test("an intro is cut to the limit and empty answers add nothing", () => {
     expect(introFromForm({}, 500)).toBe("");
-    expect(introFromForm({ likes: "x".repeat(600) }, 500)).toHaveLength(500);
+    expect(introFromForm({ loves: "x".repeat(1200) }, 1000)).toHaveLength(1000);
   });
 
   test("only the safety questions still open go to the server, never the personality chart", () => {

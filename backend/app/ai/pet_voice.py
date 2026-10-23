@@ -44,7 +44,7 @@ class RawFacts(BaseModel):
             return {}
         if not isinstance(value, dict):
             return value
-        # `"likes": null` is "nothing said"; a bare string is the quote itself.
+        # `"loves": null` is "nothing said"; a bare string is the quote itself.
         return {key: ({"quote": item} if isinstance(item, str) else item) for key, item in value.items() if item is not None}
 
 
@@ -63,8 +63,9 @@ class Facts(BaseModel):
     notes: dict[str, Fact] = {}
 
 
-# The free-text items of the list the owner reads from: what the pet eats, what it is like, likes, dislikes, cautions.
-NOTE_KEYS = ("eats", "personality", "likes", "dislikes", "careful")
+# The free-text items of the list the owner reads from: what the pet is like, what it loves, what scares it and how to
+# calm it, a normal day, health and medicine, what to be careful with, anything else.
+NOTE_KEYS = ("personality", "loves", "scares", "routine", "health", "careful", "more")
 MAX_NOTE = 300
 # What an owner says for an item that has nothing to tell: not a note.
 EMPTY_NOTES = {"nothing", "nothing special", "nothing in particular", "none", "no", "nope", "not really", "n a", "na"}
