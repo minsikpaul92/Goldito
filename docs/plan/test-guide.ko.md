@@ -174,7 +174,7 @@
 | 로그인 · 회원가입 · 역할별 화면 · Welcome 투어 | ✅ 🤖 | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
 | **Profile의 Save 고정** (스크롤해도 화면 맨 아래에 Save와 저장 에러가 보임, 오너 · 시터 같음 · 시터는 Your photos가 Badges 위) | 🟡 기존 `profile` e2e가 `profile-save`로 저장 확인 · 고정 위치 · 순서는 사람 확인 대기 | #292 |
-| **Profile 정리 (#180)**: 선택 입력 카드 접기(▸ ▾, 닫힌 카드는 값을 한 줄로) · Home address 카드(주소 · 현재 위치 버튼 · Address details · Postal code) · 서비스 지역 자동 · 오너 패킹 리스트와 시터 인수 체크 · 미팅 스팟 삭제 · Your answers 카드 · 시터 Packing list 제거 | 🟡 DB(`015g` · `015h`, 호스팅 DB에 적용됨 10/23) · 앱 구현 · SQL smoke(CI에서 처음 실행, 로컬 Postgres는 못 돌림) · 사람 확인 대기 | #180 |
+| **Profile 정리 (#180)**: 선택 입력 카드 접기(▸ ▾, 닫힌 카드는 값을 한 줄로) · Home address 카드(주소 · 현재 위치 버튼 · Address details · Postal code) · 서비스 지역 자동 · 오너 패킹 리스트와 시터 인수 체크 · 미팅 스팟 삭제 · Your answers 카드 · 시터 Packing list 제거 | 🟡 DB(`015g` · `015h`, 호스팅 DB에 적용됨 10/23) · 앱 구현 🤖 e2e(`profile` · `home-location` · `checkout` · `sitter-badges` · `profile-photos` · `sitter-onboarding` 등 로컬 chromium 108개 통과 10/23) · SQL smoke(CI에서 처음 실행, 로컬 Postgres는 못 돌림) · 사람 확인 대기 | #180 |
 | 데스크톱 폰 프레임 · 마우스=손가락 | ✅ 🤖 | 01 |
 | 데스크톱 Split view, 폰 두 개 나란히 (`?view=split`, 폭 ≥ 900), 각 폰은 로그인 화면에서 시작하고 로그인한 계정이 폰 위에 보임 | ✅ 🤖 `split.spec.ts` · 사람 SPLIT-1은 다시 확인 대기, SPLIT-2 – 5는 ✅ (2026-10-15 Minsik) | 10 / 10.10 |
 

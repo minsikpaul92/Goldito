@@ -14,6 +14,7 @@ async function openProfile(page: import("@playwright/test").Page, seed: (db: Moc
   await screen.getByTestId("open-menu").click();
   await screen.getByTestId("open-profile").click();
   await expect(screen.getByTestId("sitter-badges")).toBeVisible();
+  await screen.getByTestId("sitter-badges-toggle").click();
   return screen;
 }
 

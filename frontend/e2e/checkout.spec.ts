@@ -18,8 +18,8 @@ function seedUnpaid(db: MockDb) {
     home_address: "100 Example St",
     visitor_parking: "Visitor spot B-12",
     lobby_notes: "Buzz 1204",
-    packing_list: ["food", "bed or cushion", "medications"],
   });
+  db.owner_profiles.push({ id: OWNER.id, home_address: "1 Owner Ave", packing_list: ["food", "bed or cushion", "medications"] });
   db.bookings.push({
     id: BOOKING,
     owner_id: OWNER.id,
@@ -187,7 +187,7 @@ test.describe("checkout", () => {
 
   test("what the owner packed is saved and survives leaving the booking (FB-13)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
-    seedReopened(db); // paid once, with the sitter's place notes + packing list visible to the owner
+    seedReopened(db); // paid once, with the sitter's place notes + the owner's own packing list
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
     await page.goto(`/owner/bookings/${BOOKING}`);
@@ -201,6 +201,24 @@ test.describe("checkout", () => {
     await page.reload();
     await expect(screen.getByTestId("pack-food")).toHaveAttribute("aria-checked", "true");
     await expect(screen.getByTestId("pack-bed or cushion")).toHaveAttribute("aria-checked", "false");
+  });
+
+  test("the sitter ticks the owner's packing list at hand-over", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedReopened(db);
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    await page.goto(`/sitter/bookings/${BOOKING}`);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("packing-list")).toContainText("food");
+    await expect(screen.getByTestId("pack-food")).toHaveAttribute("aria-checked", "false");
+    await screen.getByTestId("pack-food").click();
+    await expect(screen.getByTestId("pack-food")).toHaveAttribute("aria-checked", "true");
+
+    await page.reload();
+    await expect(screen.getByTestId("pack-food")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("pack-medications")).toHaveAttribute("aria-checked", "false");
   });
 
   test("a change agreed after payment reopens checkout for the new consent only", async ({ page }) => {
@@ -251,7 +269,6 @@ test.describe("checkout", () => {
 function seedReopened(db: MockDb) {
   seedUnpaid(db);
   db.bookings[0].price_snapshot = DEMO_QUOTE;
-  db.owner_profiles.push({ id: OWNER.id, home_address: "1 Owner Ave" });
   const pickUp = db.booking_handoffs.find((h) => h.kind === "pick_up")!;
   pickUp.location_type = "owner_home";
   for (const kind of KINDS) {
