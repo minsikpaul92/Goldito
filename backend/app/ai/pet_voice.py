@@ -31,6 +31,22 @@ class RawFacts(BaseModel):
     answers: dict[str, RawFact] = {}
     notes: dict[str, RawFact] = {}
 
+    @field_validator("foods", mode="before")
+    @classmethod
+    def _no_empty_foods(cls, value: Any) -> Any:
+        # An item the model has nothing for comes back as null: skip it, keep the rest.
+        return [] if value is None else [item for item in value if item is not None] if isinstance(value, list) else value
+
+    @field_validator("answers", "notes", mode="before")
+    @classmethod
+    def _no_empty_entries(cls, value: Any) -> Any:
+        if value is None:
+            return {}
+        if not isinstance(value, dict):
+            return value
+        # `"likes": null` is "nothing said"; a bare string is the quote itself.
+        return {key: ({"quote": item} if isinstance(item, str) else item) for key, item in value.items() if item is not None}
+
 
 class Fact(BaseModel):
     value: str | int | float

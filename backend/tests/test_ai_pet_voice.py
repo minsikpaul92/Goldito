@@ -117,6 +117,21 @@ def test_notes_are_the_owners_own_words_kept_only_when_they_are_in_the_text():
     }
 
 
+def test_an_item_the_model_has_nothing_for_can_be_null_without_breaking_the_rest():
+    raw = RawFacts.model_validate(
+        {
+            "breed": None,
+            "foods": [None, {"value": "chicken", "quote": "allergic to chicken"}],
+            "answers": {"d4": None, "s1": {"value": "once", "quote": "once snapped"}},
+            "notes": {"eats": "she eats chicken free kibble", "likes": None, "dislikes": None, "careful": None},
+        }
+    )
+    facts = validate_facts(raw, TEXT + " She eats chicken free kibble.", {"s1": {"once", "never"}})
+    assert [f.value for f in facts.foods] == ["chicken"]
+    assert set(facts.answers) == {"s1"}
+    assert list(facts.notes) == ["eats"]
+
+
 def test_a_note_that_only_says_there_is_nothing_is_dropped():
     text = "Nine, nothing special. Eight, none."
     raw = RawFacts.model_validate({"notes": {"careful": {"quote": "nothing special"}, "dislikes": {"quote": "None."}}})

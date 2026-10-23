@@ -24,6 +24,14 @@ class RawPick(BaseModel):
 class RawPicks(BaseModel):
     answers: dict[str, RawPick] = {}
 
+    @field_validator("answers", mode="before")
+    @classmethod
+    def _no_empty_entries(cls, value: Any) -> Any:
+        # A question the model has nothing for comes back as null: skip it, keep the rest.
+        if value is None:
+            return {}
+        return {key: item for key, item in value.items() if item is not None} if isinstance(value, dict) else value
+
 
 class Pick(BaseModel):
     value: str

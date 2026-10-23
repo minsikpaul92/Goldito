@@ -413,6 +413,8 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-voice-questions")).toContainText("2. How old is Pip?");
     await expect(screen.getByTestId("own-voice-questions")).toContainText("9. What should we be careful with?");
     await expect(screen.getByTestId("own-wave")).toBeVisible();
+    // The list is longer than its box, so a scrollbar is drawn to show it scrolls.
+    await expect(screen.getByTestId("own-scrollbar")).toBeVisible();
     await screen.getByTestId("own-mic").click();
     // The whole text is shown and can be fixed before anything is read from it.
     await expect(screen.getByTestId("own-voice-text")).toHaveValue("Pip is a 4 year old Maltese, about 13 pounds, allergic to chicken.");

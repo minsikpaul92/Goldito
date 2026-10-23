@@ -62,6 +62,8 @@ export function VoiceInterview({ items, parse, onSubmit }: Props) {
   const slide = useRef(new Animated.Value(0)).current;
   const lines = useRef(items.map(() => new Animated.Value(0))).current;
   const level = useRef(new Animated.Value(0)).current;
+  // The questions list scrolls: its own scrollbar is drawn so it can be seen (the browser hides its bar until you scroll).
+  const [scrollbar, setScrollbar] = useState({ offset: 0, content: 0, view: 0 });
 
   const stageOpen = phase === "recording" || phase === "reading";
 
@@ -222,19 +224,41 @@ export function VoiceInterview({ items, parse, onSubmit }: Props) {
           pointerEvents={stageOpen ? "auto" : "none"}
           testID="own-voice-questions"
         >
-          <ScrollView showsVerticalScrollIndicator contentContainerStyle={styles.questionList}>
-            {items.map((item, i) => (
-              <Animated.Text
-                key={item.key}
-                style={[
-                  styles.question,
-                  { opacity: lines[i], transform: [{ translateY: lines[i].interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] },
-                ]}
-              >
-                {`${i + 1}. ${item.question}`}
-              </Animated.Text>
-            ))}
-          </ScrollView>
+          <View style={styles.listBox}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              scrollEventThrottle={16}
+              onScroll={(e) => setScrollbar((before) => ({ ...before, offset: e.nativeEvent.contentOffset.y }))}
+              onContentSizeChange={(_w, content) => setScrollbar((before) => ({ ...before, content }))}
+              onLayout={(e) => setScrollbar((before) => ({ ...before, view: e.nativeEvent.layout.height }))}
+              contentContainerStyle={styles.questionList}
+            >
+              {items.map((item, i) => (
+                <Animated.Text
+                  key={item.key}
+                  style={[
+                    styles.question,
+                    { opacity: lines[i], transform: [{ translateY: lines[i].interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] },
+                  ]}
+                >
+                  {`${i + 1}. ${item.question}`}
+                </Animated.Text>
+              ))}
+            </ScrollView>
+            {scrollbar.content > scrollbar.view + 1 && scrollbar.view > 0 ? (
+              <View style={styles.track} testID="own-scrollbar">
+                <View
+                  style={[
+                    styles.thumb,
+                    {
+                      height: Math.max(28, (scrollbar.view / scrollbar.content) * scrollbar.view),
+                      top: (scrollbar.offset / (scrollbar.content - scrollbar.view)) * (scrollbar.view - Math.max(28, (scrollbar.view / scrollbar.content) * scrollbar.view)),
+                    },
+                  ]}
+                />
+              </View>
+            ) : null}
+          </View>
         </Animated.View>
 
         <Animated.View style={[styles.micBlock, { top: micTop }]}>
@@ -295,7 +319,10 @@ const makeStyles = (theme: Theme) =>
     root: { gap: theme.spacing.md },
     stage: { position: "relative" },
     questions: { position: "absolute", top: 0, left: 0, right: 0 },
-    questionList: { gap: theme.spacing.md, paddingVertical: theme.spacing.xs },
+    listBox: { flex: 1 },
+    questionList: { gap: theme.spacing.md, paddingVertical: theme.spacing.xs, paddingRight: theme.spacing.md + 6 },
+    track: { position: "absolute", top: 0, bottom: 0, right: 0, width: 6, borderRadius: 3, backgroundColor: theme.color.track },
+    thumb: { position: "absolute", left: 0, right: 0, borderRadius: 3, backgroundColor: theme.color.primary },
     question: { fontSize: 26, lineHeight: 34, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     micBlock: { position: "absolute", left: 0, right: 0, alignItems: "center", gap: theme.spacing.xs },
     typeWrap: { position: "absolute", top: MIC_BLOCK + TYPE_GAP, left: 0, right: 0, alignItems: "center" },
