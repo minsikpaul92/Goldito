@@ -151,7 +151,7 @@ test.describe("owner onboarding", () => {
     }
 
     // Safety: bites once, not sure about others, the rest skipped.
-    await expect(screen.getByTestId("own-title")).toHaveText("Has Pip ever bitten or snapped at a person?");
+    await expect(screen.getByTestId("own-title")).toHaveText("Ever bitten or snapped at a person?");
     await screen.getByTestId("own-safe-once").click();
     await expect(screen.getByTestId("own-step-s:s2")).toBeVisible();
     await screen.getByTestId("own-safe-unsure").click();

@@ -68,7 +68,7 @@ test.describe("sitter onboarding", () => {
       screen.getByTestId("onboarding-q-multiple_owners"),
     ).toBeVisible();
     await expect(screen.getByTestId("own-title")).toHaveText(
-      "Do you look after pets from more than one household at the same time?",
+      "Do you take pets from multiple families?",
     );
     // Back on the left and Skip on the right, in one row of buttons.
     const backBox = (await screen
