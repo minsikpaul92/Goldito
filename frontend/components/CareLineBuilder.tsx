@@ -22,6 +22,7 @@ import { Stepper } from "./ui/Stepper";
 import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
 import { TimePickerSheet } from "./ui/TimePickerSheet";
+import { selectable } from "./ui/selectable";
 
 type Props = {
   species: Species;
@@ -231,19 +232,10 @@ const makeStyles = (theme: Theme) =>
     x: { fontSize: 16, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted, paddingHorizontal: theme.spacing.xs },
     label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
-    chip: {
-      minHeight: 44,
-      paddingHorizontal: theme.spacing.md,
-      borderRadius: 22,
-      borderWidth: 1,
-      borderColor: theme.color.primary,
-      backgroundColor: theme.color.surface,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    chipOn: { backgroundColor: theme.color.primary },
-    chipText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
-    chipTextOn: { color: theme.color.primaryText },
+    chip: selectable(theme).chip,
+    chipOn: selectable(theme).chipOn,
+    chipText: selectable(theme).label,
+    chipTextOn: selectable(theme).labelOn,
     pressed: { opacity: 0.7 },
     editor: {
       gap: theme.spacing.sm,

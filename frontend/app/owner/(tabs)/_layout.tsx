@@ -6,14 +6,14 @@ import { RoleTabs, tabIcon } from "../../../components/RoleTabs";
 export default function OwnerTabsLayout() {
   return (
     <RoleTabs>
-      <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: tabIcon("home-outline") }} />
+      <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: tabIcon("home") }} />
       <Tabs.Screen
         name="bookings"
-        options={{ title: "Bookings", tabBarIcon: tabIcon("calendar-outline") }}
+        options={{ title: "Bookings", tabBarIcon: tabIcon("calendar") }}
       />
-      <Tabs.Screen name="feed" options={{ title: "Feed", tabBarIcon: tabIcon("images-outline") }} />
-      <Tabs.Screen name="diary" options={{ title: "Diary", tabBarIcon: tabIcon("book-outline") }} />
-      <Tabs.Screen name="snap" options={{ title: "Snap", tabBarIcon: tabIcon("camera-outline") }} />
+      <Tabs.Screen name="feed" options={{ title: "Feed", tabBarIcon: tabIcon("feed") }} />
+      <Tabs.Screen name="diary" options={{ title: "Diary", tabBarIcon: tabIcon("diary") }} />
+      <Tabs.Screen name="snap" options={{ title: "Snap", tabBarIcon: tabIcon("camera") }} />
     </RoleTabs>
   );
 }

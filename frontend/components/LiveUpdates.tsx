@@ -21,6 +21,7 @@ import { Theme } from "../theme/themes";
 import { NoticeDetail, NoticeThumb } from "./NoticeDetail";
 import { SwipeToDelete } from "./ui/SwipeToDelete";
 import { TextButton } from "./ui/TextButton";
+import { sectionTitleStyle } from "./ui/SectionTitle";
 
 /** What the sitter does during a stay — shown as live cards on the owner's Home (the daily report too, FB-21). */
 const LIVE_TYPES = new Set([
@@ -266,7 +267,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: { gap: theme.spacing.xs },
     head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    heading: sectionTitleStyle(theme),
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     card: {
       flexDirection: "row",

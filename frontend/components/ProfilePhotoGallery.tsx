@@ -1,7 +1,7 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useCallback, useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "./ui/Icon";
 import { PhotoCropSheet } from "./PhotoCropSheet";
 import { Button } from "./ui/Button";
 import { Sheet } from "./ui/Sheet";
@@ -130,7 +130,7 @@ export function ProfilePhotoGallery({ profileId }: Props) {
       {photos.length === 0 ? (
         <Pressable accessibilityRole="button" accessibilityLabel="Add a photo" onPress={() => void add()} style={styles.empty} testID="photos-placeholder">
           <View style={styles.silhouette}>
-            <Ionicons name="person" size={TILE * 0.5} color={theme.color.textMuted} />
+            <Icon name="person" size={TILE * 0.5} color={theme.color.textMuted} />
           </View>
           <Text style={styles.addText}>Add a photo</Text>
         </Pressable>
@@ -152,7 +152,7 @@ export function ProfilePhotoGallery({ profileId }: Props) {
           {photos.length < MAX_PROFILE_PHOTOS ? (
             <Pressable accessibilityRole="button" accessibilityLabel="Add a photo" onPress={() => void add()} style={styles.tileWrap} testID="photos-add">
               <View style={[styles.tile, styles.plus]}>
-                <Ionicons name="add" size={28} color={theme.color.primary} />
+                <Icon name="add" size={28} color={theme.color.primary} />
               </View>
             </Pressable>
           ) : null}

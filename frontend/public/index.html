@@ -67,6 +67,21 @@
         }
       }
     </style>
+    <style id="focus-ring">
+      /* One keyboard focus ring (DESIGN.md): 2 px primary, 2 px offset. The app sets --focus-ring from the theme. */
+      :focus-visible {
+        outline: 2px solid var(--focus-ring, #1b4332) !important;
+        outline-offset: 2px;
+      }
+      :focus:not(:focus-visible) {
+        outline: none;
+      }
+      /* Hints read as hints, never as typed answers. */
+      input::placeholder,
+      textarea::placeholder {
+        font-style: italic;
+      }
+    </style>
   </head>
   <body>
     <noscript>Goldito needs JavaScript to run.</noscript>

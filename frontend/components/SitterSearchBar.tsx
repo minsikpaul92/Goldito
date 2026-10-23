@@ -1,15 +1,16 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { ComponentProps, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon, IconName } from "./ui/Icon";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
-import { formatDay, formatDayRange, formatTime, shiftTime } from "../features/schedule/dates";
+import { addDays, formatDay, formatDayRange, formatTime, shiftTime } from "../features/schedule/dates";
 import { SitterSearch } from "../features/sitters/useSitterSearch";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 import { Button } from "./ui/Button";
 import { CheckRow } from "./ui/CheckRow";
+import { ChoiceChips } from "./ui/ChoiceChips";
 import { RangeCalendar } from "./ui/RangeCalendar";
 import { Sheet } from "./ui/Sheet";
 import { Slider } from "./ui/Slider";
@@ -19,8 +20,6 @@ import { TextField } from "./ui/TextField";
 import { TimePickerSheet } from "./ui/TimePickerSheet";
 
 type Open = "place" | "stay" | "pets" | null;
-type IconName = ComponentProps<typeof Ionicons>["name"];
-
 const TIME_STEP = 15;
 
 
@@ -28,6 +27,20 @@ const TIME_STEP = 15;
  * One hotel-style line: a place (my home, here, an address or postal code), the stay (dates and times) and the
  * pets. Each part opens a sheet; the search runs by itself whenever anything changes.
  */
+const KM_PICKS = [2, 5, 10, 25];
+
+/** Stays people book most: tomorrow night, the coming weekend (Fri to Sun) and a week, from `today`. */
+function quickStays(today: string): { id: string; label: string; from: string; to: string }[] {
+  const weekday = new Date(`${today}T12:00:00Z`).getUTCDay(); // 0 Sun … 6 Sat
+  const toFri = (5 - weekday + 7) % 7 || 7;
+  const fri = addDays(today, toFri);
+  return [
+    { id: "night", label: "1 night", from: addDays(today, 1), to: addDays(today, 2) },
+    { id: "weekend", label: `Weekend · ${formatDayRange(fri, addDays(fri, 2))}`, from: fri, to: addDays(fri, 2) },
+    { id: "week", label: "A week", from: addDays(today, 1), to: addDays(today, 8) },
+  ];
+}
+
 export function SitterSearchBar({ search }: { search: SitterSearch }) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -37,6 +50,7 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
   const close = () => setOpen(null);
 
   const { place, dropOff, pickUp, pets, petIds } = search;
+  const datePicks = quickStays(search.today);
   const placeText = place.kind === "home" ? "My home" : place.kind === "here" ? "Current location" : place.label;
   const dateText = formatDayRange(dropOff.day, pickUp.day);
   const petText = petIds.length === 1 ? pets.find((p) => p.id === petIds[0])?.name ?? "1 pet" : `${petIds.length} pets`;
@@ -49,7 +63,7 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
       style={[styles.segment, { flexShrink: grow }]}
       testID={id}
     >
-      <Ionicons name={icon} size={theme.icon.sm} color={theme.color.text} />
+      <Icon name={icon} size={theme.icon.sm} color={theme.color.text} />
       <Text style={styles.segmentText} numberOfLines={1}>
         {text}
       </Text>
@@ -66,11 +80,11 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
   return (
     <View style={styles.wrap}>
     <View style={styles.bar} testID="sitter-search-bar">
-      {segment("location-outline", placeText, () => setOpen("place"), "bar-place", 1)}
+      {segment("place", placeText, () => setOpen("place"), "bar-place", 1)}
       <View style={styles.divider} />
-      {segment("calendar-outline", dateText, () => setOpen("stay"), "bar-dates", 0)}
+      {segment("calendar", dateText, () => setOpen("stay"), "bar-dates", 0)}
       <View style={styles.divider} />
-      {segment("paw-outline", petText, () => (pets.length === 0 ? router.push("/owner/pets/new") : setOpen("pets")), "bar-pets", 0)}
+      {segment("paw", petText, () => (pets.length === 0 ? router.push("/owner/pets/new") : setOpen("pets")), "bar-pets", 0)}
 
       <Sheet
         visible={open === "place"}
@@ -131,6 +145,18 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
         footer={<Button label="Done" onPress={close} testID="stay-done" />}
         testID="stay-sheet"
       >
+        {/* Quick picks for the common stays; the calendar stays for anything else (design site: qa-sitter-card.html). */}
+        <ChoiceChips
+          options={datePicks.map((d) => ({ value: d.id, label: d.label }))}
+          value={datePicks.filter((d) => d.from === dropOff.day && d.to === pickUp.day).map((d) => d.id)}
+          onChange={(v) => {
+            const pick = datePicks.find((d) => d.id === v[0]);
+            if (!pick) return;
+            search.setDropOff({ ...dropOff, day: pick.from });
+            search.setPickUp({ ...pickUp, day: pick.to });
+          }}
+          testID="stay-quick"
+        />
         <RangeCalendar
           start={dropOff.day}
           end={pickUp.day}
@@ -216,6 +242,12 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
         label="Search radius"
         valueText={`${search.radiusKm} km`}
         testID="radius-slider"
+      />
+      <ChoiceChips
+        options={KM_PICKS.map((k) => ({ value: String(k), label: `${k} km` }))}
+        value={KM_PICKS.includes(search.radiusKm) ? [String(search.radiusKm)] : []}
+        onChange={(v) => v[0] && search.setRadiusKm(Number(v[0]))}
+        testID="radius-quick"
       />
     </View>
     </View>

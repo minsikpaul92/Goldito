@@ -1,6 +1,6 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "./Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
@@ -26,7 +26,7 @@ export function Chip({ label, onRemove, testID }: Props) {
           hitSlop={theme.spacing.sm}
           style={styles.remove}
         >
-          <Ionicons name="close" size={theme.fontSize.small} color={theme.color.textMuted} />
+          <Icon name="close" size={theme.fontSize.small} color={theme.color.textMuted} />
         </Pressable>
       ) : null}
     </View>

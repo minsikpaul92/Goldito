@@ -1,9 +1,9 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { ComponentProps, useEffect, useRef, useState } from "react";
 import { Animated, Easing, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Icon, IconName } from "./ui/Icon";
 import { Avatar } from "./ui/Avatar";
 import { Button } from "./ui/Button";
 import { ProfileAvatar } from "./ProfileAvatar";
@@ -12,11 +12,12 @@ import { useSession } from "../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
-type IconName = ComponentProps<typeof Ionicons>["name"];
-
 const DURATION = 260;
 
-/** Header ≡ (#147): a full-width drawer from the right. You → Profile, Notifications, Schedule (sitters), What's new, Settings, Sign out. */
+/**
+ * Header menu (#147): your avatar opens a full-width drawer from the right, so the header shows who is signed in
+ * (team pick, Oct 22). You → Profile, Notifications, Schedule (sitters), What's new, Settings, Sign out.
+ */
 export function HeaderMenu() {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -56,9 +57,9 @@ export function HeaderMenu() {
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
       testID={testID}
     >
-      <Ionicons name={icon} size={24} color={theme.color.primary} />
+      <Icon name={icon} size={24} color={theme.color.primary} />
       <Text style={styles.rowLabel}>{label}</Text>
-      {right ?? <Ionicons name="chevron-forward" size={18} color={theme.color.textMuted} />}
+      {right ?? <Icon name="forward" size={18} color={theme.color.textMuted} />}
     </Pressable>
   );
 
@@ -66,12 +67,18 @@ export function HeaderMenu() {
     <>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Menu"
+        accessibilityLabel={`${name}, ${role.toLowerCase()} account. Menu`}
         onPress={() => setOpen(true)}
         style={styles.iconButton}
         testID="open-menu"
       >
-        <Ionicons name="menu-outline" size={24} color={theme.color.text} />
+        <View style={styles.avatarRing}>
+          {profile ? (
+            <ProfileAvatar profileId={profile.id} name={name} size={32} testID="header-avatar" />
+          ) : (
+            <Avatar kind="initial" name={name} size={32} testID="header-avatar" />
+          )}
+        </View>
       </Pressable>
       <Modal visible={open} transparent animationType="none" onRequestClose={() => close()}>
         <Animated.View style={[styles.scrim, { opacity: slide }]} />
@@ -92,7 +99,7 @@ export function HeaderMenu() {
               style={styles.iconButton}
               testID="header-menu-close"
             >
-              <Ionicons name="close" size={26} color={theme.color.text} />
+              <Icon name="close" size={26} color={theme.color.text} />
             </Pressable>
           </View>
 
@@ -110,9 +117,9 @@ export function HeaderMenu() {
             )}
             <View style={styles.youText}>
               <Text style={styles.name} numberOfLines={1}>{name}</Text>
-              <Text style={styles.muted}>{role}</Text>
+              <Text style={styles.muted}>{role} account</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.color.textMuted} />
+            <Icon name="forward" size={18} color={theme.color.textMuted} />
           </Pressable>
 
           {confirming ? (
@@ -125,7 +132,7 @@ export function HeaderMenu() {
             <>
               <View style={styles.list}>
                 {row(
-                  "notifications-outline",
+                  "bell",
                   "Notifications",
                   () => go(notificationsHref),
                   "menu-notifications",
@@ -135,9 +142,9 @@ export function HeaderMenu() {
                     </View>
                   ) : undefined,
                 )}
-                {profile?.role === "sitter" ? row("calendar-outline", "Schedule", () => go("/sitter/schedule"), "open-schedule") : null}
-                {row("sparkles-outline", "What's new", () => go("/whats-new"), "menu-whats-new")}
-                {row("settings-outline", "Settings", () => go("/settings"), "open-settings")}
+                {profile?.role === "sitter" ? row("calendar", "Schedule", () => go("/sitter/schedule"), "open-schedule") : null}
+                {row("whatsNew", "What's new", () => go("/whats-new"), "menu-whats-new")}
+                {row("settings", "Settings", () => go("/settings"), "open-settings")}
               </View>
               <Pressable
                 accessibilityRole="button"
@@ -145,7 +152,7 @@ export function HeaderMenu() {
                 style={({ pressed }) => [styles.row, pressed && styles.pressed]}
                 testID="log-out"
               >
-                <Ionicons name="log-out-outline" size={24} color={theme.color.textMuted} />
+                <Icon name="logOut" size={24} color={theme.color.textMuted} />
                 <Text style={[styles.rowLabel, styles.mutedLabel]}>Sign out</Text>
               </Pressable>
             </>
@@ -159,6 +166,8 @@ export function HeaderMenu() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     iconButton: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
+    // A thin ring keeps the avatar reading as a button on the cream header.
+    avatarRing: { padding: 2, borderRadius: 20, borderWidth: 1.5, borderColor: theme.color.primary },
     scrim: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: theme.color.overlay },
     drawer: {
       position: "absolute", top: 0, right: 0, bottom: 0, left: 0,

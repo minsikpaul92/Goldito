@@ -1,7 +1,7 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "../../components/ui/Icon";
 import { BigInput } from "./BigInput";
 import { Banner } from "../ui/Banner";
 import { Button } from "../ui/Button";
@@ -109,7 +109,7 @@ export function VoiceStep({ placeholder, onUse, error, busy }: Props) {
             style={[styles.mic, recordingNow && styles.micOn, (phase === "reading" || busy) && styles.micOff]}
             testID="own-mic"
           >
-            <Ionicons name={recordingNow ? "stop" : "mic"} size={40} color={theme.color.primaryText} />
+            <Icon name={recordingNow ? "stop" : "mic"} size={40} color={theme.color.primaryText} />
           </Pressable>
           <Text style={styles.status} testID="own-mic-status">
             {phase === "reading" ? "Reading what you said…" : recordingNow ? `${clock(elapsed)} of ${clock(MAX_RECORDING_MS)}` : "Tap to talk"}

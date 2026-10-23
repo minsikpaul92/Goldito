@@ -170,9 +170,9 @@ export default function OwnerBookingDetail() {
   const needsCheckout = booking.status === "confirmed" && !booking.paidAt;
   // Paid once, then an agreed change needed a new consent (009d).
   const checkoutReopened = needsCheckout && booking.priceSnapshot != null;
-  const placeNotes =
-    Object.values(places).find((p) => p && (p.visitorParking || p.lobbyNotes || p.packingList?.length)) ?? null;
-  const packing = placeNotes?.packingList ?? [];
+  const placeNotes = Object.values(places).find((p) => p && (p.visitorParking || p.lobbyNotes)) ?? null;
+  // The owner's own list, from the profile: it rides on the drop-off.
+  const packing = places.drop_off?.packingList ?? [];
   // Address may be on a different handoff than the place-notes row.
   const sitterAddress =
     placeNotes?.address ??

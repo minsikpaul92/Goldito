@@ -1,6 +1,6 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "./ui/Icon";
 import { formatInstant, formatTime, isoToZoned } from "../features/schedule/dates";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { SERVICE_LABEL } from "../features/sitters/sitterApi";
@@ -151,7 +151,7 @@ export function BookingCard({ booking, viewer, onPress }: Props) {
           </Text>
         ) : null}
       </View>
-      {onPress ? <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.textMuted} /> : null}
+      {onPress ? <Icon name="forward" size={theme.icon.sm} color={theme.color.textMuted} /> : null}
     </Pressable>
   );
 }

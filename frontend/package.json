@@ -10,10 +10,12 @@
     "web": "expo start --web",
     "test:e2e": "playwright test",
     "changelog": "node scripts/changelog.mjs",
+    "check:tokens": "node scripts/check-tokens.mjs",
     "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@expo-google-fonts/fredoka": "^0.4.1",
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.109.0",
@@ -26,6 +28,7 @@
     "expo-router": "~57.0.24",
     "expo-status-bar": "~57.0.1",
     "leaflet": "^1.9.4",
+    "lucide-react-native": "^1.61.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",

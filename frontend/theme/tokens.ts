@@ -66,6 +66,12 @@ export const tokens = {
   },
   fontSize: {
     title: 24,
+    /** Section titles (Figma Expressive: Fredoka 21). */
+    section: 21,
+    /** Option card titles on one-question screens. */
+    option: 20,
+    /** Large buttons (the 60 px Next). */
+    lead: 18,
     body: 16,
     small: 14,
     /** (proposed) Tiny labels inside dense grids, e.g. slot letters in SlotCalendar. */
@@ -82,6 +88,9 @@ export const tokens = {
   },
   /** Line height per Figma text style (Title 30, Body 22, Small 20, Caption 14). */
   lineHeight: {
+    lead: 24,
+    option: 26,
+    section: 26,
     caption: 14,
     small: 20,
     body: 22,
