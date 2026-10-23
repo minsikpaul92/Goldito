@@ -30,7 +30,7 @@ import {
 import { isDemoAccount, isDemoToolsEnabled } from "../lib/demoReset";
 import { LatLng, LocationError, getCurrentPosition } from "../lib/location";
 import { AddressSuggestion, PinPlace, reverseGeocode } from "../lib/transit";
-import { homeFor, useSession } from "../providers/SessionProvider";
+import { useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
@@ -376,8 +376,6 @@ export default function ProfileScreen() {
       setLoaded(next);
       setHome(pin);
       toast.show(pinNote ? `Profile saved · ${pinNote}` : "Profile saved");
-      if (router.canGoBack()) router.back();
-      else router.replace(homeFor(profile.role));
     } catch (error) {
       setSaveError((error as Error).message);
     } finally {
