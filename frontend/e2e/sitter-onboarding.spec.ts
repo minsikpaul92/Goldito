@@ -8,11 +8,10 @@ import { SITTER, mockSupabase } from "./supabaseMock";
 // screen first, a review step, every question skippable.
 
 const KEYS = [
+  "custom_1",
   "multiple_owners",
   "max_pets",
   "walks_per_day",
-  "meals_per_day",
-  "home_all_day",
   "activity",
   "park_nearby",
   "dog_sizes",
@@ -142,7 +141,7 @@ test.describe("sitter onboarding", () => {
       screen.getByTestId("onboarding-review-walks_per_day"),
     ).toContainText("Three, one long");
     await expect(screen.getByTestId("onboarding-review-handoff")).toContainText(
-      "I pick up, Owner brings",
+      "I can pick up, Owner drops off",
     );
     await expect(screen.getByTestId("onboarding-skipped")).toContainText(
       "3 skipped",
@@ -164,6 +163,7 @@ test.describe("sitter onboarding", () => {
       (r) => r.sitter_id === SITTER.id,
     );
     expect(rows.map((r) => r.question_key)).toEqual([
+      "custom_1",
       "multiple_owners",
       "max_pets",
       "walks_per_day",
@@ -181,7 +181,7 @@ test.describe("sitter onboarding", () => {
     expect(rows.find((r) => r.question_key === "handoff")?.choice).toBe(
       "sitter_picks_up,owner_brings",
     );
-    expect(rows.find((r) => r.question_key === "custom_1")?.question_text).toBe(
+    expect(rows.find((r) => r.question_text)?.question_text).toBe(
       "Do you have a fenced yard?",
     );
     const profile = db.sitter_profiles.find((p) => p.id === SITTER.id);
@@ -210,6 +210,7 @@ test.describe("sitter onboarding", () => {
     await newSitter(page);
     await signIn(page, SITTER);
     const screen = app(page);
+    await screen.getByTestId("onboarding-skip").click();
     await screen.getByTestId("onboarding-skip").click();
     await screen.getByTestId("onboarding-skip").click();
     await expect(screen.getByTestId("onboarding-q-max_pets")).toBeVisible();
@@ -427,13 +428,15 @@ test.describe("sitter onboarding", () => {
     expect(asked!.questions.find((q) => q.key === "dog_sizes")).toMatchObject({
       multi: true,
     });
-    // The first question is not about anything said; the ones that were come chosen, with the words and a mark.
+    // The first questions are not about anything said; the ones that were come chosen, with the words and a mark.
+    await expect(screen.getByTestId("onboarding-q-custom_1")).toBeVisible();
+    await expect(
+      screen.getByTestId("onboarding-heard-custom_1"),
+    ).toHaveCount(0);
+    await screen.getByTestId("onboarding-skip").click();
     await expect(
       screen.getByTestId("onboarding-q-multiple_owners"),
     ).toBeVisible();
-    await expect(
-      screen.getByTestId("onboarding-heard-multiple_owners"),
-    ).toHaveCount(0);
     await screen.getByTestId("onboarding-skip").click();
     await expect(screen.getByTestId("onboarding-heard-max_pets")).toContainText(
       "up to three at a time",
@@ -496,8 +499,6 @@ test.describe("sitter onboarding", () => {
       "answer the questions yourself",
     );
     await screen.getByTestId("onboarding-skip").click();
-    await expect(
-      screen.getByTestId("onboarding-q-multiple_owners"),
-    ).toBeVisible();
+    await expect(screen.getByTestId("onboarding-q-custom_1")).toBeVisible();
   });
 });
