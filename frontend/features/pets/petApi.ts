@@ -71,6 +71,16 @@ export async function savePetHat(petId: string, hat: HatId | null): Promise<void
   if (saveError) fail("change the hat");
 }
 
+/** Replace the chart answers in `pets.profile.answers` (the personality retake); the rest of the profile is kept. */
+export async function savePersonality(petId: string, answers: Record<string, number>): Promise<void> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.from("pets").select("profile").eq("id", petId).maybeSingle();
+  if (error || !data) fail("save the answers");
+  const rest = ((data as { profile?: Record<string, unknown> | null }).profile ?? {}) as Record<string, unknown>;
+  const { error: saveError } = await supabase.from("pets").update({ profile: { ...rest, answers } }).eq("id", petId);
+  if (saveError) fail("save the answers");
+}
+
 export async function getPet(petId: string): Promise<Pet | null> {
   const { data, error } = await getSupabase().from("pets").select(PET_COLUMNS).eq("id", petId).maybeSingle();
   if (error) fail("load this pet");

@@ -1,7 +1,7 @@
 # Phase 13 (P2): 해커톤 이후, 앱 출시와 실결제
 
 > **상태 (2026-10-19):** 시작 전. 해커톤 제출(2026-10-30) 뒤 바로 시작한다. GitHub 마일스톤: [P2 after hackathon](https://github.com/minsikpaul92/Goldito/milestone/3). 이슈가 상태와 체크리스트의 정본이고, 이 문서는 순서와 설계 결정만 적는다.
-> **원칙:** 마감 전에는 손대지 않는다. 새 일이 생기면 TODO가 아니라 GitHub 이슈로 만들고 마일스톤을 붙인다 ([TODO.md](../TODO.md) Later).
+> **원칙:** 마감 전에는 손대지 않는다. 새 일이 생기면 GitHub 이슈로 만들고 마일스톤을 붙인다 (GitHub issues).
 
 ## Goal
 

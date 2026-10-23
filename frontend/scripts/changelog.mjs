@@ -19,7 +19,10 @@ const plain = (s) =>
     .replace(/`([^`]+)`/g, "$1")
     .trim();
 
-export function parse(markdown) {
+// TEMPORARY (hackathon review): show the 0.x build-up in What's New too. Set to false to show only 1.0.0 and later again.
+const SHOW_BEFORE_LAUNCH = true;
+
+export function parse(markdown, showBeforeLaunch = SHOW_BEFORE_LAUNCH) {
   const releases = [];
   let release = null;
   let section = null;
@@ -42,7 +45,7 @@ export function parse(markdown) {
     if (item && section) section.items.push(plain(item[1]));
   }
   // What's new is news since launch: 0.x is the build-up to 1.0.0 and stays in the file as history only.
-  const launched = (rel) => Number.parseInt(rel.version, 10) >= 1;
+  const launched = (rel) => showBeforeLaunch || Number.parseInt(rel.version, 10) >= 1;
   return releases.filter((rel) => launched(rel) && rel.sections.some((s) => s.items.length > 0));
 }
 

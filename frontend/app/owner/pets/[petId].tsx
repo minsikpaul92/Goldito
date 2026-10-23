@@ -1,10 +1,11 @@
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { Stack, router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 
 import { CareTasksSection } from "../../../components/CareTasksSection";
 import { HeadsUpSection } from "../../../components/HeadsUpSection";
 import { PetForm } from "../../../components/PetForm";
 import { PetGlance } from "../../../components/PetGlance";
+import { PetAvatarEditor } from "../../../components/PetAvatarEditor";
 import { TextButton } from "../../../components/ui/TextButton";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
@@ -22,6 +23,7 @@ export default function PetProfileScreen() {
   const toast = useToast();
   const session = useSession();
   const [state, setState] = useState<State>({ status: "loading" });
+  const [glanceKey, setGlanceKey] = useState(0);
 
   const load = useCallback(async () => {
     setState({ status: "loading" });
@@ -36,6 +38,9 @@ export default function PetProfileScreen() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Back from the personality retake: show the new chart.
+  useFocusEffect(useCallback(() => setGlanceKey((k) => k + 1), []));
 
   if (state.status === "loading") return <LoadingView />;
   if (state.status !== "ready") {
@@ -59,7 +64,9 @@ export default function PetProfileScreen() {
   return (
     <Screen>
       <Stack.Screen options={{ title: pet.name }} />
-      <PetGlance petId={pet.id} />
+      <PetAvatarEditor key={`avatar-${glanceKey}`} pet={pet} onChanged={() => setGlanceKey((k) => k + 1)} />
+      <PetGlance key={glanceKey} petId={pet.id} />
+      <TextButton label="Retake personality" onPress={() => router.push(`/owner/pets/${pet.id}/personality`)} testID="open-personality" />
       <PetForm
         key={pet.id}
         initial={petToFormValues(pet)}

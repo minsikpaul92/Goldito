@@ -1,6 +1,6 @@
 # Phase 09 — 피드 AI 캡션 + 타임라인 앨범 분류 (Caption & Album)
 
-> **상태 (2026-10-10):** 머지됨 (PR #57) — DoD 손 확인 대기(슬기 Q.1). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [TODO](../TODO.md) Phase status이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+> **상태 (2026-10-10):** 머지됨 (PR #57) — DoD 손 확인 대기(슬기 Q.1). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [Phase 목록](README.ko.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D11–D12, **D33 Vision**, AI 규칙 §9
 > **말투 레이어 (D35):** 캡션 문장은 `tone.compose()`(07B 7B.8)로 시터 말투를 따른다. 분류 태그(meal·walk·nap·play)와 사람 속도 지연은 해당 없음 (D37). Vision 모델은 MiniCPM-V-4.5로 확정 (NVIDIA 비전 모델은 Dedicated Endpoint 전용 — D39).
@@ -79,7 +79,7 @@ Playbook §11
 
 ---
 
-## Open items (남은 후속 작업 — 명세는 여기, 순서는 [TODO](../TODO.md))
+## Open items (남은 후속 작업 — 명세는 여기, 순서는 [GitHub issues](https://github.com/minsikpaul92/Goldito/issues))
 
 - 리뷰 R3 Medium 캡션 항목 M-17 – M-19 — 슬기 Q.5. [review §5](../review-2026-10-08.ko.md)
 

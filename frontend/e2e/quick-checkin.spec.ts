@@ -40,7 +40,7 @@ test.describe("quick check-in", () => {
     await expect(screen.getByTestId(send(MAX))).toBeDisabled();
     await screen.getByTestId(tid(MAX, "meal", "all")).click();
     await screen.getByTestId(send(MAX)).click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅ Robert was told");
+    await expect(screen.getByTestId("toast")).toContainText("Sent. Robert was told");
 
     expect(db.care_checkins).toHaveLength(1);
     expect(db.care_checkins[0]).toMatchObject({ pet_id: MAX.id, kind: "meal", value: "all", note_text: null, media_id: null });
@@ -52,7 +52,7 @@ test.describe("quick check-in", () => {
     const screen = app(page);
     await screen.getByTestId(tid(MAX, "meal", "all")).click();
     await screen.getByTestId(send(MAX)).click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    await expect(screen.getByTestId("toast")).toContainText("Sent");
     await expect(screen.getByTestId(send(MAX))).toBeDisabled(); // nothing picked any more
     await expect(screen.getByTestId(tid(MAX, "meal", "all"))).toHaveAttribute("aria-pressed", "false");
     expect(db.care_checkins).toHaveLength(1);
@@ -89,7 +89,7 @@ test.describe("quick check-in", () => {
     await expect(screen.getByTestId("error-dialog")).toBeVisible();
 
     await screen.getByTestId("error-dialog-retry").click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    await expect(screen.getByTestId("toast")).toContainText("Sent");
     expect(db.care_checkins).toHaveLength(1);
   });
 
@@ -99,7 +99,7 @@ test.describe("quick check-in", () => {
     await screen.getByTestId(`checkin-memo-${MAX.id}`).fill("Left the chicken bits, sniffed and walked off");
     await screen.getByTestId(tid(MAX, "meal", "little")).click();
     await screen.getByTestId(send(MAX)).click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    await expect(screen.getByTestId("toast")).toContainText("Sent");
 
     expect(db.care_checkins[0]).toMatchObject({ kind: "meal", value: "little", note_text: "Left the chicken bits, sniffed and walked off" });
     const notice = db.notifications.find((n) => n.type === "care_checkin");
@@ -117,7 +117,7 @@ test.describe("quick check-in", () => {
     await screen.getByTestId(`checkin-memo-${MAX.id}`).fill("Watched a squirrel for ten minutes");
     await expect(screen.getByTestId(`checkin-picked-${MAX.id}`)).toContainText("as a note");
     await screen.getByTestId(send(MAX)).click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    await expect(screen.getByTestId("toast")).toContainText("Sent");
     expect(db.care_checkins[0]).toMatchObject({ kind: "note", value: null, note_text: "Watched a squirrel for ten minutes" });
   });
 
@@ -133,7 +133,7 @@ test.describe("quick check-in", () => {
     await expect(screen.getByTestId(tid(MOCHI, "mood", "calm"))).toBeVisible();
     await screen.getByTestId(tid(MOCHI, "mood", "calm")).click();
     await screen.getByTestId(send(MOCHI)).click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    await expect(screen.getByTestId("toast")).toContainText("Sent");
   });
 
   test("a photo rides along: pick, preview, then it uploads with the next check-in", async ({ page }) => {
@@ -152,7 +152,7 @@ test.describe("quick check-in", () => {
 
     await screen.getByTestId(tid(MAX, "mood", "happy")).click();
     await screen.getByTestId(send(MAX)).click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    await expect(screen.getByTestId("toast")).toContainText("Sent");
     expect(sign[0]).toMatchObject({ pet_id: MAX.id, purpose: "task_proof" });
     expect(db.care_checkins[0].media_id).toBe("media-proof");
     await expect(screen.getByTestId(`checkin-photo-${MAX.id}`)).toContainText("Add photo");

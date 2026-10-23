@@ -107,6 +107,7 @@ test.describe("auth and role routing", () => {
     await mockSupabase(page, []);
     await page.goto("/signup");
     const signup = app(page);
+    await expect(signup.getByTestId("signup-brand")).toBeVisible();
     await signup.getByTestId("role-owner").click();
     await signup.getByTestId("signup-first-name").fill("Robert");
     await signup.getByTestId("signup-email").fill("robert@goldito.test");
@@ -187,5 +188,44 @@ test.describe("auth and role routing", () => {
 
     await page.goto("/owner");
     await expect(page).toHaveURL(/\/welcome$/);
+  });
+
+  test("header and menu show the account photo or initial, and clicking header avatar opens profile (#287)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [SITTER]);
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+
+    const screen = app(page);
+    // Initial when no photo: "C" for Chloe
+    await expect(screen.getByTestId("header-avatar-initial")).toHaveText("C");
+
+    // Click header avatar opens the menu
+    await screen.getByTestId("open-menu").click();
+    await expect(screen.getByTestId("header-menu")).toBeVisible();
+
+    // Go back to sitter home
+    await page.goto("/sitter");
+
+    // When a cover photo exists, both header and menu show the photo
+    db.profile_photos.push({ id: "p1", profile_id: SITTER.id, public_id: "goldito/chloe/cover", position: 0 });
+    await page.reload();
+    await expect(screen.getByTestId("header-avatar-photo")).toBeVisible();
+
+    // Menu shows the same photo
+    await screen.getByTestId("open-menu").click();
+    await expect(screen.getByTestId("menu-avatar-photo")).toBeVisible();
+  });
+
+  test("sitter feed has no back arrow in the header (#287)", async ({ page }) => {
+    await mockSupabase(page, [SITTER]);
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+
+    const screen = app(page);
+    await app(page).getByRole("tab").getByText("Feed", { exact: true }).click();
+    await expect(page).toHaveURL(/\/sitter\/feed$/);
+
+    // No back button on the feed index screen
+    await expect(screen.getByRole("button", { name: "Back" })).toHaveCount(0);
   });
 });

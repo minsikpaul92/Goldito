@@ -91,7 +91,7 @@ export function ChatHandoffCard({ booking, viewer, onChanged, openSignal = 0 }: 
     try {
       // A pair is answered with one call; two separate suggestions one by one.
       for (const o of paired ? offers.slice(0, 1) : offers) await respondHandoff(o.step.id, true);
-      toast.show("Handoff agreed ✓");
+      toast.show("Handoff agreed");
       onChanged();
     } catch (e) {
       errorDialog.show({ title: "Not saved", message: (e as Error).message });

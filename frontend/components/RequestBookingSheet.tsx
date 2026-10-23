@@ -162,7 +162,7 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
       });
       await postBookingRequestCard(threadId, bookingId).catch(() => undefined);
       if (profile && !houseSitting) void saveOwnerDefault(profile.id, places.drop.type).catch(() => undefined);
-      toast.show(`Request sent to ${sitterName} 📨`);
+      toast.show(`Request sent to ${sitterName}`);
       onSent();
       onClose();
     } catch (e) {

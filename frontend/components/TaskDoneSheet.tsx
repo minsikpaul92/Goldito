@@ -62,7 +62,7 @@ export function TaskDoneSheet({ item, onClose, onDone }: Props) {
       }
       setStep("sending");
       await completeTaskLog(item.log.id, mediaId, memo.trim() || null);
-      toast.show(`${item.task.title} done ✅ ${item.pet.ownerName} was told`);
+      toast.show(`${item.task.title} done. ${item.pet.ownerName} was told`);
       onClose();
       onDone();
     } catch (error) {

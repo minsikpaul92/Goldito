@@ -3,7 +3,7 @@
 > **누구를 위한 문서?** 개발에 같이 참여하는 사람(민식 · 슬기 · 묵)과 테스트하는 사람.
 > **무엇을 알 수 있나?** ① 지금 무엇이 만들어졌고 무엇이 아직인지 ② 어떻게 확인하는지 ③ 확인 결과.
 > **언제 갱신하나?** 작업(Task) 하나가 끝날 때마다 **같은 커밋에서** 현황표와 시나리오를 고친다 ([CLAUDE.md](../../CLAUDE.md) §5).
-> 제품 흐름은 [full-process.ko.md](full-process.ko.md), 할 일 큐는 [TODO.md](TODO.md).
+> 제품 흐름은 [full-process.ko.md](full-process.ko.md), 할 일 큐는 [GitHub issues](https://github.com/minsikpaul92/Goldito/issues).
 
 **마지막 갱신:** 2026-10-09 · #60 머지(FLOW-13~23 · REPORT-11~12 · RV-6~10 수정) · 테스트는 **main = Vercel** (§1.1) · 슬기 QA 트랙 [Phase Q](phases/phase-q-quality.md) · 이전: 첫 수동 테스트 결과 (§3.0), 코드 리뷰 시나리오 (§3.17)
 
@@ -88,7 +88,7 @@
 
 | 기능 | 상태 | Phase |
 | :--- | :--- | :--- |
-| 첫 만남 미팅 (직접 / 영상, 제안 · 수락 · 건너뛰기 — 시터의 첫 동의 뒤에만 가능, BOOK-8 ~ 13) | ✅ 🤖 | 03B.9 · Booking steps |
+| 첫 만남 미팅 (직접 / 영상, 제안 · 수락 · 건너뛰기 — 오너는 요청 직후 **Request / Skip Meet & Greet**, 시터의 답이 첫 동의, BOOK-8 ~ 13 · MGCHOICE) | ✅ 🤖 (`015f` 호스팅 적용 전) | 03B.9 · Booking steps · #236 |
 | Google Meet 링크 자동 생성 (방은 링크 누구나 입장으로 열림 — 새 범위로 token 재발급 후 사람 확인 필요) | 🟡 서버 완료, **앱 e2e 미확인** | 03B.11 |
 | 오너가 돌봄 할 일 등록 (약 · 식사 · 산책 …) | ✅ 🤖 | 06 / 6.1 |
 | AI 케어 요청서 → 체크리스트 (칩 · 한 줄씩 · 표 · 자동 저장) | ✅ 🤖 (실제 AI 응답은 👤) | 06 / 6.12–6.13 · 6.20 |
@@ -117,7 +117,7 @@
 | **채팅 안 견적 (3D.6, #143)** — 시터가 한 번 눌러 견적 카드(서버 계산), 추가 수수료 줄(시터 추가 → 오너 Accept/Decline), 오너 Confirm, 새 견적은 이전 것을 Replaced로. 합계는 DB 함수가 계산하고 모델은 가격을 쓰지 않음. 예약 · 결제 연결은 #144 · **수수료는 #265로 제거** | `014n` (호스팅 미적용) | 🤖 `chat` e2e · SQL `rls_smoke` | 사람 확인 대기 |
 | **시터 온보딩 답변 (3D.2)** — 번호 질문 · 칩 · 자기소개 · 직접 추가 Q&A, 건너뛰기 가능, 오너는 읽기만 | 🟡 DB(`014f`) · 번호 질문 화면 · 검토 · 완료 · Profile 편집 ✅ 🤖 SQL smoke + `sitter-onboarding.spec.ts` · 가능한 날 등록(주간 규칙 · 시간)도 ✅ · Profile의 답변 목록 · 메모 "+" · "4+" 칩 · 쉬는 날 제거(#161) ✅ · 사진(PR B) · 시드 · 오너 상세 표시는 아직 · 음성은 문서만(보류) · 사람 확인 대기 | 03D / #139 |
 | **오너 가입 상세 (11.15 S1, #185)**: 한 화면 한 질문, 펫 사진 여러 장, 5축 "at a glance" 카드 | 🟡 DB(`014v`) 🤖 SQL smoke ✅ · 펫 사진 백엔드 라우트 🤖 pytest ✅ · 질문 화면(종 · 이름 · 사진 · 품종 · 나이 · 몸무게 · 소개 · 성격 · 안전 · 음식 · 요약 · 저장) 오너 소개 · 위치 · 음성 입력(녹음 → 글 → 제안, 가짜 마이크) · 사진 추측(품종 칩 · 털색 단계) 🤖 e2e ✅ · at a glance 카드(시터 예약 상세 · 오너 펫 상세 · 가입 요약, 품종 Needs 줄) 🤖 e2e ✅ · 시터 요청 카드(문의 스레드)와 Life Record 위는 아직 · 사람 확인 대기 | 11 / #185 |
-| **다마고치 (11.12, #184)**: Home의 8-bit 펫, 오늘 체크인에서 계산한 기분 · HUD, 시터 탭 액션 | 🟡 파생 상태 `lib/petStatus.ts` 🤖 e2e ✅ · 임시 스프라이트(코드로 그린 픽셀 헤드, 종 2 × 털색 8 × 기분 5) 🤖 e2e ✅ · 오너 Home 페이저와 펫 방(스프라이트 · 기분 · HUD) 🤖 e2e ✅ · 시터 Home의 펫 방과 탭 액션(밥 · 산책 · 응가 · 낮잠, `015`) 🤖 e2e ✅ · SQL smoke ✅ · 아카이브 메달(`015b`, 시터가 Returned 뒤에 펫마다 한 번 수여, 오너 Pet 페이지 아래에 표시) 🤖 e2e ✅ · SQL smoke ✅ · 사람 확인 대기 · 견종별 머리 모양(개 4 · 고양이 2) · 몸무게별 크기 · 사진은 색만(Match colors from photo, `pixel_colors`) 🤖 e2e ✅ · 시터 배지(Profile: First stay · First 5-star review, 그림자 4칸) 🤖 e2e ✅ | 11 / #184 |
+| **다마고치 (11.12, #184)**: Home의 8-bit 펫, 오늘 체크인에서 계산한 기분 · HUD, 시터 탭 액션 | 🟡 파생 상태 `lib/petStatus.ts` 🤖 e2e ✅ · 임시 스프라이트(코드로 그린 픽셀 헤드, 종 2 × 털색 8 × 기분 5) 🤖 e2e ✅ · 오너 Home 카드 뒤집기(버튼 · 드래그 · 휠로 Today ↔ 펫 방, 점 없음, #286) · 펫 방(스프라이트 · 기분 · HUD) 🤖 e2e ✅ · 펫 카드 커버 사진(없으면 이모지) 🤖 e2e ✅ · 펫 화면 아바타 탭으로 사진 바꾸기(원형 크롭, 카메라 배지) · Retake personality(같은 질문 다시 답하기) 🤖 e2e ✅(업로드 자체는 사람 확인 대기) · 시터 Home의 펫 방과 탭 액션(밥 · 산책 · 응가 · 낮잠, `015`) 🤖 e2e ✅ · SQL smoke ✅ · 아카이브 메달(`015b`, 시터가 Returned 뒤에 펫마다 한 번 수여, 오너 Pet 페이지 아래에 표시) 🤖 e2e ✅ · SQL smoke ✅ · 사람 확인 대기 · 견종별 머리 모양(개 4 · 고양이 2) · 몸무게별 크기 · 사진은 색만(Match colors from photo, `pixel_colors`) 🤖 e2e ✅ · 시터 배지(Profile: First stay · First 5-star review, 그림자 4칸) 🤖 e2e ✅ | 11 / #184 |
 | **프로필 사진 (#135 – #137)** — 시터 · 오너 사진 최대 8장, 첫 장이 대표, 라운드 크롭 · 순서 · 삭제, 시터 사진은 오너에게 · 오너 사진은 예약 · 문의가 있는 시터에게만 | 🟡 DB(`014g`) · 업로드 API ✅ · 시터 Profile의 갤러리(추가 · 라운드 크롭 · 대표로 · 앞뒤 이동 · 삭제 · 최대 8장 · 빈 실루엣) ✅ 🤖 SQL smoke + `test_profile_photos.py` + `profile-photos.spec.ts` · 오너 Profile의 같은 갤러리와 시터가 예약 · 문의 화면에서 보는 오너 대표 사진(#137) ✅ · 시터 상세 한 줄과 뷰어(#136) · Privacy 페이지의 Profile photos 문구 ✅ · 사람 확인 대기(`014g`는 호스팅 DB에 적용됨) | #135 – #137 |
 
 ### Stage 4 — 돌봄 · 알림장
@@ -157,7 +157,7 @@
 | Pet Transit **Returned 확인 시트 · 이른 Returned 경고** (FB-9) | ✅ 🤖 `handoff.spec.ts` (실제 사람 확인은 FLOW-6) | 06B / 6B.6 |
 | Pet Transit **Open in Google Maps(양쪽) · 공유 없이 시작 · 공유 안 하는 상대 화면 · 오래된 위치 안내** | ✅ 🤖 `transit.spec.ts` + SQL `rls_smoke` L (실제 폰은 👤) | 06B / 6B.8 |
 | **사진 요청** (견주 Feed **Request photo** → 시터 Home 배너 → 시터의 다음 공유 사진이 요청을 완료, 알림 하나만) | ✅ 11.1 S1 DB ✅ SQL `rls_smoke` 014 (`014` 호스팅 DB 적용 2026-10-15) · S2 견주 Feed 버튼 · S3 시터 Home 배너 · S4 답 알림이 feed_post처럼 🤖 `photo-request.spec.ts` · 두 브라우저 DoD ✅ 2026-10-15 Minsik | 11 / 11.1 |
-| **Settings · What's new** (메뉴 → Settings: 계정 · Edit profile · 알림 안내 · Privacy · 앱 버전 · Log out / 메뉴 → What's new: `docs/CHANGELOG.md`의 **1.0.0 이후**만, 없으면 "Nothing new yet") | 🟡 🤖 `settings.spec.ts` · 사람 확인 대기 |
+| **Settings · What's new** (Figma `D · Profile → Settings`: 메뉴 → Settings: 초록 계정 블록 · What's New 행 · Account(Name → Profile, Email, Pets는 오너만) · Notifications 스위치 3개(Trip updates · Daily notes and photos · Tips and news: 누르면 바로 저장돼 나갔다 와도 유지, 끄면 그 종류의 알림이 안 옴 · `015e`, 호스팅 DB에는 머지 때 적용 · Tips and news는 아직 보내는 알림이 없음 · 예약 · 채팅 · 안전 DANGER은 못 끔) · Privacy · Sign out · 앱 버전 · 프로필 사진이 있으면 이니셜 대신 사진 / `D · Settings → What's New`: `docs/CHANGELOG.md`의 **날짜 있는 항목**마다 카드 하나(맨 위 카드는 윗줄에 노란 New 배지, 해커톤 기간 변경도 임시로 보임, `SHOW_BEFORE_LAUNCH`로 다시 숨김), 없으면 "Nothing new yet") | 🟡 🤖 `settings.spec.ts` · 사람 확인 대기 |
 
 ### Stage 5 — Completion · 기타
 
@@ -173,6 +173,7 @@
 | **공개 데모 보호** (감사 2026-10-21): 데모 계정(`@goldito.test`)의 비밀번호 · 이메일은 시드만 바꿈(`014z`) · AI 호출(`/api/ai/*` · `/api/rag/*` · `/api/tone/*`)과 업로드 서명(`/api/media/sign` · 펫 · 프로필 사진)은 한 사람당 하루 100번(공유 데모 계정 1000번), 넘으면 429 | 🟡 🤖 SQL `rls_smoke`(014z) · pytest `test_seed_demo` · `test_limits` · 호스팅 DB 적용은 머지 때 (SEC-4 to SEC-6) | 10 |
 | 로그인 · 회원가입 · 역할별 화면 · Welcome 투어 | ✅ 🤖 | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
+| **Profile의 Save 고정** (스크롤해도 화면 맨 아래에 Save와 저장 에러가 보임, 오너 · 시터 같음 · 시터는 Your photos가 Badges 위) | 🟡 기존 `profile` e2e가 `profile-save`로 저장 확인 · 고정 위치 · 순서는 사람 확인 대기 | #292 |
 | 데스크톱 폰 프레임 · 마우스=손가락 | ✅ 🤖 | 01 |
 | 데스크톱 Split view, 폰 두 개 나란히 (`?view=split`, 폭 ≥ 900), 각 폰은 로그인 화면에서 시작하고 로그인한 계정이 폰 위에 보임 | ✅ 🤖 `split.spec.ts` · 사람 SPLIT-1은 다시 확인 대기, SPLIT-2 – 5는 ✅ (2026-10-15 Minsik) | 10 / 10.10 |
 
@@ -233,7 +234,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | TASK-1 | Demo sitter → Home → **All tasks** | 오늘 시각의 태스크가 시간순, 위에 "N left · M done"과 **Next up**. 일시중지한 태스크는 없음 | 🤖 `sitter-tasks` | ➖ |
 | TASK-2 | 할 일의 **Done** | **팝업**이 뜸(메모 칸 · 📷 Add photo · Done). 이 시점엔 아무것도 전송되지 않음 | 🤖 `sitter-tasks` | ➖ |
-| TASK-3 | 팝업에서 메모 없이 **Done** | "… done ✅ Robert was told" 토스트, **할 일이 목록에서 사라짐**, "Done today (N)"에 나타남. 오너 알림 제목은 **한 일**(예: "Max had breakfast on time 🍽️"), Feed 새 글 없음 | 🤖 `sitter-tasks` | ➖ |
+| TASK-3 | 팝업에서 메모 없이 **Done** | "… done. Robert was told" 토스트, **할 일이 목록에서 사라짐**, "Done today (N)"에 나타남. 오너 알림 제목은 **한 일**(예: "Max had breakfast on time 🍽️"), Feed 새 글 없음 | 🤖 `sitter-tasks` | ➖ |
 | TASK-4 | 팝업에 **메모를 쓰고 Done** | 오너 알림에 **한 일(제목) + 메모(본문)** 이 같이 감 — 무엇에 대한 메모인지 알 수 있음 | 🤖 `sitter-tasks` · SQL | ➖ |
 | TASK-5 | 팝업 **📷 Add photo** → 찍기/고르기/샘플 → 미리보기 → Use this photo → Done | 업로드 + 완료. 오너 Feed에 사진 글. 알림은 `task_done` 하나 | 🤖 `sitter-tasks` · **실제 업로드 👤** | ➖ |
 | TASK-6 | 미리보기에서 **Retake** | 선택 화면으로 복귀, 아무것도 올라가지 않음 | 🤖 `sitter-tasks` | ➖ |
@@ -268,14 +269,14 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| FEED-1 | 시터: Feed 탭 → Max → **+ Photo** → 샘플 | "Shared with Robert 🐾", 그리드에 새 사진 | 🤖 `media-picker` | ➖ |
+| FEED-1 | 시터: Feed 탭 → Max → **+ Photo** → 샘플 | "Shared with Robert", 그리드에 새 사진 | 🤖 `media-picker` | ➖ |
 | FEED-2 | **두 브라우저**: 일반 창 = 오너, 시크릿 창 = 시터. 시터가 올림 | 오너 화면에 **새로고침 없이** 토스트 + 벨 숫자 + Home 카드 + Feed 카드 (≤ 3초) | **👤만** (실시간) | ➖ |
 | FEED-3 | 오너: 사진 탭 | **탭한 그 사진**이 전체화면. ‹ › 버튼, 스와이프, ←/→ 키 이동 | 🤖 `feed` | ➖ |
 | FEED-4 | 영상 샘플 (Fetch play) 재생 | 오너 전체화면에서 재생 | 👤 | ➖ |
 | FEED-5 | 시터가 **자기 사진** 열기 → 🗑️ → 확인 | "Photo deleted", 오너 Feed에서도 사라짐. 오너 화면에는 시터 글의 🗑️ **없음** | 🤖 `feed` · 파일 삭제는 pytest | ➖ |
 | FEED-6 | 사진 업로드가 **실패**하면 | 빨간 팝업이 남고 Try again | 🤖 `media-picker` | ➖ |
-| VIS-1 | 시터: **Share with Robert** 칩 끄기("Only you") → 사진 올리기 | "Saved just for you 🔒", 🔒 배지. **오너는 못 봄**, 알림 없음 | 🤖 `media-picker` · SQL | ➖ |
-| VIS-2 | 오너: Feed → **+ Photo** (기본 "Only you") | "Saved just for you 🔒". 시터는 못 봄 | 🤖 `media-picker` · SQL | ➖ |
+| VIS-1 | 시터: **Share with Robert** 칩 끄기("Only you") → 사진 올리기 | "Saved just for you", 🔒 배지. **오너는 못 봄**, 알림 없음 | 🤖 `media-picker` · SQL | ➖ |
+| VIS-2 | 오너: Feed → **+ Photo** (기본 "Only you") | "Saved just for you". 시터는 못 봄 | 🤖 `media-picker` · SQL | ➖ |
 | VIS-3 | 오너: "Visible to sitter" 켜고 올림 | 당직 시터가 알림 "Robert shared a photo of Max 📸" → 탭 → 시터 Feed → Max, 사진 보임 | 🤖 SQL · e2e (알림 이동) | ➖ |
 
 ### 3.5 알림 (NOTIF)
@@ -289,7 +290,7 @@
 | NOTIF-4 | 알림 한 줄을 **왼쪽으로 60% 넘게 밀기** | 카드와 같은 **둥근 모양의 빨간 Delete**가 드러나고, 놓으면 사라지며 삭제됨(가만히 있을 땐 빨간 부분이 안 보임). 벨 숫자 갱신 | 🤖 `feed` | ➖ |
 | NOTIF-5 | 알림 한 줄을 **덜 밀다 놓기** | 제자리로 돌아오고 유지됨. 탭은 여전히 열림 | 🤖 `feed` | ➖ |
 | NOTIF-6 | **Clear all** → 확인 | 확인 시트("Clear 2 notifications") 후 전부 삭제, "You're all caught up." | 🤖 `feed` | ➖ |
-| NOTIF-7 | 한꺼번에 사진 여러 장 | 토스트는 "3 new photos 📸" 하나로 합쳐짐 | 👤 | ➖ |
+| NOTIF-7 | 한꺼번에 사진 여러 장 | 토스트는 "3 new photos" 하나로 합쳐짐 | 👤 | ➖ |
 
 ### 3.6 오너 Home · History · Diary (LIVE / HIST)
 
@@ -335,14 +336,14 @@
 | BOOK-5 | 견적 → 동의서 → 데모 결제 → 출입 정보 잠금 해제 | 🤖 `checkout` · SQL | ❌ 10/08 민식 — Finish booking → "This sitter doesn't offer that service." (`sitter_rates` 비어 있음, FLOW-3) |
 | BOOK-6 | **영상 미팅 Google Meet 링크** (앱에서). 링크는 호스트(Goldito 계정) 승인 없이 **바로 입장**돼야 함 (다른 계정, 시크릿 창으로 확인). **Join Google Meet** 버튼은 Safari에서도 눌려 새 탭이 열려야 함 (진짜 `<a>` 링크) | 🤖 `test_meet_greet.py` (방 열기 호출 · 실패해도 링크 유지) · `meet-greet.spec.ts` (버튼이 `href` · `target=_blank` 링크) · Safari에서 실제 클릭과 입장은 **👤** | ➖ |
 | BOOK-7 | 시터가 요청의 **Decline** → 시트에서 사유 칩(여러 개 가능) + 짧은 메모(≤ 200자, 선택)를 입력 → **Decline request**. 칩 · 메모 없이도 거절됨. 시트의 **Suggest another time instead**는 거절하지 않고 시간 제안 시트를 연다 (FB-35) | 요청이 Declined로 Past에 가고, 오너에게 "Chloe declined your booking request" 알림(본문 = 사유 · 메모)이 오며, 오너의 예약 상세에 **"Chloe can't take this one."** 아래 인용으로 사유가 보임. 사유 · 메모가 없으면 인용 줄이 없음. 거절 · 취소된 예약에는 헤더 카드와 안내 줄 사이에 **빈 카드가 없음**(오너 · 시터 둘 다, 진행 중 예약은 단계 막대 그대로) | 🤖 `sitter-bookings` · SQL `rls_smoke` | ➖ |
-| BOOK-8 | **첫 만남 쌍의 첫 동의.** 오너가 처음 만나는 시터에게 요청 → 시터 상세 | 시터 화면 맨 위에 **단계 막대**(Request · Meet & Greet · Confirm · Pay · Stay)와 "Your turn", 버튼은 **Next / Decline**(Accept 없음). 오너 화면은 "Waiting for Chloe to say yes to meeting", 일정 잡기 · 건너뛰기 버튼 없음, 날짜는 아직 홀드 안 됨 | 🤖 `meet-greet` · `sitter-bookings` · SQL `rls_smoke` (011l) | ➖ |
+| BOOK-8 | **첫 만남 쌍의 첫 동의.** 오너가 처음 만나는 시터에게 요청 → 시터 상세 | 시터 화면 맨 위에 **단계 막대**(Request · M&G · Confirm · Pay · Care, #237)와 "Your turn", 버튼은 **Next / Decline**(Accept 없음). 오너 화면은 **Request Meet & Greet / Skip Meet & Greet** 두 버튼(#236, MGCHOICE-1), 날짜는 아직 홀드 안 됨 | 🤖 `meet-greet` · `sitter-bookings` · SQL `rls_smoke` (011l) | ➖ |
 | SCHED-1 | 시터 일정 · 오너가 보는 시터 프로필의 **달력** | 날짜 칸에 **M · A · N 글자가 없고** **날짜 칸 전체가 세 개의 가로 띠**(위부터 **Night · Afternoon · Morning** — 아래가 오전, 위가 밤, 날짜 숫자는 그 위). 예약할 수 없는 띠(막음 · 꽉 참 · 열지 않음)는 **연한 빗금**(세 띠가 같은 무늬로 이어짐), 열린 띠는 비어 있음. 지난 날은 흐리게(빗금 없음). 범례는 한 줄 **Available / Not available**. 날짜를 누르면 아래에 칸별 시간 · 상태("Morning: Open · 9:30 AM–1:00 PM", 막힌 이유 포함). 스크린리더 라벨에 세 칸 상태가 모두 있음. 네이티브는 빗금 대신 회색 칸(react-native-svg 없음) | 🤖 `schedule.spec.ts` (빗금 여부는 computed style) · 실제 폰 너비 👤 | 10/17 화면은 로컬 스크린샷으로만 확인 · 사람 확인 대기 |
 | SCHED-2 | 시터 Schedule에서 날짜 범위 고르기 | **하나씩 클릭**(첫 클릭 = 하루, 두 번째 클릭 = 범위, 다음 클릭 = 다시 시작)해도 되고, **날짜를 누른 채 끌어서** 한 번에 고를 수도 있음(뒤로 끌어도 됨, 선택이 끌리는 대로 바뀜, 끝나고 손을 떼면 그 범위 유지 · 요약에 "3 days"). 끌기가 끝날 때 생기는 클릭은 선택을 다시 시작하지 않음. 지난 날짜는 범위에 들어오지 않음. 폰에서는 **길게 눌렀다가** 끌어야 하고, 그냥 쓸어 넘기면 화면이 스크롤됨. 오너가 보는 시터 달력은 하루만 고름 | 🤖 `schedule.spec.ts` (마우스 끌기 · 클릭) · 폰 길게 누르기는 👤 | 사람 확인 대기 (터치 끌기는 아직 실제 기기에서 안 봄) |
 | SCHED-3 | 시터 Schedule **기본 열림** — 일정을 하나도 안 만든 시터 | 달력의 모든 날 · 세 시간대가 **열림**(프로필의 기본 시간 · 기본 마릿수), 오너 검색에도 나옴(이전엔 일정을 열어야만 나왔음). 날짜를 눌러 Open으로 저장하면 **그 날들만** 시간 · 마릿수가 바뀜. Open 시트에서 **일부 시간대만 체크하고 저장하면 체크를 끈 시간대는 그 날들에 닫힘**(예: 오전만 열면 그 날의 오후 · 야간은 Blocked, 이미 확정된 예약과 겹치면 취소 확인이 먼저 뜸). 날짜를 건드리지 않으면 전부 열림. 반복해서 닫으려면 아래 규칙 | 🤖 `schedule.spec.ts` · `sitters.spec.ts` · SQL `rls_smoke` (014d) | 사람 확인 대기 |
 | SCHED-4 | Schedule 오른쪽 위 **⚙️ → Closing rules** | **요일 × 시간대(Morning · Afternoon · Night)** 격자에서 칸을 눌러 닫음(✕), 아래 **Hours**에서 세 시간대의 기본 시간을 30분 단위로 고침. **Apply** → "Rules applied ✅", 달력에 그 요일마다 해당 띠가 **빗금**("Closed · weekly rule"), 규칙 + 달력에서 직접 닫은 날이 **합쳐서** 적용. 아무것도 고르지 않고 Apply(또는 Open everything)면 규칙이 사라져 다시 전부 열림. 다시 열면 저장된 규칙 · 시간으로 시작. 시간이 맞지 않으면(끝 ≤ 시작) Apply 비활성. **이미 확정된 예약은 규칙이 취소하지 않음**(그 칸은 Full로 보이고 새 예약만 막힘) | 🤖 `schedule.spec.ts` · SQL `rls_smoke` (014d: 규칙 · 기본 열림 · 확정 예약 유지 · 권한) | 사람 확인 대기 |
 | SCHED-5 | ⚙️ → Closing rules → **Hours**에서 **Every day · Sun … Sat** 칩 | **Every day**를 고르면 세 시간대의 기본 시간(전 요일 공통)을 고침. **요일 칩**을 누르면 그 요일만의 시간을 따로 고칠 수 있고(그 요일은 칩에 **•** 표시, "Mondays have their own hours."), 다른 요일은 Every day 시간 그대로. **Same as every day**로 그 요일의 개별 시간을 지움. Apply 후 달력에서 그 요일을 누르면 "Morning: Open · 9:30 AM–1:00 PM"처럼 요일별 시간이 보임. 우선순위: **날짜를 직접 연 행 > 요일별 시간 > Every day 시간**. 끝 ≤ 시작이면 "Morning on Wednesdays needs …"로 Apply 비활성. 요일 시간이 Every day와 같아지면 저장하지 않음 | 🤖 `schedule.spec.ts` · SQL `rls_smoke` (014e) | 사람 확인 대기 · 호스팅 DB에 `014e` 적용 후 |
 | BOOK-9 | 시터가 **Next** | 토스트 "Dates held …", 오너에게 "Chloe would like to meet first" 알림. 막대 아래 "Day 1", 카드는 "These dates are on hold for Robert" / 오너는 "Chloe is holding your dates …"와 **Schedule Meet & Greet**. 시터 버튼은 **Confirm booking**(만나기 전까지 비활성). 두 번 눌러도 알림은 한 번 | 🤖 `meet-greet` · SQL | ➖ |
-| BOOK-10 | 첫 동의 전에 일정 제안 · 건너뛰기를 API로 시도 / 단골에게 Yes 시도 | `interest_required` / `interest_not_needed` | SQL `rls_smoke` | ➖ |
+| BOOK-10 | 단골에게 Yes(첫 동의)를 API로 시도 | `interest_not_needed`. 첫 동의 전 오너의 일정 제안 · 건너뛰기는 이제 허용(#236, `015f`), 시터의 제안 · 답은 그 자리에서 첫 동의가 됨 | SQL `rls_smoke` | ➖ |
 | BOOK-11 | **홀드와 한 번에 한 오너.** Chloe(기본 설정)에게 오너 A가 첫 동의를 받은 날짜에 오너 B가 요청 · 검색 · 문의 | B의 요청은 `sitter_unavailable`(날짜가 상세에), 시터 검색에 안 나옴, 문의 AI의 "can host"도 불가. 시터가 일정 막기로 덮으려 해도 거부. 시터 프로필에서 **Take pets from more than one owner at a time**을 켜면 정원(max pets) 안에서 허용. 오너에게는 시터 프로필 · 문의 시트 · 검색 결과에 "One owner at a time" / "Hosts several owners' pets" 배지 | 🤖 `profile` · SQL · pytest `test_inquiry` | ➖ |
 | BOOK-12 | 만난 뒤 **오너가 Not this sitter**(사유 칩 + 짧은 메모) / 취소 · 거절 · 타임아웃 | 오너 버튼 이름이 첫 동의 뒤에는 **Not this sitter**(그 전에는 Cancel booking), 사유가 취소 이유로 저장되고 시터 화면에 "Robert passed: …" 표시. 취소되면 홀드가 풀려 다음 오너가 요청 가능 | 🤖 `meet-greet` · SQL | ➖ |
 | BOOK-13 | **2일 · 3일 규칙.** 첫 동의 2일 뒤에도 만남 시간이 없음 → 알림 → 3일 더 무응답 | 양쪽에 "Still no time to meet …"(시간 잡기 · 건너뛰기 · 거절), 카드에 같은 문구. 3일 뒤 자동 취소(`meet_greet_timeout`), 홀드 해제, 양쪽 알림. 시간이 **agreed**가 되면 시계가 멈춤 | SQL `rls_smoke` (스윕) · pytest `test_sweep` · 실제 15분 cron은 👤 | ➖ |
@@ -507,7 +508,7 @@
 | FLOW-20 | 오너 리뷰 화면에서 별 5 → 프리셋 칩 / 별 2로 바꿈 | 별점마다 다른 프리셋 3개, 별을 바꾸면 이전 선택이 빠짐. 고른 문구 + 직접 쓴 글이 코멘트로 저장 (FB-27) | 🤖 `completion` | ➖ |
 | FLOW-21 | 시터 Returned 뒤 그 예약(또는 Past) → **⭐ Rate Robert** → 별 · 프리셋 · 한마디 → Save | "Your note about Robert" 읽기 전용 + Edit. "🔒 Only you can see this — Robert is never told." 오너에게 알림 **없음**, 오너는 읽을 수 없음 (FB-25) | 🤖 `handoff` · SQL O | ➖ |
 | FLOW-22 | 같은 오너가 다시 예약 요청 → 시터가 그 요청 열기 | 맨 위에 "Your notes from earlier stays with Robert"(별 · 메모 · 날짜, 본인만 보임) (FB-29) | 🤖 `handoff` | ➖ |
-| FLOW-23 | 오너 리뷰 Send → "Add Chloe to your favorites?" → ⭐ Add | 예약으로 돌아감. Bookings의 Your sitters에 "★ Favorite"·맨 위, Book care 검색에서 ★ 시터가 먼저. 시터 프로필의 ☆/★로 끄고 켬. 이미 즐겨찾기면 묻지 않음 (FB-28) | 🤖 `completion` · SQL P | ➖ |
+| FLOW-23 | 오너 리뷰 Send → 같은 화면의 **♡ Add Chloe to favorites** 한 번 누르기 → **Back to the booking** (#251) | 질문 시트 없음, 별 없음. 하트가 채워지고 "Chloe is a favorite" 토스트(시터에게는 알림 없음). 채팅 · 시터 프로필과 같은 하트. Book care 검색에서 즐겨찾기 시터가 먼저. 이미 즐겨찾기면 묻지 않고 채워진 하트 "Favorite"만 보임. 이미 리뷰한 예약의 리뷰 화면에도 같은 하트 (FB-28) | 🤖 `completion` · SQL P | ➖ |
 
 ---
 
@@ -562,7 +563,7 @@
 | TRIP-5 | 인수인계 장소 = 견주 집 / 다른 곳 | 시터가 이동(목적지 = 견주 집 좌표) / 둘 다 이동 가능하지만 목적지 없음 → 지도 · ETA 없음, 거리로 도착 판정 안 함 | SQL `rls_smoke` L | ➖ |
 | TRIP-6 | 시터가 인수인계 사진을 올리고 사진 체크를 요청 (강아지 사진 / 동물 없는 방 / 차 안 크레이트 없음) | 강아지가 보이고 종이 맞으면 `ok`, 동물이 없거나 종이 다르면 `warning`, 차 사진은 크레이트나 안전벨트가 보여야 `ok`(모델이 "안전해 보임"이라고 해도 서버 규칙이 우선). 모델이 실패·20초 초과여도 200 `unchecked`로 저장. 예약의 시터가 아니거나 남의 사진이면 403 | 🤖 pytest `test_ai_handoff_check` · SQL `rls_smoke` L(행 읽기·쓰기 권한) · **차 안 크레이트 감지는 진짜 사진으로 확인 대기 👤** | ➖ |
 | TRIP-7 | Profile → Map pin for trips → **Use my current location** | 버튼을 누르기 전에는 위치를 읽지 않고, **화면에는 "Use my current location" 버튼과 한 줄 안내만 보임(이미 저장된 핀의 상태 · 동네 · 지도 링크 · 용도는 숨김 — 데모 계정의 옛 핀 같은 엉뚱한 장소가 먼저 보이지 않게)**. 한 번 누르면 브라우저 권한 창(이미 허용이면 바로). 읽는 동안 상태 줄이 **"📡 Reading your location…"**, 읽으면 **초록 강조 "✅ Pin set from your location. Tap Save to keep it."** + 토스트 **"Location found 📍 Tap Save to keep it"** + 버튼이 **"Read my location again"**으로 바뀜(같은 화면, 모순되는 두 줄 없음). Save하면 저장. 위치를 읽은 뒤에만 **"📍 Near {동네, 도시} · {우편번호 앞 3자리}"**(예: Trinity Bellwoods, Toronto · M6J — 역지오코딩, 번지수 없음, 우편번호는 뭉갠 좌표라 뒤 3자리는 안 보여 줌), **Open in Google Maps** 링크로 핀 위치를 직접 확인, **"What it's for: …"** 한 줄로 핀의 용도(오너: 트립 지도 · ETA · 내 주변 시터 찾기 / 시터: 오너 집으로 가는 트립 · 오너가 가까운 시터를 찾음, 오너는 반올림한 거리만 보고 핀 · 주소는 안 봄)를 보여 줌. 저장하면 토스트가 **"Pin saved near {동네}"**. 이름을 못 찾으면 "We couldn't name this spot — check it on the map" 브라우저가 거절하면 "Location is off for Goldito…" 안내, 핀은 그대로 위치를 읽으면 **Home address**에도 "거리명, 도시, 우편 앞 3자리"가 자동으로 채워짐(집 번호는 사람이 덧붙임, 예: Dundas St W, Toronto, M6J) | 🤖 `home-location.spec.ts` + pytest `test_geo` (reverse) · 실제 폰 👤 | ➖ |
-| TRIP-8 | 주소를 새로 쓰거나 고치고 Save | 토스트에 한 줄 "Profile saved ✅ · Pin placed near {동네, 도시}". 주소를 못 찾거나 조회가 안 되면 "We couldn't place that address on the map — use your current location for the pin"이고 옛 핀은 지워짐. 주소를 안 건드리면 조회하지 않고 핀 유지. 같은 방문에 현재 위치로 찍은 핀은 주소 조회로 덮어쓰지 않음 | 🤖 `home-location.spec.ts` + pytest `test_geo` | ➖ |
+| TRIP-8 | 주소를 새로 쓰거나 고치고 Save | 토스트에 한 줄 "Profile saved · Pin placed near {동네, 도시}". 주소를 못 찾거나 조회가 안 되면 "We couldn't place that address on the map — use your current location for the pin"이고 옛 핀은 지워짐. 주소를 안 건드리면 조회하지 않고 핀 유지. 같은 방문에 현재 위치로 찍은 핀은 주소 조회로 덮어쓰지 않음 | 🤖 `home-location.spec.ts` + pytest `test_geo` | ➖ |
 | TRIP-9 | 가상 운전(Simulate the drive)의 경로 | 출발 = 이동하는 쪽 집, 매 단계 목적지에 가까워지고, 마지막 점은 목적지 약 60 m 앞(150 m 도착 규칙 안) | 🤖 `location.spec.ts` | ➖ |
 | TRIP-10 | 견주가 인수인계 2시간 전부터 예약 상세 **Start trip** → 동의 화면 → **Simulate the drive (demo)** | 동의 화면이 먼저 뜨고 그 전에는 trip이 만들어지지 않음. 시작하면 Trip 화면: "Sharing your location with Chloe until you arrive" 배너, "ETA 7:42 AM · 3.2 km", 지도(🚗 · 📍, ± 버튼, © OpenStreetMap contributors). 약 30초 뒤 "You've arrived 🚗", 배너가 사라지고 **Chloe's place**(주소 · Visitor parking · 로비 안내) | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-11 | 동의 화면에서 **Cancel** (또는 Close) | 위치도 trip도 시작되지 않고 예약 상세에 머묾 | 🤖 `transit.spec.ts` | ➖ |
@@ -634,7 +635,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | PHOTO-1 | (DB) 견주가 돌봄 중인 펫에 `request_photo` → 다시 한 번 | 열린 요청 1개(같은 예약 · 펫에 하나만, 두 번째는 같은 요청을 돌려줌), 시터에게 `photo_request` 알림 1개 "{견주} asked for a photo of {펫} 📷". 돌봄 중이 아닌 펫은 `not_in_care`, 남의 펫은 `not_allowed`, 표에 직접 쓰기 · 시터가 손으로 닫기는 막힘 | SQL `rls_smoke` 014 | 자동 통과 대기(CI) |
 | PHOTO-2 | (DB) 시터가 그 펫의 **나만 보기** 사진 → **공유** 사진 | 나만 보기는 요청을 그대로 둠. 공유 사진이 요청을 `fulfilled`로(`fulfilled_post_id`), 견주에게 "Here's the photo of {펫} you asked for 📷" **하나만**(같은 사진의 `feed_post` 알림은 안 감). 그 뒤 견주는 다시 요청 가능 | SQL `rls_smoke` 014 | 자동 통과 대기(CI) |
-| PHOTO-3 | 견주 → Feed → 돌봄 중인 펫(Max) → **📷 Request photo** → 새로고침 → 집에 있는 펫(Mochi) | 토스트 "Asked {시터} for a photo 📷", 버튼이 **Requested · waiting for a photo**(비활성)로 바뀌고 새로고침해도 그대로. 집에 있는 펫에는 버튼 없음. 요청이 답을 받으면(`photo_request_fulfilled` 알림) 피드가 새 사진을 다시 불러오고 버튼이 돌아옴 | 🤖 `photo-request.spec.ts` | ✅ 2026-10-15 Minsik (두 브라우저 · 로컬 앱 + 호스팅 DB, 새로고침 없이) |
+| PHOTO-3 | 견주 → Feed → 돌봄 중인 펫(Max) → **📷 Request photo** → 새로고침 → 집에 있는 펫(Mochi) | 토스트 "Asked {시터} for a photo", 버튼이 **Requested · waiting for a photo**(비활성)로 바뀌고 새로고침해도 그대로. 집에 있는 펫에는 버튼 없음. 요청이 답을 받으면(`photo_request_fulfilled` 알림) 피드가 새 사진을 다시 불러오고 버튼이 돌아옴 | 🤖 `photo-request.spec.ts` | ✅ 2026-10-15 Minsik (두 브라우저 · 로컬 앱 + 호스팅 DB, 새로고침 없이) |
 | PHOTO-4 | 시터 → Home (견주가 Max 사진을 요청한 상태) → 배너 **📷 {견주} asked for a photo of Max — tap to share** → Max 피드 → **+ Photo** 로 공유 → Home | 배너 탭(또는 벨의 `photo_request` 알림)이 `/sitter/feed/{펫}`를 연다. 공유 사진이 요청을 끝내고 견주에게는 `photo_request_fulfilled` 알림 하나만, Home에 돌아오면 배너 없음. 새 요청은 Home을 떠나지 않아도 배너로 보인다(알림 수신 때 다시 읽음) | 🤖 `photo-request.spec.ts` | ✅ 2026-10-15 Minsik (두 브라우저 · 로컬 앱 + 호스팅 DB, 새로고침 없이) |
 | PHOTO-5 | 견주 → Home (요청이 답을 받은 뒤) | `photo_request_fulfilled` 알림이 `feed_post`처럼 Home 라이브 카드(📷)·Diary Live 새로고침·벨 상세(사진이 있으면 **See in Feed**)로 보이고, 누르면 그 펫의 Feed | 🤖 `photo-request.spec.ts` | ✅ 2026-10-15 Minsik (두 브라우저 · 로컬 앱 + 호스팅 DB, 새로고침 없이) |
 
@@ -876,7 +877,7 @@
 | CHAT-20 | 첫 만남 쌍: 시터 → 채팅(오너의 요청 카드) → 푸터 **Next** → **Pick a time** → 장소 · 시간 → Send / 오너 → 푸터 **Accept** → 바로 **Done, we met**(시간 전이면 한 번 더 확인, #229) | 푸터는 **지금 내 차례의 한 가지**만(아니면 "Waiting for …"). **Meet & Greet 카드**가 날짜 홀드 · 제안 · 수락 · Done을 DB에서 읽어 그리고, 한 줄로 접힘("Met ✓"). 건너뛰기 · 시간 바꾸기 · 거절 · 캘린더 · Google Meet 링크는 카드 안에서(기존 RPC) | 🤖 `chat` | 사람 확인 대기 · 실제 Google Meet 링크는 3B.11 변수가 있는 호스팅 DB에서 |
 | CHAT-21 | Meet & Greet 뒤(반복 쌍은 요청 직후): 오너 푸터 **I'd like to book** → 시트(펫 · 시간 · 체크리스트 · 가격) → 확인 / 시터 푸터 **I accept** | **Agreement 카드**에 두 줄(오너 ✓ / 시터 ✓), 순서 자유, 둘 다 있으면 "Booked, you both agreed ✓" 한 줄로 접힘. 한쪽만 눌렀을 때 부킹은 요청 상태, **결제 버튼 없음** | 🤖 `chat` · SQL `rls_smoke` 014o | 사람 확인 대기 |
 | CHAT-22 | **(수수료 부분은 #265로 없어짐)** 둘 다 동의한 뒤: 시터 푸터 **Send final quote** (수수료는 카드에서 추가) → 오너 수수료 Accept/Decline → 푸터 **Confirm quote** → **Pay $…** → Checkout(서명 · 데모 결제) | 최종 견적이 **확인되어야** 오너에게 Pay가 나옴(그 전에는 "Waiting for …"). **Payment 카드**는 총액과 "Held until the stay ends"(결제 뒤 "Paid"), 카드를 눌러도 Checkout으로. Checkout 총액 = 카드 총액(수락한 수수료 포함) = 낸 금액. 카드 정보 없음 | 🤖 `chat` · `checkout` · SQL `rls_smoke` 014o | 사람 확인 대기 |
-| CHAT-23 | 이미 만난 쌍의 채팅 | 푸터에 **Next**가 없고 Meet & Greet 카드도 없음, 진행 원은 3번째(Confirm)에서 시작하며 Meet은 체크됨 | 🤖 `chat` | 사람 확인 대기 |
+| CHAT-23 | 이미 만난 쌍의 채팅 | 푸터에 **Next**가 없고 Meet & Greet 카드도 없음, 진행 원은 3번째(Confirm)에서 시작하며 M&G는 체크됨 | 🤖 `chat` | 사람 확인 대기 |
 | CHAT-24 | 오너가 "How much would it be?"처럼 가격을 물은 뒤 시터가 채팅을 열기, 또는 시터가 "Shall we book it?"이라고 한 뒤 오너가 열기 | 말 칩 줄 맨 앞에 **번개 아이콘이 붙은 행동 칩**(시터 `Send quote`, 오너 `I'd like to book` 등)이 한 개 나온다. 누르면 푸터나 카드가 하는 것과 같은 시트가 **열릴 뿐** 아무것도 저장되지 않고, 칩은 사라진다(눌러서 확정하는 것은 시트 안). 서버가 가리켜도 **이 화면에서 지금 불가능한 행동**(예: 확정 전 `pay`)은 안 나오고, 행동이 없으면 말 칩만. 코드가 만든 가능한 행동 목록(`get_booking_stages`의 단계 + 카드 상태) 안에서만 고르고 확신도 0.7 미만 · 단계를 못 읽음 · 모델 장애면 없음 | 🤖 `chat` · pytest `test_ai_chat` | 사람 확인 대기 · 실제 모델 응답은 배포 앱에서 |
 | CHAT-25 | 오너와 시터의 AI가 따로: 시터가 오너의 첫 글(Stay 카드와 "Can you take Max?")에 칩 → 초안 / 오너가 시터 답 뒤에 칩 → 초안 | 두 쪽이 **각자의 프롬프트와 입력**을 씀. 시터의 **첫 답은 인사와 자기소개**("Hi Robert, I'm Chloe …")이고 **금액이 없음**. 금액(견적, 요금)은 오너가 돈을 물었거나 채팅에 견적 카드가 있을 때만 시터 쪽에 들어가고, **오너 쪽은 요금 · 정책 · 가용성을 못 보고** 채팅에 보이는 견적만 봄. 오너 초안은 "I can host" · "my place" 같은 호스트 말이 없고 **맡기고 찾는 쪽은 오너**(시터가 "I'll pick up"이라고 쓰거나 오너가 "you drop off"라고 쓴 초안은 거절되고 다시 씀). 직전 메시지(양쪽)와 거의 같은 초안도 거절. 펫에 없는 종의 이모지(개 둘에 고양이)도 거절. 모델은 `MODEL_CHAT_OWNER` / `MODEL_CHAT_SITTER`(초안)와 `MODEL_CHAT_CHIPS`(칩), 모두 기본 Super(비면 `MODEL_FAST`) | 🤖 pytest `test_ai_chat` · `test_nebius` | 사람 확인 대기 · 실제 모델로 오너와 시터를 나란히(`?view=split`) 4턴 이상 눌러서 말투 · 반복 · 역할을 읽어야 함 |
 | CHAT-26 | 칩 요청이 실패하거나 연결이 끊김, 로그 | Supabase 연결이 끊겨도 `chat-chips`는 200과 기본 칩(채팅 자체를 못 읽으면 한 번 다시 시도한 뒤 503). 칩 · 초안마다 서버 로그 한 줄 `chat_ai {...}`(쪽 · 상태 · source model/fallback · 버려진 이유 · 칩 문구 · 초안 문구): 이름은 `{NAME}`으로 가려지고 id는 없음 | 🤖 pytest `test_ai_chat` · 🤖 `chat` | 사람 확인 대기 |
@@ -1043,6 +1044,16 @@
 | TAMA-17 | 시터 Home에서 **Feed**, **Poop**을 누름 (오너 쪽은 알림이 오면) | **Feed**: 펫이 옆을 보고 서서 **빨간 밥그릇에 얼굴을 박고** 먹음(약 3~4초, 사료가 줄어들고) 끝나면 그릇이 사라지고 다시 돌아다님. **Poop**: 펫이 **쪼그려 앉는 자세**를 하고 뒤쪽 바닥에 **응가가 생김**, 펫이 가고 나서도 약 6초 뒤 깜빡이며 **치워짐**. 졸린(자는) 펫은 깨우지 않고 그대로 잠. 밥을 안 먹었거나(none) 응가를 못 했다는(none) 기록에는 안 나옴. 오너 화면은 알림 뒤 20초 안에 불러온 기록이면 같은 모습을 봄 | 🤖 `pet-behavior` · `pet-scene` · `pet-room-sitter` | 사람이 두 브라우저로 한 번 (밥그릇 · 응가 모양, 타이밍) |
 | TAMA-18 | 시터: **Nap** 누르기 → **Awake** 누르기 (`015d`) | Nap을 누르면 펫이 바로 엎드려 자고(Sleepy, Z) 버튼이 **☀️ Awake**로 바뀌어 **Awake를 누를 때까지 계속 잠**. Awake를 누르면 일어나 정면을 보고 다시 돌아다님, 버튼은 Nap으로 돌아옴. Awake 없이 4시간이 지난 낮잠은 저절로 끝남. 오너는 "Max is taking a nap 💤"과 "Max woke up ☀️" 알림을 받음 | 🤖 `pet-status` · `pet-room-sitter` · `pet-behavior` · SQL smoke `11.12b` | 호스팅 DB에 `015d` 적용 뒤 한 번 |
 
+### 3.43 헤더 일관성과 계정 사진 (HDR) · #287
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| :--- | :--- | :--- | :--- | :--- |
+| HDR-1 | 로그인 후 헤더 우측 확인 (Common-001) | 벨과 햄버거 메뉴 사이에 소형 계정 아바타 표시. 사진이 없으면 이니셜(Chloe는 "C"), 아바타를 누르면 `/profile`로 이동 | 🤖 `auth` | ➖ |
+| HDR-2 | 프로필 사진이 있는 계정으로 로그인 (Sitter-007) | 헤더 아바타 및 햄버거 메뉴 상단 프로필 영역에 이니셜 대신 실제 사진 노출 | 🤖 `auth` | ➖ |
+| HDR-3 | 로그인 · 회원가입 · 투어 화면 헤더 비교 (Common-006) | 로그인, 회원가입(`/signup`), 온보딩 투어(`/welcome/owner`, `/welcome/sitter`) 상단에 `BrandLogo` 일관되게 표시 | 🤖 `auth` · `welcome` | ➖ |
+| HDR-4 | 시터 피드 탭(`/sitter/feed`) 진입 (Muk) | 탭 루트 화면에 뒤로가기 화살표가 없음 | 🤖 `auth` | ➖ |
+| HDR-5 | 오너 온보딩 질문 스킵 (About 및 각 질문 화면) | About 화면 하단 "Skip questions" 및 우측 상단 "Skip all" 버튼으로 남은 모든 질문을 건너뛰고 요약(Summary)으로 바로 이동. 이후 질문 화면에서도 우측 상단 "Skip all" 제공 | 🤖 `owner-onboarding` | ➖ |
+
 ### 3.49 채팅 인계 순서: 트립 → 도착 → Received, 인사는 빠른 답장 (ARRIVE) · #250
 
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
@@ -1054,7 +1065,30 @@
 | ARRIVE-5 | 2시간 전, 여행자의 + 메뉴 | 꺼진 **Start trip** 옆에 "From 8:00 PM"(열리는 시각). 카드와 예약 화면에는 원래대로 "You can start the trip from …" | 🤖 `chat-trip` | ➖ |
 | ARRIVE-6 | 트립 없이 맡김 | 채팅에는 Received가 없고, **예약 화면의 Received**(2시간 전부터, 서버 규칙 그대로)로 처리 | **👤** | ➖ |
 
+### 3.50 Meet & Greet 요청 · 건너뛰기를 오너가 먼저, 양쪽이 답하기 (MGCHOICE) · #236 · *사전: 호스팅 DB에 `015f` 적용 뒤*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| MGCHOICE-1 | 처음 만나는 시터에게 채팅에서 **Request booking** → Send request | 요청 카드 바로 아래 Meet & Greet 카드에 **Request Meet & Greet** · **Skip Meet & Greet** 두 버튼이 나란히. 오너 푸터에는 "Waiting for …" 없음. 예약 화면의 카드도 같은 두 버튼. 날짜는 아직 홀드 안 됨 | 🤖 `chat` · `meet-greet` · SQL `rls_smoke` (015f) | 사람 확인 대기 |
+| MGCHOICE-2 | **Request Meet & Greet** → 시간 시트 | 맡기기 날 다음 날짜는 달력에서 못 고르고 +도 꺼짐. 맡기기 시각 이후면 "Pick a time before the drop-off." 와 Send 꺼짐(서버도 `meet_greet_too_late`) | 🤖 `meet-greet` · SQL | ➖ |
+| MGCHOICE-3 | 오너가 시간을 보낸 뒤 시터 | 카드에 **Accept**(채팅은 푸터) · Suggest another time · **Request skip** · 빨간 **Decline**. Accept나 Request skip을 누르면 그 자리에서 날짜 홀드(따로 Next 없음) | 🤖 `meet-greet` · SQL | ➖ |
+| MGCHOICE-4 | 아무 쪽이나 **Decline** | "Decline this request?" 시트 → 빨간 **Decline request** → 요청이 끝남(취소, `meet_greet_declined`), 상대에게 "… declined the booking request" 알림. 예약 화면에는 "Chloe declined this request." / "You declined this request." 시트를 닫으면 아무 일도 없음 | 🤖 `meet-greet` · SQL | ➖ |
+| MGCHOICE-5 | 한쪽이 건너뛰기를 요청한 뒤 다른 쪽 | **Accept skip**(채팅은 푸터) · **Request Meet & Greet**(새 시간) · 빨간 **Decline**. Accept skip이면 Meet & Greet 없이 Confirm 단계로, Request Meet & Greet이면 새 시간 제안으로 바뀜. 시터의 Accept skip도 첫 동의 | 🤖 `chat` · `meet-greet` · SQL | ➖ |
+| MGCHOICE-6 | 오너가 아무것도 안 고른 요청 | 시터는 예전처럼 **Next**로 먼저 날짜를 홀드할 수 있음(BOOK-9) | 🤖 `meet-greet` | ➖ |
+| MGCHOICE-7 | Checkout의 **Type your name to sign** | 처음엔 비어 있고 프로필 이름이 연한 힌트로만 보임, 자동완성 꺼짐. 이름을 쳐야 Pay가 켜짐 | 🤖 `checkout` | ➖ |
+
+### 3.51 단계 막대: M&G · Care, Scheduled · Trip · Skipped (STAGEBAR) · #237
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| STAGEBAR-1 | 채팅 위 · 예약 화면의 단계 막대 | 다섯 단계 **Request · M&G · Confirm · Pay · Care**(예전 Meet · Stay). 360 px 폭에서도 잘리지 않음. 스크린리더는 "Meet & Greet"로 읽음 | 🤖 `chat` · `meet-greet` | ➖ |
+| STAGEBAR-2 | Meet & Greet 시간이 합의됨(Meet & Greet set) | M&G 아래 작은 글씨 **Scheduled**. 화상이든 직접이든 같음(Meet & Greet에는 트립이 없음) | 🤖 `meet-greet` | ➖ |
+| STAGEBAR-3 | 둘 다 건너뛰기에 동의 | M&G 원에 ✓ 대신 **–**, 아래 **Skipped** | 🤖 `meet-greet` | ➖ |
+| STAGEBAR-4 | 결제 뒤 맡기기 전 / 맡기기 트립이 가는 중 | Care 아래 **Scheduled**, 트립이 출발해 끝날 때까지(도착 포함) **Trip**, 맡기면 사라짐. 채팅과 예약 화면 모두 | 🤖 `chat-trip` | 실제 트립 👤 |
+
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
+
+- **오너가 먼저 고른 Meet & Greet에는 시간 제한이 없다 (MGCHOICE):** 2일 · 3일 알림과 자동 취소(011l)는 시터의 첫 동의부터 센다. 오너가 시간을 보내거나 건너뛰기를 요청하고 시터가 답하지 않으면 그 요청은 시터가 답하거나 둘 중 하나가 취소할 때까지 그대로 남는다.
 
 - **하루 한도 (감사 2026-10-21):** AI 호출과 업로드 서명은 한 사람당 하루(UTC) 100번, 공유 데모 계정은 1000번. 숫자는 백엔드 메모리에만 있어서 Render가 다시 시작하면 0부터 센다. 테스트로 한도에 걸리면 다음 날까지 기다리거나 Render를 다시 시작한다.
 

@@ -51,7 +51,7 @@ export function OwnerReviewForm({ bookingId, sitterName, onSent, locked }: Props
     setError(null);
     try {
       await submitReview(bookingId, rating, full);
-      toast.show(`Thanks! ${sitterName} was told ⭐`);
+      toast.show(`Thanks! ${sitterName} was told`);
       onSent();
     } catch (e) {
       setError((e as Error).message);
