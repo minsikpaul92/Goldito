@@ -97,6 +97,7 @@ Build the app minimal. A screen should be understandable at a glance, without ex
 - **No tutorial-style text.** Do not restate what a label or button already says, and do not write "this is where you..." sentences. When a line is truly needed, keep it to one short sentence.
 - **Keep every string short.** Labels, buttons, empty states, errors, toasts, placeholders, and confirmations are a few words or one short sentence. Detailed or lengthy copy reads as AI-written and makes the app look cluttered.
 - **Hide optional inputs by default** (for example, a note box behind a "+" button) instead of showing every field with a description.
+- **Emoji: avoid the ones AI text uses all the time** (the list is in `DESIGN.md` §7.6, e.g. ✨ 🚀 💡 🔥 ✅ ❌ ⚠️ 🎯 📌 🌟 🎉 👋 🙌 💪 🤖 🔍 📝 ⭐ 💬). Other emoji are fine, buttons included; a line icon or plain words also work.
 - **Punctuation: never use em dashes or en dashes** in anything you write (UI copy, hints, placeholders, comments, docs, commit and PR text, replies). Use a comma, parentheses, or split the text into two sentences. For ranges write "1 to 4" or "1-4" with a hyphen.
 - Do not rewrite existing text in bulk. Fix a line when you touch it (surgical changes still apply).
 
