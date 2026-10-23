@@ -1,7 +1,7 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "../../components/ui/Icon";
 import { PhotoCropSheet } from "../PhotoCropSheet";
 import { Button } from "../ui/Button";
 import { Sheet } from "../ui/Sheet";
@@ -97,7 +97,7 @@ export function PetPhotosStep({ photos, onChange, onBusy }: Props) {
           testID="own-photo-add"
         >
           <View style={[styles.tile, styles.plus]}>
-            <Ionicons name="add" size={theme.icon.hero} color={theme.color.primary} />
+            <Icon name="add" size={theme.icon.hero} color={theme.color.primary} />
           </View>
         </Pressable>
       ) : null}

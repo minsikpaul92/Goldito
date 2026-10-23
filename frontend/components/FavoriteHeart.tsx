@@ -1,7 +1,7 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 
+import { Icon } from "./ui/Icon";
 import { listFavoriteSitterIds, setFavoriteSitter } from "../features/sitters/sitterApi";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -48,7 +48,7 @@ export function FavoriteHeart({ sitterId, sitterName }: { sitterId: string; sitt
       style={styles.row}
       testID="favorite-heart"
     >
-      <Ionicons name={favorite ? "heart" : "heart-outline"} size={theme.icon.md} color={theme.color.primary} />
+      <Icon name="heart" filled={favorite} size={theme.icon.md} color={theme.color.primary} />
       <Text style={styles.label}>{favorite ? "Favorite" : `Add ${sitterName} to favorites`}</Text>
     </Pressable>
   );

@@ -67,23 +67,23 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Skip | `own-skip` | 173 |
-| Button | Next | `own-next` | 175 |
-| Button | Next | `own-next` | 225 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 226 |
-| Banner | `error` | — | 238 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 278 |
-| Stepper | Age | `own-age` | 372 |
-| Button | Next | `own-next` | 385 |
-| SegmentedControl | — | `own-weight-unit` | 404 |
-| LinkButton | `source.label` | ``own-source-${i + 1}`` | 456 |
-| Button | Start | `own-next` | 461 |
-| TextButton | Skip questions | `own-skip-questions` | 462 |
-| Button | Add | `own-food-other-add` | 592 |
-| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 648 |
-| Banner | `error` | `own-error` | 705 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 706 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 724 |
+| TextButton | Skip | `own-skip` | 174 |
+| Button | Next | `own-next` | 176 |
+| Button | Next | `own-next` | 226 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 227 |
+| Banner | `error` | — | 239 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 279 |
+| Stepper | Age | `own-age` | 373 |
+| Button | Next | `own-next` | 386 |
+| SegmentedControl | — | `own-weight-unit` | 405 |
+| LinkButton | `source.label` | ``own-source-${i + 1}`` | 457 |
+| Button | Start | `own-next` | 462 |
+| TextButton | Skip questions | `own-skip-questions` | 463 |
+| Button | Add | `own-food-other-add` | 593 |
+| Button | locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location" | `own-use-location` | 654 |
+| Banner | `error` | `own-error` | 712 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 713 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 731 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -347,21 +347,24 @@ Public privacy page (10.11): reachable signed out — the Google OAuth consent s
 
 Role profile (phase-03 3.8): edit only. Settings, What's new and Privacy are reached from the menu.
 
-Shows: `DemoTools` · `AddressInput` · `OpenInMapsButton` · `SitterBadges` · `ProfilePhotoGallery` · `SitterAnswersSummary`
+Shows: `DemoTools` · `AddressInput` · `SitterBadges` · `ProfilePhotoGallery` · `SitterAnswersSummary`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 203 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 330 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 418 |
-| TextButton | Edit entry info | `profile-home-access` | 435 |
-| SegmentedControl | — | `profile-ai-mode` | 451 |
-| Button | Edit your answers | `profile-answers-edit` | 480 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 488 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 490 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 507 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 517 |
-| TextButton | + Add a spot | `profile-add-spot` | 541 |
+| EmptyState | Couldn't load your profile | — | 277 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 426 |
+| Button | locating ? "Locating…" : "📍 Use my current location" | `profile-use-location` | 457 |
+| Pressable | Remove item | ``profile-packing-remove-${i + 1}`` | 504 |
+| TextButton | + Add item | `profile-packing-add` | 517 |
+| Pressable | — | `profile-home-access` | 560 |
+| Pressable | ``Remove spot ${i + 1}`` | ``profile-spot-remove-${i + 1}`` | 593 |
+| TextButton | + Add another spot | `profile-add-spot` | 609 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 616 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 626 |
+| SegmentedControl | — | `profile-ai-mode` | 637 |
+| Button | Edit your answers | `profile-answers-edit` | 669 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 677 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 679 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
@@ -430,24 +433,25 @@ Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChange
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 151 |
-| EmptyState | Couldn't load this booking | — | 158 |
-| Tag | `b.label` | — | 256 |
-| TextButton | Suggest drop-off time | `suggest-drop_off` | 316 |
-| TextButton | Suggest pick-up time | `suggest-pick_up` | 321 |
-| TextButton | Change time or place | `change-booking` | 329 |
-| Tag | `a` | — | 358 |
-| Button | busy ? "Saving…" : "Next" | `interest-booking` | 386 |
-| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 401 |
-| TextButton | Decline | `decline-booking` | 409 |
-| Button | busy ? "Saving…" : "Received" | `handoff-received` | 420 |
-| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 430 |
-| TextButton | Cancel booking | `cancel-booking` | 449 |
-| Sheet | Cancel booking | `cancel-sheet` | 468 |
-| Button | Cancel booking | `cancel-confirm` | 474 |
-| Sheet | Decline request | `decline-sheet` | 512 |
-| Button | Decline request | `decline-confirm` | 518 |
-| TextButton | Suggest another time instead | `decline-suggest` | 557 |
+| EmptyState | Booking not found | — | 167 |
+| EmptyState | Couldn't load this booking | — | 174 |
+| Tag | `b.label` | — | 272 |
+| TextButton | Suggest drop-off time | `suggest-drop_off` | 332 |
+| TextButton | Suggest pick-up time | `suggest-pick_up` | 337 |
+| TextButton | Change time or place | `change-booking` | 345 |
+| CheckRow | `item` | ``pack-${item}`` | 359 |
+| Tag | `a` | — | 394 |
+| Button | busy ? "Saving…" : "Next" | `interest-booking` | 422 |
+| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 437 |
+| TextButton | Decline | `decline-booking` | 445 |
+| Button | busy ? "Saving…" : "Received" | `handoff-received` | 456 |
+| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 466 |
+| TextButton | Cancel booking | `cancel-booking` | 485 |
+| Sheet | Cancel booking | `cancel-sheet` | 504 |
+| Button | Cancel booking | `cancel-confirm` | 510 |
+| Sheet | Decline request | `decline-sheet` | 548 |
+| Button | Decline request | `decline-confirm` | 554 |
+| TextButton | Suggest another time instead | `decline-suggest` | 593 |
 
 ### `/sitter/bookings/[bookingId]/trip` — [app/sitter/bookings/[bookingId]/trip.tsx](../../frontend/app/sitter/bookings/[bookingId]/trip.tsx)
 
@@ -899,13 +903,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `label` | `testID` | 55 |
-| Pressable | ``${name}, ${role.toLowerCase()} account. Menu`` | `open-menu` | 70 |
-| Pressable | Close menu | `header-menu-close` | 97 |
-| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 108 |
-| Button | Sign out | `log-out-confirm` | 130 |
-| Button | Cancel | `log-out-cancel` | 131 |
-| Pressable | — | `log-out` | 151 |
+| Pressable | `label` | `testID` | 53 |
+| Pressable | ``${name}, ${role.toLowerCase()} account. Menu`` | `open-menu` | 68 |
+| Pressable | Close menu | `header-menu-close` | 95 |
+| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 106 |
+| Button | Sign out | `log-out-confirm` | 128 |
+| Button | Cancel | `log-out-cancel` | 129 |
+| Pressable | — | `log-out` | 149 |
 
 ### HeadsUpSection — [components/HeadsUpSection.tsx](../../frontend/components/HeadsUpSection.tsx)
 
@@ -1166,7 +1170,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | aria["aria-label"] | `testID` | 63 |
+| Pressable | aria["aria-label"] | `testID` | 61 |
 
 ### ScheduleSheet — [components/ScheduleSheet.tsx](../../frontend/components/ScheduleSheet.tsx)
 
@@ -1248,20 +1252,20 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `text` | `id` | 61 |
-| Sheet | Done | `place-done` | 91 |
-| Button | Done | `place-done` | 95 |
-| Button | Use this place | `place-use-address` | 109 |
-| CheckRow | 🏠 My home | `place-home` | 116 |
-| CheckRow | 📍 Current location | `place-here` | 117 |
-| TextButton | Open Profile | `place-open-profile` | 138 |
-| Sheet | Done | `stay-done` | 143 |
-| Button | Done | `stay-done` | 147 |
-| Stepper | Drop-off time | `search-drop_off-time` | 174 |
-| Stepper | Pick-up time | `search-pick_up-time` | 183 |
-| Sheet | Done | `pets-done` | 215 |
-| Button | Done | `pets-done` | 219 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 223 |
+| Pressable | `text` | `id` | 59 |
+| Sheet | Done | `place-done` | 89 |
+| Button | Done | `place-done` | 93 |
+| Button | Use this place | `place-use-address` | 107 |
+| CheckRow | 🏠 My home | `place-home` | 114 |
+| CheckRow | 📍 Current location | `place-here` | 115 |
+| TextButton | Open Profile | `place-open-profile` | 136 |
+| Sheet | Done | `stay-done` | 141 |
+| Button | Done | `stay-done` | 145 |
+| Stepper | Drop-off time | `search-drop_off-time` | 172 |
+| Stepper | Pick-up time | `search-pick_up-time` | 181 |
+| Sheet | Done | `pets-done` | 213 |
+| Button | Done | `pets-done` | 217 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 221 |
 
 ### SlotCalendar — [components/SlotCalendar.tsx](../../frontend/components/SlotCalendar.tsx)
 
@@ -1540,4 +1544,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-450 actions · 449 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+454 actions · 453 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

@@ -1,7 +1,7 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useRef } from "react";
 import { Platform, Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
 
+import { Icon } from "./ui/Icon";
 import { dayOfMonth, formatDay, formatMonth, monthGrid } from "../features/schedule/dates";
 import { DaySlot, SLOTS, SlotState, slotKey } from "../features/schedule/scheduleApi";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
@@ -169,7 +169,7 @@ export function SlotCalendar({
           style={[styles.navButton, !canGoPrev && styles.disabled]}
           testID="calendar-prev"
         >
-          <Ionicons name="chevron-back" size={theme.icon.sm} color={theme.color.primary} />
+          <Icon name="back" size={theme.icon.sm} color={theme.color.primary} />
         </Pressable>
         <Text accessibilityRole="header" style={styles.month} testID="calendar-month">
           {formatMonth(month)}
@@ -181,7 +181,7 @@ export function SlotCalendar({
           style={styles.navButton}
           testID="calendar-next"
         >
-          <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.primary} />
+          <Icon name="forward" size={theme.icon.sm} color={theme.color.primary} />
         </Pressable>
       </View>
 

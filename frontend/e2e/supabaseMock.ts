@@ -1587,7 +1587,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
           address: address(h),
           visitor_parking: h.location_type === "sitter_home" ? (sitter?.visitor_parking ?? null) : null,
           lobby_notes: h.location_type === "sitter_home" ? (sitter?.lobby_notes ?? null) : null,
-          packing_list: h.location_type === "sitter_home" ? (sitter?.packing_list ?? null) : null,
+          packing_list:
+            h.kind === "drop_off" ? (db.owner_profiles.find((p) => p.id === booking.owner_id)?.packing_list ?? []) : null,
         })),
     );
   }

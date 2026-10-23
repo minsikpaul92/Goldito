@@ -1,6 +1,6 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
 
+import { Icon } from "../../components/ui/Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
@@ -32,7 +32,7 @@ export function BigOption({ label, selected, badge, onPress, style, testID }: Pr
         <Text style={styles.label}>{label}</Text>
         {badge ? <Text style={styles.badge}>{badge}</Text> : null}
       </View>
-      {selected ? <Ionicons name="checkmark-circle" size={theme.icon.md} color={theme.color.primary} /> : null}
+      {selected ? <Icon name="selected" size={theme.icon.md} color={theme.color.primary} /> : null}
     </Pressable>
   );
 }

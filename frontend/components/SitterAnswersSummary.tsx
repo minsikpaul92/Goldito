@@ -25,13 +25,13 @@ export function SitterAnswersSummary({ sitterId }: { sitterId: string }) {
   const rows = QUESTIONS.flatMap((q, i) => {
     const a = draft.answers[q.key];
     const text = [choiceLabel(q, a?.choice), a?.answer.trim()].filter(Boolean).join(" · ");
-    return text ? [{ key: q.key, prompt: `${i + 1}. ${q.prompt}`, text }] : [];
+    return text ? [{ key: q.key, n: i + 1 as number | null, prompt: q.prompt, text }] : [];
   });
   for (const [i, c] of draft.custom.entries()) {
-    if (c.question.trim() && c.answer.trim()) rows.push({ key: `custom-${i}`, prompt: c.question.trim(), text: c.answer.trim() });
+    if (c.question.trim() && c.answer.trim()) rows.push({ key: `custom-${i}`, n: null, prompt: c.question.trim(), text: c.answer.trim() });
   }
   if (draft.availability.rules.length > 0) {
-    rows.push({ key: "availability", prompt: "When you can host", text: availabilitySummary(draft.availability) });
+    rows.push({ key: "availability", n: null, prompt: "When you can host", text: availabilitySummary(draft.availability) });
   }
   if (rows.length === 0) return null;
 
@@ -39,8 +39,15 @@ export function SitterAnswersSummary({ sitterId }: { sitterId: string }) {
     <View style={styles.list} testID="profile-answers-list">
       {rows.map((row) => (
         <View key={row.key} style={styles.row}>
-          <Text style={styles.prompt}>{row.prompt}</Text>
-          <Text style={styles.answer}>{row.text}</Text>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{row.n ?? "✓"}</Text>
+          </View>
+          <View style={styles.texts}>
+            <Text style={styles.prompt}>{row.prompt}</Text>
+            <View style={styles.answerBox}>
+              <Text style={styles.answer}>{row.text}</Text>
+            </View>
+          </View>
         </View>
       ))}
     </View>
@@ -50,7 +57,31 @@ export function SitterAnswersSummary({ sitterId }: { sitterId: string }) {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     list: { gap: theme.spacing.sm },
-    row: { gap: 2 },
+    row: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: theme.spacing.sm,
+      padding: theme.spacing.md,
+      borderRadius: theme.ui.radius.card,
+      backgroundColor: theme.color.blockMint,
+    },
+    badge: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.color.primary,
+    },
+    badgeText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primaryText },
+    texts: { flex: 1, gap: theme.spacing.xs },
+    answerBox: {
+      padding: theme.spacing.sm,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.color.surface,
+      borderWidth: 1,
+      borderColor: theme.color.border,
+    },
     prompt: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.textMuted },
     answer: { fontSize: theme.fontSize.body, lineHeight: theme.lineHeight.body, color: theme.color.text },
   });

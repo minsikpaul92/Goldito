@@ -1,6 +1,6 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "./Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
@@ -43,7 +43,7 @@ export function Stepper({
       style={({ pressed }) => [styles.button, !enabled && styles.disabled, pressed && enabled && styles.pressed]}
       testID={testID ? `${testID}-${id}` : undefined}
     >
-      <Ionicons name={icon} size={theme.icon.sm} color={theme.color.primary} />
+      <Icon name={icon} size={theme.icon.sm} color={theme.color.primary} />
     </Pressable>
   );
 

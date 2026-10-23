@@ -62,6 +62,8 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `015b_pet_medals.sql` | 11.12 (#184) | `pet_medals` (pet, booking, sitter, stay dates; one per pet and stay), read by the pet's owner and the sitter who gave it; written only by `award_pet_medal` (the booking's sitter, after the pick-up is done) |
 | `015d_wake_checkin.sql` | 11.12b (#184) | `care_checkins.kind` gains `wake` (no value): the sitter taps Awake when a napping pet wakes; `log_care_checkin` tells the owner "Max woke up ☀️" |
 | `015e_notification_prefs.sql` | Settings (#292) | `profiles.notification_prefs` (Trip updates · Daily notes and photos on, Tips and news off) set by `set_notification_pref(key, on)`; a `notifications` BEFORE INSERT trigger drops a notice whose family the person turned off (`trip_*`, `report_sent` · `feed_post` · `photo_request_fulfilled`, `tip` · `news`). Everything else, safety DANGER included, is never muted |
+| `015g_profile_address_details.sql` | Profile (#180) | `home_address_2` (unit, buzzer) and `home_postal_code` on `owner_profiles` and `sitter_profiles`, editable by the person; `full_address(details, street, postal)` builds the text, and `get_handoff_details` returns it as the drop-off / pick-up address |
+| `015h_owner_packing_list.sql` | Profile (#180) | `owner_profiles.packing_list` (up to 20 items, written by the owner); `get_handoff_details` returns it on the drop-off row for both parties, so the sitter ticks it at hand-over. `sitter_profiles.packing_list` is no longer used |
 
 Files after `003` are planned — numbers follow the work order in [phases/README.ko.md](../docs/plan/phases/README.ko.md) (product flow: [full-process.ko.md](../docs/plan/full-process.ko.md)). If the order changes, take the next free number.
 

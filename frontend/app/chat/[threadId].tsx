@@ -1,8 +1,8 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
+import { Icon } from "../../components/ui/Icon";
 import { AgreeSheet } from "../../components/AgreeSheet";
 import { ChatDeclineSheet } from "../../components/ChatDeclineSheet";
 import { BookingStageBar, hasStageBar, stageCaption } from "../../components/BookingStageBar";
@@ -374,7 +374,7 @@ export default function Chat() {
     {
       id: "meet",
       label: "Meet & Greet request",
-      icon: "people-outline",
+      icon: "people",
       enabled: !!booking && !!meetGreetPrimary(booking, header.myRole) && !!meetCard.current,
       onPress: () => meetCard.current?.primary(),
     },
@@ -383,7 +383,7 @@ export default function Chat() {
           {
             id: "quote",
             label: quoteKind === "final" ? "Final quote" : "Quote",
-            icon: "pricetag-outline" as const,
+            icon: "price" as const,
             enabled: !finished && (quoteKind === "final" ? !!finalStay : !!stay),
             onPress: () => setQuoting(quoteKind),
           },
@@ -394,7 +394,7 @@ export default function Chat() {
           {
             id: "quote-request",
             label: "Quote request",
-            icon: "chatbox-ellipses-outline" as const,
+            icon: "chat" as const,
             enabled: !finished && !!stay && !priced,
             onPress: () => {
               setText("Could you send me a quote for these dates?");
@@ -406,14 +406,14 @@ export default function Chat() {
     {
       id: "date",
       label: "Date change",
-      icon: "calendar-outline",
+      icon: "calendar",
       enabled: !!booking && ["requested", "confirmed"].includes(booking.status) && !(booking.dropOff?.completedAt && booking.pickUp?.completedAt),
       onPress: () => bump("handoff"),
     },
     {
       id: "trip",
       label: "Start trip",
-      icon: "car-outline",
+      icon: "car",
       enabled: !!booking && canStartTripNow(booking, header.myRole) && !arrivedForNext(booking, pairTrips),
       hint: tripOpensHint,
       onPress: () => bump("trip"),
@@ -423,7 +423,7 @@ export default function Chat() {
           {
             id: "received",
             label: "Received",
-            icon: "enter-outline" as const,
+            icon: "received" as const,
             // Same rule as the trip card (#250): only once the drop-off trip got there. With no trip at all, the
             // booking page keeps its Received.
             enabled: canReceiveNow(stayBooking) && !!stayBooking && arrivedForNext(stayBooking, pairTrips),
@@ -433,7 +433,7 @@ export default function Chat() {
           {
             id: "returned",
             label: "Returned",
-            icon: "exit-outline" as const,
+            icon: "returned" as const,
             enabled: canReturnNow(stayBooking),
             onPress: () => bump("returned"),
           },
@@ -444,7 +444,7 @@ export default function Chat() {
           {
             id: "photo",
             label: "Photo request",
-            icon: "camera-outline" as const,
+            icon: "camera" as const,
             enabled: !!booking && inCare(booking),
             onPress: () => bump("photo"),
           },
@@ -653,7 +653,7 @@ export default function Chat() {
               style={[styles.chip, styles.actionChip]}
               testID="chat-action-chip"
             >
-              <Ionicons name="flash-outline" size={14} color={theme.color.primaryText} />
+              <Icon name="quick" size={14} color={theme.color.primaryText} />
               <Text style={[styles.chipText, styles.actionChipText]}>{shownAction.label}</Text>
             </Pressable>
           ) : null}
@@ -681,7 +681,7 @@ export default function Chat() {
           style={styles.plusButton}
           testID="chat-plus"
         >
-          <Ionicons name="add" size={24} color={theme.color.primary} />
+          <Icon name="add" size={24} color={theme.color.primary} />
         </Pressable>
         <TextInput
           ref={input}
@@ -715,7 +715,7 @@ export default function Chat() {
           style={[styles.sendButton, (sending || !text.trim()) && styles.sendOff]}
           testID="chat-send"
         >
-          <Ionicons name="arrow-up" size={20} color={theme.color.primaryText} />
+          <Icon name="send" size={20} color={theme.color.primaryText} />
         </Pressable>
       </View>
       {owner && booking ? (

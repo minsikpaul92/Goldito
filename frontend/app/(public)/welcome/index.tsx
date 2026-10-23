@@ -1,7 +1,7 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "../../../components/ui/Icon";
 import { BrandLogo } from "../../../components/BrandLogo";
 import { Screen } from "../../../components/ui/Screen";
 import { TextButton } from "../../../components/ui/TextButton";
@@ -33,7 +33,7 @@ export default function WelcomeLanding() {
           style={({ pressed }) => [styles.roleCard, pressed && styles.pressed]}
           testID="welcome-choose-owner"
         >
-          <Ionicons name="home-outline" size={theme.icon.md} color={theme.color.primary} />
+          <Icon name="home" size={theme.icon.md} color={theme.color.primary} />
           <View style={styles.roleText}>
             <Text style={styles.roleTitle}>Pet owner</Text>
             <Text style={styles.roleBody}>
@@ -50,7 +50,7 @@ export default function WelcomeLanding() {
           style={({ pressed }) => [styles.roleCard, pressed && styles.pressed]}
           testID="welcome-choose-sitter"
         >
-          <Ionicons name="heart-outline" size={theme.icon.md} color={theme.color.primary} />
+          <Icon name="heart" size={theme.icon.md} color={theme.color.primary} />
           <View style={styles.roleText}>
             <Text style={styles.roleTitle}>Pet sitter</Text>
             <Text style={styles.roleBody}>
