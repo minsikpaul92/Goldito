@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { loadPetPhotos, petPhotoThumb } from "../../features/ownerOnboarding/petPhotosApi";
+import { PetPhoto, loadPetPhotos, petPhotoThumb } from "../../features/ownerOnboarding/petPhotosApi";
 import { describePet } from "../../features/pets/petFormat";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { tokens } from "../../theme/tokens";
 import { Pet } from "../../types/db";
 import { Icon } from "../ui/Icon";
+import { PhotoViewerSheet } from "../PhotoViewerSheet";
 import { HomeArt } from "./HomeArt";
 import { HOME_TEXT } from "./homeType";
 
@@ -24,19 +26,24 @@ function facts(pet: Pet): string {
 export function PetTile({ pet, index, onPress }: { pet: Pet; index: number; onPress: () => void }) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const [cover, setCover] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<PetPhoto[]>([]);
+  const [viewing, setViewing] = useState(false);
 
-  useEffect(() => {
-    let live = true;
-    loadPetPhotos(pet.id)
-      .then((photos) => live && setCover(photos[0]?.publicId ?? null))
-      .catch(() => {});
-    return () => {
-      live = false;
-    };
-  }, [pet.id]);
+  // Read again whenever Home comes back into view: a photo added on the pet screen shows up here.
+  useFocusEffect(
+    useCallback(() => {
+      let live = true;
+      loadPetPhotos(pet.id)
+        .then((list) => live && setPhotos(list))
+        .catch(() => {});
+      return () => {
+        live = false;
+      };
+    }, [pet.id]),
+  );
 
   return (
+    <>
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${pet.name}, ${describePet(pet)}`}
@@ -44,13 +51,21 @@ export function PetTile({ pet, index, onPress }: { pet: Pet; index: number; onPr
       style={({ pressed }) => [styles.tile, { backgroundColor: PET_GROUNDS[index % PET_GROUNDS.length] }, pressed && styles.pressed]}
       testID={`pet-card-${pet.name}`}
     >
-      <View style={styles.face}>
-        {cover ? (
-          <Image source={{ uri: petPhotoThumb(cover, 104) }} style={styles.photo} testID={`pet-card-photo-${pet.name}`} accessibilityIgnoresInvertColors />
+      {/* The face opens the pet's photos big; without a photo it is just the tile (Figma slot: see HomeArt). */}
+      <Pressable
+        accessibilityRole={photos.length > 0 ? "button" : undefined}
+        accessibilityLabel={`${pet.name}'s photos`}
+        disabled={photos.length === 0}
+        onPress={() => setViewing(true)}
+        style={styles.face}
+        testID={`pet-card-face-${pet.name}`}
+      >
+        {photos.length > 0 ? (
+          <Image source={{ uri: petPhotoThumb(photos[0].publicId, 104) }} style={styles.photo} testID={`pet-card-photo-${pet.name}`} accessibilityIgnoresInvertColors />
         ) : (
           <HomeArt name="paw" size={30} color={theme.color.text} />
         )}
-      </View>
+      </Pressable>
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>
           {pet.name}
@@ -66,6 +81,9 @@ export function PetTile({ pet, index, onPress }: { pet: Pet; index: number; onPr
         ) : null}
       </View>
     </Pressable>
+    {/* Outside the tile: a tap inside the sheet must not reach the tile's own press. */}
+    <PhotoViewerSheet visible={viewing} title={pet.name} photos={photos} onClose={() => setViewing(false)} testID={`pet-photos-${pet.name}`} />
+    </>
   );
 }
 

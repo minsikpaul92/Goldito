@@ -1077,7 +1077,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | `title` | `testID` | 23 |
+| Sheet | `title` | `testID` | 88 |
+| Pressable | ``Photo ${i + 1} of ${photos.length}`` | **none** | 112 |
 
 ### ProfilePhotoGallery — [components/ProfilePhotoGallery.tsx](../../frontend/components/ProfilePhotoGallery.tsx)
 
@@ -1323,7 +1324,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 40 |
+| Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 47 |
+| Pressable | ``${pet.name}'s photos`` | ``pet-card-face-${pet.name}`` | 55 |
 
 ### StayHero — [components/home/StayHero.tsx](../../frontend/components/home/StayHero.tsx)
 
@@ -1563,4 +1565,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-461 actions · 460 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+463 actions · 461 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).

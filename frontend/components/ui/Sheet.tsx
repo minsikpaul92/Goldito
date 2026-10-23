@@ -1,5 +1,7 @@
-import { ReactNode, useEffect, useRef } from "react";
-import { Animated, Easing, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Easing, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
@@ -19,15 +21,51 @@ type Props = {
   testID?: string;
 };
 
+/** Drag the handle or title this far (px) or this fast (px/ms) and the sheet goes: down closes, up fills the screen. */
+const DRAG_DISTANCE = 70;
+const DRAG_VELOCITY = 0.6;
+
 /**
- * Bottom sheet with a visible Close; tapping the backdrop closes it too. No drag to
- * dismiss (DESIGN.md §6 Sheet, §7.7). Inside the desktop frame it stays in the phone,
- * because the app runs in the frame's iframe.
+ * Bottom sheet with a visible Close; tapping the backdrop closes it too. Grab the handle or the title bar:
+ * pull down to close (from full screen, down first goes back to the normal height), pull up for full screen.
+ * Inside the desktop frame it stays in the phone, because the app runs in the frame's iframe.
  */
 export function Sheet({ visible, title, onClose, children, footer, scrollbar, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const reduce = useReduceMotion();
+  const insets = useSafeAreaInsets();
+  const [full, setFull] = useState(false);
+  const dragY = useRef(new Animated.Value(0)).current;
+  const fullRef = useRef(full);
+  fullRef.current = full;
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    if (!visible) {
+      setFull(false);
+      dragY.setValue(0);
+    }
+  }, [visible, dragY]);
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        // Only a mostly vertical drag takes over, so a tap on Close still works.
+        onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx),
+        onPanResponderMove: (_e, g) => dragY.setValue(Math.max(-40, g.dy)),
+        onPanResponderRelease: (_e, g) => {
+          const down = g.dy > DRAG_DISTANCE || g.vy > DRAG_VELOCITY;
+          const up = g.dy < -DRAG_DISTANCE / 2 || g.vy < -DRAG_VELOCITY;
+          dragY.setValue(0);
+          if (down) {
+            if (fullRef.current) setFull(false);
+            else closeRef.current();
+          } else if (up) setFull(true);
+        },
+        onPanResponderTerminate: () => dragY.setValue(0),
+      }),
+    [dragY],
+  );
   // The sheet rises from the bottom edge while the backdrop fades (audit F43); Reduce motion skips the rise.
   const rise = useRef(new Animated.Value(0)).current;
   const reduceRef = useRef(reduce);
@@ -66,20 +104,27 @@ export function Sheet({ visible, title, onClose, children, footer, scrollbar, te
           style={StyleSheet.absoluteFill}
           testID={testID ? `${testID}-backdrop` : undefined}
         />
+        <Animated.View style={[styles.dragWrap, full && styles.dragFull, { transform: [{ translateY: dragY }] }]}>
         <Animated.View
           accessibilityViewIsModal
           role="dialog"
           aria-modal
           aria-label={title}
-          style={[styles.sheet, riseStyle]}
+          style={[styles.sheet, full && styles.sheetFull, full && { paddingTop: insets.top }, riseStyle]}
           testID={testID}
         >
-          <View style={styles.handle} />
-          <View style={styles.header}>
-            <Text accessibilityRole="header" style={styles.title}>
-              {title}
-            </Text>
-            <TextButton label="Close" onPress={onClose} testID={testID ? `${testID}-close` : undefined} />
+          <View
+            {...pan.panHandlers}
+            {...(Platform.OS === "web" ? ({ dataSet: { gestureOwner: "true" } } as object) : null)}
+            testID={testID ? `${testID}-grab` : undefined}
+          >
+            <View style={styles.handle} />
+            <View style={styles.header}>
+              <Text accessibilityRole="header" style={styles.title}>
+                {title}
+              </Text>
+              <TextButton label="Close" onPress={onClose} testID={testID ? `${testID}-close` : undefined} />
+            </View>
           </View>
           <ScrollView
             contentContainerStyle={styles.body}
@@ -89,6 +134,7 @@ export function Sheet({ visible, title, onClose, children, footer, scrollbar, te
             {children}
           </ScrollView>
           {footer ? <View style={styles.footer}>{footer}</View> : null}
+        </Animated.View>
         </Animated.View>
       </View>
     </Modal>
@@ -102,16 +148,17 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "flex-end",
       backgroundColor: theme.color.overlay,
     },
+    dragWrap: { width: "100%", maxWidth: 480, alignSelf: "center" },
+    dragFull: { height: "100%" },
     sheet: {
       maxHeight: "90%",
       width: "100%",
-      maxWidth: 480,
-      alignSelf: "center",
       backgroundColor: theme.color.surface,
       borderTopLeftRadius: theme.radius.xl,
       borderTopRightRadius: theme.radius.xl,
     },
-    // Grab handle: shows it's a sheet over the screen (no drag to dismiss, §7.7).
+    sheetFull: { maxHeight: "100%", flex: 1, borderTopLeftRadius: 0, borderTopRightRadius: 0 },
+    // Grab handle: pull it down to close, up for full screen.
     handle: { alignSelf: "center", width: 40, height: 5, borderRadius: 3, backgroundColor: theme.color.border, marginTop: theme.spacing.sm },
     header: {
       flexDirection: "row",
