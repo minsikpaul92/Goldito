@@ -65,7 +65,9 @@ def test_a_value_that_is_not_in_the_text_is_dropped_not_saved():
         answers={"d4": fact("3", "she loves thunder")},  # a quote that was never said
     )
     facts = validate_facts(raw, TEXT, OPTIONS)
-    assert facts.model_dump() == {"breed": None, "age_years": None, "weight_kg": None, "foods": [], "answers": {}}
+    assert facts.model_dump() == {
+        "breed": None, "age_years": None, "weight_kg": None, "foods": [], "answers": {}, "notes": {},
+    }
 
 
 def test_a_fact_with_no_quote_is_dropped():
@@ -87,6 +89,44 @@ def test_a_null_quote_from_the_model_is_read_as_no_quote_not_as_a_broken_answer(
     facts = validate_facts(raw, TEXT, OPTIONS)
     assert facts.breed is None and facts.age_years is None and facts.answers == {}
     assert [f.value for f in facts.foods] == ["chicken"]
+
+
+NUMBERED = (
+    "One, Mumu is a Bichon Frise. Two, she is four years old. Three, about nine pounds. Four, she eats chicken free kibble. "
+    "Five, allergic to chicken. Six, she is a sweet, greedy girl. Seven, she loves squeaky toys. Eight, she hates baths. "
+    "Nine, be careful with the stairs."
+)
+
+
+def test_notes_are_the_owners_own_words_kept_only_when_they_are_in_the_text():
+    raw = RawFacts.model_validate(
+        {
+            "notes": {
+                "eats": {"quote": "she eats chicken free kibble"},
+                "likes": {"quote": "she loves squeaky toys"},
+                "dislikes": {"quote": "she loves baths"},  # reworded: not in the text
+                "careful": {"quote": None},
+                "mood": {"quote": "she is a sweet, greedy girl"},  # not an item of the list
+            }
+        }
+    )
+    facts = validate_facts(raw, NUMBERED, {})
+    assert {k: v.model_dump() for k, v in facts.notes.items()} == {
+        "eats": {"value": "she eats chicken free kibble", "quote": "she eats chicken free kibble"},
+        "likes": {"value": "she loves squeaky toys", "quote": "she loves squeaky toys"},
+    }
+
+
+def test_a_note_that_only_says_there_is_nothing_is_dropped():
+    text = "Nine, nothing special. Eight, none."
+    raw = RawFacts.model_validate({"notes": {"careful": {"quote": "nothing special"}, "dislikes": {"quote": "None."}}})
+    assert validate_facts(raw, text, {}).notes == {}
+
+
+def test_a_note_longer_than_the_limit_is_dropped():
+    long = " ".join(["word"] * 80)
+    raw = RawFacts.model_validate({"notes": {"personality": {"quote": long}}})
+    assert validate_facts(raw, long, {}).notes == {}
 
 
 def test_an_answer_outside_the_asked_questions_or_the_options_is_dropped():

@@ -29,6 +29,7 @@ class RawFacts(BaseModel):
     weight_kg: RawFact | None = None
     foods: list[RawFact] = []
     answers: dict[str, RawFact] = {}
+    notes: dict[str, RawFact] = {}
 
 
 class Fact(BaseModel):
@@ -42,8 +43,15 @@ class Facts(BaseModel):
     weight_kg: Fact | None = None
     foods: list[Fact] = []
     answers: dict[str, Fact] = {}
+    # What the owner said for the free-text items of the numbered list, in their own words (the key says which item).
+    notes: dict[str, Fact] = {}
 
 
+# The free-text items of the list the owner reads from: what the pet eats, what it is like, likes, dislikes, cautions.
+NOTE_KEYS = ("eats", "personality", "likes", "dislikes", "careful")
+MAX_NOTE = 300
+# What an owner says for an item that has nothing to tell: not a note.
+EMPTY_NOTES = {"nothing", "nothing special", "nothing in particular", "none", "no", "nope", "not really", "n a", "na"}
 MAX_FOODS = 8
 MAX_BREED = 60
 MAX_FOOD = 40
@@ -153,5 +161,12 @@ def validate_facts(raw: RawFacts, text: str, options: dict[str, set[str]]) -> Fa
         value = str(answer.value)
         if value in allowed and quote_in(answer.quote, text):
             facts.answers[key] = Fact(value=value, quote=answer.quote.strip())
+
+    # Notes are the owner's own words for an item, so the quote is the value. It has to be in the text.
+    for key in NOTE_KEYS:
+        note = raw.notes.get(key)
+        words = " ".join(note.quote.split()) if note else ""
+        if words and len(words) <= MAX_NOTE and " ".join(_tokens(words)) not in EMPTY_NOTES and quote_in(words, text):
+            facts.notes[key] = Fact(value=words, quote=words)
 
     return facts
