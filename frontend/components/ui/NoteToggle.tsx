@@ -1,6 +1,6 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet } from "react-native";
 
+import { Icon } from "./Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
@@ -26,7 +26,7 @@ export function NoteToggle({ open, filled, onPress, testID }: Props) {
       testID={testID}
       style={[styles.button, filled && !open && styles.filled]}
     >
-      <Ionicons name={open ? "remove" : "add"} size={22} color={theme.color.primary} />
+      <Icon name={open ? "remove" : "add"} size={22} color={theme.color.primary} />
     </Pressable>
   );
 }

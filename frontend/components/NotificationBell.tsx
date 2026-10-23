@@ -1,7 +1,7 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "./ui/Icon";
 import { useNotifications } from "../providers/NotificationsProvider";
 import { useSession } from "../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
@@ -31,7 +31,7 @@ export function NotificationBell() {
       style={styles.wrap}
       testID="notification-bell"
     >
-      <Ionicons name="notifications-outline" size={24} color={theme.color.text} />
+      <Icon name="bell" size={24} color={theme.color.text} />
       {unreadCount > 0 ? (
         <View style={styles.badge} testID="notification-badge">
           <Text style={styles.badgeText}>{unreadCount > 9 ? "9+" : String(unreadCount)}</Text>

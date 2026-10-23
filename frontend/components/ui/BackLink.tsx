@@ -1,6 +1,6 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text } from "react-native";
 
+import { Icon } from "./Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
@@ -23,7 +23,7 @@ export function BackLink({ onPress, testID }: Props) {
       style={({ pressed }) => [styles.back, pressed && styles.pressed]}
       testID={testID}
     >
-      <Ionicons name="chevron-back" size={theme.icon.sm} color={theme.color.primary} />
+      <Icon name="back" size={theme.icon.sm} color={theme.color.primary} />
       <Text style={styles.label}>Back</Text>
     </Pressable>
   );

@@ -1,12 +1,12 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { ComponentProps } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon, IconName } from "./ui/Icon";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
 type Props = {
-  icon: ComponentProps<typeof Ionicons>["name"];
+  icon: IconName;
   title: string;
   description: string;
   selected: boolean;
@@ -27,13 +27,13 @@ export function RoleCard({ icon, title, description, selected, onPress, testID }
       onPress={onPress}
       style={[styles.card, selected && styles.selected]}
     >
-      <Ionicons name={icon} size={theme.icon.md} color={theme.color.primary} />
+      <Icon name={icon} size={theme.icon.md} color={theme.color.primary} />
       <View style={styles.text}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.description}>{description}</Text>
       </View>
-      <Ionicons
-        name={selected ? "radio-button-on" : "radio-button-off"}
+      <Icon
+        name={selected ? "radioOn" : "radioOff"}
         size={theme.icon.sm}
         color={selected ? theme.color.primary : theme.color.border}
       />

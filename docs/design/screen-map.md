@@ -901,13 +901,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `label` | `testID` | 55 |
-| Pressable | ``${name}, ${role.toLowerCase()} account. Menu`` | `open-menu` | 70 |
-| Pressable | Close menu | `header-menu-close` | 97 |
-| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 108 |
-| Button | Sign out | `log-out-confirm` | 130 |
-| Button | Cancel | `log-out-cancel` | 131 |
-| Pressable | — | `log-out` | 151 |
+| Pressable | `label` | `testID` | 53 |
+| Pressable | ``${name}, ${role.toLowerCase()} account. Menu`` | `open-menu` | 68 |
+| Pressable | Close menu | `header-menu-close` | 95 |
+| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 106 |
+| Button | Sign out | `log-out-confirm` | 128 |
+| Button | Cancel | `log-out-cancel` | 129 |
+| Pressable | — | `log-out` | 149 |
 
 ### HeadsUpSection — [components/HeadsUpSection.tsx](../../frontend/components/HeadsUpSection.tsx)
 
@@ -1168,7 +1168,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | aria["aria-label"] | `testID` | 63 |
+| Pressable | aria["aria-label"] | `testID` | 61 |
 
 ### ScheduleSheet — [components/ScheduleSheet.tsx](../../frontend/components/ScheduleSheet.tsx)
 
@@ -1243,20 +1243,20 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `text` | `id` | 45 |
-| Sheet | Done | `place-done` | 75 |
-| Button | Done | `place-done` | 79 |
-| Button | Use this place | `place-use-address` | 93 |
-| CheckRow | 🏠 My home | `place-home` | 100 |
-| CheckRow | 📍 Current location | `place-here` | 101 |
-| TextButton | Open Profile | `place-open-profile` | 122 |
-| Sheet | Done | `stay-done` | 127 |
-| Button | Done | `stay-done` | 131 |
-| Stepper | Drop-off time | `search-drop_off-time` | 146 |
-| Stepper | Pick-up time | `search-pick_up-time` | 155 |
-| Sheet | Done | `pets-done` | 187 |
-| Button | Done | `pets-done` | 191 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 195 |
+| Pressable | `text` | `id` | 43 |
+| Sheet | Done | `place-done` | 73 |
+| Button | Done | `place-done` | 77 |
+| Button | Use this place | `place-use-address` | 91 |
+| CheckRow | 🏠 My home | `place-home` | 98 |
+| CheckRow | 📍 Current location | `place-here` | 99 |
+| TextButton | Open Profile | `place-open-profile` | 120 |
+| Sheet | Done | `stay-done` | 125 |
+| Button | Done | `stay-done` | 129 |
+| Stepper | Drop-off time | `search-drop_off-time` | 144 |
+| Stepper | Pick-up time | `search-pick_up-time` | 153 |
+| Sheet | Done | `pets-done` | 185 |
+| Button | Done | `pets-done` | 189 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 193 |
 
 ### SlotCalendar — [components/SlotCalendar.tsx](../../frontend/components/SlotCalendar.tsx)
 

@@ -1,17 +1,15 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Redirect, Stack, Tabs } from "expo-router";
 import { ComponentProps, ReactNode } from "react";
 import { ColorValue, Platform, Pressable, StyleProp, Text, View, ViewStyle } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Icon, IconName } from "./ui/Icon";
 import { HeaderActions } from "./HeaderActions";
 import { LoadingView } from "./ui/LoadingView";
 import { Role, homeFor, useSession } from "../providers/SessionProvider";
 import { useTheme } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
-
-type IconName = ComponentProps<typeof Ionicons>["name"];
 
 /** Tab bar icon from the interim outline set (Figma picks the final set). */
 export function tabIcon(name: IconName) {
@@ -22,7 +20,7 @@ export function tabIcon(name: IconName) {
 
 function TabIcon({ name, color, size, focused }: { name: IconName; color: ColorValue; size: number; focused: boolean }) {
   const theme = useTheme();
-  if (theme.ui.tabs !== "pill") return <Ionicons name={name} color={color} size={size} />;
+  if (theme.ui.tabs !== "pill") return <Icon name={name} color={String(color)} size={size} />;
   return (
     <View
       style={{
@@ -34,7 +32,7 @@ function TabIcon({ name, color, size, focused }: { name: IconName; color: ColorV
         backgroundColor: focused ? theme.color.accent : "transparent",
       }}
     >
-      <Ionicons name={name} color={color} size={22} />
+      <Icon name={name} color={String(color)} size={22} />
     </View>
   );
 }

@@ -1,8 +1,8 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "../../../../components/ui/Icon";
 import { PhotoViewer } from "../../../../components/PhotoViewer";
 import { SitterActions } from "../../../../components/SitterActions";
 import { Avatar } from "../../../../components/ui/Avatar";
@@ -158,8 +158,8 @@ export default function SitterProfileScreen() {
                 style={styles.heart}
                 testID="sitter-favorite"
               >
-                <Ionicons
-                  name={favorite ? "heart" : "heart-outline"}
+                <Icon
+                  name="heart" filled={favorite}
                   size={theme.icon.md}
                   color={theme.color.primary}
                 />

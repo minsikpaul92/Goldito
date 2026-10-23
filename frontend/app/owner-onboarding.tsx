@@ -1,8 +1,8 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Redirect, router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "../components/ui/Icon";
 import { BigInput } from "../components/ownerOnboarding/BigInput";
 import { BigOption } from "../components/ownerOnboarding/BigOption";
 import { PetGlanceCard } from "../components/PetGlanceCard";
@@ -740,7 +740,7 @@ export default function OwnerOnboarding() {
             <Text style={styles.summaryLabel}>{row.label}</Text>
             <Text style={styles.summaryValue}>{row.value}</Text>
           </View>
-          <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.textMuted} />
+          <Icon name="forward" size={theme.icon.sm} color={theme.color.textMuted} />
         </Pressable>
       ))}
     </StepFrame>
