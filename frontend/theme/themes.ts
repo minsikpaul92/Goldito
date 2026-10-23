@@ -18,6 +18,8 @@ export type SkinColors = {
   track: string;
   text: string;
   textMuted: string;
+  /** Input hints: lighter than textMuted so they never read as typed values, still 4.5:1 on white. */
+  placeholder: string;
 };
 
 /** Theme presets = the modes of the Figma Color collection. Coat-color skins (6–8, from the designer) are added here in 11.10. */
@@ -33,6 +35,7 @@ export const themes = {
     track: tokens.color.track,
     text: tokens.color.text,
     textMuted: tokens.color.textMuted,
+    placeholder: tokens.color.textMuted,
   },
   /** Warmer neutrals, same green (Figma mode `Balanced`). */
   balanced: {
@@ -46,6 +49,7 @@ export const themes = {
     track: "#E6E1D9",
     text: "#1F1B16",
     textMuted: "#5E5850",
+    placeholder: "#7A746B",
   },
   /** The app's look (Mook's Expressive): ink on cream, mint accent, warm tan lines. `default` is the earlier look. */
   expressive: {
@@ -61,6 +65,8 @@ export const themes = {
     text: "#1B4332",
     // 5.9:1 on cream.
     textMuted: "#6B5D4A",
+    // 4.7:1 on white.
+    placeholder: "#807160",
   },
 } satisfies Record<string, SkinColors>;
 

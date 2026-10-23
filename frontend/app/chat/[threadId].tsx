@@ -689,7 +689,7 @@ export default function Chat() {
           value={text}
           onChangeText={setText}
           placeholder={`Message ${header.otherName}`}
-          placeholderTextColor={`${theme.color.textMuted}80`}
+          placeholderTextColor={theme.color.placeholder}
           maxLength={2000}
           multiline
           numberOfLines={1}

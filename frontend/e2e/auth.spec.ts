@@ -199,9 +199,9 @@ test.describe("auth and role routing", () => {
     // Initial when no photo: "C" for Chloe
     await expect(screen.getByTestId("header-avatar-initial")).toHaveText("C");
 
-    // Click header avatar navigates to profile
-    await screen.getByTestId("header-profile-avatar").click();
-    await expect(page).toHaveURL(/\/profile$/);
+    // Click header avatar opens the menu
+    await screen.getByTestId("open-menu").click();
+    await expect(screen.getByTestId("header-menu")).toBeVisible();
 
     // Go back to sitter home
     await page.goto("/sitter");
