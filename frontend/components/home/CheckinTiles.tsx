@@ -12,7 +12,7 @@ import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
 import { tokens } from "../../theme/tokens";
 import { Button } from "../ui/Button";
-import { IconName } from "../ui/Icon";
+import { Icon, IconName } from "../ui/Icon";
 import { Sheet } from "../ui/Sheet";
 import { TextField } from "../ui/TextField";
 import { HomeArt } from "./HomeArt";
@@ -117,6 +117,7 @@ export function CheckinTiles({ pet, onSent }: { pet: CaringPet; onSent?: () => v
               style={({ pressed }) => [styles.option, i === 0 && styles.optionFirst, pressed && styles.pressed]}
               testID={`tile-option-${open}-${option.value ?? option.kind}`}
             >
+              {option.icon ? <Icon name={option.icon} size={18} color={tokens.color.text} /> : null}
               <Text style={[styles.optionText, i === 0 && styles.optionTextFirst]}>{option.label}</Text>
             </Pressable>
           ))}
@@ -192,7 +193,9 @@ const makeStyles = (theme: Theme) =>
     },
     option: {
       minHeight: 40,
-      justifyContent: "center",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
       paddingHorizontal: theme.spacing.md,
       borderRadius: theme.radius.pill,
       borderWidth: 1,

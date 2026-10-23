@@ -1310,9 +1310,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Pressable | — | ``tile-option-${open}-${option.value ?? option.kind}`` | 112 |
-| Pressable | ``${HOME_TILES[key].label} ${pet.name}`` | ``tile-${key}`` | 127 |
-| Sheet | Send | `tile-memo-send` | 144 |
-| Button | Send | `tile-memo-send` | 149 |
+| Pressable | ``${HOME_TILES[key].label} ${pet.name}`` | ``tile-${key}`` | 128 |
+| Sheet | Send | `tile-memo-send` | 145 |
+| Button | Send | `tile-memo-send` | 150 |
 
 ### LatestCard — [components/home/LatestCard.tsx](../../frontend/components/home/LatestCard.tsx)
 

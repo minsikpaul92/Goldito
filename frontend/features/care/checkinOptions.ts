@@ -1,17 +1,18 @@
+import type { IconName } from "../../components/ui/Icon";
 import type { CareCheckinKind, Species } from "../../types/db";
 
-export type CheckinOption = { value: string; label: string };
+export type CheckinOption = { value: string; label: string; icon?: IconName };
 
 /** The moods a sitter can log (015i). The first one is what a double tap sends. */
 export const MOOD_OPTIONS: CheckinOption[] = [
-  { value: "happy", label: "😊 Happy" },
-  { value: "playful", label: "🎾 Playful" },
-  { value: "excited", label: "🤩 Excited" },
-  { value: "calm", label: "😌 Calm" },
-  { value: "tired", label: "😴 Tired" },
-  { value: "missing", label: "🥺 Missing you" },
-  { value: "sad", label: "😢 Sad" },
-  { value: "anxious", label: "😟 Anxious" },
+  { value: "happy", label: "Happy", icon: "moodHappy" },
+  { value: "playful", label: "Playful", icon: "moodPlayful" },
+  { value: "excited", label: "Excited", icon: "moodExcited" },
+  { value: "calm", label: "Calm", icon: "moodCalm" },
+  { value: "tired", label: "Tired", icon: "moodTired" },
+  { value: "missing", label: "Missing you", icon: "moodMissing" },
+  { value: "sad", label: "Sad", icon: "moodSad" },
+  { value: "anxious", label: "Anxious", icon: "moodAnxious" },
 ];
 
 /** The one-tap values of each check-in (sitter-care-loop §3). Notes have no tap value. */
@@ -61,7 +62,7 @@ export const CHECKIN_GROUPS: {
 export const MEMO_MAX = 120;
 
 /** One choice on a Home tile. `memo` = "Other": the sitter must type a few words, and they are what the owner reads. */
-export type TileOption = { kind: CareCheckinKind; value: string | null; label: string; memo?: boolean };
+export type TileOption = { kind: CareCheckinKind; value: string | null; label: string; memo?: boolean; icon?: IconName };
 
 export type HomeTileKey = "ate" | "potty" | "walk" | "nap" | "mood";
 
@@ -103,7 +104,7 @@ export const HOME_TILES: Record<HomeTileKey, { label: string; options: TileOptio
       { kind: "wake", value: null, label: "Awake" },
     ],
   },
-  mood: { label: "Mood", options: MOOD_OPTIONS.map((o) => ({ kind: "mood" as const, value: o.value, label: o.label })) },
+  mood: { label: "Mood", options: MOOD_OPTIONS.map((o) => ({ kind: "mood" as const, value: o.value, label: o.label, icon: o.icon })) },
 };
 
 export const homeTilesFor = (species: Species): HomeTileKey[] =>
