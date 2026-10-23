@@ -111,7 +111,7 @@ test.describe("meet & greet", () => {
 
     await screen.getByTestId("meet-accept").click();
     await expect(screen.getByTestId("toast")).toContainText("Meet & Greet set with Robert");
-    await expect(screen.getByTestId("meet-greet")).toContainText("Meet & Greet set ✅");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Meet & Greet set");
     await expect(screen.getByTestId("meet-greet")).not.toContainText("After you meet");
     await screen.getByTestId("meet-check-Care needs").click();
     await expect(screen.getByTestId("meet-check-Care needs")).toHaveAttribute("aria-checked", "true");
