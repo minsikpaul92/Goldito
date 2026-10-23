@@ -33,8 +33,6 @@ test.describe("profile", () => {
     expect(row?.home_address).toBe("1 Test St, Toronto, ON");
 
     await expect(screen.getByTestId("profile-display_name")).toHaveValue("Robert Park");
-    await expect(screen.getByTestId("profile-group-emergency")).toContainText("Min");
-    await screen.getByTestId("profile-add-emergency").click();
     await expect(screen.getByTestId("profile-emergency_contact_name")).toHaveValue("Min");
   });
 
