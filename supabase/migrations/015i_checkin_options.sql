@@ -24,7 +24,7 @@ alter table public.care_checkins
 alter table public.care_checkins
   add constraint care_checkins_other_chk check (value is distinct from 'other' or note_text is not null);
 
--- log_care_checkin (015d) with titles for the new values; nothing else changes.
+-- log_care_checkin (015d) with titles for the new values, and a check-in that settles the matching task.
 create or replace function public.log_care_checkin(
   p_pet uuid,
   p_kind text,
@@ -65,6 +65,27 @@ begin
   insert into public.care_checkins (pet_id, created_by, kind, value, note_text, media_id)
   values (p_pet, auth.uid(), p_kind, case when p_kind = 'note' then null else p_value end, v_note, p_media_id)
   returning * into v_row;
+
+  -- A meal, a walk or a potty the sitter reports settles the nearest open task of that kind today (a pet may eat
+  -- early). "Didn't eat" settles nothing. No second notice: the check-in notice below already tells the owner.
+  if (p_kind = 'meal' and p_value in ('all', 'most', 'little', 'other'))
+     or p_kind = 'walk'
+     or (p_kind = 'potty' and p_value in ('normal', 'soft', 'other')) then
+    update public.task_logs
+       set status = 'done', completed_at = now(), completed_by = auth.uid()
+     where id = (
+       select l.id
+         from public.task_logs l
+         join public.care_tasks t on t.id = l.task_id
+        where l.pet_id = p_pet
+          and l.status = 'pending'
+          and t.type = case p_kind when 'meal' then 'feeding' when 'walk' then 'walk' else 'litter' end
+          and l.due_at >= public.local_ts(public.app_today(), '00:00')
+          and l.due_at < public.local_ts(public.app_today() + 1, '00:00')
+        order by l.due_at
+        limit 1
+     );
+  end if;
 
   select p.name, p.owner_id into v_pet_name, v_owner from public.pets p where p.id = p_pet;
 

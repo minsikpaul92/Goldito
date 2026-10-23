@@ -2,14 +2,17 @@ import { router, useFocusEffect } from "expo-router";
 import { ReactNode, useCallback, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { PetCaution, listPetCautions } from "../../features/care/careApi";
+import { PetCaution, completeTaskLog, listPetAllergies, listPetCautions } from "../../features/care/careApi";
 import { ChangeRequest, listPendingChangeRequests } from "../../features/care/carePlanApi";
 import { useDueReminder } from "../../features/care/useDueReminder";
 import { TaskItem, useTodayTasks } from "../../features/care/useTodayTasks";
 import type { CaringPet } from "../../features/feed/caringPets";
 import { SPECIES_EMOJI } from "../../features/pets/petFormat";
 import { formatTime, isoToZoned } from "../../features/schedule/dates";
+import { careTypeMeta } from "../../features/care/careFormat";
+import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useNotifications } from "../../providers/NotificationsProvider";
+import { useToast } from "../../providers/ToastProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { tokens } from "../../theme/tokens";
@@ -38,9 +41,28 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
   const [finishing, setFinishing] = useState<TaskItem | null>(null);
   const [selected, setSelected] = useState(pets[0]?.id);
   const [cautions, setCautions] = useState<PetCaution[]>([]);
+  const [allergies, setAllergies] = useState<Record<string, string[]>>({});
   const [showCautions, setShowCautions] = useState(false);
   const [requests, setRequests] = useState<(ChangeRequest & { petName: string })[]>([]);
   const pet = pets.find((p) => p.id === selected) ?? pets[0];
+  const toast = useToast();
+  const errorDialog = useErrorDialog();
+  const [ticking, setTicking] = useState<string | null>(null);
+
+  // One tap on the box finishes a task with no memo and no photo; tapping the row opens the sheet for those.
+  const tick = async (item: TaskItem) => {
+    if (ticking || item.log.status === "done") return;
+    setTicking(item.log.id);
+    try {
+      await completeTaskLog(item.log.id, null, null);
+      toast.show(`${item.task.title} done`);
+      reload();
+    } catch (e) {
+      errorDialog.show({ title: "Not saved", message: e instanceof Error ? e.message : "Try again.", onRetry: () => void tick(item) });
+    } finally {
+      setTicking(null);
+    }
+  };
 
   const petKey = pets.map((p) => p.id).join(",");
   // A new care request from the owner shows without a refresh (FB-2).
@@ -50,6 +72,9 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
       let live = true;
       void listPendingChangeRequests()
         .then((list) => live && setRequests(list))
+        .catch(() => undefined);
+      void listPetAllergies(pets.map((p) => p.id))
+        .then((map) => live && setAllergies(map))
         .catch(() => undefined);
       void listPetCautions(pets.map((p) => p.id))
         .then((list) => live && setCautions(list))
@@ -75,6 +100,22 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
   return (
     <Screen contentStyle={styles.page} testID="sitter-home">
       <View style={styles.page} testID="sitter-dashboard">
+        {/* Allergies of every pet in care, always on top: they are checked all day, not only at meals. */}
+        {pets.some((p) => allergies[p.id]) ? (
+          <View style={styles.allergies} accessibilityRole="alert" testID="allergy-banner">
+            {pets
+              .filter((p) => allergies[p.id])
+              .map((p) => (
+                <View key={p.id} style={styles.allergyRow} testID={`allergy-${p.id}`}>
+                  <Icon name="warning" size={16} color={tokens.color.warning} />
+                  <Text style={styles.allergyText}>
+                    <Text style={styles.allergyName}>{`${p.name}: `}</Text>
+                    {`No ${allergies[p.id].join(", ")}`}
+                  </Text>
+                </View>
+              ))}
+          </View>
+        ) : null}
         {top}
 
         {/* An owner's care request is waiting for an answer: one line, the whole request one tap away. */}
@@ -145,6 +186,47 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
           </Pressable>
         ) : null}
 
+        {items.length > 0 ? (
+          <View style={styles.checklist} testID="checklist">
+            <Text accessibilityRole="header" style={styles.heading}>
+              {`Today's checklist · ${done} of ${items.length}`}
+            </Text>
+            {items.map((item) => {
+              const isDone = item.log.status === "done";
+              return (
+                <View key={item.log.id} style={[styles.checkRow, isDone && styles.checkRowDone]} testID={`check-row-${item.log.id}`}>
+                  <Pressable
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: isDone }}
+                    accessibilityLabel={`${item.task.title} ${item.pet.name}`}
+                    disabled={isDone || ticking !== null}
+                    hitSlop={8}
+                    onPress={() => void tick(item)}
+                    style={[styles.box, isDone && styles.boxOn]}
+                    testID={`check-box-${item.log.id}`}
+                  >
+                    {isDone ? <Icon name="check" size={16} color={tokens.color.primaryText} strokeWidth={3} /> : null}
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={isDone}
+                    onPress={() => setFinishing(item)}
+                    style={styles.checkText}
+                    testID={`check-open-${item.log.id}`}
+                  >
+                    <Text style={[styles.checkTitle, isDone && styles.checkTitleDone]} numberOfLines={1}>
+                      {`${careTypeMeta(item.task.type).emoji} ${item.task.title}`}
+                    </Text>
+                    <Text style={styles.checkMeta} numberOfLines={1}>
+                      {[item.pet.name, formatTime(isoToZoned(item.log.due_at).time), item.task.dose].filter(Boolean).join(" · ")}
+                    </Text>
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
+
         <Text accessibilityRole="header" style={styles.heading} testID="quick-heading">
           {`Quick check-in · ${pet.name}`}
         </Text>
@@ -165,7 +247,7 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
             ))}
           </View>
         ) : null}
-        <CheckinTiles key={pet.id} pet={pet} />
+        <CheckinTiles key={pet.id} pet={pet} onSent={reload} />
 
         <View style={styles.acts}>
           <Pressable
@@ -261,7 +343,37 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: tokens.color.warningSurface,
     },
     headsUpText: { flexShrink: 1, fontSize: HOME_TEXT.body, lineHeight: 17.5, fontWeight: theme.fontWeight.bold, color: tokens.color.warning },
+    // Warning colors (brand page: --color-warning), never a faded tone: this is what a sitter must not get wrong.
+    allergies: {
+      gap: 6,
+      padding: 12,
+      borderRadius: theme.radius.xl,
+      borderWidth: 1.5,
+      borderColor: tokens.color.warning,
+      backgroundColor: tokens.color.warningSurface,
+    },
+    allergyRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    allergyText: { flex: 1, fontSize: theme.fontSize.small, lineHeight: 20, fontWeight: theme.fontWeight.semibold, color: tokens.color.warning },
+    allergyName: { fontWeight: theme.fontWeight.bold },
     heading: sectionTitleStyle(theme),
+    checklist: { gap: 8 },
+    checkRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      padding: 12,
+      borderRadius: theme.radius.xl,
+      backgroundColor: theme.color.surface,
+      borderWidth: 1,
+      borderColor: theme.color.border,
+    },
+    checkRowDone: { opacity: 0.6 },
+    box: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: theme.color.borderStrong, alignItems: "center", justifyContent: "center" },
+    boxOn: { backgroundColor: tokens.color.primary, borderColor: tokens.color.primary },
+    checkText: { flex: 1, gap: 1 },
+    checkTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    checkTitleDone: { textDecorationLine: "line-through" },
+    checkMeta: { fontSize: HOME_TEXT.body, lineHeight: 17.5, color: theme.color.textMuted },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
     chip: {
       minHeight: 36,

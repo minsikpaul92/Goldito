@@ -1,9 +1,11 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { logCareCheckin } from "../../features/care/careApi";
+import { SentCheckin, listTodayCheckins, logCareCheckin } from "../../features/care/careApi";
 import { HOME_TILES, HomeTileKey, MEMO_MAX, TileOption, homeTilesFor } from "../../features/care/checkinOptions";
 import type { CaringPet } from "../../features/feed/caringPets";
+import { formatTime, isoToZoned } from "../../features/schedule/dates";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { useToast } from "../../providers/ToastProvider";
@@ -41,6 +43,21 @@ export function CheckinTiles({ pet, onSent }: { pet: CaringPet; onSent?: () => v
   const [memoFor, setMemoFor] = useState<{ key: HomeTileKey; option: TileOption } | null>(null);
   const [memo, setMemo] = useState("");
   const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState<SentCheckin[]>([]);
+
+  // What this sitter already sent for the pet today: a check mark and the time on the tile (the full list is in My history).
+  const loadSent = useCallback(async () => {
+    try {
+      setSent(await listTodayCheckins(pet.id));
+    } catch {
+      // A convenience; sending works without it.
+    }
+  }, [pet.id]);
+  useFocusEffect(
+    useCallback(() => {
+      void loadSent();
+    }, [loadSent]),
+  );
 
   const send = async (option: TileOption, note: string | null) => {
     if (sending) return;
@@ -51,6 +68,7 @@ export function CheckinTiles({ pet, onSent }: { pet: CaringPet; onSent?: () => v
       setOpen(null);
       setMemoFor(null);
       setMemo("");
+      void loadSent();
       onSent?.();
     } catch (e) {
       errorDialog.show({ title: "Not sent", message: e instanceof Error ? e.message : "Try again.", onRetry: () => void send(option, note) });
@@ -82,6 +100,8 @@ export function CheckinTiles({ pet, onSent }: { pet: CaringPet; onSent?: () => v
   };
 
   const keys = homeTilesFor(pet.species);
+  const kindsOf: Record<HomeTileKey, string[]> = { ate: ["meal"], potty: ["potty"], walk: ["walk"], nap: ["nap", "wake"], mood: ["mood"] };
+  const lastOf = (key: HomeTileKey) => sent.find((c) => kindsOf[key].includes(c.kind));
   const options = open ? HOME_TILES[open].options : [];
 
   return (
@@ -115,10 +135,12 @@ export function CheckinTiles({ pet, onSent }: { pet: CaringPet; onSent?: () => v
           >
             <HomeArt name={TILE_LOOK[key].icon} size={30} color={tokens.color.text} />
             <Text style={styles.label}>{HOME_TILES[key].label}</Text>
+            {lastOf(key) ? (
+              <Text style={styles.sentMark} testID={`tile-sent-${key}`}>{`✓ ${formatTime(isoToZoned(lastOf(key)!.at).time)}`}</Text>
+            ) : null}
           </Pressable>
         ))}
       </View>
-
       <Sheet
         visible={memoFor != null}
         title={memoFor ? `${HOME_TILES[memoFor.key].label} · Other` : ""}
@@ -145,6 +167,7 @@ const makeStyles = (theme: Theme) =>
     wrap: { position: "relative", zIndex: 10 },
     row: { flexDirection: "row", gap: 10 },
     tile: { flex: 1, height: 84, alignItems: "center", justifyContent: "center", gap: 2, paddingHorizontal: 4, borderRadius: theme.radius.xl },
+    sentMark: { fontSize: HOME_TEXT.kicker, lineHeight: 14, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
     tileOpen: { borderWidth: 2, borderColor: theme.color.text },
     label: { fontSize: HOME_TEXT.body + 0.5, lineHeight: 18.2, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     popover: {

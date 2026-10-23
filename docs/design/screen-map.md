@@ -1309,10 +1309,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | ``tile-option-${open}-${option.value ?? option.kind}`` | 92 |
-| Pressable | ``${HOME_TILES[key].label} ${pet.name}`` | ``tile-${key}`` | 107 |
-| Sheet | Send | `tile-memo-send` | 122 |
-| Button | Send | `tile-memo-send` | 127 |
+| Pressable | — | ``tile-option-${open}-${option.value ?? option.kind}`` | 112 |
+| Pressable | ``${HOME_TILES[key].label} ${pet.name}`` | ``tile-${key}`` | 127 |
+| Sheet | Send | `tile-memo-send` | 144 |
+| Button | Send | `tile-memo-send` | 149 |
 
 ### LatestCard — [components/home/LatestCard.tsx](../../frontend/components/home/LatestCard.tsx)
 
@@ -1331,15 +1331,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 82 |
-| Pressable | — | `dashboard-next-done` | 113 |
-| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 133 |
-| Pressable | — | ``caring-pet-${p.id}`` | 154 |
-| Pressable | — | `action-five-second` | 171 |
-| Pressable | — | `action-treat-check` | 184 |
-| TextButton | All tasks | `shortcut-tasks` | 200 |
-| TextButton | My history | `shortcut-history` | 201 |
-| Sheet | Heads-up | `headsup-sheet` | 206 |
+| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 123 |
+| Pressable | — | `dashboard-next-done` | 154 |
+| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 174 |
+| Pressable | ``${item.task.title} ${item.pet.name}`` | ``check-box-${item.log.id}`` | 198 |
+| Pressable | — | ``check-open-${item.log.id}`` | 210 |
+| Pressable | — | ``caring-pet-${p.id}`` | 236 |
+| Pressable | — | `action-five-second` | 253 |
+| Pressable | — | `action-treat-check` | 266 |
+| TextButton | All tasks | `shortcut-tasks` | 282 |
+| TextButton | My history | `shortcut-history` | 283 |
+| Sheet | Heads-up | `headsup-sheet` | 288 |
 
 ### StayHero — [components/home/StayHero.tsx](../../frontend/components/home/StayHero.tsx)
 
@@ -1579,4 +1581,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-472 actions · 470 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+474 actions · 472 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).

@@ -184,6 +184,19 @@ export async function listTodayCheckins(petId: string): Promise<SentCheckin[]> {
   }));
 }
 
+/** Allergies of these pets, by pet id (RLS: whoever may read the pet's profile, the sitter in the care window too). */
+export async function listPetAllergies(petIds: string[]): Promise<Record<string, string[]>> {
+  if (petIds.length === 0) return {};
+  const { data, error } = await getSupabase().from("pets").select("id, pet_allergies(id, allergen)").in("id", petIds);
+  if (error) fail("load the allergies");
+  const out: Record<string, string[]> = {};
+  for (const row of (data ?? []) as unknown as { id: string; pet_allergies: { allergen: string }[] | null }[]) {
+    const list = (row.pet_allergies ?? []).map((a) => a.allergen);
+    if (list.length > 0) out[row.id] = list;
+  }
+  return out;
+}
+
 export type PetCaution = { id: string; petId: string; text: string };
 
 /** Active Heads-ups for these pets (RLS: the owner, the sitter in the care window, a sitter deciding on a request). */

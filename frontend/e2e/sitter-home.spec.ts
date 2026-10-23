@@ -113,6 +113,60 @@ test.describe("sitter home dashboard", () => {
     expect(db.care_checkins[1]).toMatchObject({ kind: "mood", value: "missing" });
   });
 
+  test("allergies of every pet in care are on top, in the warning color", async ({ page }) => {
+    const db = await home(page);
+    db.pet_allergies.push({ id: "al1", pet_id: MAX.id, allergen: "chicken" }, { id: "al2", pet_id: MOCHI.id, allergen: "fish" });
+    await page.reload();
+    const screen = app(page);
+    await screen.getByTestId("allergy-banner").waitFor();
+    await expect(screen.getByTestId(`allergy-${MAX.id}`)).toContainText("Max: No chicken");
+    await expect(screen.getByTestId(`allergy-${MOCHI.id}`)).toContainText("Mochi: No fish");
+    // Still there after picking the other pet for the check-in.
+    await screen.getByTestId(`caring-pet-${MOCHI.id}`).click();
+    await expect(screen.getByTestId(`allergy-${MAX.id}`)).toBeVisible();
+  });
+
+  test("an Ate check-in settles the pet's next feeding task, even before it is due; Didn't eat does not", async ({ page }) => {
+    const db = await home(page);
+    const screen = app(page);
+    await expect(screen.getByTestId("tasks-next")).toContainText("Max · Breakfast");
+    await screen.getByTestId("tile-ate").click();
+    await screen.getByTestId("tile-option-ate-none").click();
+    await expect(screen.getByTestId("toast")).toContainText("was told");
+    await expect(screen.getByTestId("tasks-next")).toContainText("Max · Breakfast"); // still waiting
+
+    await screen.getByTestId("tile-ate").click();
+    await screen.getByTestId("tile-option-ate-all").click();
+    await expect(screen.getByTestId("tasks-next")).toContainText("Max · Walk"); // Breakfast is done
+    expect(db.task_logs.filter((l) => l.status === "done")).toHaveLength(1);
+    await expect(screen.getByTestId("dashboard-next")).toContainText("1 of 4 done today");
+  });
+
+  test("the tile shows what was sent; the full list is in My history", async ({ page }) => {
+    await home(page);
+    const screen = app(page);
+    await expect(screen.getByTestId("tile-sent-mood")).toHaveCount(0);
+    await screen.getByTestId("tile-mood").click();
+    await screen.getByTestId("tile-option-mood-playful").click();
+    await expect(screen.getByTestId("tile-sent-mood")).toContainText("✓");
+    await expect(screen.getByTestId("sent-today")).toHaveCount(0);
+    await screen.getByTestId("shortcut-history").click();
+    await expect(screen.getByText("Mood · Playful")).toBeVisible();
+  });
+
+  test("the checklist lists today's tasks; one tap on the box finishes one", async ({ page }) => {
+    const db = await home(page);
+    const screen = app(page);
+    await expect(screen.getByTestId("checklist")).toContainText("Today's checklist · 0 of 4");
+    await expect(screen.locator("[data-testid^='check-row-']")).toHaveCount(4);
+    const litter = screen.locator("[data-testid^='check-row-']").filter({ hasText: "Litter box" });
+    await litter.locator("[data-testid^='check-box-']").click(); // Mochi's litter box, not the next one
+    await expect(screen.getByTestId("toast")).toContainText("done");
+    expect(db.taskCompletions).toHaveLength(1);
+    await expect(screen.getByTestId("checklist")).toContainText("Today's checklist · 1 of 4");
+    await expect(litter.locator("[data-testid^='check-box-']")).toBeDisabled(); // checked
+  });
+
   test("the action cards and links open the bigger screens", async ({ page }) => {
     await home(page);
     const screen = app(page);

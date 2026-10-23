@@ -2075,6 +2075,15 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       created_at: new Date(nowMs()).toISOString(),
     };
     db.care_checkins.push(row);
+    // Same rule as the SQL (015i): a meal, walk or potty settles the nearest open task of that kind ("didn't eat" does not).
+    const settles = (p_kind === "meal" && p_value !== "none") || p_kind === "walk" || (p_kind === "potty" && p_value !== "none");
+    if (settles) {
+      const type = p_kind === "meal" ? "feeding" : p_kind === "walk" ? "walk" : "litter";
+      const open = db.task_logs
+        .filter((l) => l.pet_id === p_pet && l.status === "pending" && db.care_tasks.find((t) => t.id === l.task_id)?.type === type)
+        .sort((a, b) => String(a.due_at).localeCompare(String(b.due_at)))[0];
+      if (open) Object.assign(open, { status: "done", completed_at: row.created_at, completed_by: me });
+    }
     // Same rule as the SQL: preset line, or only the typed memo.
     const preset = `${pet?.name} ${p_kind} ${p_value ?? ""}`.trim();
     db.notifications.push({
