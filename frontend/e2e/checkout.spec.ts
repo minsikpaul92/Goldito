@@ -66,14 +66,14 @@ test.describe("checkout", () => {
     await expect(screen.getByTestId("checkout-title")).toContainText("Finish booking with Chloe");
     await expect(screen.getByTestId("quote-total")).toContainText(`$${DEMO_QUOTE.total.toFixed(2)}`);
 
-    await expect(screen.getByTestId("checkout-pay")).toBeDisabled();
+    await expect(screen.getByTestId("checkout-pay-why")).toBeVisible(); // Pay is gray and says why (#282)
 
     // Leave one consent unchecked — Pay must stay off (3C.7 DoD).
     for (const kind of KINDS.slice(0, -1)) {
       await screen.getByTestId(`consent-${kind}-check`).click();
       await expect(screen.getByTestId(`consent-${kind}-check`)).toHaveAttribute("aria-checked", "true");
     }
-    await expect(screen.getByTestId("checkout-pay")).toBeDisabled();
+    await expect(screen.getByTestId("checkout-pay-why")).toBeVisible(); // Pay is gray and says why (#282)
     expect(db.payments).toHaveLength(0);
   });
 
@@ -143,6 +143,41 @@ test.describe("checkout", () => {
     await expect(app(page).getByText("doesn't offer that service", { exact: false })).toHaveCount(0);
   });
 
+  test("a grayed-out Pay always says why, a tap goes to what is missing, and only the owner's own name signs (#282)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedUnpaid(db);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}/checkout`);
+    const screen = app(page);
+    const why = screen.getByTestId("checkout-pay-why");
+
+    await expect(screen.getByTestId("checkout-pay-why")).toBeVisible(); // Pay is gray and says why (#282)
+    await expect(why).toHaveText(`Agree to ${KINDS.length} more items`);
+    // A tap on the gray Pay scrolls to the first box still unticked.
+    await screen.getByTestId("checkout-signer").scrollIntoViewIfNeeded();
+    await expect(screen.getByTestId(`consent-${KINDS[0]}-check`)).not.toBeInViewport();
+    await screen.getByTestId("checkout-pay").click(); // gray, but the tap shows what is missing
+    await expect(screen.getByTestId(`consent-${KINDS[0]}-check`)).toBeInViewport();
+
+    for (const kind of KINDS.slice(0, -1)) await screen.getByTestId(`consent-${kind}-check`).click();
+    await expect(why).toHaveText("Agree to 1 more item");
+    await screen.getByTestId("checkout-pay").click(); // gray, but the tap shows what is missing
+    await expect(screen.getByTestId(`consent-${KINDS.at(-1)}-check`)).toBeInViewport();
+    await screen.getByTestId(`consent-${KINDS.at(-1)}-check`).click();
+    await expect(why).toHaveText("Type your name to sign");
+
+    // Someone else's name does not sign; the owner's own name does, in any case and spacing.
+    await screen.getByTestId("checkout-signer").fill("Somebody Else");
+    await expect(why).toHaveText("Type your name as on your profile");
+    await screen.getByTestId("checkout-pay").click(); // does not pay
+    expect(db.payments).toHaveLength(0);
+    await screen.getByTestId("checkout-signer").fill("  robert ");
+    await expect(why).toHaveCount(0);
+    await expect(screen.getByTestId("checkout-pay")).toBeEnabled();
+    expect(db.payments).toHaveLength(0);
+  });
+
   test("checking every consent and Pay completes demo checkout", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedUnpaid(db);
@@ -158,8 +193,9 @@ test.describe("checkout", () => {
     // The name is typed, never filled in; the profile name is only a hint (#236).
     await expect(screen.getByTestId("checkout-signer")).toHaveValue("");
     await expect(screen.getByTestId("checkout-signer")).toHaveAttribute("placeholder", "Robert");
-    await expect(screen.getByTestId("checkout-pay")).toBeDisabled();
+    await expect(screen.getByTestId("checkout-pay-why")).toBeVisible(); // Pay is gray and says why (#282)
     await screen.getByTestId("checkout-signer").fill("Robert");
+    await expect(screen.getByTestId("checkout-pay-why")).toHaveCount(0);
     await expect(screen.getByTestId("checkout-pay")).toBeEnabled();
     await screen.getByTestId("checkout-pay").click();
 
@@ -239,7 +275,7 @@ test.describe("checkout", () => {
     for (const kind of KINDS) {
       await expect(screen.getByTestId(`consent-${kind}-signed`)).toBeVisible();
     }
-    await expect(screen.getByTestId("checkout-pay")).toBeDisabled();
+    await expect(screen.getByTestId("checkout-pay-why")).toBeVisible(); // Pay is gray and says why (#282)
     await screen.getByTestId("consent-home_access-check").click();
     await screen.getByTestId("checkout-signer").fill("Robert");
     await screen.getByTestId("checkout-pay").click();

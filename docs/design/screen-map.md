@@ -133,9 +133,9 @@ Shows: `ConsentCard` · `QuoteCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Can't open checkout | — | 148 |
-| Button | Add entry info | `checkout-entry-add` | 176 |
-| Button | `totalLabel` | `checkout-pay` | 222 |
+| EmptyState | Can't open checkout | — | 170 |
+| Button | Add entry info | `checkout-entry-add` | 198 |
+| Button | `totalLabel` | `checkout-pay` | 254 |
 
 ### `/owner/bookings/[bookingId]/review` — [app/owner/bookings/[bookingId]/review.tsx](../../frontend/app/owner/bookings/[bookingId]/review.tsx)
 
