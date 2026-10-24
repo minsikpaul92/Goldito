@@ -1026,6 +1026,7 @@ function syncBookingCards(db: MockDb) {
       b.status === "confirmed" ? "payment" : null,
     ].filter((x): x is string => !!x);
     const sender = db.lastActor && [b.owner_id, b.sitter_id].includes(db.lastActor) ? db.lastActor : null;
+    const hadMeetCard = db.chat_messages.some((m) => m.thread_id === thread.id && (m.card as Row | null)?.type === "meet_greet" && (m.card as Row).booking_id === b.id);
     for (const type of wanted) {
       const has = db.chat_messages.some((m) => m.thread_id === thread.id && (m.card as Row | null)?.type === type && (m.card as Row).booking_id === b.id);
       if (!has) {
@@ -1036,6 +1037,37 @@ function syncBookingCards(db: MockDb) {
           kind: "card",
           body: null,
           card: { type, booking_id: b.id, rev: 0 },
+          created_at: new Date(nowMs() + db.chat_messages.length).toISOString(),
+        });
+      }
+    }
+    // 015k (#264): a Meet & Greet change also posts a line at the bottom, from the one who made it.
+    if (hadMeetCard) {
+      const [oldStatus, , oldMg, oldMode, oldAt, oldPlace] = JSON.parse(before) as (string | null)[];
+      const event =
+        b.status === "cancelled" && oldStatus !== "cancelled" && b.cancel_reason === "meet_greet_declined"
+          ? "declined"
+          : b.status !== "requested"
+            ? null
+            : mg === "proposed" && (oldMg !== "proposed" || oldAt !== b.meet_greet_at || oldMode !== b.meet_greet_mode || oldPlace !== b.meet_greet_place)
+              ? "proposed"
+              : mg === oldMg
+                ? null
+                : mg === "agreed"
+                  ? "agreed"
+                  : mg === "required" && oldMg === "proposed"
+                    ? "time_declined"
+                    : ["skip_requested", "skipped", "done"].includes(mg)
+                      ? mg
+                      : null;
+      if (event) {
+        db.chat_messages.push({
+          id: crypto.randomUUID(),
+          thread_id: thread.id,
+          sender_id: sender,
+          kind: "card",
+          body: null,
+          card: { type: "meet_greet_update", booking_id: b.id, event, mode: b.meet_greet_mode ?? null, at: b.meet_greet_at ?? null, place: b.meet_greet_place ?? null },
           created_at: new Date(nowMs() + db.chat_messages.length).toISOString(),
         });
       }
