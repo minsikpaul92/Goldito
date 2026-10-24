@@ -211,7 +211,7 @@ test.describe("care in the chat", () => {
     await expect(screen.getByTestId("chat-photo-open")).toContainText("Robert asked for a photo of Max");
     await expect(screen.getByTestId("chat-ask-photo")).toHaveCount(0); // only the owner asks
     await screen.getByTestId("chat-photo-send").click();
-    await expect(page).toHaveURL(new RegExp(`/sitter/feed/${MAX}$`));
+    await expect(page).toHaveURL(new RegExp(`/sitter/feed\\?pet=${MAX}$`));
 
     // The sitter's next shared photo answers the ask (the database does this); the caption is one line.
     db.media.push({ id: "media-1", pet_id: MAX, cloudinary_public_id: "pets/max-nap", resource_type: "image", purpose: "feed" });

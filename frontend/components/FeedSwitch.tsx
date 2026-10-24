@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 
-import { SegmentedControl } from "./ui/SegmentedControl";
+import { SlideToggle } from "./ui/SlideToggle";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
@@ -15,8 +15,8 @@ export function useFeedView(): FeedView {
 }
 
 /**
- * The Feed tab with Diary inside it (#329, Seulgi's five tabs): a Photos · Diary switch on top, the chosen page under
- * it. The choice is in the URL (`?view=`), so a link or a notice can open the diary.
+ * The Feed tab with Diary inside it (#329, Seulgi's five tabs): a Photos / Diary switch on top (a sliding toggle), the
+ * chosen page under it. The choice is in the URL (`?view=`), so a link or a notice can open the diary.
  */
 export function FeedSwitch({ photos, diary }: { photos: ReactNode; diary: ReactNode }) {
   const styles = useThemedStyles(makeStyles);
@@ -24,7 +24,7 @@ export function FeedSwitch({ photos, diary }: { photos: ReactNode; diary: ReactN
   return (
     <View style={styles.root}>
       <View style={styles.bar}>
-        <SegmentedControl
+        <SlideToggle
           options={[
             { value: "photos", label: "Photos" },
             { value: "diary", label: "Diary" },

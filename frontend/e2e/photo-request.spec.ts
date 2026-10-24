@@ -24,7 +24,7 @@ test.describe("photo request", () => {
     const banner = screen.getByTestId("home-photo-request");
     await expect(banner).toContainText("asked for a photo of Max");
     await banner.click();
-    await expect(page).toHaveURL(new RegExp(`/sitter/feed/${MAX}$`));
+    await expect(page).toHaveURL(new RegExp(`/sitter/feed\\?pet=${MAX}$`));
     await screen.getByTestId("feed-add-photo").click();
     await screen.getByTestId("sample-walk").click();
     await screen.getByTestId("feed-add-save").click();

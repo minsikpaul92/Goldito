@@ -43,9 +43,14 @@ export type FeedPost = {
   caption: string | null;
   captionSource: CaptionSource | null;
   category: FeedCategory | null;
+  /** The tags of the photo (any number of them, 015l); `category` is the one the app and the care functions write. */
+  tags: FeedTag[];
   note: string | null;
   taskLogId: string | null;
+  /** When it was sent (the 30 minutes to delete it for both count from here). */
   createdAt: string;
+  /** When the photo is "from" (015l): the day header, the order and the time on it. The author can move it. */
+  takenAt: string;
 };
 
 export type FeedMedia = {
@@ -67,7 +72,7 @@ export type FeedTimelinePost = FeedPost & {
 };
 
 const FEED_COLUMNS =
-  "id, pet_id, sitter_id, posted_by, visibility, media_id, caption, caption_source, category, note, task_log_id, created_at";
+  "id, pet_id, sitter_id, posted_by, visibility, media_id, caption, caption_source, category, tags, note, task_log_id, created_at, taken_at";
 
 // `hidden` reads my own row of feed_post_hidden (RLS shows nobody else's); a post I removed is not returned at all.
 const TIMELINE_SELECT =
@@ -92,6 +97,13 @@ type TimelineRow = FeedPostRow & {
   hidden?: { state: string } | { state: string }[] | null;
 };
 
+/** The tags of a row: its own list, or the one tag of an older row. */
+function tagsOf(row: FeedPostRow): FeedTag[] {
+  const own = row.tags ?? [];
+  const list = own.length > 0 ? own : row.category ? [row.category] : [];
+  return list.filter((t): t is FeedTag => TAGS.includes(t));
+}
+
 function asFeedPost(row: FeedPostRow): FeedPost {
   return {
     id: row.id,
@@ -103,9 +115,11 @@ function asFeedPost(row: FeedPostRow): FeedPost {
     caption: row.caption,
     captionSource: row.caption_source,
     category: row.category ?? null,
+    tags: tagsOf(row),
     note: row.note ?? null,
     taskLogId: row.task_log_id,
     createdAt: row.created_at,
+    takenAt: row.taken_at ?? row.created_at,
   };
 }
 
@@ -196,16 +210,25 @@ export type FeedTag = Exclude<FeedFilterKey, "all" | "none">;
 
 const TAGS: readonly string[] = ["meal", "walk", "nap", "mood", "potty"];
 
-/** The tag shown on a photo: only the five that have a chip; anything else is untagged. */
-export function feedTag(post: Pick<FeedTimelinePost, "category" | "media">): FeedTag | null {
-  if (post.media.purpose === "sticker") return null;
-  return post.category && TAGS.includes(post.category) ? (post.category as FeedTag) : null;
+/** The tags a photo can have, with the words the app shows for them. */
+export const FEED_TAGS: { key: FeedTag; label: string }[] = [
+  { key: "meal", label: "Meals" },
+  { key: "walk", label: "Walks" },
+  { key: "nap", label: "Naps" },
+  { key: "mood", label: "Mood" },
+  { key: "potty", label: "Potty" },
+];
+
+/** The tags shown on a photo, in the order of the chips; a sticker has none. */
+export function feedTags(post: Pick<FeedPost, "tags"> & { media: Pick<FeedMedia, "purpose"> }): FeedTag[] {
+  if (post.media.purpose === "sticker") return [];
+  return TAGS.filter((t): t is FeedTag => post.tags.includes(t as FeedTag));
 }
 
 export function matchesFilter(post: FeedTimelinePost, key: FeedFilterKey): boolean {
   if (key === "all") return true;
-  const tag = feedTag(post);
-  return key === "none" ? tag === null : tag === key;
+  const tags = feedTags(post);
+  return key === "none" ? tags.length === 0 : tags.includes(key);
 }
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -250,8 +273,8 @@ export type MosaicRow =
  */
 export function buildMosaic(posts: FeedTimelinePost[], dayOf: (iso: string) => string, today: string): MosaicRow[] {
   const byDay = new Map<string, FeedTimelinePost[]>();
-  for (const post of [...posts].sort((a, b) => b.createdAt.localeCompare(a.createdAt))) {
-    const day = dayOf(post.createdAt);
+  for (const post of [...posts].sort((a, b) => b.takenAt.localeCompare(a.takenAt))) {
+    const day = dayOf(post.takenAt);
     byDay.set(day, [...(byDay.get(day) ?? []), post]);
   }
   const rows: MosaicRow[] = [];
@@ -304,6 +327,23 @@ export async function removeFeedPost(postId: string, scope: DeleteScope = "me"):
   }
 }
 
+/** What an author can change on a photo (015l). */
+export type FeedEdit = { takenAt: string; note: string; tags: FeedTag[] };
+
+/** The author changes the tags, the day and time, and the memo of their photo. */
+export async function updateFeedPost(postId: string, edit: FeedEdit): Promise<void> {
+  const { error } = await getSupabase().rpc("update_feed_post", {
+    p_post: postId,
+    p_taken_at: edit.takenAt,
+    p_note: edit.note,
+    p_tags: edit.tags,
+  });
+  if (!error) return;
+  if (error.message === "in_the_future") throw new Error("Pick a time that has already passed.");
+  if (error.message === "not_author") throw new Error("Only the person who posted it can edit it.");
+  throw new Error("Couldn't save this photo. Try again.");
+}
+
 /** Hide a photo from the grid (it comes back under Hidden). */
 export async function hideFeedPost(postId: string): Promise<void> {
   const { error } = await getSupabase().rpc("hide_feed_post", { p_post: postId });
@@ -330,7 +370,7 @@ export async function listFeedPosts(
     .from("feed_posts")
     .select(TIMELINE_SELECT)
     .eq("pet_id", petId)
-    .order("created_at", { ascending: false })
+    .order("taken_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
   if (error) {

@@ -1797,6 +1797,25 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, id);
   }
 
+  if (path === "rpc/update_feed_post") {
+    // 015l: the author changes the tags, the day and time it is from, and the memo.
+    const { p_post, p_taken_at, p_note, p_tags } = request.postDataJSON();
+    const post = db.feed_posts.find((p) => p.id === p_post);
+    const fail = (message: string) => json(route, 400, { code: "P0001", message });
+    if (!post) return fail("not_found");
+    if (post.posted_by !== me) return fail("not_author");
+    if (Date.parse(p_taken_at) > nowMs() + 5 * 60_000) return fail("in_the_future");
+    const tags = [...new Set<string>(p_tags ?? [])].sort();
+    if (tags.some((t) => !["meal", "walk", "nap", "mood", "potty"].includes(t))) return fail("bad_tag");
+    Object.assign(post, {
+      taken_at: p_taken_at,
+      note: typeof p_note === "string" && p_note.trim() ? p_note.trim() : null,
+      tags,
+      category: tags[0] ?? null,
+    });
+    return route.fulfill({ status: 204 });
+  }
+
   if (path === "rpc/hide_feed_post" || path === "rpc/unhide_feed_post") {
     const { p_post } = request.postDataJSON();
     const own = (h: Row) => h.post_id === p_post && h.user_id === me;
@@ -2468,6 +2487,12 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "pet_stickers" || path === "safety_checks") && params.get("order")!.endsWith(".desc")) {
         rows.reverse();
       }
+    }
+    // The Feed is read by the time a photo is from (015l), newest first.
+    if ((params.get("order") ?? "").startsWith("taken_at")) {
+      const at = (r: Row) => String(r.taken_at ?? r.created_at);
+      rows = [...rows].sort((a, b) => at(a).localeCompare(at(b)));
+      if (params.get("order")!.endsWith(".desc")) rows.reverse();
     }
     if ((params.get("order") ?? "").startsWith("started_at")) {
       rows = [...rows].sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)));

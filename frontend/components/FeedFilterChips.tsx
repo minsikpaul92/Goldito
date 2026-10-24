@@ -1,19 +1,25 @@
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { FeedTagIcon } from "./FeedTagIcon";
 import { HOME_TEXT } from "./home/homeType";
 import { HorizontalList } from "./ui/HorizontalList";
+import { Icon } from "./ui/Icon";
 import { FEED_FILTERS, FeedFilterKey } from "../lib/feed";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
+/** What the chips choose: a tag filter, or `hidden` (the photos I hid). */
+export type FeedChipKey = FeedFilterKey | "hidden";
+
 type Props = {
-  value: FeedFilterKey;
-  onChange: (key: FeedFilterKey) => void;
+  value: FeedChipKey;
+  onChange: (key: FeedChipKey) => void;
+  /** How many photos I hid: the Hidden chip comes after No tag only when there are some. */
+  hiddenCount: number;
 };
 
-/** The Feed's filter chips (Figma 1730:104035): All · Meals · Walks · Naps · Mood · Potty · No tag, a row that scrolls sideways. */
-export function FeedFilterChips({ value, onChange }: Props) {
+/** The Feed's filter chips (Figma 1730:104035): All · Meals · Walks · Naps · Mood · Potty · No tag (· Hidden), a row that scrolls sideways. */
+export function FeedFilterChips({ value, onChange, hiddenCount }: Props) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   return (
@@ -34,6 +40,20 @@ export function FeedFilterChips({ value, onChange }: Props) {
           </Pressable>
         );
       })}
+      {hiddenCount > 0 ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ selected: value === "hidden" }}
+          onPress={() => onChange("hidden")}
+          style={[styles.chip, value === "hidden" && styles.chipOn]}
+          testID="feed-filter-hidden"
+        >
+          <View style={styles.hiddenIcon}>
+            <Icon name="hidden" size={18} color={value === "hidden" ? theme.color.primaryText : theme.color.text} />
+          </View>
+          <Text style={[styles.label, value === "hidden" && styles.labelOn]}>Hidden</Text>
+        </Pressable>
+      ) : null}
     </HorizontalList>
   );
 }
@@ -54,6 +74,7 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.surface,
     },
     chipOn: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },
+    hiddenIcon: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
     label: { fontSize: HOME_TEXT.chip, lineHeight: 18.2, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     labelOn: { color: theme.color.primaryText },
   });

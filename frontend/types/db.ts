@@ -116,10 +116,14 @@ export type FeedPostRow = {
   caption: string | null;
   caption_source: CaptionSource | null;
   category: FeedCategory | null;
+  /** The tags of the photo (015l), any number. */
+  tags?: string[] | null;
   /** The author's short memo (015j), up to 200 characters. */
   note: string | null;
   task_log_id: string | null;
   created_at: string;
+  /** When the photo is from (015l); the time it was sent until its author moves it. */
+  taken_at?: string | null;
 };
 
 export type MediaResourceType = "image" | "video";

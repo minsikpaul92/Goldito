@@ -1,12 +1,14 @@
-import { ReactNode, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { FeedDeleteSheet } from "./FeedDeleteSheet";
-import { FeedFilterChips } from "./FeedFilterChips";
+import { FeedEditSheet } from "./FeedEditSheet";
+import { FeedChipKey, FeedFilterChips } from "./FeedFilterChips";
 import { FeedTagIcon } from "./FeedTagIcon";
 import { FeedViewer } from "./FeedViewer";
 import { HOME_TEXT } from "./home/homeType";
 import { EmptyState } from "./ui/EmptyState";
+import { LoadingView } from "./ui/LoadingView";
 import { sectionTitleStyle } from "./ui/SectionTitle";
 import { TextButton } from "./ui/TextButton";
 import { appToday, isoToZoned } from "../features/schedule/dates";
@@ -19,11 +21,13 @@ import {
   MosaicRow,
   buildMosaic,
   feedBadgeTime,
-  feedTag,
+  feedTags,
   hideFeedPost,
   matchesFilter,
   removeFeedPost,
   unhideFeedPost,
+  updateFeedPost,
+  FeedEdit,
 } from "../lib/feed";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -40,16 +44,18 @@ const CELL_RADIUS = 22;
 type Props = {
   /** Everything loaded so far for the pet (hidden ones included; this screen sorts them out). */
   posts: FeedTimelinePost[];
+  /** The first page is on its way: the pet dropdown and the chips are already there, the list says so. */
+  loading?: boolean;
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
   currentUserId: string | null;
   /** A photo was deleted: drop it from the list. */
   onRemoved: (postId: string) => void;
-  /** A photo was hidden or brought back. */
-  onHiddenChange: (postId: string, hidden: boolean) => void;
-  /** Above the chips (the pet switch). */
-  header?: ReactNode;
+  /** A photo changed: hidden or brought back, or edited by its author. */
+  onPostChange: (postId: string, change: Partial<FeedTimelinePost>) => void;
+  /** The pet dropdown, left of the chips. */
+  petPicker?: ReactNode;
   /** What the empty Feed says it will show. */
   emptyMessage: string;
   /** The list could not load: this message with a Try again. */
@@ -74,13 +80,14 @@ const EMPTY_TITLE: Record<FeedFilterKey, string> = {
  */
 export function FeedBrowser({
   posts,
+  loading,
   hasMore,
   loadingMore,
   onLoadMore,
   currentUserId,
   onRemoved,
-  onHiddenChange,
-  header,
+  onPostChange,
+  petPicker,
   emptyMessage,
   error,
   testID,
@@ -88,30 +95,58 @@ export function FeedBrowser({
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const [width, setWidth] = useState(0);
-  const [filter, setFilter] = useState<FeedFilterKey>("all");
-  const [showHidden, setShowHidden] = useState(false);
+  const [filter, setFilter] = useState<FeedChipKey>("all");
   const [viewerId, setViewerId] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const showHidden = filter === "hidden";
   const shown = useMemo(
-    () => posts.filter((p) => p.hidden === showHidden && matchesFilter(p, filter)),
-    [posts, showHidden, filter],
+    () => (filter === "hidden" ? posts.filter((p) => p.hidden) : posts.filter((p) => !p.hidden && matchesFilter(p, filter))),
+    [posts, filter],
   );
   const rows = useMemo(() => buildMosaic(shown, (iso) => isoToZoned(iso).day, appToday()), [shown]);
   const hiddenCount = posts.filter((p) => p.hidden).length;
+  // The last hidden photo came back: the Hidden chip is gone, so go back to All.
+  useEffect(() => {
+    if (filter === "hidden" && hiddenCount === 0) setFilter("all");
+  }, [filter, hiddenCount]);
   const pending = posts.find((p) => p.id === pendingId) ?? null;
+  const editing = posts.find((p) => p.id === editId) ?? null;
 
   const cell = width > 0 ? (width - 2 * SIDE - 2 * GAP) / 3 : 0;
 
   const hide = async (id: string, hidden: boolean) => {
     try {
       await (hidden ? hideFeedPost(id) : unhideFeedPost(id));
-      onHiddenChange(id, hidden);
+      onPostChange(id, { hidden });
       setViewerId(null);
       toast.show(hidden ? "Photo hidden" : "Photo is back in your Feed");
     } catch (err) {
       toast.show(err instanceof Error ? err.message : "Couldn't do that. Try again.");
+    }
+  };
+
+  const saveEdit = async (edit: FeedEdit) => {
+    if (!editId || saving) return;
+    const id = editId;
+    setSaving(true);
+    try {
+      await updateFeedPost(id, edit);
+      onPostChange(id, {
+        takenAt: edit.takenAt,
+        note: edit.note || null,
+        tags: edit.tags,
+        category: edit.tags[0] ?? null,
+      });
+      setEditId(null);
+      toast.show("Photo updated");
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't save this photo. Try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -132,14 +167,16 @@ export function FeedBrowser({
     }
   };
 
-  const empty = error ? (
+  const empty = loading ? (
+    <LoadingView />
+  ) : error ? (
     <EmptyState emoji="📸" title="Couldn't load the feed" message={error.message} action={{ label: "Try again", onPress: error.onRetry }} />
   ) : showHidden ? (
     <EmptyState emoji="📸" title="Nothing hidden" message="Photos you hide wait here." />
   ) : posts.length === 0 ? (
     <EmptyState emoji="📸" title="No photos yet" message={emptyMessage} />
   ) : (
-    <EmptyState emoji="📸" title={EMPTY_TITLE[filter]} message="Photos with this tag show up here." />
+    <EmptyState emoji="📸" title={EMPTY_TITLE[filter as FeedFilterKey]} message="Photos with this tag show up here." />
   );
 
   return (
@@ -152,34 +189,24 @@ export function FeedBrowser({
         onEndReachedThreshold={0.4}
         ListHeaderComponent={
           <View style={styles.top}>
-            {header}
-            {showHidden ? (
-              <View style={styles.hiddenBar}>
-                <Text accessibilityRole="header" style={styles.hiddenTitle}>
-                  Hidden
-                </Text>
-                <TextButton label="Back" onPress={() => setShowHidden(false)} testID="feed-hidden-back" />
+            <View style={styles.filters}>
+              {petPicker}
+              <View style={styles.chips}>
+                <FeedFilterChips value={filter} onChange={setFilter} hiddenCount={hiddenCount} />
               </View>
-            ) : (
-              <FeedFilterChips value={filter} onChange={setFilter} />
-            )}
+            </View>
           </View>
         }
         ListEmptyComponent={width > 0 ? empty : null}
         ListFooterComponent={
-          <View>
-            {hasMore ? (
-              <TextButton
-                label={loadingMore ? "Loading…" : "Load more"}
-                onPress={onLoadMore}
-                disabled={loadingMore}
-                testID="feed-load-more"
-              />
-            ) : null}
-            {!showHidden && hiddenCount > 0 ? (
-              <TextButton label={`Hidden (${hiddenCount})`} onPress={() => setShowHidden(true)} testID="feed-hidden-open" />
-            ) : null}
-          </View>
+          hasMore ? (
+            <TextButton
+              label={loadingMore ? "Loading…" : "Load more"}
+              onPress={onLoadMore}
+              disabled={loadingMore}
+              testID="feed-load-more"
+            />
+          ) : null
         }
         renderItem={({ item, index }) => (
           <MosaicRowView row={item} first={index === 0} cell={cell} onOpen={setViewerId} />
@@ -188,11 +215,17 @@ export function FeedBrowser({
       />
 
       <FeedViewer
-        visible={viewerId != null && pendingId == null}
+        visible={viewerId != null && pendingId == null && editId == null}
         posts={shown}
         initialPostId={viewerId}
         onClose={() => setViewerId(null)}
         onNearEnd={onLoadMore}
+        canEdit={(post) => currentUserId != null && post.postedBy === currentUserId && post.media.purpose !== "sticker"}
+        onRequestEdit={(id) => {
+          // Reopen on this photo when the edit is closed (the viewer hides behind the sheet).
+          setViewerId(id);
+          setEditId(id);
+        }}
         onHide={(id) => void hide(id, true)}
         onUnhide={(id) => void hide(id, false)}
         onRequestDelete={(id) => {
@@ -201,6 +234,8 @@ export function FeedBrowser({
           setPendingId(id);
         }}
       />
+
+      <FeedEditSheet post={editing} saving={saving} onClose={() => setEditId(null)} onSave={(edit) => void saveEdit(edit)} />
 
       <FeedDeleteSheet
         post={pending}
@@ -262,9 +297,9 @@ function FeedCell({ post, w, h, onOpen }: { post: FeedTimelinePost; w: number; h
   const theme = useTheme();
   const isVideo = post.media.resourceType === "video";
   const isSticker = post.media.purpose === "sticker";
-  const tag = feedTag(post);
-  const tagLabel = tag ? FEED_FILTERS.find((f) => f.key === tag)?.label : null;
-  const time = feedBadgeTime(post.createdAt);
+  const tags = feedTags(post);
+  const tagLabel = tags.length > 0 ? tags.map((t) => FEED_FILTERS.find((f) => f.key === t)?.label).join(", ") : null;
+  const time = feedBadgeTime(post.takenAt);
   const uri = isVideo
     ? videoPosterUrl(post.media.publicId, 600)
     : isSticker
@@ -290,9 +325,13 @@ function FeedCell({ post, w, h, onOpen }: { post: FeedTimelinePost; w: number; h
           <Text style={styles.playIcon}>▶</Text>
         </View>
       ) : null}
-      <View style={styles.badge} pointerEvents="none">
-        {tag ? <FeedTagIcon tag={tag} size={20} color={theme.color.text} /> : null}
-        <Text style={styles.badgeText}>{time}</Text>
+      <View style={[styles.badge, tags.length === 0 && styles.badgePlain]} pointerEvents="none" testID={`feed-badge-${post.id}`}>
+        {tags.map((tag) => (
+          <FeedTagIcon key={tag} tag={tag} size={20} color={theme.color.text} />
+        ))}
+        <Text style={styles.badgeText} testID={`feed-badge-time-${post.id}`}>
+          {time}
+        </Text>
       </View>
     </Pressable>
   );
@@ -310,8 +349,8 @@ const makeStyles = (theme: Theme) =>
       alignSelf: "center",
     },
     top: { gap: 14, paddingTop: 8, paddingBottom: 14 },
-    hiddenBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    hiddenTitle: sectionTitleStyle(theme),
+    filters: { flexDirection: "row", alignItems: "center", gap: 8 },
+    chips: { flex: 1, minWidth: 0 },
     dayHeader: {
       flexDirection: "row",
       alignItems: "baseline",
@@ -340,6 +379,8 @@ const makeStyles = (theme: Theme) =>
       borderRadius: theme.radius.pill,
       backgroundColor: theme.color.surface,
     },
+    // No tag: the time alone, the same room on both sides, so it sits in the middle of the pill.
+    badgePlain: { paddingLeft: 9, justifyContent: "center" },
     badgeText: { fontSize: BADGE_TEXT, lineHeight: 16.1, fontWeight: "800", color: theme.color.text },
     play: {
       position: "absolute",

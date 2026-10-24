@@ -5,10 +5,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AddPhotoSheet } from "../../../components/AddPhotoSheet";
 import { FeedBrowser } from "../../../components/FeedBrowser";
+import { FeedPetPicker } from "../../../components/FeedPetPicker";
 import { FeedSwitch } from "../../../components/FeedSwitch";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
-import { SegmentedControl } from "../../../components/ui/SegmentedControl";
 import { useInCare } from "../../../features/care/useInCare";
 import { OwnerDiaryBook } from "../../../features/diary/OwnerDiaryBook";
 import { useMyPets } from "../../../features/pets/useMyPets";
@@ -181,30 +181,25 @@ function OwnerFeed() {
     );
   }
 
-  if (feed.status === "loading") return <LoadingView />;
-
-  const posts = feed.posts;
-  const petOptions = pets.slice(0, 4).map((p) => ({ value: p.id, label: p.name }));
+  const posts = feed.status === "loading" ? [] : feed.posts;
+  const petGroups = [{ key: "mine", pets: pets.map((p) => ({ id: p.id, name: p.name, species: p.species })) }];
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <FeedBrowser
         posts={posts}
+        loading={feed.status === "loading"}
         hasMore={feed.status === "ready" ? feed.hasMore : false}
         loadingMore={loadingMore}
         onLoadMore={() => void loadMore()}
         currentUserId={currentUserId}
         onRemoved={(id) => setFeed((prev) => (prev.status === "loading" ? prev : { ...prev, posts: prev.posts.filter((p) => p.id !== id) }))}
-        onHiddenChange={(id, hidden) =>
+        onPostChange={(id, change) =>
           setFeed((prev) =>
-            prev.status === "loading" ? prev : { ...prev, posts: prev.posts.map((p) => (p.id === id ? { ...p, hidden } : p)) },
+            prev.status === "loading" ? prev : { ...prev, posts: prev.posts.map((p) => (p.id === id ? { ...p, ...change } : p)) },
           )
         }
-        header={
-          petOptions.length > 1 ? (
-            <SegmentedControl options={petOptions} value={petId} onChange={setPetId} testID="feed-pet" />
-          ) : null
-        }
+        petPicker={<FeedPetPicker groups={petGroups} value={petId} onChange={setPetId} />}
         emptyMessage="Your sitter will share photos here."
         error={feed.status === "error" && posts.length === 0 ? { message: feed.message, onRetry: () => void loadPage(0, false) } : null}
         testID="owner-feed-list"
