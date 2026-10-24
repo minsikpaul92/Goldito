@@ -113,11 +113,19 @@ test.describe("sitter pet room", () => {
   });
 
   test("feeding shows a bowl the pet eats from, then it goes; going potty leaves a poop the room clears", async ({ page }) => {
+    // The pet picks what to do next by chance, and one that is lying down ignores a Feed or Poop tap (triggerBehavior).
+    // A fixed roll makes it a pet that never lies down on its own, so the tap always shows.
+    await page.addInitScript(() => {
+      Math.random = () => 0.4;
+    });
     await setup(page);
     const screen = app(page);
     // Stop the clock so every tick of the pet is one we run ourselves.
     // (A new check-in is "just now" for 20 seconds, so pause only a moment from now.)
     await page.clock.pauseAt(new Date((await page.evaluate(() => Date.now())) + 1000));
+    // The mock stamps every check-in at noon, and the room shows only one under 20 seconds old. The page clock has run
+    // on since noon (more on a busy machine), so put it back: the check-in is "just now" however long the setup took.
+    await page.clock.setSystemTime(NOON_TORONTO);
     const sprite = screen.getByTestId("pet-room-Max-sprite");
     const bowl = () => sprite.evaluate((el) => [...el.querySelectorAll("div")].filter((d) => getComputedStyle(d).backgroundColor === "rgb(214, 69, 69)").length);
     expect(await bowl()).toBe(0);
@@ -131,9 +139,14 @@ test.describe("sitter pet room", () => {
 
     const poops = screen.getByTestId("pet-room-Max-sprite-poop");
     await expect(poops).toHaveCount(0);
+    await page.clock.setSystemTime(NOON_TORONTO);
     await screen.getByTestId(tap(MAX, "potty")).click();
-    await page.clock.runFor(2000);
-    await expect(poops).toHaveCount(1);
+    // The poop drops a few ticks after the request and the reload are done, and those finish in real time while the page
+    // clock stands still: move the clock on a little at a time until the poop is there.
+    await expect.poll(async () => {
+      await page.clock.runFor(200);
+      return poops.count();
+    }).toBe(1);
     await page.clock.runFor(9000);
     await expect(poops).toHaveCount(0);
   });
