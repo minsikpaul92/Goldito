@@ -96,12 +96,12 @@ Shows: `BookingCard` · `BookingTicket` · `PhotoViewerSheet` · `SitterResultCa
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 104 |
-| SegmentedControl | — | `owner-bookings-tabs` | 148 |
-| Button | Book care | `book-care` | 172 |
-| TextButton | Open Profile | `search-open-profile` | 186 |
-| TextButton | Try again | `search-retry` | 194 |
-| TextButton | pastOpen ? "Hide past bookings" : `Past bookings (${past.length})` | `past-toggle` | 235 |
+| EmptyState | Couldn't load your bookings | — | 112 |
+| SegmentedControl | — | `owner-bookings-tabs` | 157 |
+| Button | Book care | `book-care` | 181 |
+| TextButton | Open Profile | `search-open-profile` | 195 |
+| TextButton | Try again | `search-retry` | 203 |
+| TextButton | pastOpen ? "Hide past bookings" : `Past bookings (${past.length})` | `past-toggle` | 244 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -161,12 +161,12 @@ Shows: `HandoffDraft` · `HandoffPicker`
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Add a pet first | — | 253 |
-| CheckRow | `favorites.has(id) ? `★ ${name}` : name` | ``pick-sitter-${name}`` | 267 |
-| TextButton | Profile | ``sitter-profile-${name}`` | 283 |
-| SegmentedControl | — | `service` | 304 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``pick-pet-${pet.name}`` | 325 |
-| TextButton | showPartial ? "Hide other options" : `Other options (${otherPartial.length})` | `toggle-partial` | 399 |
-| Button | sending ? "Sending…" : sitterName ? `Request booking with ${sitterName}` : "Request booking" | `request-booking` | 433 |
+| CheckRow | `name` | ``pick-sitter-${name}`` | 267 |
+| TextButton | Profile | ``sitter-profile-${name}`` | 284 |
+| SegmentedControl | — | `service` | 305 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``pick-pet-${pet.name}`` | 326 |
+| TextButton | showPartial ? "Hide other options" : `Other options (${otherPartial.length})` | `toggle-partial` | 400 |
+| Button | sending ? "Sending…" : sitterName ? `Request booking with ${sitterName}` : "Request booking" | `request-booking` | 434 |
 
 ### `/owner/chat` — [app/owner/(tabs)/chat.tsx](../../frontend/app/owner/(tabs)/chat.tsx)
 
@@ -1251,8 +1251,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${name}'s photos`` | ``sitter-avatar-${name}`` | 42 |
-| Pressable | [name, facts, meta && facts !== meta ? meta : null, km, availability?.label, nightly != null ? `$${nightly} per night` : null].filter(Boolean).join(", ") | `testID` | 48 |
+| Pressable | ``${name}'s photos`` | ``sitter-avatar-${name}`` | 44 |
+| Pressable | [favorite ? `${name}, favorite` : name, rating != null ? `rated ${rating.toFixed(1)}` : null, facts, meta && facts !== meta ? meta : null, km, availability?.label, nightly != null ? `$${nightly} per night` : null].filter(Boolean).join(", ") | `testID` | 50 |
 
 ### SitterSearchBar — [components/SitterSearchBar.tsx](../../frontend/components/SitterSearchBar.tsx)
 

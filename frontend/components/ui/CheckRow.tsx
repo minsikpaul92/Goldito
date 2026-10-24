@@ -13,11 +13,13 @@ type Props = {
   /** One-of-many choice (radio semantics and icon) instead of a checkbox. */
   radio?: boolean;
   disabled?: boolean;
+  /** A favorite sitter: the same filled heart as the sitter's page, after the name. */
+  favorite?: boolean;
   testID?: string;
 };
 
 /** Checkbox (or radio) with its label as one big click target. */
-export function CheckRow({ label, hint, checked, onChange, radio, disabled, testID }: Props) {
+export function CheckRow({ label, hint, checked, onChange, radio, disabled, favorite, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
 
@@ -26,7 +28,7 @@ export function CheckRow({ label, hint, checked, onChange, radio, disabled, test
       accessibilityRole={radio ? "radio" : "checkbox"}
       // react-native-web ignores accessibilityState.checked; aria-checked reaches the DOM.
       aria-checked={checked}
-      accessibilityLabel={label}
+      accessibilityLabel={favorite ? `${label}, favorite` : label}
       disabled={disabled}
       onPress={() => onChange(radio ? true : !checked)}
       style={[styles.row, disabled && styles.disabled]}
@@ -38,7 +40,10 @@ export function CheckRow({ label, hint, checked, onChange, radio, disabled, test
         color={checked ? theme.color.primary : theme.color.textMuted}
       />
       <View style={styles.text}>
-        <Text style={styles.label}>{label}</Text>
+        <View style={styles.labelRow}>
+          <Text style={styles.label}>{label}</Text>
+          {favorite ? <Icon name="heart" filled size={14} color={theme.color.primary} /> : null}
+        </View>
         {hint ? <Text style={styles.hint}>{hint}</Text> : null}
       </View>
     </Pressable>
@@ -59,6 +64,7 @@ const makeStyles = (theme: Theme) =>
     disabled: {
       opacity: theme.opacity.disabled,
     },
+    labelRow: { flexDirection: "row", alignItems: "center", gap: 6 },
     label: {
       fontSize: theme.fontSize.body,
       fontWeight: theme.fontWeight.semibold,

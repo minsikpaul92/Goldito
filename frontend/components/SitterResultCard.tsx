@@ -1,14 +1,16 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { useThemedStyles } from "../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { tokens } from "../theme/tokens";
 import { Avatar } from "./ui/Avatar";
+import { Icon } from "./ui/Icon";
 
 type Props = {
   name: string;
   /** Cover photo url, or nothing for the initial. */
   photo?: string | null;
-  /** First part of the facts line: "5 yrs experience". */
+  /** After the distance on the facts line: "5 yrs exp". */
   meta?: string | null;
   /** Last part of the facts line: "2 km". */
   km: string;
@@ -30,11 +32,11 @@ type Props = {
  * The whole card opens the profile; no chevron. Rating, stays and availability join the facts line once the search returns them.
  */
 export function SitterResultCard({ name, photo, meta, km, nightly, favorite, rating, stays, availability, onOpen, onPhoto, testID }: Props) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
-  // Rating and stays say "trusted" in a few characters; experience is the fallback for new sitters (one short line, no ellipsis).
-  const facts = rating != null || stays != null
-    ? [rating != null ? `★ ${rating.toFixed(1)}` : null, stays != null ? `${stays} ${stays === 1 ? "stay" : "stays"}` : null].filter(Boolean).join(" · ")
-    : meta ?? "";
+  // Stays say "trusted" in a few characters; experience is the fallback for new sitters (one short line, no ellipsis).
+  // The rating sits next to the name, and only when the sitter has reviews.
+  const facts = stays != null ? `${stays} ${stays === 1 ? "stay" : "stays"}` : meta ?? "";
   const avatar = photo ? <Avatar kind="photo" uri={photo} size={52} /> : <Avatar kind="initial" name={name} size={52} />;
   return (
     <View style={styles.card}>
@@ -47,18 +49,22 @@ export function SitterResultCard({ name, photo, meta, km, nightly, favorite, rat
       )}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={[name, facts, meta && facts !== meta ? meta : null, km, availability?.label, nightly != null ? `$${nightly} per night` : null].filter(Boolean).join(", ")}
+        accessibilityLabel={[favorite ? `${name}, favorite` : name, rating != null ? `rated ${rating.toFixed(1)}` : null, facts, meta && facts !== meta ? meta : null, km, availability?.label, nightly != null ? `$${nightly} per night` : null].filter(Boolean).join(", ")}
         onPress={onOpen}
         style={({ pressed }) => [styles.main, pressed && styles.pressed]}
         testID={testID}
       >
         <View style={styles.body}>
-          <Text style={styles.name} numberOfLines={1}>
-            {favorite ? `★ ${name}` : name}
-          </Text>
+          <View style={styles.nameRow}>
+            {favorite ? <Icon name="heart" filled size={14} color={theme.color.primary} testID={`sitter-heart-${name}`} /> : null}
+            <Text style={styles.name} numberOfLines={1}>
+              {name}
+              {rating != null ? <Text style={styles.rating} testID={`sitter-rating-${name}`}>{`  ★ ${rating.toFixed(1)}`}</Text> : null}
+            </Text>
+          </View>
           <Text style={styles.meta} numberOfLines={1}>
-            {facts ? `${facts} · ` : ""}
             <Text testID={`sitter-km-${name}`}>{km}</Text>
+            {facts ? ` · ${facts}` : ""}
           </Text>
           {availability ? (
             <View style={[styles.avail, availability.free ? styles.free : styles.full]}>
@@ -90,8 +96,11 @@ const makeStyles = (theme: Theme) =>
     main: { flex: 1, flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, minHeight: theme.layout.touchTarget },
     pressed: { opacity: theme.motion.pressOpacity },
     body: { flex: 1, gap: 2 },
-    name: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+    name: { flexShrink: 1, fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     meta: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    // Gold on a light ground (brand page), never faded.
+    rating: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: tokens.color.goldOnLight },
     price: { alignItems: "flex-end" },
     avail: { alignSelf: "flex-start", marginTop: 2, borderRadius: theme.radius.pill, paddingHorizontal: theme.spacing.sm, paddingVertical: 2 },
     free: { backgroundColor: theme.color.successSurface },
