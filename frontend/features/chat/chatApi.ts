@@ -34,7 +34,18 @@ export type ChatCard =
     }
   // The booking's step cards (014o) hold only the booking id; the screen reads the booking itself to draw them.
   | { type: "meet_greet" | "agreement" | "payment"; bookingId: string }
+  // A Meet & Greet change, posted at the bottom by the one who made it (015k, #264). Time and place as they were then.
+  | {
+      type: "meet_greet_update";
+      bookingId: string;
+      event: MeetGreetEvent;
+      mode: "in_person" | "video" | null;
+      at: string | null;
+      place: string | null;
+    }
   | { type: "unknown" };
+
+export type MeetGreetEvent = "proposed" | "agreed" | "time_declined" | "skip_requested" | "skipped" | "done" | "declined";
 
 export type ChatMessage = {
   id: string;
@@ -102,6 +113,8 @@ export function previewOf(item: Pick<ChatListItem, "lastKind" | "lastBody" | "la
       return "Booking request";
     case "meet_greet":
       return "Meet & Greet";
+    case "meet_greet_update":
+      return "Meet & Greet update";
     case "agreement":
       return "Booking";
     case "payment":
@@ -126,7 +139,14 @@ function toCard(raw: unknown): ChatCard {
     extras?: { id: string; label: string; amount: number | string; status: ChatQuoteExtra["status"] }[];
     total?: number | string;
     status?: "sent" | "confirmed" | "replaced";
+    event?: MeetGreetEvent;
+    mode?: "in_person" | "video" | null;
+    at?: string | null;
+    place?: string | null;
   } | null;
+  if (c?.type === "meet_greet_update" && c.booking_id && c.event) {
+    return { type: "meet_greet_update", bookingId: c.booking_id, event: c.event, mode: c.mode ?? null, at: c.at ?? null, place: c.place ?? null };
+  }
   if ((c?.type === "meet_greet" || c?.type === "agreement" || c?.type === "payment") && c.booking_id) {
     return { type: c.type, bookingId: c.booking_id };
   }

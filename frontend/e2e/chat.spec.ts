@@ -1195,6 +1195,45 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("chat-next-accept")).toHaveText("I accept");
   });
 
+  test("a Meet & Greet answer arrives as a new line at the bottom for both sides; the list follows it (#264)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedBooking(db, true);
+    db.chat_messages.push({ id: "mg0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: { type: "meet_greet", booking_id: BOOKING, rev: 0 }, created_at: "2026-10-10T09:59:01.000Z" });
+    db.chat_messages.push({ id: "t1", thread_id: THREAD, sender_id: OWNER.id, kind: "text", body: "Free tomorrow evening?", card: null, created_at: "2026-10-10T10:00:00.000Z" });
+
+    // Robert suggests a video call: his own line says "You".
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/chat/${THREAD}`);
+    let screen = app(page);
+    await screen.getByTestId("meet-request").click();
+    await screen.getByTestId("meet-mode-video").click();
+    await screen.getByTestId("meet-send").click();
+    await expect(screen.getByTestId("chat-mg-update").last()).toContainText("You suggested a Meet & Greet");
+    await expect(screen.getByTestId("chat-mg-update").last()).toContainText("Video");
+
+    // Chloe: the newest thing in the list and in the chat is the update.
+    screen = await openChatAs(page, SITTER);
+    await expect(screen.getByTestId("chat-mg-update").last()).toContainText("Robert suggested a Meet & Greet");
+    await screen.getByTestId("chat-next-meet").click(); // Accept
+    await expect(screen.getByTestId("chat-mg-update").last()).toContainText("You accepted the Meet & Greet");
+    const last = db.chat_messages.at(-1);
+    expect(last).toMatchObject({ sender_id: SITTER.id, card: { type: "meet_greet_update", event: "agreed" } });
+
+    // Robert's list: the update is the preview and it is unread; in the chat it is the last line, the old card stays.
+    await page.evaluate(() => localStorage.clear());
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    screen = app(page);
+    await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
+    await expect(screen.getByTestId("chat-row-Chloe")).toContainText("Meet & Greet update");
+    await expect(screen.getByTestId("chat-unread-Chloe")).toBeVisible();
+    await screen.getByTestId("chat-row-Chloe").click();
+    await expect(screen.getByTestId("chat-mg-update").last()).toContainText("Chloe accepted the Meet & Greet");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Meet & Greet set");
+    expect(db.chat_messages.filter((m) => (m.card as { type?: string } | null)?.type === "meet_greet")).toHaveLength(1);
+  });
+
   test("someone outside the chat cannot open it", async ({ page }) => {
     const other: MockUser = { id: "00000000-0000-4000-8000-000000000009", email: "joy@goldito.test", password: "joy-pass", role: "owner", displayName: "Joy" };
     const { db } = await mockSupabase(page, [OWNER, SITTER, other]);

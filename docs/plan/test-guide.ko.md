@@ -1166,9 +1166,21 @@
 | PAYWHY-3 | 다 체크 → 이름 칸 | 비어 있으면 **Type your name to sign**, 다른 이름이면 **Type your name as on your profile**. 프로필 이름과 같으면(대소문자 · 앞뒤 · 여러 칸 띄어쓰기는 무시) 줄이 사라지고 Pay가 켜짐 | 🤖 `checkout` | ➖ |
 | PAYWHY-4 | 다 맞춘 뒤 Pay | 예전처럼 결제 → 예약 화면 "Booked and paid" | 🤖 `checkout` | ➖ |
 
+### 3.55 Meet & Greet가 바뀌면 채팅 맨 아래에 새 줄 (MGUPD) · #264 · *사전: 호스팅 DB에 `015k` 적용 뒤*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| MGUPD-1 | (DB) `rls_smoke.sql`의 015k 블록 | 요청 직후엔 줄 없음 · 제안과 수락이 차례로 맨 아래에(보낸 사람 = 한 사람) · 제안한 시간과 방식이 줄에 남음 · 채팅 목록의 마지막 메시지와 안 읽은 수가 따라옴 · 건너뛰기 요청과 거절도 줄로 | SQL `rls_smoke` | ➖ |
+| MGUPD-2 | 오너가 M&G 시간 제안 → 시터가 수락(채팅을 주고받는 중에) | 두 화면 모두 맨 아래에 작은 줄: 오너 "You suggested a Meet & Greet · Video · 날짜", 시터 "Robert suggested …", 수락 뒤 "Chloe accepted the Meet & Greet" / "You accepted …". 위의 M&G 카드는 그대로(지금 상태) | 🤖 `chat` | 사람 확인 대기 |
+| MGUPD-3 | 상대가 M&G를 바꾼 뒤 채팅 목록 | 미리보기 "Meet & Greet update", 안 읽은 수 +1, Chat 탭 배지 | 🤖 `chat` | ➖ |
+| MGUPD-4 | 다른 변화: 시간 거절, 건너뛰기 요청 · 수락, Done, 요청 거절 | 각각 "can't make that time" · "asked to skip" · "agreed to skip" · "Meet & Greet done" · "declined the request" 줄 | SQL(건너뛰기 · 거절) | **👤** 나머지 |
+| MGUPD-5 | 채팅 칩 | 상대의 업데이트 줄에 반응하는 칩(채팅 AI가 줄을 읽음) | pytest `test_ai_chat` | 실제 모델 👤 |
+
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
 - **Feed 삭제 · 숨기기 (FEEDX, #345):** 시터가 오너에게 보낸 사진은 **보낸 지 30분 안**에만 둘 다에게서 지울 수 있다(서버 시계 기준, 앱은 같은 30분으로 버튼을 보여 준다). 그 뒤의 삭제는 내 쪽에서만이고 상대 Feed에는 남는다. 숨기기는 되돌릴 수 있고(Feed 맨 아래 Hidden), 삭제는 되돌릴 수 없다. 사진 파일은 아무도 못 보게 됐을 때만 지워진다. 돌봄이 끝난 시터는 자기가 올린 글만 계속 읽고(오너가 공유해 준 사진은 돌봄 기간까지만), 새로 올리는 사진은 나만 보기로만 된다. 호스팅 DB에 `015j`를 적용하기 전에는 새 Feed가 사진을 못 불러온다.
+
+- **업데이트 줄은 Meet & Greet만 (MGUPD):** 동의(I'd like to book · I accept) · 결제 카드는 예전처럼 제자리에서 바뀌고 새 줄은 없다. 채팅 목록 미리보기는 어떤 변화든 "Meet & Greet update"로 같다(목록은 카드 종류만 안다).
 
 - **서명 이름은 앱에서만 확인한다 (PAYWHY-3):** Pay 버튼은 프로필 이름과 같을 때만 켜지지만, 서버(`sign_booking_consent`)는 이름이 1-80자인지만 본다. 앱을 거치지 않은 호출은 다른 이름으로도 서명할 수 있다. 데모 결제라 서버 확인은 넣지 않았다. 또 회색 Pay는 탭을 받기 때문에(빠진 곳으로 스크롤) 스크린리더에는 "꺼짐"으로 읽히지 않고, 바로 위의 이유 줄이 대신 알려 준다.
 

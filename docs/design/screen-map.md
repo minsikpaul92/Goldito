@@ -20,22 +20,22 @@
 
 One chat per owner and sitter (3D.4): the person and the stay pinned in the header, the booking progress, then everyone's messages and cards, and one thin line to write on. Request booking opens a sheet over the chat.
 
-Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreementCard` · `ChatPaymentCard` · `ChatCareCards` · `ChatHandoffCard` · `ChatPlusMenu` · `ChatQuoteCard` · `ChatStayCard` · `ChatTripCard` · `SendQuoteSheet` · `ChatHeaderTitle` · `MeetGreetCard` · `MeetGreetHandle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
+Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreementCard` · `ChatPaymentCard` · `ChatCareCards` · `ChatHandoffCard` · `ChatPlusMenu` · `ChatQuoteCard` · `ChatStayCard` · `ChatTripCard` · `SendQuoteSheet` · `ChatHeaderTitle` · `ChatMeetGreetUpdate` · `MeetGreetCard` · `MeetGreetHandle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 238 |
-| EmptyState | Chat not found | — | 246 |
-| Pressable | — | `chat-stage` | 536 |
-| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 589 |
-| Button | Send quote | `chat-send-quote` | 596 |
-| TextButton | Send quote | `chat-send-quote` | 599 |
-| TextButton | Decline | `chat-decline` | 602 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 629 |
-| Pressable | — | `chat-action-chip` | 650 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 661 |
-| Pressable | Send a card | `chat-plus` | 677 |
-| Pressable | Send | `chat-send` | 710 |
+| EmptyState | Couldn't load this chat | — | 239 |
+| EmptyState | Chat not found | — | 247 |
+| Pressable | — | `chat-stage` | 537 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 592 |
+| Button | Send quote | `chat-send-quote` | 599 |
+| TextButton | Send quote | `chat-send-quote` | 602 |
+| TextButton | Decline | `chat-decline` | 605 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 632 |
+| Pressable | — | `chat-action-chip` | 653 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 664 |
+| Pressable | Send a card | `chat-plus` | 680 |
+| Pressable | Send | `chat-send` | 713 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 

@@ -15,6 +15,7 @@ import { ChatStayCard } from "../../components/ChatStayCard";
 import { ChatTripCard } from "../../components/ChatTripCard";
 import { SendQuoteSheet } from "../../components/ChatQuoteSheets";
 import { ChatHeaderTitle, HeaderStay } from "../../components/ChatHeaderTitle";
+import { ChatMeetGreetUpdate } from "../../components/ChatMeetGreetUpdate";
 import { MeetGreetCard, MeetGreetHandle } from "../../components/MeetGreetCard";
 import { MessageBubble } from "../../components/MessageBubble";
 import { PhotoViewerSheet } from "../../components/PhotoViewerSheet";
@@ -557,6 +558,8 @@ export default function Chat() {
             requestCard(m, m.card)
           ) : m.kind === "card" && (m.card?.type === "meet_greet" || m.card?.type === "agreement" || m.card?.type === "payment") ? (
             stepCard(m, m.card)
+          ) : m.kind === "card" && m.card?.type === "meet_greet_update" ? (
+            <ChatMeetGreetUpdate key={m.id} card={m.card} mine={m.senderId === me} otherName={header.otherName} at={m.at} />
           ) : m.kind === "card" && m.card?.type === "quote" ? (
             <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
               <ChatQuoteCard

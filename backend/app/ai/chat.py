@@ -128,6 +128,18 @@ def _step_card_text(card_type: str, booking: dict, me_id: str, tz) -> str | None
     return None
 
 
+# A Meet & Greet change posted at the bottom of the chat (015k, #264), in the words of the one who made it.
+_MEET_GREET_UPDATE = {
+    "proposed": "suggested a Meet & Greet",
+    "agreed": "accepted the Meet & Greet",
+    "time_declined": "can't make that Meet & Greet time",
+    "skip_requested": "asked to skip the Meet & Greet",
+    "skipped": "agreed to skip the Meet & Greet",
+    "done": "marked the Meet & Greet done",
+    "declined": "declined the booking request",
+}
+
+
 def describe(message: dict, me_id: str, tz, booking: dict | None = None) -> dict | None:
     """One message for the prompt and the summary: who said it and what (cards in square brackets), scrubbed like the
     typed text. Empty cards are left out. `booking` is the pair's live booking: the step cards (Meet & Greet, agreement,
@@ -141,6 +153,12 @@ def describe(message: dict, me_id: str, tz, booking: dict | None = None) -> dict
             return None
         text = _step_card_text(card["type"], booking, me_id, tz)
         return {"who": "app", "text": f"[{text}]"} if text else None
+    if card.get("type") == "meet_greet_update" and card.get("event") in _MEET_GREET_UPDATE:
+        plan = ""
+        if card.get("event") in ("proposed", "agreed") and card.get("at"):
+            place = scrub(card.get("place"))
+            plan = f" for {_when(card['at'], tz)}, " + ("by video" if card.get("mode") == "video" else f"in person{' at ' + place if place else ''}")
+        return {"who": who, "text": f"[{_MEET_GREET_UPDATE[card['event']]}{plan}]"}
     if card.get("type") == "quote" and isinstance(card.get("quote"), dict):
         total = card.get("total") if card.get("total") is not None else card["quote"].get("total")
         status = _QUOTE_STATUS.get(card.get("status"), "sent")
@@ -191,9 +209,9 @@ def greets(text: str | None) -> bool:
     return bool(text and _GREETING.search(text))
 
 
-# The cards a person answers to: a quote, a booking request, a Meet & Greet, the agreement, the payment. The Stay card is the
+# The cards a person answers to: a quote, a booking request, a Meet & Greet (and its update lines, #264), the agreement, the payment. The Stay card is the
 # start of the chat, not something to react to.
-REACT_CARDS = ("request", "quote", "meet_greet", "agreement", "payment")
+REACT_CARDS = ("request", "quote", "meet_greet", "meet_greet_update", "agreement", "payment")
 
 
 def is_event(message: dict) -> bool:
