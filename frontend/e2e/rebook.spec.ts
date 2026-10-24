@@ -106,6 +106,7 @@ test.describe("cancel and rebook", () => {
     await expect(page).toHaveURL(/\/owner$/);
     const owner = app(page);
     await page.goto("/owner/bookings");
+    await owner.getByTestId("past-toggle").click(); // nothing under way: the old bookings are behind this
     await expect(owner.getByTestId(`booking-card-${BOOKING}`)).toContainText("Cancelled");
     await expect(owner.getByTestId(`booking-card-${BOOKING}`)).not.toContainText("find a new sitter");
     await page.goto(`/owner/bookings/${BOOKING}`);

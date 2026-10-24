@@ -109,6 +109,46 @@ test.describe("sitter requests", () => {
     await expect(screen.getByTestId("booking-owner-avatar-initial")).toHaveCount(0);
   });
 
+  test("In progress is only there while a request is past its first yes (Meet & Greet, agreement, payment, the stay)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "required"); // untouched: waiting for the sitter's first yes
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    await page.goto("/sitter/bookings");
+    const screen = app(page);
+    await expect(screen.getByTestId("sitter-bookings-tabs-requests")).toBeVisible();
+    await expect(screen.getByTestId("sitter-bookings-tabs-in_progress")).toHaveCount(0);
+
+    // The sitter said yes to meeting: it moves to In progress, and the tab opens there (a number is waiting on it).
+    db.bookings[0].sitter_interest_at = "2026-10-03T10:00:00Z";
+    await page.goto("/sitter/bookings");
+    await expect(screen.getByTestId("sitter-bookings-tabs-in_progress")).toBeVisible();
+    await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("Meet");
+  });
+
+  test("the owner's Bookings leads with Your bookings while one is under way, and with the search when none is", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "required");
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto("/owner/bookings");
+    const screen = app(page);
+    await expect(screen.getByTestId("your-bookings")).toBeVisible();
+    await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("Ask");
+    const yours = await screen.getByTestId("your-bookings").boundingBox();
+    const find = await screen.getByTestId("find-sitter").boundingBox();
+    expect(yours!.y).toBeLessThan(find!.y);
+    await screen.getByTestId("book-care").click();
+
+    // Declined: nothing is under way any more. The bookings step aside; the old one is one tap down.
+    db.bookings[0].status = "declined";
+    await page.goto("/owner/bookings");
+    await expect(screen.getByTestId("find-sitter")).toBeVisible();
+    await expect(screen.getByTestId("your-bookings")).toHaveCount(0);
+    await screen.getByTestId("past-toggle").click();
+    await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toBeVisible();
+  });
+
   test("a first-time request shows custom time and Meet first; the sitter's button is Next (#170)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "required");
@@ -118,8 +158,10 @@ test.describe("sitter requests", () => {
     await expect(card).toContainText("Robert");
     await expect(card).toContainText("Custom time, needs your OK");
     await expect(card).toContainText("Meet first");
-    await expect(card).toContainText("Drop-off Oct 5, 7:00 AM · Your place");
-    await expect(card).toContainText("Pick-up Oct 8, 5:00 PM · Robert's place");
+    await expect(card).toContainText("Drop-off · Robert drives");
+    await expect(card).toContainText("7:00 AM");
+    await expect(card).toContainText("Pick-up · you drive");
+    await expect(card).toContainText("5:00 PM");
 
     await card.click();
     await expect(page).toHaveURL(new RegExp(`/sitter/bookings/${BOOKING}$`));
@@ -133,27 +175,32 @@ test.describe("sitter requests", () => {
     await expect(screen.getByTestId("accept-booking")).toHaveCount(0);
   });
 
-  test("the tab opens on Requests, but on Upcoming once a stay is on or about to start", async ({ page }) => {
+  test("the tab opens on the chip with a number (Requests), and on Upcoming once nothing waits for an answer", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
-    seed(db, "not_needed");
+    seed(db, "required"); // a first-time request: waiting for the sitter's first yes
     await signIn(page, SITTER);
     await expect(page).toHaveURL(/\/sitter$/);
     await page.goto("/sitter/bookings");
     const screen = app(page);
     await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toBeVisible();
 
-    // A confirmed stay that starts within 48 h now comes first, with the request still counted on its tab.
+    // A paid stay that starts within 48 h does not pull the tab away from the request that has a number.
     const soon = new Date(Date.now() + 6 * 3_600_000).toISOString();
-    db.bookings.push({ id: "soon1", owner_id: OWNER.id, sitter_id: SITTER.id, status: "confirmed", service_type: "boarding", meet_greet_status: "not_needed", created_at: "2026-10-02T18:00:00Z" });
+    db.bookings.push({ id: "soon1", owner_id: OWNER.id, sitter_id: SITTER.id, status: "confirmed", service_type: "boarding", meet_greet_status: "not_needed", paid_at: "2026-10-03T10:00:00Z", created_at: "2026-10-02T18:00:00Z" });
     db.booking_pets.push({ booking_id: "soon1", pet_id: MOCHI });
     db.booking_handoffs.push(
       { id: "s-drop", booking_id: "soon1", kind: "drop_off", scheduled_at: soon, location_type: "sitter_home", location_note: null, within_sitter_hours: true, status: "agreed", proposed_by: OWNER.id, completed_at: null, created_at: "2026-10-02T18:00:00Z" },
       { id: "s-pick", booking_id: "soon1", kind: "pick_up", scheduled_at: "2030-10-08T21:00:00.000Z", location_type: "sitter_home", location_note: null, within_sitter_hours: true, status: "agreed", proposed_by: OWNER.id, completed_at: null, created_at: "2026-10-02T18:00:00Z" },
     );
     await page.goto("/sitter/bookings");
-    await expect(screen.getByTestId("booking-card-soon1")).toBeVisible();
+    await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toBeVisible();
     await expect(screen.getByTestId("sitter-bookings-tabs-requests-count")).toHaveText("1");
-    await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toHaveCount(0);
+    await expect(screen.getByTestId("booking-card-soon1")).toHaveCount(0);
+
+    // Answered (declined): nothing is waiting, so the stay that is about to start comes first.
+    db.bookings[0].status = "declined";
+    await page.goto("/sitter/bookings");
+    await expect(screen.getByTestId("booking-card-soon1")).toBeVisible();
   });
 
   test("a stay with the pets already received sits under In progress, not Upcoming, and the tab opens on it (FB-8)", async ({ page }) => {
@@ -167,7 +214,7 @@ test.describe("sitter requests", () => {
     });
     // Mochi is with Chloe now; Max's stay starts in 10 days; a very old stay was never marked Returned.
     for (const [id, pet] of [["now1", MOCHI], ["later1", MAX], ["old1", MAX]] as const) {
-      db.bookings.push({ id, owner_id: OWNER.id, sitter_id: SITTER.id, status: "confirmed", service_type: "boarding", meet_greet_status: "not_needed", created_at: "2026-10-02T18:00:00Z" });
+      db.bookings.push({ id, owner_id: OWNER.id, sitter_id: SITTER.id, status: "confirmed", service_type: "boarding", meet_greet_status: "not_needed", paid_at: "2026-10-03T10:00:00Z", created_at: "2026-10-02T18:00:00Z" });
       db.booking_pets.push({ booking_id: id, pet_id: pet });
     }
     db.booking_handoffs.push(
@@ -196,7 +243,7 @@ test.describe("sitter requests", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "not_needed");
     const iso = (offset: number) => new Date(Date.now() + offset).toISOString();
-    db.bookings.push({ id: "old1", owner_id: OWNER.id, sitter_id: SITTER.id, status: "confirmed", service_type: "boarding", meet_greet_status: "not_needed", created_at: "2026-10-02T18:00:00Z" });
+    db.bookings.push({ id: "old1", owner_id: OWNER.id, sitter_id: SITTER.id, status: "confirmed", service_type: "boarding", meet_greet_status: "not_needed", paid_at: "2026-10-03T10:00:00Z", created_at: "2026-10-02T18:00:00Z" });
     db.booking_pets.push({ booking_id: "old1", pet_id: MAX });
     for (const [id, kind, at] of [["o-drop", "drop_off", iso(-400 * 3_600_000)], ["o-pick", "pick_up", iso(-350 * 3_600_000)]]) {
       db.booking_handoffs.push({
@@ -226,7 +273,7 @@ test.describe("sitter requests", () => {
     expect(db.notifications.find((n) => n.type === "booking_sitter_accepted")).toMatchObject({ user_id: OWNER.id });
   });
 
-  test("Accept after the owner's yes confirms a pair that has met and moves it to Upcoming", async ({ page }) => {
+  test("Accept after the owner's yes confirms a pair that has met; it stays In progress until it is paid", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "not_needed");
     db.bookings[0].owner_agreed_at = "2026-10-09T16:00:00.000Z";
@@ -240,7 +287,8 @@ test.describe("sitter requests", () => {
     await expect(screen.getByTestId("accept-booking")).toHaveCount(0);
 
     await page.goBack();
-    await screen.getByTestId("sitter-bookings-tabs-upcoming").click();
+    // Confirmed, not paid yet: still In progress; it moves to Upcoming once the owner has paid.
+    await screen.getByTestId("sitter-bookings-tabs-in_progress").click();
     await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("Confirmed");
   });
 

@@ -82,7 +82,9 @@ test.describe("auth and role routing", () => {
     await expect(page).toHaveURL(/\/owner$/);
     await app(page).getByRole("tab").getByText("Bookings", { exact: true }).click();
     await expect(page).toHaveURL(/\/owner\/bookings$/);
-    await expect(app(page).getByText("No bookings yet")).toBeVisible();
+    // Nothing under way: the sitter search leads and there is no empty "Your bookings".
+    await expect(app(page).getByTestId("find-sitter")).toBeVisible();
+    await expect(app(page).getByTestId("your-bookings")).toHaveCount(0);
   });
 
   test("signing up as a sitter sends the role and opens the sitter area", async ({ page }) => {
