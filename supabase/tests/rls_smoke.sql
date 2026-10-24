@@ -7330,4 +7330,69 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 015l (#345): edit a Feed photo: several tags, the day and time it was taken, the memo
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  pip uuid;
+  m uuid;
+  p_a uuid;
+  p_b uuid;
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Pip15l') returning id into pip;
+  perform _t_booking(robert, chloe, array[pip], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/015l/a', 'image', 'feed') returning id into m;
+  perform _t_as(chloe);
+  insert into public.feed_posts (pet_id, sitter_id, posted_by, media_id, visibility, category)
+    values (pip, chloe, chloe, m, 'shared', 'walk') returning id into p_a;
+  perform _t_ok((select tags = array['walk'] and taken_at = created_at from public.feed_posts where id = p_a),
+    '015l: a new post copies its tag into tags and starts at the time it was sent');
+
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/015l/b', 'image', 'feed') returning id into m;
+  perform _t_as(chloe);
+  insert into public.feed_posts (pet_id, sitter_id, posted_by, media_id, visibility, category)
+    values (pip, chloe, chloe, m, 'shared', 'play') returning id into p_b;
+  perform _t_ok((select tags = '{}' from public.feed_posts where id = p_b), '015l: a play or other tag has no chip, so no tag');
+
+  -- The author edits: two tags, an earlier time, a memo; the time it was sent stays
+  perform public.update_feed_post(p_a, now() - interval '3 hours', '  Walk, then a potty break  ', array['potty', 'walk', 'walk']);
+  perform _t_ok((select tags = array['potty', 'walk'] and category = 'potty' and note = 'Walk, then a potty break'
+        and taken_at < created_at - interval '2 hours' from public.feed_posts where id = p_a),
+    '015l: the author sets several tags (once each, in order), a memo and an earlier time');
+  perform _t_ok((select created_at > now() - interval '5 minutes' from public.feed_posts where id = p_a),
+    '015l: editing the time leaves the time it was sent, so the 30 minutes cannot be stretched');
+  perform public.update_feed_post(p_a, now() - interval '3 hours', '', '{}');
+  perform _t_ok((select tags = '{}' and category is null and note is null from public.feed_posts where id = p_a),
+    '015l: no tags and an empty memo clear both');
+
+  -- Who and what is refused
+  perform _t_as(robert);
+  begin perform public.update_feed_post(p_a, now(), 'mine now', '{}'); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_author', '015l: the owner cannot edit the sitter''s photo');
+  perform _t_as(chloe);
+  begin perform public.update_feed_post(p_a, now() + interval '1 hour', null, '{}'); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'in_the_future', '015l: a time in the future is refused');
+  begin perform public.update_feed_post(p_a, now(), null, array['cuddle']); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'bad_tag', '015l: only the five tags');
+  begin perform public.update_feed_post(p_a, now(), repeat('x', 201), '{}'); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'note_too_long', '015l: a memo is at most 200 characters');
+  begin update public.feed_posts set tags = array['meal'] where id = p_a; v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%' or not exists (select 1 from public.feed_posts where id = p_a and tags = array['meal']),
+    '015l: no direct edits, only update_feed_post');
+  perform _t_as(null, 'anon');
+  begin perform public.update_feed_post(p_a, now(), null, '{}'); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '015l: anon cannot edit');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;
