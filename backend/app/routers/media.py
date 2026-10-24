@@ -84,6 +84,9 @@ def _authorize_media(
     elif purpose == "diary_page":
         # A sitter shares a page they wrote — also after the stay, so not "on duty" but "sent a report about the pet".
         authz.assert_wrote_report_for(user, pet_id)
+    elif purpose == "feed":
+        # A sitter's feed photo: on duty, or later a private one for themself (the database allows only that).
+        authz.assert_can_post_feed(user, pet_id)
     elif purpose == "handoff":
         if booking_id is None:
             raise HTTPException(

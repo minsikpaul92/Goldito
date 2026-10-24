@@ -237,6 +237,7 @@ def test_sign_forbidden_when_not_on_duty(client: TestClient, monkeypatch: pytest
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not on duty for this pet.")
 
     monkeypatch.setattr(authz, "assert_on_duty_for", deny)
+    monkeypatch.setattr(authz, "has_cared_for", lambda *_a: False)
     response = client.post(
         "/api/media/sign",
         headers={"Authorization": f"Bearer {sitter_token()}"},
@@ -244,6 +245,32 @@ def test_sign_forbidden_when_not_on_duty(client: TestClient, monkeypatch: pytest
     )
     assert response.status_code == 403
     assert "on duty" in response.json()["detail"].lower()
+
+
+def test_after_the_stay_a_sitter_may_still_sign_a_feed_photo_but_nothing_else(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # #345: a private photo for themself after the stay; every other purpose still needs the care window.
+    from fastapi import HTTPException, status
+
+    def deny(_user, _pet_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not on duty for this pet.")
+
+    monkeypatch.setattr(authz, "assert_on_duty_for", deny)
+    monkeypatch.setattr(authz, "has_cared_for", lambda *_a: True)
+    monkeypatch.setattr(
+        cloudinary_service,
+        "sign",
+        lambda **kw: SimpleNamespace(
+            cloud_name="c", api_key="k", timestamp=1, signature="s",
+            folder=f"goldito/{kw['pet_id']}/{kw['purpose']}", upload_url="u", transformation="t",
+        ),
+    )
+    headers = {"Authorization": f"Bearer {sitter_token()}"}
+    feed = client.post("/api/media/sign", headers=headers, json={"pet_id": PET_ID, "resource_type": "image", "purpose": "feed"})
+    assert feed.status_code == 200
+    proof = client.post("/api/media/sign", headers=headers, json={"pet_id": PET_ID, "resource_type": "image", "purpose": "task_proof"})
+    assert proof.status_code == 403
 
 
 def test_sign_returns_folder_and_signature(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
