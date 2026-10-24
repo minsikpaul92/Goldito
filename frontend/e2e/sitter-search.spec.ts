@@ -92,6 +92,21 @@ async function stubGps(page: Page, deny = false) {
 }
 
 test.describe("find a sitter", () => {
+  test("a sitter with reviews has the rating next to the name; one without has none", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
+    seed(db);
+    // Chloe (favorite) has two reviews; Paul has none.
+    db.reviews.push(
+      { id: "rv1", booking_id: "b-a", owner_id: OWNER.id, sitter_id: SITTER.id, rating: 5, comment: null, created_at: "2026-10-01T10:00:00Z" },
+      { id: "rv2", booking_id: "b-b", owner_id: OWNER.id, sitter_id: SITTER.id, rating: 4, comment: null, created_at: "2026-10-02T10:00:00Z" },
+    );
+    const screen = await openBookings(page);
+    await expect(screen.getByTestId("sitter-favorites").getByTestId("sitter-tile-Chloe")).toBeVisible();
+    await expect(screen.getByTestId("sitter-rating-Chloe")).toHaveText("★ 4.5");
+    await expect(screen.getByTestId("sitter-tile-Paul")).toBeVisible();
+    await expect(screen.getByTestId("sitter-rating-Paul")).toHaveCount(0);
+  });
+
   test("a heart on a sitter's page shows under Favorites at once, and removing it moves them back (#267)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
     seed(db);

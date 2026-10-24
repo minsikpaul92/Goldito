@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { tokens } from "../theme/tokens";
 import { Avatar } from "./ui/Avatar";
 
 type Props = {
@@ -31,10 +32,9 @@ type Props = {
  */
 export function SitterResultCard({ name, photo, meta, km, nightly, favorite, rating, stays, availability, onOpen, onPhoto, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
-  // Rating and stays say "trusted" in a few characters; experience is the fallback for new sitters (one short line, no ellipsis).
-  const facts = rating != null || stays != null
-    ? [rating != null ? `★ ${rating.toFixed(1)}` : null, stays != null ? `${stays} ${stays === 1 ? "stay" : "stays"}` : null].filter(Boolean).join(" · ")
-    : meta ?? "";
+  // Stays say "trusted" in a few characters; experience is the fallback for new sitters (one short line, no ellipsis).
+  // The rating sits next to the name, and only when the sitter has reviews.
+  const facts = stays != null ? `${stays} ${stays === 1 ? "stay" : "stays"}` : meta ?? "";
   const avatar = photo ? <Avatar kind="photo" uri={photo} size={52} /> : <Avatar kind="initial" name={name} size={52} />;
   return (
     <View style={styles.card}>
@@ -47,7 +47,7 @@ export function SitterResultCard({ name, photo, meta, km, nightly, favorite, rat
       )}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={[name, facts, meta && facts !== meta ? meta : null, km, availability?.label, nightly != null ? `$${nightly} per night` : null].filter(Boolean).join(", ")}
+        accessibilityLabel={[name, rating != null ? `rated ${rating.toFixed(1)}` : null, facts, meta && facts !== meta ? meta : null, km, availability?.label, nightly != null ? `$${nightly} per night` : null].filter(Boolean).join(", ")}
         onPress={onOpen}
         style={({ pressed }) => [styles.main, pressed && styles.pressed]}
         testID={testID}
@@ -55,6 +55,7 @@ export function SitterResultCard({ name, photo, meta, km, nightly, favorite, rat
         <View style={styles.body}>
           <Text style={styles.name} numberOfLines={1}>
             {favorite ? `★ ${name}` : name}
+            {rating != null ? <Text style={styles.rating} testID={`sitter-rating-${name}`}>{`  ★ ${rating.toFixed(1)}`}</Text> : null}
           </Text>
           <Text style={styles.meta} numberOfLines={1}>
             {facts ? `${facts} · ` : ""}
@@ -92,6 +93,8 @@ const makeStyles = (theme: Theme) =>
     body: { flex: 1, gap: 2 },
     name: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     meta: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    // Gold on a light ground (brand page), never faded.
+    rating: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: tokens.color.goldOnLight },
     price: { alignItems: "flex-end" },
     avail: { alignSelf: "flex-start", marginTop: 2, borderRadius: theme.radius.pill, paddingHorizontal: theme.spacing.sm, paddingVertical: 2 },
     free: { backgroundColor: theme.color.successSurface },

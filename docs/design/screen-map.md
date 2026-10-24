@@ -96,12 +96,12 @@ Shows: `BookingCard` · `BookingTicket` · `PhotoViewerSheet` · `SitterResultCa
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 104 |
-| SegmentedControl | — | `owner-bookings-tabs` | 148 |
-| Button | Book care | `book-care` | 172 |
-| TextButton | Open Profile | `search-open-profile` | 186 |
-| TextButton | Try again | `search-retry` | 194 |
-| TextButton | pastOpen ? "Hide past bookings" : `Past bookings (${past.length})` | `past-toggle` | 235 |
+| EmptyState | Couldn't load your bookings | — | 112 |
+| SegmentedControl | — | `owner-bookings-tabs` | 157 |
+| Button | Book care | `book-care` | 181 |
+| TextButton | Open Profile | `search-open-profile` | 195 |
+| TextButton | Try again | `search-retry` | 203 |
+| TextButton | pastOpen ? "Hide past bookings" : `Past bookings (${past.length})` | `past-toggle` | 244 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -1252,7 +1252,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Pressable | ``${name}'s photos`` | ``sitter-avatar-${name}`` | 42 |
-| Pressable | [name, facts, meta && facts !== meta ? meta : null, km, availability?.label, nightly != null ? `$${nightly} per night` : null].filter(Boolean).join(", ") | `testID` | 48 |
+| Pressable | [name, rating != null ? `rated ${rating.toFixed(1)}` : null, facts, meta && facts !== meta ? meta : null, km, availability?.label, nightly != null ? `$${nightly} per night` : null].filter(Boolean).join(", ") | `testID` | 48 |
 
 ### SitterSearchBar — [components/SitterSearchBar.tsx](../../frontend/components/SitterSearchBar.tsx)
 
