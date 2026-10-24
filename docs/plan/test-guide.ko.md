@@ -481,7 +481,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | UX-1 | 오너 → 예약 새로 만들기 → Drop-off / Pick-up **날짜를 탭** | **달력 시트**가 뜸. 오늘 이전 날은 비활성(Pick-up은 Drop-off 이전), 월 이동 가능, 날짜를 누르면 그 날로 선택. −/+ 는 여전히 하루씩 | 🤖 `booking` | ➖ |
 | UX-2 | 시터 Home (돌보는 중) | **All tasks / My history**가 숫자 타일과 **달라 보임** (색 테두리 · 연한 배경 · `›`), 누르면 이동 | **👤** (모양) | ➖ |
-| UX-3 | 시터 → Bookings 탭 | (채팅은 Chat 탭으로 옮김, #329) **진행 중이거나 48시간 안에 시작하는 확정 예약**이 있으면 **Upcoming**으로 열림, 그게 없고 요청이 있으면 **Requests**, 둘 다 없으면 Requests. Requests 개수는 탭에 계속 표시. 직접 고른 탭은 안 덮어씀 | 🤖 `sitter-bookings` | ➖ |
+| UX-3 | 시터 → Bookings 탭 | (채팅은 Chat 탭, #329) 칩 **Requests · In progress · Upcoming · Past**. 숫자가 붙은 칩(시터가 답해야 할 일)으로 **버튼을 안 눌러도 바로 열림**(Requests 먼저, 그다음 In progress). 숫자가 없으면 돌봄 중 → 48시간 안에 시작 → Upcoming. 직접 칩을 고르면 그 방문 동안 유지 | 🤖 `sitter-bookings` | 사람 확인 대기 |
 | UX-4 | 오너 → Bookings → **Your questions** | 내 문의가 최신순으로, "Waiting for …" / "💬 Reply ready" / "Booking requested" (= INQ-19) | 🤖 `inquiry` | ➖ |
 | UX-5 | 시터 Bookings에 대기 요청 · 답할 문의가 있을 때 (폰 너비 402) | Requests · Questions · Upcoming · Past가 **한 줄**, 숫자는 칸 오른쪽 위 **작은 배지**(괄호 "(1)" 없음) (FB-30) | 🤖 `sitter-bookings` · `inquiry` | ➖ |
 | UX-6 | `pets`로 리셋한 오너(예약 · 문의 · 시터 이력 없음) → Bookings 탭 | 빈 화면 대신 **Sitters on Goldito** — 시터 카드(→ 프로필), 아래 Book care. Book care의 시터 목록에도 각 시터 옆 **Profile** (FB-32) | 🤖 `sitters` | 로컬 ✅ 10/09 민식 · Vercel ➖ |
@@ -504,7 +504,7 @@
 | FLOW-2 | 시터가 Accept(처음 만나는 사이면 **Confirm booking**) → 오너 화면 | 오너 예약이 새로고침 없이 Confirmed로 | 👤 (실시간) | ➖ |
 | FLOW-3 | 오너 **Finish booking** (시터 요금표가 있는 상태 — **10/08에 Chloe 요금 행을 임시로 넣음**: 보딩 $55 · 추가 펫 +50% · 공휴일 +25%, 다시 눌러 확인) | 체크아웃이 열려 **견적 · 동의서 · 데모 결제**가 진행됨 (FB-7) | 🤖 `checkout` (mock — 요금표 없음 → "hasn't set their prices yet" · 서비스 안 함 → "doesn't offer" 2건 추가) · pytest `test_seed_demo` | ❌ 10/08 민식 ("This sitter doesn't offer that service" — `sitter_rates` 비어 있음). 코드 수정됨 — 호스팅 DB에 `seed_demo` 실행 후 다시 확인 |
 | FLOW-4 | 요금표가 **없는** 시터로 체크아웃 | "Chloe hasn't set her prices yet"처럼 **진짜 이유** 문구 (서비스 문구 아님) | 새로 필요 | ➖ |
-| FLOW-5 | 시터 Bookings: 드롭오프 끝난 예약 | **In progress** 에만 나옴, Upcoming에 없음. 탭은 가로 스크롤(5개), 진행 중 예약이 있으면 그 탭으로 열림. 픽업 시각이 지났는데 Returned 안 된 옛 예약은 Upcoming을 열게 하지 않음 (FB-8 · L-2) | 🤖 `sitter-bookings.spec.ts` (2개) | ❌ 10/08 민식 → 다시 확인 필요 |
+| FLOW-5 | 시터 Bookings 분류 (D60 단계 기준) | **Requests** = 아직 첫 답(Yes, let's meet)을 안 한 요청 · **In progress** = 첫 답 이후 Meet & Greet · 합의 · 결제 대기, 그리고 펫을 받은 뒤 돌봄 중 · **Upcoming** = 결제 끝, 아직 인계 전 · **Past** = 끝남 · 거절 · 취소 · 만료 · 시간이 지나도 시작 못 한 것. In progress 칩은 해당 예약이 있을 때만 보임 | 🤖 `sitter-bookings` | 사람 확인 대기 |
 | FLOW-6 | 시터 **Returned** | **확인 시트**가 먼저 뜸("Return Max?" · 되돌릴 수 없고 Life Record가 써진다는 문구 · 오늘 남은 할 일 수 · 알림장 미발송이면 "Send today's note first"). 합의된 픽업 **30분 전보다 이르면** "It's not pick-up time yet … Do you really want to return Max now?"가 더 붙고 **Return이 빨간 바탕 · 흰 글씨**(막지는 않음, 2026-10-11 결정). 30분 전부터는 경고 없이 평소 버튼. **Return**을 눌러야만 처리, **Cancel**은 아무것도 안 바꿈 (FB-9) | 🤖 `handoff.spec.ts` (5개) | ❌ 10/08 민식 (바로 처리됨) → 다시 확인 필요 |
 | FLOW-7 | 시간 변경 시트에서 Drop-off 를 바꾸고 Pick-up 탭 → 다시 Drop-off | 각각 고친 값이 **유지** (FB-5) | 🤖 `negotiation.spec.ts` | ❌ 10/08 민식 → 다시 확인 필요 |
 | FLOW-8 | 두 탭을 고치고 **Send to …** | 바뀐 것 **전부** 한 번에 전송(새 드롭오프가 옛 픽업보다 늦으면 픽업을 먼저). 하나가 실패하면 시트가 열린 채로 "Drop-off was sent. Pick-up didn't go through …"를 보이고 Send가 나머지만 다시 보냄. **Close** 는 아무것도 저장 · 전송하지 않고 그냥 닫힘 | 🤖 `negotiation.spec.ts` (4개) | ❌ 10/08 민식 → 다시 확인 필요 |
@@ -616,6 +616,9 @@
 | SNAP-2c | **Recent checks** | 고른 펫의 최근 **2건**: 그림 · 제품명 · 이유 한 줄("Chicken · Max is allergic" · "Nothing on Max's list") · DANGER / WARNING / SAFE 알약. **See all** → 그 펫의 최근 20건 목록, 줄을 누르면 그 결과 | 🤖 `snap.spec.ts` | 사람 확인 대기 |
 | ART-1 | **Figma 그림(SVG)**: Snap 카드 · 칩 · Recent checks, 오너 Home 타일(밥그릇 · 카메라 · 나무) · 사진 없는 펫 얼굴(개 · 고양이), 시터 Home 체크인 타일(Ate · Potty · Walk · Mood) · 약 히어로 · 5-second check · Treat check 카드 | 그림이 Lucide 선 아이콘이 아니라 Figma의 색 그림으로 보임. 새 그림은 `assets/art/<화면>/`에 .svg를 넣고 `npm run art` → `HomeArt`의 `art`로 연결(CI가 `art.mjs --check`로 확인). 아직 Lucide인 곳: 고양이 Nap 타일, 약 외의 히어로 그림, 보호자 히어로의 시터 사진이 없을 때 | 🤖 `snap.spec.ts`(그림이 그려짐) · 모양은 사람 확인 대기 | 사람 확인 대기 |
 | SAMPLE-1 | **Mumu 샘플** (비숑프리제): 사진 13장 + 영상 1개(17초, 소리 없음). 사진 고르는 모든 곳(피드 · 일기 · 할 일 · 리포트 · Snap · 프로필)과 Mood · Sticker에 나옴, 영상은 사진/영상을 둘 다 받는 곳과 Mood에 | 샘플 목록에 "Mumu · …" 이름으로 보임. 메타데이터(위치 포함) 제거, 창문 사진의 가게 전화번호는 흐리게 처리. 파일은 `assets/demo/mumu/` | 🤖 `media-picker.spec.ts`(목록에 보임) | 사람 확인 대기 |
+| BOOKTAB-1 | **오너 Bookings** (Figma 1730:103907): 진행 중인 예약(Requests · Upcoming)이 있을 때 | 맨 위 **Your bookings**: 칩 Upcoming · Requests · Past, 예약은 **티켓 카드**(복숭아색: 집 그림 · "Boarding at Chloe's" · 펫 이름 · DROP-OFF → PICK-UP 큰 날짜 · 단계 알약 Ask · Meet · Book · Care · Home(끝난 단계 ✓) · 상태 태그 · Drop-off / Pick-up 줄("you drive" · 시각, 끝나면 ✓) · Paid + 금액). **Book care**를 누르면 아래 시터 찾기로 내려감. 그 아래 검색창 · Favorites · Sitters nearby | 🤖 `sitter-bookings` | 사람 확인 대기 |
+| BOOKTAB-2 | 오너: 진행 중인 예약이 없을 때 | Your bookings와 "No bookings yet"가 **숨겨지고** 시터 찾기가 맨 위. 지난 예약만 있으면 맨 아래 **Past bookings (N)**를 눌러 펼침 | 🤖 `sitter-bookings` · `auth` · `rebook` · `completion` | 사람 확인 대기 |
+| BOOKTAB-3 | 시터 Bookings의 예약 카드 | 오너와 같은 티켓 카드("Boarding · Robert", 누가 운전하는지는 시터 기준 "Robert drives" · "you drive"). Past는 예전 작은 카드 | 🤖 `sitter-bookings` | 사람 확인 대기 |
 | SNAP-3 | (API) 견주가 본인 펫 성분표 사진으로 `POST /api/ai/safety-check` — chicken 알러지 Max에 `chicken breast` 라벨 / 개에게 `raisins` / 고양이에게 `lily extract` / `animal fat` / 평범한 라벨 | 차례로 DANGER(모델이 SAFE라 해도) · DANGER · DANGER · WARNING(숨은 출처 설명) · SAFE. 결과에 신뢰 도메인 출처, Tavily가 안 되면 `sources_unavailable`, Ultra가 안 되면 SAFE 대신 WARNING(`double_checked: false`). 라벨을 못 읽으면 422. 남의 사진 · 다른 펫 · 돌보는 중이 아닌 시터는 403 | 🤖 pytest · 실제 모델은 👤 — 모델 직접 호출 확인(라벨 4장 읽기 · Tavily · Ultra WARNING, 2026-10-14 [model-ids.md](phases/notes/model-ids.md)), 라우트 전체는 배포 백엔드에 이 코드가 올라간 뒤(#90 머지) | ➖ |
 | SNAP-4 | (DB) 시터가 검사한 DANGER / 견주가 검사한 DANGER / WARNING | 시터 DANGER만 견주에게 "Blocked a risky treat for {이름} ⚠️" 알림 1건. 견주도 "I understand"(`acknowledged_at`)를 남길 수 있음, 판정은 앱에서 못 바꿈 | SQL `rls_smoke` 013 — 호스팅 DB에서 전부 PASS | ✅ 2026-10-14 민식 (SQL) |
 | SNAP-5 | 견주(Max chicken 알러지 · Mochi) → Snap → **Treat check** → Max 고르기 → **Snap a label** → 샘플 **Chicken jerky** → **Check for Max** | "Reading the label…" → (8초 뒤) "Checking for Max…" → **빨간 전체 화면** "Don't give this to Max" + 이유 + `chicken` 칩. 폰 프레임 안, 바깥 클릭 · Esc로 안 닫힘, **I understand — don't feed**로만 닫힘 → `acknowledged_at` 기록, 결과 카드 · Recent checks 1줄이 남음. 맨 아래 작은 회색 "AI can be wrong…" 항상 | 🤖 `treat-check.spec.ts`(API 목업) · 실제 판정은 👤(배포 백엔드에 이 코드가 올라간 뒤) | 사람 확인 대기 |
@@ -1033,7 +1036,7 @@
 | CHATNEW-1 | 오너가 채팅을 보냄 → 시터 화면 | 새로고침 없이 하단 **Chat** 탭에 안 읽은 수 배지(빨간 원). Chat 탭을 열면 그 채팅 줄 왼쪽에 색 막대 · 옅은 배경(가장 최근의 새 채팅 하나만) | 🤖 `chat` | ➖ |
 | CHATNEW-2 | 두 오너가 각각 씀 | 배지는 합계(예: 3), 더 최근에 쓴 오너의 채팅이 강조됨 | 🤖 `chat` | ➖ |
 | CHATNEW-3 | 다 읽음 | 배지와 강조가 사라짐 | 🤖 `chat` | ➖ |
-| CHATNEW-4 | 시터 → Bookings | Chats 칩이 없음. 진행 중 · 곧 시작하는 예약이면 Upcoming, 아니면 Requests | 🤖 `chat` · `sitter-bookings` | ➖ |
+| CHATNEW-4 | 시터 → Bookings | Chats 칩이 없음. 숫자가 붙은 칩으로 바로 열림 | 🤖 `chat` · `sitter-bookings` | ➖ |
 
 ### 3.47 채팅 첫 카드는 한 줄 요약 (STAYLINE) · #227
 

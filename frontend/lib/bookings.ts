@@ -858,34 +858,88 @@ export function requestExpired(b: BookingSummary, now: number = Date.now()): boo
   return b.status === "requested" && !!b.pickUp && Date.parse(b.pickUp.at) <= now;
 }
 
+/** A stay whose pick-up time has passed without the pets ever being handed over: nobody will act on it any more. */
+function overdueUnstarted(b: BookingSummary, now: number = Date.now()): boolean {
+  return (b.stage === "meet_greet" || b.stage === "confirm" || b.stage === "awaiting_payment" || b.stage === "paid") && !!b.pickUp && Date.parse(b.pickUp.at) <= now;
+}
+
 export type SitterBucket = "requests" | "in_progress" | "upcoming" | "past";
 
-/** Requests · In progress · Upcoming · Past for the sitter's Bookings tab (In progress = the pets are with the sitter). */
+/**
+ * Requests · In progress · Upcoming · Past for the sitter's Bookings tab, by the booking's stage (D60):
+ * Requests = a request the sitter has not answered yet; In progress = the Meet & Greet, the agreement and the payment,
+ * and again once the pets are with the sitter; Upcoming = paid, the pets not handed over yet; Past = the rest.
+ */
 export function sitterBucket(b: BookingSummary): SitterBucket {
-  if (b.status === "requested") return requestExpired(b) ? "past" : "requests";
-  if (b.status === "confirmed" && !b.pickUp?.completedAt) return b.dropOff?.completedAt ? "in_progress" : "upcoming";
-  return "past";
+  if (requestExpired(b) || overdueUnstarted(b)) return "past";
+  switch (b.stage) {
+    case "requested":
+      return "requests";
+    case "meet_greet":
+    case "confirm":
+    case "awaiting_payment":
+    case "in_care":
+      return "in_progress";
+    case "paid":
+      return "upcoming";
+    default:
+      return "past";
+  }
+}
+
+/** The sitter has to act (answer, plan, accept): what the number on a Bookings chip counts. */
+export function needsSitter(b: BookingSummary): boolean {
+  return sitterBucket(b) !== "past" && (b.nextActor === "sitter" || b.nextActor === "both");
+}
+
+export type OwnerBucket = "upcoming" | "requests" | "past";
+
+/**
+ * Upcoming · Requests · Past for the owner's Bookings tab: Requests = everything before it is paid (asked, Meet & Greet,
+ * agreement, payment); Upcoming = paid, and the stay itself; Past = finished, declined, cancelled, expired.
+ */
+export function ownerBucket(b: BookingSummary): OwnerBucket {
+  if (requestExpired(b) || overdueUnstarted(b)) return "past";
+  switch (b.stage) {
+    case "requested":
+    case "meet_greet":
+    case "confirm":
+    case "awaiting_payment":
+      return "requests";
+    case "paid":
+    case "in_care":
+      return "upcoming";
+    default:
+      return "past";
+  }
+}
+
+/** The owner has to act (pick a time, agree, pay). */
+export function needsOwner(b: BookingSummary): boolean {
+  return ownerBucket(b) !== "past" && (b.nextActor === "owner" || b.nextActor === "both");
 }
 
 const SOON_MS = 48 * 3_600_000;
 
 /**
- * Which sitter segment to open on: a stay in progress; else one starting within 48 h → Upcoming; else open Requests;
- * else Upcoming if any.
+ * Which sitter segment to open on: the one with a number on it (something to answer: Requests first, then In progress);
+ * else a stay in progress; else one starting within 48 h → Upcoming; else Upcoming if any.
  */
 export function firstSitterBucket(
   bookings: BookingSummary[],
   now = Date.now(),
 ): "requests" | "in_progress" | "upcoming" | "past" {
+  const needs = (k: SitterBucket) => bookings.some((b) => sitterBucket(b) === k && needsSitter(b));
+  if (needs("requests")) return "requests";
+  if (needs("in_progress")) return "in_progress";
   if (bookings.some((b) => sitterBucket(b) === "in_progress")) return "in_progress";
   const upcoming = bookings.filter((b) => sitterBucket(b) === "upcoming");
-  // "Soon" = the drop-off is within 48 h (or a little late) and the pick-up is still ahead — an old booking nobody
+  // "Soon" = the drop-off is within 48 h (or a little late) and the pick-up is still ahead: an old booking nobody
   // marked Returned doesn't pull the tab (L-2).
   const soon = upcoming.some(
     (b) => !!b.dropOff && Date.parse(b.dropOff.at) - now <= SOON_MS && (!b.pickUp || Date.parse(b.pickUp.at) > now),
   );
   if (soon) return "upcoming";
-  if (bookings.some((b) => sitterBucket(b) === "requests")) return "requests";
   return upcoming.length > 0 ? "upcoming" : "requests";
 }
 

@@ -139,8 +139,10 @@ test.describe("book care", () => {
     await expect(card).toContainText("Requested");
     await expect(card).toContainText("Max");
     await expect(card).toContainText("Mochi");
-    await expect(card).toContainText("9:30 AM · Chloe's place");
-    await expect(card).toContainText("5:00 PM · My place");
+    await expect(card).toContainText("Drop-off · you drive");
+    await expect(card).toContainText("9:30 AM");
+    await expect(card).toContainText("Pick-up · Chloe drives");
+    await expect(card).toContainText("5:00 PM");
   });
 
   test("tapping the date opens a calendar; a tap picks the day and − / + still nudge it", async ({ page }) => {
@@ -226,7 +228,7 @@ test.describe("book care", () => {
       p_pick_up_location_type: "owner_home",
     });
     const card = screen.getByTestId(`booking-card-${db.bookings.at(-1)?.id}`);
-    await expect(card).toContainText("🔑 House sitting");
+    await expect(card).toContainText("House sitting by Paul");
     await expect(card).toContainText("Paul cares for them at your place");
   });
 

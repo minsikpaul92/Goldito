@@ -90,16 +90,18 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
-Owner Bookings tab: a hotel-style search line on top (place, dates, pets), the favorite sitters free for those dates (everyone nearby after Search) as photo and name, a tap opens the sitter, then my bookings with status badges (3B.3).
+Owner Bookings tab (Figma 1730:103907). While a booking is under way, Your bookings come first (Upcoming · Requests · Past, each stay a ticket) and **Book care** takes you down to the search. With nothing under way the bookings are hidden and the search leads: a hotel-style line (place, dates, pets), the favorite sitters free for those dates, and everyone nearby (3B.3). Past stays are one tap away either way.
 
-Shows: `BookingCard` · `PhotoViewerSheet` · `SitterResultCard` · `SitterSearchBar`
+Shows: `BookingCard` · `BookingTicket` · `PhotoViewerSheet` · `SitterResultCard` · `SitterSearchBar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 96 |
-| TextButton | Open Profile | `search-open-profile` | 136 |
-| TextButton | Try again | `search-retry` | 144 |
-| EmptyState | No bookings yet | — | 175 |
+| EmptyState | Couldn't load your bookings | — | 104 |
+| SegmentedControl | — | `owner-bookings-tabs` | 148 |
+| Button | Book care | `book-care` | 172 |
+| TextButton | Open Profile | `search-open-profile` | 186 |
+| TextButton | Try again | `search-retry` | 194 |
+| TextButton | pastOpen ? "Hide past bookings" : `Past bookings (${past.length})` | `past-toggle` | 235 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -430,15 +432,15 @@ Shows: `SitterAnswersForm`
 
 ### `/sitter/bookings` — [app/sitter/(tabs)/bookings.tsx](../../frontend/app/sitter/(tabs)/bookings.tsx)
 
-Sitter Bookings tab (phase-03b 3B.4): Requests · In progress · Upcoming · Past → booking detail. Chats have their own tab (#329).
+Sitter Bookings tab (phase-03b 3B.4): Requests · In progress · Upcoming · Past → booking detail. Chats have their own tab (#329). A number on a chip = something to answer; the tab opens on that chip by itself. In progress is only there while something is in progress.
 
-Shows: `BookingCard`
+Shows: `BookingCard` · `BookingTicket`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 89 |
-| SegmentedControl | — | `sitter-bookings-tabs` | 106 |
-| EmptyState | — | — | 122 |
+| EmptyState | Couldn't load your bookings | — | 94 |
+| SegmentedControl | — | `sitter-bookings-tabs` | 115 |
+| EmptyState | — | — | 131 |
 
 ### `/sitter/bookings/[bookingId]` — [app/sitter/bookings/[bookingId]/index.tsx](../../frontend/app/sitter/bookings/[bookingId]/index.tsx)
 
@@ -679,6 +681,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | — | ``booking-card-${booking.id}`` | 131 |
 | Tag | `badge.label` | — | 142 |
+
+### BookingTicket — [components/BookingTicket.tsx](../../frontend/components/BookingTicket.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | ``booking-card-${booking.id}`` | 77 |
+| Tag | `badge.label` | — | 118 |
 
 ### CareLineBuilder — [components/CareLineBuilder.tsx](../../frontend/components/CareLineBuilder.tsx)
 
@@ -1634,4 +1643,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-480 actions · 478 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+484 actions · 482 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).

@@ -10,6 +10,7 @@ export const HOME_TEXT = {
   hero: 25, // tokens-ok: Figma Home hero title
   chip: 13, // tokens-ok: Figma Snap chip and card line
   row: 15, // tokens-ok: Figma Snap recent check name
+  date: 34, // tokens-ok: Figma Bookings big date
   stat: 30, // tokens-ok: Figma Home tile number
 } as const;
 
