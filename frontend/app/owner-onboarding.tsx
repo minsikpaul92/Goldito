@@ -652,8 +652,10 @@ export default function OwnerOnboarding() {
         const point = await getCurrentPosition();
         update({ home: point, homeAddress: "" });
         // The address found fills the field so the person can see it was read right; the pin stays either way.
-        const place = await reverseGeocode(point);
-        if (place?.address) update({ homeAddress: place.address });
+        // An exact lookup (#349): the whole address, house number included; the field stays editable.
+        const place = await reverseGeocode(point, { exact: true });
+        const line = place?.full ?? place?.address;
+        if (line) update({ homeAddress: line });
         else setLocationNote("No address found here. The pin is kept.");
       } catch (e) {
         setLocationNote(

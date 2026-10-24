@@ -253,11 +253,16 @@ export default function ProfileScreen() {
     }
     let current = true;
     setHomePlace(undefined);
-    void reverseGeocode({ lat: pinLat, lng: pinLng }).then((place) => {
+    // An exact lookup (#349): the whole address, house number and full postal code; the person can still edit it.
+    void reverseGeocode({ lat: pinLat, lng: pinLng }, { exact: true }).then((place) => {
       if (!current) return;
       setHomePlace(place);
-      // The location fills the home address (street, city, postal area); the person adds the house number.
-      if (place?.address) {
+      if (place?.full) {
+        const { street, postal } = splitPostal(place.full);
+        setDraft((prev) => ({ ...prev, home_address: street, ...(postal ? { home_postal_code: postal } : {}) }));
+        setPlacedAddress(street);
+      } else if (place?.address) {
+        // No full address found: the street, city and postal area; the person adds the house number.
         // The street line and the postal code go into their own fields.
         const street = place.postal && place.address.endsWith(`, ${place.postal}`) ? place.address.slice(0, -(place.postal.length + 2)) : place.address;
         setDraft((prev) => ({ ...prev, home_address: street, ...(place.postal ? { home_postal_code: place.postal } : {}) }));

@@ -82,11 +82,11 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 | TextButton | Skip questions | `own-skip-questions` | 483 |
 | CheckRow | I checked this list | `own-foods-checked` | 602 |
 | Button | Add | `own-food-other-add` | 620 |
-| Button | locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location" | `own-use-location` | 679 |
-| Banner | `error` | `own-error` | 735 |
-| Button | Save and finish later | `own-save-later` | 737 |
-| Button | saving ? "Saving…" : draft.pending.length > 0 ? "Save, add next" : `Save ${petName}` | `own-save` | 748 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 770 |
+| Button | locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location" | `own-use-location` | 681 |
+| Banner | `error` | `own-error` | 737 |
+| Button | Save and finish later | `own-save-later` | 739 |
+| Button | saving ? "Saving…" : draft.pending.length > 0 ? "Save, add next" : `Save ${petName}` | `own-save` | 750 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 772 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -355,20 +355,20 @@ Shows: `DemoTools` · `AddressInput` · `SitterBadges` · `ProfilePhotoGallery` 
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 277 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 424 |
-| Button | locating ? "Locating…" : "📍 Use my current location" | `profile-use-location` | 455 |
-| Pressable | Remove item | ``profile-packing-remove-${i + 1}`` | 502 |
-| TextButton | + Add item | `profile-packing-add` | 515 |
-| Pressable | — | `profile-home-access` | 558 |
-| Pressable | ``Remove spot ${i + 1}`` | ``profile-spot-remove-${i + 1}`` | 591 |
-| TextButton | + Add another spot | `profile-add-spot` | 607 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 614 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 624 |
-| SegmentedControl | — | `profile-ai-mode` | 635 |
-| Button | Edit your answers | `profile-answers-edit` | 667 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 675 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 677 |
+| EmptyState | Couldn't load your profile | — | 282 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 429 |
+| Button | locating ? "Locating…" : "📍 Use my current location" | `profile-use-location` | 460 |
+| Pressable | Remove item | ``profile-packing-remove-${i + 1}`` | 507 |
+| TextButton | + Add item | `profile-packing-add` | 520 |
+| Pressable | — | `profile-home-access` | 563 |
+| Pressable | ``Remove spot ${i + 1}`` | ``profile-spot-remove-${i + 1}`` | 596 |
+| TextButton | + Add another spot | `profile-add-spot` | 612 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 619 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 629 |
+| SegmentedControl | — | `profile-ai-mode` | 640 |
+| Button | Edit your answers | `profile-answers-edit` | 672 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 680 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 682 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
