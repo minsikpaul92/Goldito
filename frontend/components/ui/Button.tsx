@@ -14,18 +14,21 @@ type Props = {
   size?: "default" | "large";
   /** Working (saving, sending): keeps its colour with a spinner, never the gray disabled look (audit F46). Taps are ignored. */
   loading?: boolean;
+  /** Looks disabled but still takes the tap, so a screen can show what is missing (Checkout Pay, #282). */
+  dimmed?: boolean;
   style?: ViewStyle;
   testID?: string;
 };
 
 /** Figma: Goldito-Design → Components → Button (Style × State). */
-export function Button({ label, onPress, disabled, variant = "primary", size = "default", loading, style, testID }: Props) {
+export function Button({ label, onPress, disabled, variant = "primary", size = "default", loading, dimmed, style, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const secondary = variant === "secondary";
   const danger = variant === "danger";
 
-  const labelStyle = [styles.label, size === "large" && styles.largeLabel, secondary && styles.secondaryLabel, disabled && styles.disabledLabel];
+  const off = disabled || dimmed;
+  const labelStyle = [styles.label, size === "large" && styles.largeLabel, secondary && styles.secondaryLabel, off && styles.disabledLabel];
 
   return (
     <Pressable
@@ -39,8 +42,8 @@ export function Button({ label, onPress, disabled, variant = "primary", size = "
         size === "large" && styles.large,
         secondary && styles.secondary,
         danger && styles.danger,
-        disabled && styles.disabled,
-        pressed && !disabled && !loading && styles.pressed,
+        off && styles.disabled,
+        pressed && !off && !loading && styles.pressed,
         style,
       ]}
     >

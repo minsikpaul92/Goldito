@@ -1100,7 +1100,7 @@
 | MGCHOICE-4 | 아무 쪽이나 **Decline** | "Decline this request?" 시트 → 빨간 **Decline request** → 요청이 끝남(취소, `meet_greet_declined`), 상대에게 "… declined the booking request" 알림. 예약 화면에는 "Chloe declined this request." / "You declined this request." 시트를 닫으면 아무 일도 없음 | 🤖 `meet-greet` · SQL | ➖ |
 | MGCHOICE-5 | 한쪽이 건너뛰기를 요청한 뒤 다른 쪽 | **Accept skip**(채팅은 푸터) · **Request Meet & Greet**(새 시간) · 빨간 **Decline**. Accept skip이면 Meet & Greet 없이 Confirm 단계로, Request Meet & Greet이면 새 시간 제안으로 바뀜. 시터의 Accept skip도 첫 동의 | 🤖 `chat` · `meet-greet` · SQL | ➖ |
 | MGCHOICE-6 | 오너가 아무것도 안 고른 요청 | 시터는 예전처럼 **Next**로 먼저 날짜를 홀드할 수 있음(BOOK-9) | 🤖 `meet-greet` | ➖ |
-| MGCHOICE-7 | Checkout의 **Type your name to sign** | 처음엔 비어 있고 프로필 이름이 연한 힌트로만 보임, 자동완성 꺼짐. 이름을 쳐야 Pay가 켜짐 | 🤖 `checkout` | ➖ |
+| MGCHOICE-7 | Checkout의 **Type your name to sign** | 처음엔 비어 있고 프로필 이름이 연한 힌트로만 보임, 자동완성 꺼짐. **프로필 이름과 같은 이름**을 쳐야 Pay가 켜짐(PAYWHY-3) | 🤖 `checkout` | ➖ |
 
 ### 3.51 단계 막대: M&G · Care, Scheduled · Trip · Skipped (STAGEBAR) · #237
 
@@ -1135,7 +1135,18 @@
 | NAV-5 | 옛 주소 `/owner/diary` · `/sitter/diary?page=…`, 펫 방 · 반납 시트의 Diary 링크, 리포트 알림 | Feed의 Diary가 열림(시터는 그 페이지로) | 🤖 `pet-room` · `diary-book` | ➖ |
 | NAV-6 | 시터 Home의 **💬 Chats (n)** | Chat 탭으로 감 | **👤** | ➖ |
 
+### 3.54 Pay가 꺼진 이유 (PAYWHY) · #282
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| PAYWHY-1 | Checkout을 열고 아무것도 안 함 | Pay 위에 **Agree to 4 more items**(빠진 개수), Pay는 회색. 체크할 때마다 숫자가 줄고 마지막엔 **Agree to 1 more item** | 🤖 `checkout` | 사람 확인 대기 |
+| PAYWHY-2 | 회색 Pay 누르기 | 결제는 안 되고, 화면이 **첫 번째로 안 체크한 동의**(다 체크했으면 이름 칸)로 스크롤 | 🤖 `checkout` | ➖ |
+| PAYWHY-3 | 다 체크 → 이름 칸 | 비어 있으면 **Type your name to sign**, 다른 이름이면 **Type your name as on your profile**. 프로필 이름과 같으면(대소문자 · 앞뒤 · 여러 칸 띄어쓰기는 무시) 줄이 사라지고 Pay가 켜짐 | 🤖 `checkout` | ➖ |
+| PAYWHY-4 | 다 맞춘 뒤 Pay | 예전처럼 결제 → 예약 화면 "Booked and paid" | 🤖 `checkout` | ➖ |
+
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
+
+- **서명 이름은 앱에서만 확인한다 (PAYWHY-3):** Pay 버튼은 프로필 이름과 같을 때만 켜지지만, 서버(`sign_booking_consent`)는 이름이 1-80자인지만 본다. 앱을 거치지 않은 호출은 다른 이름으로도 서명할 수 있다. 데모 결제라 서버 확인은 넣지 않았다. 또 회색 Pay는 탭을 받기 때문에(빠진 곳으로 스크롤) 스크린리더에는 "꺼짐"으로 읽히지 않고, 바로 위의 이유 줄이 대신 알려 준다.
 
 - **오너가 먼저 고른 Meet & Greet에는 시간 제한이 없다 (MGCHOICE):** 2일 · 3일 알림과 자동 취소(011l)는 시터의 첫 동의부터 센다. 오너가 시간을 보내거나 건너뛰기를 요청하고 시터가 답하지 않으면 그 요청은 시터가 답하거나 둘 중 하나가 취소할 때까지 그대로 남는다.
 
