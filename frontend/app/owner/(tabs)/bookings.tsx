@@ -13,6 +13,7 @@ import { TextButton } from "../../../components/ui/TextButton";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
+import { getRatingSummary } from "../../../features/completion/completionApi";
 import { ProfilePhoto, loadCoverPhotos, loadProfilePhotos, photoThumb } from "../../../features/profile/profilePhotosApi";
 import { useSitterSearch } from "../../../features/sitters/useSitterSearch";
 import { NearbySitter, OwnerBooking, OwnerBucket, listOwnerBookings, needsOwner, ownerBucket } from "../../../lib/bookings";
@@ -45,6 +46,7 @@ export default function OwnerBookings() {
   const search = useSitterSearch();
   const [viewer, setViewer] = useState<{ name: string; photos: ProfilePhoto[] } | null>(null);
   const [covers, setCovers] = useState<Map<string, ProfilePhoto>>(new Map());
+  const [ratings, setRatings] = useState<Map<string, number>>(new Map());
   const [chip, setChip] = useState<OwnerBucket | null>(null);
   const [pastOpen, setPastOpen] = useState(false);
   const scroller = useRef<ScrollView>(null);
@@ -79,6 +81,12 @@ export default function OwnerBookings() {
   useEffect(() => {
     let current = true;
     loadCoverPhotos(shownKey ? shownKey.split(",") : []).then((m) => current && setCovers(m));
+    // The stars next to a name: only a sitter with reviews gets one.
+    const ids = shownKey ? shownKey.split(",") : [];
+    Promise.all(ids.map(async (id) => [id, await getRatingSummary(id)] as const)).then((all) => {
+      if (!current) return;
+      setRatings(new Map(all.filter(([, r]) => r.count > 0 && r.avg != null).map(([id, r]) => [id, r.avg as number])));
+    });
     return () => {
       current = false;
     };
@@ -123,6 +131,7 @@ export default function OwnerBookings() {
         km={`${sitter.distanceKm} km`}
         nightly={sitter.boardingNightly ?? sitter.houseSittingNightly}
         favorite={search.favorites.has(sitter.sitterId)}
+        rating={ratings.get(sitter.sitterId) ?? null}
         onOpen={() => openSitter(sitter.sitterId)}
         onPhoto={() => void viewPhotos(sitter.sitterId, sitter.displayName)}
         testID={`sitter-tile-${sitter.displayName}`}
