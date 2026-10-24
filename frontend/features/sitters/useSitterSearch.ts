@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BookingError, NearbySitter, searchSittersNearby } from "../../lib/bookings";
 import { LatLng, LocationError, getCurrentPosition } from "../../lib/location";
-import { geocodeAddress } from "../../lib/transit";
+import { geocodeAddress, reverseGeocode } from "../../lib/transit";
 import { tripProblem } from "../../lib/trip";
 import { useSession } from "../../providers/SessionProvider";
 import { useMyPets } from "../pets/useMyPets";
@@ -18,7 +18,11 @@ const POSTAL_CODE = /^[A-Za-z]\d[A-Za-z]\s?\d[A-Za-z]\d$/;
 
 export type When = { day: string; time: string };
 /** Where the owner searches from: the saved home, the device, or an address / postal code they typed. */
-export type Place = { kind: "home" } | { kind: "here" } | { kind: "custom"; point: LatLng; label: string };
+/**
+ * `here` carries where it resolved to once the lookup answers (#268): the whole address, house number included
+ * ("12 Dundas St W, Toronto, ON M6J 1G1"), else the street, else the area. Only the owner sees it.
+ */
+export type Place = { kind: "home" } | { kind: "here"; label: string | null } | { kind: "custom"; point: LatLng; label: string };
 export type Results =
   | { status: "idle" }
   | { status: "loading" }
@@ -47,6 +51,8 @@ export function useSitterSearch() {
   const [place, setPlace] = useState<Place>({ kind: "home" });
   // undefined = still loading; null = no home point saved
   const [home, setHome] = useState<LatLng | null | undefined>(undefined);
+  /** The home address as the owner typed it on their Profile, shown for "My home" (#268). */
+  const [homeAddress, setHomeAddress] = useState<string | null>(null);
   const [here, setHere] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
   const [placeError, setPlaceError] = useState<string | null>(null);
@@ -88,7 +94,10 @@ export function useSitterSearch() {
   useEffect(() => {
     if (!profile) return;
     loadRoleProfile(profile.id, "owner")
-      .then((r) => setHome(r.fields.home_lat != null && r.fields.home_lng != null ? { lat: r.fields.home_lat, lng: r.fields.home_lng } : null))
+      .then((r) => {
+        setHome(r.fields.home_lat != null && r.fields.home_lng != null ? { lat: r.fields.home_lat, lng: r.fields.home_lng } : null);
+        setHomeAddress(r.role === "owner" ? (r.fields.home_address?.trim() || null) : null);
+      })
       .catch(() => setHome(null));
     loadSearchRadius(profile.id)
       .catch(() => null)
@@ -116,7 +125,13 @@ export function useSitterSearch() {
     try {
       const point = await getCurrentPosition();
       setHere(point);
-      setPlace({ kind: "here" });
+      setPlace({ kind: "here", label: null });
+      // Say where that is (#268): the search runs right away, the name follows when the lookup answers.
+      // An exact lookup: the owner sees their own full address; nobody else gets it (the privacy page says so).
+      void reverseGeocode(point, { exact: true }).then((found) => {
+        const line = found?.full ?? found?.address ?? found?.label ?? null;
+        if (line) setPlace((p) => (p.kind === "here" ? { kind: "here", label: line } : p));
+      });
     } catch (error) {
       setPlaceError(error instanceof LocationError ? LOCATION_MESSAGE[error.reason] : LOCATION_MESSAGE.unavailable);
     } finally {
@@ -202,6 +217,7 @@ export function useSitterSearch() {
     setPickUp,
     place,
     home,
+    homeAddress,
     locating,
     placeError,
     useHere,

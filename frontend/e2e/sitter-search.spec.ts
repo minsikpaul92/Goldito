@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-import { NOON_TORONTO, TODAY_TORONTO, app, box, signIn } from "./helpers";
+import { app, box, signIn } from "./helpers";
 import { MockDb, MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // Bookings tab sitter search (03D 3D.1): one hotel-style line (place, dates, pets), favorites first as photo and name,
@@ -67,6 +67,13 @@ async function openBookings(page: Page) {
 }
 
 /** The app's "today" in Toronto plus n days. */
+/** Taps a day on the stay calendar, turning to the next month first when the day is not on the one shown. */
+async function pickStayDay(screen: ReturnType<typeof app>, day: string) {
+  const cell = screen.getByTestId(`stay-calendar-${day}`);
+  if (!(await cell.isVisible())) await screen.getByTestId("stay-calendar-next").click();
+  await cell.click();
+}
+
 function inDays(n: number): string {
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Toronto" });
   const d = new Date(`${today}T12:00:00Z`);
@@ -156,7 +163,7 @@ test.describe("find a sitter", () => {
     seed(db);
     const screen = await openBookings(page);
 
-    await expect(screen.getByTestId("bar-place")).toContainText("My home");
+    await expect(screen.getByTestId("bar-place")).toHaveText("1 Owner Ave"); // the home address (#268)
     await expect(screen.getByTestId("bar-pets")).toContainText("2 pets");
     await expect(screen.getByTestId("bar-search")).toHaveCount(0); // nothing to press: it searches by itself
     // Chloe (a favorite) is under Favorites, Paul (not) under Sitters nearby, Uma is out of range.
@@ -181,27 +188,22 @@ test.describe("find a sitter", () => {
   });
 
   test("a range on the calendar and exact times set the stay", async ({ page }) => {
-    // A fixed day: the calendar shows one month, so a range that crosses the end of the real month cannot be clicked.
-    await page.clock.setFixedTime(NOON_TORONTO);
-    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA], { now: NOON_TORONTO });
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
     seed(db);
-    const inFixedDays = (n: number) => {
-      const d = new Date(`${TODAY_TORONTO}T12:00:00Z`);
-      d.setUTCDate(d.getUTCDate() + n);
-      return d.toISOString().slice(0, 10);
-    };
     const screen = await openBookings(page);
     await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
     const calls = db.nearbySearches.length;
 
     await screen.getByTestId("bar-dates").click();
-    await screen.getByTestId(`stay-calendar-${inFixedDays(5)}`).click();
-    await screen.getByTestId(`stay-calendar-${inFixedDays(8)}`).click();
+    // Near the end of a month the second day is on the next page of the calendar.
+    await pickStayDay(screen, inDays(5));
+    await pickStayDay(screen, inDays(8));
     await screen.getByTestId("search-drop_off-time-plus").click(); // 9:15 AM
     await screen.getByTestId("stay-done").click();
     await expect.poll(() => db.nearbySearches.length).toBeGreaterThan(calls);
-    await expect.poll(() => String(db.nearbySearches.at(-1)?.p_drop_off_at)).toContain(`${inFixedDays(5)}T13:15`);
-    expect(String(db.nearbySearches.at(-1)?.p_pick_up_at)).toContain(`${inFixedDays(8)}T21:00`);
+    // Toronto is UTC-4 in summer time and UTC-5 after it ends (early November): 9:15 AM and 5:00 PM read either way.
+    await expect.poll(() => String(db.nearbySearches.at(-1)?.p_drop_off_at)).toMatch(new RegExp(`${inDays(5)}T1[34]:15`));
+    expect(String(db.nearbySearches.at(-1)?.p_pick_up_at)).toMatch(new RegExp(`${inDays(8)}T2[12]:00`));
 
     // The clock opens from the time itself.
     await screen.getByTestId("bar-dates").click();
@@ -283,6 +285,36 @@ test.describe("find a sitter", () => {
     expect(db.nearbySearches.at(-1)).toMatchObject({ p_lng: -79.4194 });
   });
 
+  test("the bar names the place: the home address as typed, the full address of Current location (#268)", async ({ page }) => {
+    await stubGps(page);
+    const asked: unknown[] = [];
+    await page.route("**/api/geo/reverse", (route) => {
+      asked.push(route.request().postDataJSON());
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ found: true, label: "Trinity Bellwoods, Toronto", postal: "M6J", address: "Dundas St W, Toronto, M6J", full: "12 Dundas St W, Toronto, ON M6J 1G1" }),
+      });
+    });
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
+    seed(db);
+    Object.assign(db.owner_profiles.find((p) => p.id === OWNER.id)!, { home_address: "120 Harbord St, Toronto" });
+    const screen = await openBookings(page);
+
+    // My home: the address the owner typed on their Profile.
+    await expect(screen.getByTestId("bar-place")).toHaveText("120 Harbord St");
+    await screen.getByTestId("bar-place").click();
+    await expect(screen.getByTestId("place-home")).toContainText("120 Harbord St, Toronto");
+
+    // Current location: an exact lookup, the house number and street in the bar, the whole address in the sheet.
+    await screen.getByTestId("place-here").click();
+    await expect(screen.getByTestId("place-here")).toContainText("12 Dundas St W, Toronto, ON M6J 1G1");
+    expect(asked.at(-1)).toMatchObject({ lat: 43.6477, lng: -79.4194, exact: true });
+    await screen.getByTestId("place-done").click();
+    await expect(screen.getByTestId("bar-place")).toHaveText("12 Dundas St W");
+    await expect.poll(() => db.nearbySearches.at(-1)?.p_lat).toBe(43.6477);
+  });
+
   test("a blocked location says how to fix it and keeps the home", async ({ page }) => {
     await stubGps(page, true);
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
@@ -293,7 +325,7 @@ test.describe("find a sitter", () => {
     await screen.getByTestId("place-here").click();
     await expect(screen.getByTestId("place-error")).toContainText("Location is blocked for this site");
     await screen.getByTestId("place-done").click();
-    await expect(screen.getByTestId("bar-place")).toContainText("My home");
+    await expect(screen.getByTestId("bar-place")).toHaveText("1 Owner Ave");
   });
 
   test("the pets sheet picks who is staying", async ({ page }) => {

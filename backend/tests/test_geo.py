@@ -120,7 +120,7 @@ def test_a_point_becomes_a_coarse_label(client, monkeypatch):
     seen: list[tuple[float, float]] = []
     monkeypatch.setattr(geo, "_reverse", lambda lat, lng: seen.append((lat, lng)) or HIT)
     body = post_reverse(client, owner_token()).json()
-    assert body == {"found": True, "label": "Trinity Bellwoods, Toronto", "postal": "M6J", "address": "Dundas St W, Toronto, M6J"}
+    assert body == {"found": True, "label": "Trinity Bellwoods, Toronto", "postal": "M6J", "address": "Dundas St W, Toronto, M6J", "full": None}
     assert "12" not in body["label"] + body["address"]  # no house number
     assert "1G1" not in str(body)  # only the area part of the postal code
     assert seen == [(43.6477, -79.4194)]
@@ -128,7 +128,7 @@ def test_a_point_becomes_a_coarse_label(client, monkeypatch):
 
 def test_a_point_nobody_can_name_is_found_false(client, monkeypatch):
     monkeypatch.setattr(geo, "_reverse", lambda lat, lng: {"error": "Unable to geocode"})
-    assert post_reverse(client, owner_token()).json() == {"found": False, "label": None, "postal": None, "address": None}
+    assert post_reverse(client, owner_token()).json() == {"found": False, "label": None, "postal": None, "address": None, "full": None}
 
 
 def test_the_reverse_lookup_sends_a_rounded_point(monkeypatch):
@@ -148,6 +148,32 @@ def test_the_reverse_lookup_sends_a_rounded_point(monkeypatch):
     assert call["url"] == "https://nominatim.openstreetmap.org/reverse"
     assert call["headers"]["User-Agent"].startswith("Goldito/")
     assert call["params"]["lat"] == 43.648 and call["params"]["lon"] == -79.419  # about 100 m, not the exact spot
+
+
+def test_exact_looks_the_point_up_as_it_is_and_returns_the_whole_address(client, monkeypatch):
+    """#268: the owner's own sitter search shows the house number; only then is the exact point sent."""
+    seen: list[tuple] = []
+    monkeypatch.setattr(geo, "_reverse", lambda lat, lng, exact=False: seen.append((lat, lng, exact)) or HIT)
+    headers = {"Authorization": f"Bearer {owner_token()}"}
+    body = client.post("/api/geo/reverse", headers=headers, json={"lat": 43.647712, "lng": -79.419498, "exact": True}).json()
+    assert body["full"] == "12 Dundas St W, Toronto, M6J 1G1"
+    assert seen == [(43.647712, -79.419498, True)]
+
+
+def test_an_exact_lookup_sends_the_point_unrounded(monkeypatch):
+    calls: list[dict] = []
+
+    class Reply:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {}
+
+    monkeypatch.setattr(geo.httpx, "get", lambda url, **kw: calls.append(kw) or Reply())
+    monkeypatch.setattr(geo, "MIN_GAP_S", 0)
+    geo._reverse(43.647712345, -79.419498765, exact=True)
+    assert calls[0]["params"]["lat"] == 43.647712345 and calls[0]["params"]["lon"] == -79.419498765
 
 
 def test_the_reverse_lookup_being_down_is_a_502_and_it_needs_sign_in(client, monkeypatch):
