@@ -6006,13 +6006,15 @@ begin
   perform _t_ok(not exists (select 1 from public.chat_messages where card ->> 'booking_id' = v3::text),
     '014o: another pair''s booking cards are not readable');
   perform _t_as(joy);
-  perform _t_ok((select count(*) from public.chat_messages where card ->> 'booking_id' = v3::text) = 2,
+  perform _t_ok((select count(*) from public.chat_messages where card ->> 'booking_id' = v3::text
+        and card ->> 'type' in ('meet_greet', 'agreement')) = 2,
     '014o: the pair reads its own booking cards');
   perform _t_as(null);
   update public.bookings set status = 'cancelled' where id = v3;
   perform _t_ok((select min((card ->> 'rev')::int) from public.chat_messages where card ->> 'booking_id' = v3::text) >= 2,
     '014o: a cancelled booking touches its cards and posts no new one');
-  perform _t_ok((select count(*) from public.chat_messages where card ->> 'booking_id' = v3::text) = 2, '014o: …still two cards');
+  perform _t_ok((select count(*) from public.chat_messages where card ->> 'booking_id' = v3::text
+      and card ->> 'type' in ('meet_greet', 'agreement')) = 2, '014o: …still two cards');
 
   -- Anon cannot call the new functions.
   perform _t_as(null, 'anon');
@@ -7024,6 +7026,79 @@ begin
   exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err = 'not_allowed', '015f: another sitter cannot decline it');
   perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 015k (#264): a Meet & Greet change posts a new line at the bottom of the chat
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  nora constant uuid := '00000000-0000-4000-8000-0000000000b4';
+  e constant date := app_today() + 600;
+  v_pet uuid;
+  v_b uuid;
+  v_c uuid;
+  v_thread uuid;
+  r record;
+  v_events text;
+begin
+  perform _t_as(nora);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (nora, 'open', e - 1, e + 20, 'morning', '08:00', '12:00', 3),
+         (nora, 'open', e - 1, e + 20, 'afternoon', '12:00', '18:00', 3),
+         (nora, 'open', e - 1, e + 20, 'overnight', '18:00', '08:00', 3);
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (joy, 'dog', 'Pebble') returning id into v_pet;
+  insert into public.chat_threads (owner_id, sitter_id) values (joy, nora) on conflict do nothing;
+  select id into v_thread from public.chat_threads where owner_id = joy and sitter_id = nora;
+  v_b := _t_booking(joy, nora, array[v_pet], local_ts(e, '09:00'), local_ts(e + 2, '17:00'), 'requested');
+  perform _t_meet(v_b, 'required');
+
+  -- The request card brings the Meet & Greet card; nothing has changed yet, so no update line.
+  perform _t_as(joy);
+  perform post_booking_request_card(v_thread, v_b);
+  perform _t_as(null);
+  perform _t_ok(not exists (select 1 from public.chat_messages where thread_id = v_thread
+      and card ->> 'type' = 'meet_greet_update' and card ->> 'booking_id' = v_b::text),
+    '015k: no update line before anything changes');
+
+  -- Joy proposes, Nora accepts: two lines at the bottom, each from the one who acted, with the time copied in.
+  perform _t_as(joy);
+  perform propose_meet_greet(v_b, 'video', local_ts(e - 1, '19:00'));
+  perform _t_as(nora);
+  perform respond_meet_greet(v_b, true);
+  perform _t_as(null);
+  select string_agg((card ->> 'event') || ':' || case sender_id when joy then 'joy' when nora then 'nora' else '?' end, ',' order by created_at)
+  into v_events
+  from public.chat_messages where thread_id = v_thread and card ->> 'type' = 'meet_greet_update' and card ->> 'booking_id' = v_b::text;
+  perform _t_ok(v_events = 'proposed:joy,agreed:nora', '015k: proposed by Joy, then agreed by Nora (' || coalesce(v_events, 'none') || ')');
+  perform _t_ok((select (card ->> 'at')::timestamptz = local_ts(e - 1, '19:00') and card ->> 'mode' = 'video'
+      from public.chat_messages where thread_id = v_thread and card ->> 'event' = 'proposed' and card ->> 'booking_id' = v_b::text),
+    '015k: the line keeps the proposed time and mode');
+  perform _t_ok((select card ->> 'type' from public.chat_messages where thread_id = v_thread order by created_at desc limit 1) = 'meet_greet_update',
+    '015k: the newest message in the chat is the update');
+
+  -- Joy's chat list: the update is the newest message, and Nora's acceptance is unread for Joy.
+  perform _t_as(joy);
+  select * into r from list_my_chats() where thread_id = v_thread;
+  perform _t_ok(r.last_card_type = 'meet_greet_update' and r.unread_count >= 1, '015k: the chat list follows the update (preview and unread)');
+  perform _t_as(null);
+
+  -- A skip asked and declined: skip_requested, then declined (the request ends).
+  v_c := _t_booking(joy, nora, array[v_pet], local_ts(e + 10, '09:00'), local_ts(e + 12, '17:00'), 'requested');
+  perform _t_meet(v_c, 'required');
+  perform _t_as(joy);
+  perform post_booking_request_card(v_thread, v_c);
+  perform request_skip_meet_greet(v_c);
+  perform _t_as(nora);
+  perform respond_skip_meet_greet(v_c, false);
+  perform _t_as(null);
+  select string_agg(card ->> 'event', ',' order by created_at) into v_events
+  from public.chat_messages where thread_id = v_thread and card ->> 'type' = 'meet_greet_update' and card ->> 'booking_id' = v_c::text;
+  perform _t_ok(v_events = 'skip_requested,declined', '015k: a skip request and its decline are posted (' || coalesce(v_events, 'none') || ')');
 end;
 $$;
 

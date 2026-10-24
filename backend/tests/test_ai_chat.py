@@ -521,6 +521,26 @@ def test_the_meet_and_greet_card_says_where_it_stands(fields, want):
     assert out == {"who": "app", "text": f"[{want}]"}
 
 
+@pytest.mark.parametrize(
+    ("sender", "fields", "want"),
+    [
+        (SITTER_ID, {"event": "agreed", "mode": "video", "at": "2026-10-20T19:00:00+00:00"}, {"who": "them", "text": "[accepted the Meet & Greet for Oct 20 3:00 PM, by video]"}),
+        (OWNER_ID, {"event": "skip_requested"}, {"who": "me", "text": "[asked to skip the Meet & Greet]"}),
+        (SITTER_ID, {"event": "made_up"}, None),
+    ],
+)
+def test_a_meet_and_greet_update_line_says_who_changed_what(sender, fields, want):
+    """015k (#264): the update line is a message from the one who acted, with the time as it was then."""
+    from zoneinfo import ZoneInfo
+
+    msg = message(1, sender, card={"type": "meet_greet_update", "booking_id": "b1", **fields})
+    assert logic.describe(msg, OWNER_ID, ZoneInfo("America/Toronto")) == want
+
+
+def test_a_meet_and_greet_update_is_something_to_react_to():
+    assert logic.is_event(message(1, SITTER_ID, card={"type": "meet_greet_update", "booking_id": "b1", "event": "agreed"}))
+
+
 def test_the_payment_card_says_paid_once_it_is():
     from zoneinfo import ZoneInfo
 
