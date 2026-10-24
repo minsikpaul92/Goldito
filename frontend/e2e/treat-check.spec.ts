@@ -169,7 +169,7 @@ test.describe("treat check", () => {
     const screen = app(page);
     await screen.getByTestId(`treat-pet-${MAX}`).click();
     await snapSample(page, "sweet_potato_chew");
-    await expect(screen.getByTestId("treat-result-safe")).toContainText("Looks fine for Max ✅");
+    await expect(screen.getByTestId("treat-result-safe")).toContainText("Looks fine for Max");
     await expect(screen.getByTestId("treat-sources-unavailable")).toContainText("Sources unavailable right now");
 
     await snapSample(page, "sweet_potato_chew");

@@ -107,7 +107,7 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
                 <Text style={styles.meta}>{`From ${page.sitterName}`}</Text>
                 {page.tasks.map((t, i) => (
                   <Text key={`${i}-${t.title}`} style={styles.task}>
-                    {`${t.status === "done" ? "✓" : "⚠️"} ${t.title}${t.status === "done" ? "" : " · missed"}`}
+                    {`${t.status === "done" ? "✓" : "✗"} ${t.title}${t.status === "done" ? "" : " · missed"}`}
                   </Text>
                 ))}
                 <PageActions reportId={page.id} action="hide" other={page.sitterName} onDone={() => void load()} />

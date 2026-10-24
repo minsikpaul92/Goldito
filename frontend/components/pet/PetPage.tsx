@@ -83,7 +83,7 @@ export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => vo
           </Pressable>
         ))}
       </View>
-      <TextButton label="🎨 Match colors from photo" onPress={() => setMaking(true)} style={styles.make} testID="pet-colors-open" />
+      <TextButton label="Match colors from photo" onPress={() => setMaking(true)} style={styles.make} testID="pet-colors-open" />
       <PetColorsSheet
         visible={making}
         onClose={() => setMaking(false)}

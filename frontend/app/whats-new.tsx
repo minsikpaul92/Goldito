@@ -47,7 +47,7 @@ export default function WhatsNewScreen() {
       <BackLink onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} testID="whats-new-back" />
       <ScreenHeader title="What's New" subtitle="Small updates, in plain words" />
       {RELEASES.length === 0 ? (
-        <EmptyState emoji="✨" title="Nothing new yet" message="New features show here." />
+        <EmptyState emoji="📰" title="Nothing new yet" message="New features show here." />
       ) : (
         RELEASES.map((release, i) => (
           <Card key={`${release.version}-${release.title}`} tone={i === 0 ? "butter" : undefined} style={styles.release} testID={`release-${i}`}>

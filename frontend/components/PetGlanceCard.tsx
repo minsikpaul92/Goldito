@@ -80,7 +80,7 @@ export function PetGlanceCard({ name, species, facts, coverPublicId, profile, al
       {g.chips.length > 0 ? (
         <View style={styles.chips} testID={testID ? `${testID}-chips` : undefined}>
           {g.chips.map((chip) => (
-            <Tag key={chip.key} label={chip.tone === "warning" ? `⚠️ ${chip.text}` : chip.text} tone={TONE[chip.tone]} />
+            <Tag key={chip.key} label={chip.text} tone={TONE[chip.tone]} icon={chip.tone === "warning" ? "warning" : undefined} />
           ))}
         </View>
       ) : null}

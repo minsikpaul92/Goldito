@@ -469,14 +469,14 @@ The sitter reads an owner's care request while a stay is on, then approves or de
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Request not found | — | 53 |
-| Button | busy ? "Working…" : "Approve" | `request-approve` | 142 |
-| Button | Decline or reply… | `request-decline` | 143 |
-| Sheet | Reply to this request | `decline-sheet` | 147 |
-| Pressable | — | ``decline-reason-${i}`` | 151 |
-| Pressable | — | ``counter-owner-${i}`` | 189 |
-| Button | busy ? "Working…" : "Send counter-request" | `counter-send` | 203 |
-| Button | busy ? "Working…" : "Decline" | `decline-confirm` | 207 |
+| EmptyState | Request not found | — | 55 |
+| Button | busy ? "Working…" : "Approve" | `request-approve` | 147 |
+| Button | Decline or reply… | `request-decline` | 148 |
+| Sheet | Reply to this request | `decline-sheet` | 152 |
+| Pressable | — | ``decline-reason-${i}`` | 156 |
+| Pressable | — | ``counter-owner-${i}`` | 194 |
+| Button | busy ? "Working…" : "Send counter-request" | `counter-send` | 208 |
+| Button | busy ? "Working…" : "Decline" | `decline-confirm` | 212 |
 
 ### `/sitter/chat` — [app/sitter/(tabs)/chat.tsx](../../frontend/app/sitter/(tabs)/chat.tsx)
 
@@ -682,36 +682,36 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Remove this line | ``line-remove-${line.key}`` | 94 |
-| Pressable | — | ``line-preset-${p.id}`` | 114 |
-| Pressable | — | ``line-kind-${k.kind}`` | 134 |
-| Pressable | — | ``line-mode-${m}`` | 167 |
-| Pressable | ``Time ${formatTime(time)}, tap to change`` | `line-time` | 180 |
-| Stepper | Times | `line-count` | 192 |
-| Pressable | — | ``line-span-${s}`` | 207 |
-| Button | Add line | `line-add` | 222 |
-| TextButton | Cancel | `line-cancel` | 223 |
+| Pressable | Remove this line | ``line-remove-${line.key}`` | 97 |
+| Pressable | — | ``line-preset-${p.id}`` | 117 |
+| Pressable | — | ``line-kind-${k.kind}`` | 138 |
+| Pressable | — | ``line-mode-${m}`` | 172 |
+| Pressable | ``Time ${formatTime(time)}, tap to change`` | `line-time` | 185 |
+| Stepper | Times | `line-count` | 197 |
+| Pressable | — | ``line-span-${s}`` | 212 |
+| Button | Add line | `line-add` | 227 |
+| TextButton | Cancel | `line-cancel` | 228 |
 
 ### CareTasksSection — [components/CareTasksSection.tsx](../../frontend/components/CareTasksSection.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Add task | `care-add` | 141 |
-| Button | stay ? "Write a care request" : "Write a care checklist" | `care-request-open` | 148 |
-| Button | Accept | `counter-accept` | 180 |
-| Button | Decline | `counter-decline` | 186 |
-| TextButton | Try again | `care-retry` | 194 |
-| Pressable | ``Open ${task.title}`` | ``care-task-open-${task.id}`` | 208 |
-| Tag | Paused | — | 224 |
-| Tag | `status` | ``care-status-${task.id}`` | 226 |
-| TextButton | task.active ? "Pause" : "Resume" | ``care-toggle-${task.id}`` | 234 |
-| TextButton | Delete | ``care-delete-${task.id}`` | 240 |
-| Sheet | busy ? "Deleting…" : "Delete task" | `care-delete-sheet` | 275 |
-| Button | busy ? "Deleting…" : "Delete task" | `care-delete-confirm` | 283 |
-| Sheet | saving ? "Saving…" : task ? "Save changes" : "Save task" | `care-sheet` | 368 |
-| Button | saving ? "Saving…" : task ? "Save changes" : "Save task" | `care-save` | 376 |
-| Pressable | — | ``care-type-${t.type}`` | 391 |
-| Pressable | ``Task time ${formatTime(time)}, tap to change`` | `care-time` | 429 |
+| Button | Add task | `care-add` | 142 |
+| Button | stay ? "Write a care request" : "Write a care checklist" | `care-request-open` | 149 |
+| Button | Accept | `counter-accept` | 181 |
+| Button | Decline | `counter-decline` | 187 |
+| TextButton | Try again | `care-retry` | 195 |
+| Pressable | ``Open ${task.title}`` | ``care-task-open-${task.id}`` | 209 |
+| Tag | Paused | — | 225 |
+| Tag | `status` | ``care-status-${task.id}`` | 227 |
+| TextButton | task.active ? "Pause" : "Resume" | ``care-toggle-${task.id}`` | 235 |
+| TextButton | Delete | ``care-delete-${task.id}`` | 241 |
+| Sheet | busy ? "Deleting…" : "Delete task" | `care-delete-sheet` | 276 |
+| Button | busy ? "Deleting…" : "Delete task" | `care-delete-confirm` | 284 |
+| Sheet | saving ? "Saving…" : task ? "Save changes" : "Save task" | `care-sheet` | 369 |
+| Button | saving ? "Saving…" : task ? "Save changes" : "Save task" | `care-save` | 377 |
+| Pressable | — | ``care-type-${t.type}`` | 392 |
+| Pressable | ``Task time ${formatTime(time)}, tap to change`` | `care-time` | 430 |
 
 ### ChatBookingCards — [components/ChatBookingCards.tsx](../../frontend/components/ChatBookingCards.tsx)
 
@@ -853,10 +853,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Done | `due-alert-done` | 73 |
-| Button | 💤 Remind me in 10 min | `due-alert-snooze` | 74 |
-| TextButton | Dismiss | `due-alert-dismiss` | 76 |
-| Pressable | — | `due-alert-more` | 78 |
+| Button | Done | `due-alert-done` | 78 |
+| Button | Remind me in 10 min | `due-alert-snooze` | 79 |
+| TextButton | Dismiss | `due-alert-dismiss` | 81 |
+| Pressable | — | `due-alert-more` | 83 |
 
 ### EntryInfoCard — [components/EntryInfoCard.tsx](../../frontend/components/EntryInfoCard.tsx)
 
@@ -901,7 +901,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | TextButton | Retry | `record-retry` | 142 |
-| Button | Leave a review ⭐ | `leave-review` | 152 |
+| Button | Leave a review | `leave-review` | 152 |
 
 ### HandoffChangeSheet — [components/HandoffChangeSheet.tsx](../../frontend/components/HandoffChangeSheet.tsx)
 
@@ -1033,7 +1033,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | TextButton | Edit | `owner-note-edit` | 86 |
-| Button | ``⭐ Rate ${ownerName}`` | `owner-note-start` | 95 |
+| Button | ``Rate ${ownerName}`` | `owner-note-start` | 95 |
 | Button | saving ? "Saving…" : "Save note" | `owner-note-save` | 122 |
 | TextButton | Cancel | `owner-note-cancel` | 123 |
 
@@ -1069,7 +1069,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Tag | chip.tone === "warning" ? `⚠️ ${chip.text}` : chip.text | — | 83 |
+| Tag | `chip.text` | — | 83 |
 | LinkButton | ``Source: ${new URL(source.url).hostname.replace(/^www\./, "")}`` | `testID ? `${testID}-source-${i + 1}` : `glance-source-${i + 1}`` | 150 |
 
 ### PetRecordFold — [components/PetRecordFold.tsx](../../frontend/components/PetRecordFold.tsx)
@@ -1136,16 +1136,16 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Tag | ``Sent to ${pet.ownerName} ✓`` | ``report-sent-${pet.id}`` | 352 |
-| Button | ✏️ Write another report | ``report-another-${pet.id}`` | 367 |
+| Button | Write another report | ``report-another-${pet.id}`` | 367 |
 | Button | busy === "send" ? "Sending…" : `Send to ${pet.ownerName}` | ``report-send-${pet.id}`` | 405 |
-| TextButton | ✎ Fix a recorded value | ``report-edit-${pet.id}`` | 435 |
+| TextButton | Fix a recorded value | ``report-edit-${pet.id}`` | 435 |
 | Sheet | Fix a recorded value | ``report-edit-sheet-${pet.id}`` | 437 |
 | Button | on ? `✓ ${o.label}` : o.label | ``report-edit-${pet.id}-${group.kind}-${o.value}`` | 449 |
 | Button | Done | ``report-edit-done-${pet.id}`` | 469 |
 | TextButton | Remove | ``report-photo-remove-${p.mediaId}`` | 476 |
 | Button | photos.length >= REPORT_MAX_PHOTOS ? "📷 2 photos added" : `📷 Add photo (${photos.length}/${REPORT_MAX_PHOTOS})` | ``report-add-photo-${pet.id}`` | 480 |
 | Button | Add | ``report-custom-add-${pet.id}`` | 500 |
-| Button | busy === "generate" ? "Writing…" : body.trim() ? "✨ Rewrite the page from the chips" : "✨ Write the page from the chips" | ``report-generate-${pet.id}`` | 502 |
+| Button | busy === "generate" ? "Writing…" : body.trim() ? "Rewrite the page from the chips" : "Write the page from the chips" | ``report-generate-${pet.id}`` | 502 |
 
 ### RequestBookingSheet — [components/RequestBookingSheet.tsx](../../frontend/components/RequestBookingSheet.tsx)
 
@@ -1295,10 +1295,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Try again | `tasks-retry` | 51 |
-| Tag | `label` | ``task-status-${item.log.id}`` | 89 |
-| Button | Done | ``task-done-${item.log.id}`` | 93 |
-| Pressable | — | `tasks-done-toggle` | 100 |
+| Button | Try again | `tasks-retry` | 53 |
+| Tag | `label` | ``task-status-${item.log.id}`` | 91 |
+| Button | Done | ``task-done-${item.log.id}`` | 95 |
+| Pressable | — | `tasks-done-toggle` | 102 |
 
 ### TripEntry — [components/TripEntry.tsx](../../frontend/components/TripEntry.tsx)
 
@@ -1437,7 +1437,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | — | ``pet-switch-${p.name}`` | 54 |
 | Pressable | ``${itemName(item)} ${hat === item.id ? "on" : "off"}`` | ``pet-hat-${item.id}`` | 73 |
-| TextButton | 🎨 Match colors from photo | `pet-colors-open` | 86 |
+| TextButton | Match colors from photo | `pet-colors-open` | 86 |
 
 ### PetRoomCard — [components/pet/PetRoomCard.tsx](../../frontend/components/pet/PetRoomCard.tsx)
 
@@ -1544,7 +1544,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 355 |
 | Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 389 |
 | TextButton | Cancel | `decor-cancel` | 390 |
-| TextButton | ✨ Decorate | `decor-start` | 401 |
+| TextButton | Decorate | `decor-start` | 401 |
 | TextButton | ↗ Share | `decor-share` | 402 |
 | Pressable | `hint` | `testID` | 423 |
 

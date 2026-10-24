@@ -443,7 +443,7 @@ test.describe("sitter onboarding", () => {
     );
     await expect(
       screen.getByTestId("onboarding-choice-max_pets-3"),
-    ).toContainText("✨ suggested");
+    ).toContainText("Suggested");
     await expect(
       screen.getByTestId("onboarding-choice-max_pets-3"),
     ).toHaveAttribute("aria-pressed", "true");

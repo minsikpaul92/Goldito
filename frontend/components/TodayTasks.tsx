@@ -1,15 +1,16 @@
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { careTypeMeta, statusLabel, statusTone, todayStatus } from "../features/care/careFormat";
+import { careTypeMeta, statusIcon, statusLabel, statusTone, todayStatus } from "../features/care/careFormat";
 import { useDueReminder } from "../features/care/useDueReminder";
 import { TaskItem, TaskPet, useTodayTasks } from "../features/care/useTodayTasks";
 import { formatTime, isoToZoned } from "../features/schedule/dates";
-import { useThemedStyles } from "../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 import { TaskDoneSheet } from "./TaskDoneSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
+import { Icon } from "./ui/Icon";
 import { Tag } from "./ui/Tag";
 import { sectionTitleStyle } from "./ui/SectionTitle";
 
@@ -18,6 +19,7 @@ import { sectionTitleStyle } from "./ui/SectionTitle";
  * sheet (memo + photo + Done); a finished task leaves the list and shows up under "Done today".
  */
 export function TodayTasks({ pets }: { pets: TaskPet[] }) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { state, reload } = useTodayTasks(pets);
   const [finishing, setFinishing] = useState<TaskItem | null>(null);
@@ -58,7 +60,7 @@ export function TodayTasks({ pets }: { pets: TaskPet[] }) {
       ) : null}
       {state.status === "ready" && items.length > 0 && open.length === 0 ? (
         <Text style={styles.allDone} testID="tasks-all-done">
-          All done for today 🎉
+          All done for today 🐾
         </Text>
       ) : null}
 
@@ -86,7 +88,7 @@ export function TodayTasks({ pets }: { pets: TaskPet[] }) {
                 </Text>
                 {item.task.notes ? <Text style={styles.muted}>{item.task.notes}</Text> : null}
                 {label ? (
-                  <Tag label={label} tone={statusTone(todayStatus(item.log))} testID={`task-status-${item.log.id}`} />
+                  <Tag label={label} tone={statusTone(todayStatus(item.log))} icon={statusIcon(todayStatus(item.log))} testID={`task-status-${item.log.id}`} />
                 ) : null}
               </View>
             </View>
@@ -106,9 +108,12 @@ export function TodayTasks({ pets }: { pets: TaskPet[] }) {
           </Pressable>
           {showDone
             ? done.map((item) => (
-                <Text key={item.log.id} style={styles.muted} testID={`task-finished-${item.log.id}`}>
-                  {`✅ ${item.task.title} · ${item.pet.name} · ${formatTime(isoToZoned(item.log.completed_at ?? item.log.due_at).time)}${item.log.note_text ? ` · “${item.log.note_text}”` : ""}`}
-                </Text>
+                <View key={item.log.id} style={styles.finished}>
+                  <Icon name="check" size={16} strokeWidth={2.5} color={theme.color.success} />
+                  <Text style={[styles.muted, styles.finishedText]} testID={`task-finished-${item.log.id}`}>
+                    {`${item.task.title} · ${item.pet.name} · ${formatTime(isoToZoned(item.log.completed_at ?? item.log.due_at).time)}${item.log.note_text ? ` · “${item.log.note_text}”` : ""}`}
+                  </Text>
+                </View>
               ))
             : null}
         </View>
@@ -121,6 +126,8 @@ export function TodayTasks({ pets }: { pets: TaskPet[] }) {
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
+    finished: { flexDirection: "row", alignItems: "flex-start", gap: theme.spacing.xs },
+    finishedText: { flex: 1 },
     section: { gap: theme.spacing.sm },
     headRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
     heading: sectionTitleStyle(theme),

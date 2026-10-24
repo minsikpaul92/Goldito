@@ -364,7 +364,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
           <Text style={styles.body}>{body}</Text>
         )}
         {sentId ? <PageActions reportId={sentId} action="delete" other={pet.ownerName} onDone={writeAnother} /> : null}
-        <Button label="✏️ Write another report" variant="secondary" onPress={writeAnother} testID={`report-another-${pet.id}`} />
+        <Button label="Write another report" variant="secondary" onPress={writeAnother} testID={`report-another-${pet.id}`} />
         <Text style={styles.muted}>It covers what happens from now on.</Text>
       </Card>
     );
@@ -432,7 +432,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
       )}
 
       {editable.length > 0 ? (
-        <TextButton label="✎ Fix a recorded value" onPress={() => setEditing(true)} testID={`report-edit-${pet.id}`} />
+        <TextButton label="Fix a recorded value" onPress={() => setEditing(true)} testID={`report-edit-${pet.id}`} />
       ) : null}
       <Sheet visible={editing} title="Fix a recorded value" onClose={() => setEditing(false)} testID={`report-edit-sheet-${pet.id}`}>
         {editable.map((chip) => {
@@ -500,7 +500,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         <Button label="Add" disabled={!customText.trim()} onPress={addCustom} testID={`report-custom-add-${pet.id}`} />
       </View>
       <Button
-        label={busy === "generate" ? "Writing…" : body.trim() ? "✨ Rewrite the page from the chips" : "✨ Write the page from the chips"}
+        label={busy === "generate" ? "Writing…" : body.trim() ? "Rewrite the page from the chips" : "Write the page from the chips"}
         variant="secondary"
         disabled={busy != null}
         onPress={() => void generate()}

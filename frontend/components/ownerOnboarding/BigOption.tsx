@@ -7,7 +7,7 @@ import { Theme } from "../../theme/themes";
 type Props = {
   label: string;
   selected?: boolean;
-  /** A small line under the label, e.g. "✨ suggested". */
+  /** A small line under the label, e.g. "Suggested". */
   badge?: string;
   onPress: () => void;
   style?: ViewStyle;

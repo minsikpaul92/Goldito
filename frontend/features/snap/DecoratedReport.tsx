@@ -73,7 +73,7 @@ type Props = {
    * page once it exists. Without it a page being written has no Decorate.
    */
   pending?: { items: DecorItem[]; onChange: (items: DecorItem[]) => void };
-  /** Told when ✨ Decorate opens or closes (the diary book holds still meanwhile). */
+  /** Told when Decorate opens or closes (the diary book holds still meanwhile). */
   onEditingChange?: (editing: boolean) => void;
   testID?: string;
 };
@@ -398,7 +398,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
         </View>
       ) : (
         <View style={styles.row}>
-          <TextButton label="✨ Decorate" onPress={() => void start()} testID="decor-start" />
+          <TextButton label="Decorate" onPress={() => void start()} testID="decor-start" />
           {reportId && !writing ? <TextButton label="↗ Share" onPress={() => setSharing(true)} testID="decor-share" /> : null}
         </View>
       )}

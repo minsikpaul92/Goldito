@@ -150,7 +150,7 @@ function GestureLabScreen() {
 
       {toastVisible ? (
         <View testID="lab-toast" style={styles.toast}>
-          <Text style={styles.toastText}>Saved ✅</Text>
+          <Text style={styles.toastText}>Saved</Text>
         </View>
       ) : null}
 
