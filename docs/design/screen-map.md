@@ -668,8 +668,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | ``booking-card-${booking.id}`` | 131 |
-| Tag | `badge.label` | — | 142 |
+| Pressable | — | ``booking-card-${booking.id}`` | 152 |
+| Tag | `badge.label` | — | 163 |
 
 ### BookingTicket — [components/BookingTicket.tsx](../../frontend/components/BookingTicket.tsx)
 

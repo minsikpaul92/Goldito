@@ -109,6 +109,12 @@ test.describe("cancel and rebook", () => {
     await owner.getByTestId("past-toggle").click(); // nothing under way: the old bookings are behind this
     await expect(owner.getByTestId(`booking-card-${BOOKING}`)).toContainText("Cancelled");
     await expect(owner.getByTestId(`booking-card-${BOOKING}`)).not.toContainText("find a new sitter");
+    // #181: a past card says when and where in one line, the place once, and who drives in one line (no car emoji)
+    const stay = owner.getByTestId(`stay-${BOOKING}`);
+    await expect(stay).toBeVisible();
+    await expect(stay).toHaveText(/^Oct \d+.* at Chloe's place$/); // where the pets stay, once
+    await expect(owner.getByTestId(`booking-card-${BOOKING}`)).not.toContainText("Drop-off");
+    await expect(owner.getByTestId(`booking-card-${BOOKING}`)).not.toContainText("🚗");
     await page.goto(`/owner/bookings/${BOOKING}`);
     await expect(owner.getByTestId("booking-ended")).toContainText("Chloe cancelled this booking.");
     await expect(owner.getByTestId("cancel-booking")).toHaveCount(0);
