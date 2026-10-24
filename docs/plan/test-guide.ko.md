@@ -619,6 +619,7 @@
 | BOOKTAB-1 | **오너 Bookings** (Figma 1730:103907): 진행 중인 예약(Requests · Upcoming)이 있을 때 | 맨 위 **Your bookings**: 칩 Upcoming · Requests · Past, 예약은 **티켓 카드**(복숭아색: 집 그림 · "Boarding at Chloe's" · 펫 이름 · DROP-OFF → PICK-UP 큰 날짜 · 단계 알약 Ask · Meet · Book · Care · Home(끝난 단계 ✓) · 상태 태그 · Drop-off / Pick-up 줄("you drive" · 시각, 끝나면 ✓) · Paid + 금액). **Book care**를 누르면 아래 시터 찾기로 내려감. 그 아래 검색창 · Favorites · Sitters nearby | 🤖 `sitter-bookings` | 사람 확인 대기 |
 | BOOKTAB-2 | 오너: 진행 중인 예약이 없을 때 | Your bookings와 "No bookings yet"가 **숨겨지고** 시터 찾기가 맨 위. 지난 예약만 있으면 맨 아래 **Past bookings (N)**를 눌러 펼침 | 🤖 `sitter-bookings` · `auth` · `rebook` · `completion` | 사람 확인 대기 |
 | BOOKTAB-3 | 시터 Bookings의 예약 카드 | 오너와 같은 티켓 카드("Boarding · Robert", 누가 운전하는지는 시터 기준 "Robert drives" · "you drive"). Past는 예전 작은 카드 | 🤖 `sitter-bookings` | 사람 확인 대기 |
+| BOOKTAB-4 | 오너 Bookings의 시터 카드(Favorites · Sitters nearby) | 이름 옆에 후기가 있으면 **★ 4.5**(금색), 없으면 아무것도 안 붙음. 즐겨찾기는 이름 앞 **채워진 하트**(시터 페이지의 하트와 같음, 별 아님). 아래 줄은 **거리가 먼저**: "7 km · 10 yrs exp" | 🤖 `sitter-search` | 사람 확인 대기 |
 | SNAP-3 | (API) 견주가 본인 펫 성분표 사진으로 `POST /api/ai/safety-check` — chicken 알러지 Max에 `chicken breast` 라벨 / 개에게 `raisins` / 고양이에게 `lily extract` / `animal fat` / 평범한 라벨 | 차례로 DANGER(모델이 SAFE라 해도) · DANGER · DANGER · WARNING(숨은 출처 설명) · SAFE. 결과에 신뢰 도메인 출처, Tavily가 안 되면 `sources_unavailable`, Ultra가 안 되면 SAFE 대신 WARNING(`double_checked: false`). 라벨을 못 읽으면 422. 남의 사진 · 다른 펫 · 돌보는 중이 아닌 시터는 403 | 🤖 pytest · 실제 모델은 👤 — 모델 직접 호출 확인(라벨 4장 읽기 · Tavily · Ultra WARNING, 2026-10-14 [model-ids.md](phases/notes/model-ids.md)), 라우트 전체는 배포 백엔드에 이 코드가 올라간 뒤(#90 머지) | ➖ |
 | SNAP-4 | (DB) 시터가 검사한 DANGER / 견주가 검사한 DANGER / WARNING | 시터 DANGER만 견주에게 "Blocked a risky treat for {이름} ⚠️" 알림 1건. 견주도 "I understand"(`acknowledged_at`)를 남길 수 있음, 판정은 앱에서 못 바꿈 | SQL `rls_smoke` 013 — 호스팅 DB에서 전부 PASS | ✅ 2026-10-14 민식 (SQL) |
 | SNAP-5 | 견주(Max chicken 알러지 · Mochi) → Snap → **Treat check** → Max 고르기 → **Snap a label** → 샘플 **Chicken jerky** → **Check for Max** | "Reading the label…" → (8초 뒤) "Checking for Max…" → **빨간 전체 화면** "Don't give this to Max" + 이유 + `chicken` 칩. 폰 프레임 안, 바깥 클릭 · Esc로 안 닫힘, **I understand — don't feed**로만 닫힘 → `acknowledged_at` 기록, 결과 카드 · Recent checks 1줄이 남음. 맨 아래 작은 회색 "AI can be wrong…" 항상 | 🤖 `treat-check.spec.ts`(API 목업) · 실제 판정은 👤(배포 백엔드에 이 코드가 올라간 뒤) | 사람 확인 대기 |
@@ -1099,7 +1100,7 @@
 | MGCHOICE-4 | 아무 쪽이나 **Decline** | "Decline this request?" 시트 → 빨간 **Decline request** → 요청이 끝남(취소, `meet_greet_declined`), 상대에게 "… declined the booking request" 알림. 예약 화면에는 "Chloe declined this request." / "You declined this request." 시트를 닫으면 아무 일도 없음 | 🤖 `meet-greet` · SQL | ➖ |
 | MGCHOICE-5 | 한쪽이 건너뛰기를 요청한 뒤 다른 쪽 | **Accept skip**(채팅은 푸터) · **Request Meet & Greet**(새 시간) · 빨간 **Decline**. Accept skip이면 Meet & Greet 없이 Confirm 단계로, Request Meet & Greet이면 새 시간 제안으로 바뀜. 시터의 Accept skip도 첫 동의 | 🤖 `chat` · `meet-greet` · SQL | ➖ |
 | MGCHOICE-6 | 오너가 아무것도 안 고른 요청 | 시터는 예전처럼 **Next**로 먼저 날짜를 홀드할 수 있음(BOOK-9) | 🤖 `meet-greet` | ➖ |
-| MGCHOICE-7 | Checkout의 **Type your name to sign** | 처음엔 비어 있고 프로필 이름이 연한 힌트로만 보임, 자동완성 꺼짐. 이름을 쳐야 Pay가 켜짐 | 🤖 `checkout` | ➖ |
+| MGCHOICE-7 | Checkout의 **Type your name to sign** | 처음엔 비어 있고 프로필 이름이 연한 힌트로만 보임, 자동완성 꺼짐. **프로필 이름과 같은 이름**을 쳐야 Pay가 켜짐(PAYWHY-3) | 🤖 `checkout` | ➖ |
 
 ### 3.51 단계 막대: M&G · Care, Scheduled · Trip · Skipped (STAGEBAR) · #237
 
@@ -1156,9 +1157,20 @@
 | FEEDX-16 | Snap에서 스티커를 만듦(오너 / 시터) | 만든 사람의 Feed(No tag)에만 스티커가 올라옴. 상대는 못 봄. 다이어리 사진 고르기 · 표지 · 사진 수에는 안 끼임 | SQL `015j` · 화면은 사람 확인 대기 | 사람 확인 대기 |
 | FEEDX-17 | Feed에서 Request photo | 버튼 없음(채팅에 있음) | 🤖 `feed` | 사람 확인 대기 |
 
+### 3.55 Pay가 꺼진 이유 (PAYWHY) · #282
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| PAYWHY-1 | Checkout을 열고 아무것도 안 함 | Pay 위에 **Agree to 4 more items**(빠진 개수), Pay는 회색. 체크할 때마다 숫자가 줄고 마지막엔 **Agree to 1 more item** | 🤖 `checkout` | 사람 확인 대기 |
+| PAYWHY-2 | 회색 Pay 누르기 | 결제는 안 되고, 화면이 **첫 번째로 안 체크한 동의**(다 체크했으면 이름 칸)로 스크롤 | 🤖 `checkout` | ➖ |
+| PAYWHY-3 | 다 체크 → 이름 칸 | 비어 있으면 **Type your name to sign**, 다른 이름이면 **Type your name as on your profile**. 프로필 이름과 같으면(대소문자 · 앞뒤 · 여러 칸 띄어쓰기는 무시) 줄이 사라지고 Pay가 켜짐 | 🤖 `checkout` | ➖ |
+| PAYWHY-4 | 다 맞춘 뒤 Pay | 예전처럼 결제 → 예약 화면 "Booked and paid" | 🤖 `checkout` | ➖ |
+
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
 - **Feed 삭제 · 숨기기 (FEEDX, #345):** 시터가 오너에게 보낸 사진은 **보낸 지 30분 안**에만 둘 다에게서 지울 수 있다(서버 시계 기준, 앱은 같은 30분으로 버튼을 보여 준다). 그 뒤의 삭제는 내 쪽에서만이고 상대 Feed에는 남는다. 숨기기는 되돌릴 수 있고(Feed 맨 아래 Hidden), 삭제는 되돌릴 수 없다. 사진 파일은 아무도 못 보게 됐을 때만 지워진다. 돌봄이 끝난 시터는 자기가 올린 글만 계속 읽고(오너가 공유해 준 사진은 돌봄 기간까지만), 새로 올리는 사진은 나만 보기로만 된다. 호스팅 DB에 `015j`를 적용하기 전에는 새 Feed가 사진을 못 불러온다.
+
+- **서명 이름은 앱에서만 확인한다 (PAYWHY-3):** Pay 버튼은 프로필 이름과 같을 때만 켜지지만, 서버(`sign_booking_consent`)는 이름이 1-80자인지만 본다. 앱을 거치지 않은 호출은 다른 이름으로도 서명할 수 있다. 데모 결제라 서버 확인은 넣지 않았다. 또 회색 Pay는 탭을 받기 때문에(빠진 곳으로 스크롤) 스크린리더에는 "꺼짐"으로 읽히지 않고, 바로 위의 이유 줄이 대신 알려 준다.
 
 - **오너가 먼저 고른 Meet & Greet에는 시간 제한이 없다 (MGCHOICE):** 2일 · 3일 알림과 자동 취소(011l)는 시터의 첫 동의부터 센다. 오너가 시간을 보내거나 건너뛰기를 요청하고 시터가 답하지 않으면 그 요청은 시터가 답하거나 둘 중 하나가 취소할 때까지 그대로 남는다.
 

@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { ConsentCard } from "../../../../components/ConsentCard";
 import { Card } from "../../../../components/ui/Card";
@@ -36,6 +36,9 @@ import { useToast } from "../../../../providers/ToastProvider";
 import { Theme } from "../../../../theme/themes";
 import { sectionTitleStyle } from "../../../../components/ui/SectionTitle";
 
+/** Names compare without case or extra spaces: "david  kim" signs for "David Kim". */
+const sameName = (a: string, b: string) => a.trim().replace(/\s+/g, " ").toLowerCase() === b.trim().replace(/\s+/g, " ").toLowerCase();
+
 type Ready = {
   booking: BookingSummary;
   quote: PriceQuote;
@@ -61,6 +64,9 @@ export default function CheckoutScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [vetClinic, setVetClinic] = useState<string | null>(null);
+  const scroller = useRef<ScrollView>(null);
+  /** Where each consent card and the name field sit in the scroll content, to jump to the first missing one (#282). */
+  const spots = useRef<Record<string, number>>({});
 
   const load = useCallback(async () => {
     if (!bookingId || !session.profile) return;
@@ -110,9 +116,25 @@ export default function CheckoutScreen() {
     [ready?.signed],
   );
 
-  const allChecked =
-    ready != null &&
-    ready.required.every((k) => signedKinds.has(k) || checks[k]);
+  const missing = (ready?.required ?? []).filter((k) => !signedKinds.has(k) && !checks[k]);
+  // The signature is the owner's own name, as on their profile (#282): any other text does not sign.
+  const profileName = session.profile?.displayName ?? "";
+  const nameOk = signerName.trim() !== "" && sameName(signerName, profileName);
+  // Why Pay is off, in one short line (#282). Null once everything is done.
+  const payBlocked = !ready
+    ? null
+    : missing.length > 0
+      ? `Agree to ${missing.length} more item${missing.length === 1 ? "" : "s"}`
+      : !signerName.trim()
+        ? "Type your name to sign"
+        : !nameOk
+          ? "Type your name as on your profile"
+          : null;
+  const jumpToMissing = () => {
+    const key = missing[0] ?? "name";
+    const y = spots.current[key];
+    if (y != null) scroller.current?.scrollTo({ y: Math.max(0, y - 16), animated: true });
+  };
 
   const pay = async () => {
     if (!ready || !session.profile) return;
@@ -161,7 +183,7 @@ export default function CheckoutScreen() {
 
   return (
     <View style={styles.root}>
-      <Screen contentStyle={styles.content}>
+      <Screen ref={scroller} contentStyle={styles.content}>
         <Text accessibilityRole="header" style={styles.heading} testID="checkout-title">
           {`Finish booking with ${booking.sitterName}`}
         </Text>
@@ -185,29 +207,32 @@ export default function CheckoutScreen() {
         {required.map((kind) => {
           const existing = signed.find((s) => s.kind === kind);
           return (
-            <ConsentCard
-              key={kind}
-              template={CONSENT_TEMPLATES[kind]}
-              checked={Boolean(checks[kind])}
-              onCheckedChange={(v) => setChecks((c) => ({ ...c, [kind]: v }))}
-              signedAt={existing?.signedAt}
-              disabled={busy}
-              testID={`consent-${kind}`}
-            />
+            <View key={kind} onLayout={(e) => (spots.current[kind] = e.nativeEvent.layout.y)}>
+              <ConsentCard
+                template={CONSENT_TEMPLATES[kind]}
+                checked={Boolean(checks[kind])}
+                onCheckedChange={(v) => setChecks((c) => ({ ...c, [kind]: v }))}
+                signedAt={existing?.signedAt}
+                disabled={busy}
+                testID={`consent-${kind}`}
+              />
+            </View>
           );
         })}
 
-        <TextField
-          label="Type your name to sign"
-          value={signerName}
-          onChangeText={setSignerName}
-          // Typed by the person, never filled in (#236): the name is only a hint.
-          placeholder={session.profile?.displayName ?? undefined}
-          autoCapitalize="words"
-          autoComplete="off"
-          autoCorrect={false}
-          testID="checkout-signer"
-        />
+        <View onLayout={(e) => (spots.current.name = e.nativeEvent.layout.y)}>
+          <TextField
+            label="Type your name to sign"
+            value={signerName}
+            onChangeText={setSignerName}
+            // Typed by the person, never filled in (#236): the name is only a hint.
+            placeholder={profileName || undefined}
+            autoCapitalize="words"
+            autoComplete="off"
+            autoCorrect={false}
+            testID="checkout-signer"
+          />
+        </View>
         <Text style={styles.footer}>{DEMO_CONSENT_FOOTER}</Text>
 
         {error ? (
@@ -218,11 +243,19 @@ export default function CheckoutScreen() {
       </Screen>
 
       <View style={styles.footerBar}>
-        <Text style={styles.demoHint}>Demo payment, no card needed</Text>
+        {payBlocked ? (
+          <Text style={styles.blocked} testID="checkout-pay-why">
+            {payBlocked}
+          </Text>
+        ) : (
+          <Text style={styles.demoHint}>Demo payment, no card needed</Text>
+        )}
+        {/* A tap on the grayed-out Pay goes to the first thing still missing (#282). */}
         <Button
           label={totalLabel}
-          onPress={() => void pay()}
-          disabled={busy || !allChecked || !signerName.trim()}
+          onPress={payBlocked ? jumpToMissing : () => void pay()}
+          dimmed={!!payBlocked}
+          disabled={busy}
           testID="checkout-pay"
         />
       </View>
@@ -244,6 +277,7 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.surface,
     },
     demoHint: { fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center" },
+    blocked: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text, textAlign: "center" },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },
     entryCard: { gap: theme.spacing.sm, borderColor: theme.color.warning, borderWidth: 1 },
     entryTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },

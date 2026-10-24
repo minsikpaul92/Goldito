@@ -160,8 +160,8 @@ function KitScreen() {
 
       <Section id="cards" title="CARDS" onLayout={spy.onSectionLayout("cards")}>
         <SectionTitle>Sitter results</SectionTitle>
-        <SitterResultCard name="Chloe" meta="5 yrs experience" km="2 km" nightly={55} favorite rating={4.9} stays={38} availability={{ free: true, label: "Free on your dates" }} onOpen={() => undefined} testID="kit-sitter-chloe" />
-        <SitterResultCard name="Jun" meta="3 yrs experience" km="3 km" nightly={60} rating={4.8} stays={21} availability={{ free: false, label: "Full on Oct 24" }} onOpen={() => undefined} testID="kit-sitter-jun" />
+        <SitterResultCard name="Chloe" meta="5 yrs exp" km="2 km" nightly={55} favorite rating={4.9} stays={38} availability={{ free: true, label: "Free on your dates" }} onOpen={() => undefined} testID="kit-sitter-chloe" />
+        <SitterResultCard name="Jun" meta="3 yrs exp" km="3 km" nightly={60} rating={4.8} stays={21} availability={{ free: false, label: "Full on Oct 24" }} onOpen={() => undefined} testID="kit-sitter-jun" />
         <SitterResultCard name="Ari" km="4 km" nightly={null} onOpen={() => undefined} testID="kit-sitter-ari" />
         <SectionTitle>Price</SectionTitle>
         <PriceBreakdown
