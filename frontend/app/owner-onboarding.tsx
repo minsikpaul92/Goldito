@@ -178,7 +178,7 @@ export default function OwnerOnboarding() {
   const heard = (fact: { quote: string } | null | undefined, show: boolean, id: string, lead = "You said") =>
     fact && show ? (
       <Text style={styles.heard} testID={`own-heard-${id}`}>
-        {`✨ ${lead}: “${fact.quote}”`}
+        {`${lead}: “${fact.quote}”`}
       </Text>
     ) : null;
 
@@ -340,7 +340,7 @@ export default function OwnerOnboarding() {
               <BigOption
                 key={name}
                 label={`${name}?`}
-                badge="✨ suggested"
+                badge="Suggested"
                 selected={draft.breed === name}
                 onPress={() => pick({ breed: name })}
                 style={styles.half}
@@ -375,7 +375,7 @@ export default function OwnerOnboarding() {
             key={coat.value}
             label={coat.label}
             selected={draft.coat === coat.value}
-            badge={guess?.coat === coat.value && draft.coat === "" ? "✨ suggested" : undefined}
+            badge={guess?.coat === coat.value && draft.coat === "" ? "Suggested" : undefined}
             onPress={() => pick({ coat: coat.value })}
             style={styles.half}
             testID={`own-coat-${coat.value}`}
@@ -499,7 +499,7 @@ export default function OwnerOnboarding() {
             key={label}
             label={label}
             selected={draft.answers[question.key] === i + 1}
-            badge={suggested && draft.answers[question.key] === i + 1 ? "✨ suggested" : undefined}
+            badge={suggested && draft.answers[question.key] === i + 1 ? "Suggested" : undefined}
             onPress={() =>
               pick({
                 answers: { ...draft.answers, [question.key]: (i + 1) as Score },
@@ -530,7 +530,7 @@ export default function OwnerOnboarding() {
             key={option.value}
             label={option.label}
             selected={draft.safety[question.key] === option.value}
-            badge={said && said.value === option.value && !draft.safety[question.key] ? "✨ suggested" : undefined}
+            badge={said && said.value === option.value && !draft.safety[question.key] ? "Suggested" : undefined}
             onPress={() => pick({ safety: { ...draft.safety, [question.key]: option.value } })}
             testID={`own-safe-${option.value}`}
           />
@@ -567,7 +567,7 @@ export default function OwnerOnboarding() {
             <BigOption
               key={food}
               label={food}
-              badge={heardFoods.some((f) => normalizeAllergen(f.value) === normalizeAllergen(food)) ? "✨ suggested" : undefined}
+              badge={heardFoods.some((f) => normalizeAllergen(f.value) === normalizeAllergen(food)) ? "Suggested" : undefined}
               selected={foods.includes(normalizeAllergen(food))}
               onPress={() => toggle(food)}
               style={styles.half}
@@ -583,7 +583,7 @@ export default function OwnerOnboarding() {
               <BigOption
                 key={f.value}
                 label={f.value}
-                badge="✨ suggested"
+                badge="Suggested"
                 onPress={() => toggle(f.value)}
                 style={styles.half}
                 testID={`own-food-${normalizeAllergen(f.value)}`}

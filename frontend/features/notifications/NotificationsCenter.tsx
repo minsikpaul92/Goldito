@@ -181,7 +181,7 @@ export function NotificationsCenter({ role }: { role: Role }) {
   if (items.length === 0) {
     return (
       <EmptyState
-        emoji="✅"
+        emoji="🔔"
         title="You're all caught up."
         message="New updates from your stay will show up here."
         action={role === "owner" ? { label: "History", onPress: () => router.push("/owner/history") } : undefined}

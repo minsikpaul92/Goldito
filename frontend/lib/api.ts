@@ -44,7 +44,7 @@ export async function getHealth(): Promise<HealthResult> {
     }
     const data = (await response.json()) as { status?: string };
     if (data.status === "ok") {
-      return { ok: true, message: "API OK ✅" };
+      return { ok: true, message: "API OK" };
     }
     return {
       ok: false,

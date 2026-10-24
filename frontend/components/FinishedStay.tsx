@@ -150,7 +150,7 @@ export function FinishedStay({ booking }: { booking: BookingSummary }) {
         </Card>
       ) : (
         <Button
-          label="Leave a review ⭐"
+          label="Leave a review"
           onPress={() => router.push(`/owner/bookings/${booking.id}/review`)}
           testID="leave-review"
         />

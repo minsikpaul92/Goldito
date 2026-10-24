@@ -92,7 +92,7 @@ export function OwnerNoteCard({ bookingId, ownerName }: { bookingId: string; own
       <Card style={styles.card} testID="owner-note">
         <Text style={styles.label}>{`How was it working with ${ownerName}?`}</Text>
         <Text style={styles.muted}>{privateLine(ownerName)}</Text>
-        <Button label={`⭐ Rate ${ownerName}`} variant="secondary" onPress={startEditing} testID="owner-note-start" />
+        <Button label={`Rate ${ownerName}`} variant="secondary" onPress={startEditing} testID="owner-note-start" />
       </Card>
     );
   }

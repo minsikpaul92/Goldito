@@ -12,7 +12,7 @@ export default function SitterTasks() {
     return (
       <Screen>
         <EmptyState
-          emoji="✅"
+          emoji="🐾"
           title="Couldn't load tasks"
           message={state.message}
           action={{ label: "Try again", onPress: () => void reload() }}

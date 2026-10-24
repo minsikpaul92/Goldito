@@ -518,14 +518,14 @@ test.describe("owner onboarding", () => {
     // The personality chart is tapped: nothing in it arrives chosen.
     for (let i = 1; i <= 12; i++) {
       await expect(screen.getByTestId(`own-step-q:d${i}`)).toBeVisible();
-      await expect(screen.getByTestId("own-opt-3")).not.toContainText("✨ suggested");
+      await expect(screen.getByTestId("own-opt-3")).not.toContainText("Suggested");
       await screen.getByTestId("own-skip").click();
     }
 
     // A safety answer is only shown: nothing is selected until the owner taps.
     await expect(screen.getByTestId("own-step-s:s1")).toBeVisible();
     await expect(screen.getByTestId("own-heard-safety")).toContainText("We heard");
-    await expect(screen.getByTestId("own-safe-once")).toContainText("✨ suggested");
+    await expect(screen.getByTestId("own-safe-once")).toContainText("Suggested");
     await expect(screen.getByTestId("own-safe-once")).not.toHaveAttribute("aria-pressed", "true");
     await screen.getByTestId("own-safe-once").click();
     for (const key of ["s2", "s3", "s4", "s5"]) {
@@ -678,14 +678,14 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-skip").click(); // voice
 
     await expect(screen.getByTestId("own-breed-guess-1")).toContainText("Maltese?");
-    await expect(screen.getByTestId("own-breed-guess-1")).toContainText("✨ suggested");
+    await expect(screen.getByTestId("own-breed-guess-1")).toContainText("Suggested");
     await expect(screen.getByTestId("own-breed")).toHaveValue("");
     expect(asked!.species).toBe("dog");
     expect(asked!.public_id).toContain(`goldito/pet-profile/${OWNER.id}/`);
     await screen.getByTestId("own-breed-guess-2").click();
 
     await expect(screen.getByTestId("own-title")).toHaveText("What color is Pip?");
-    await expect(screen.getByTestId("own-coat-white")).toContainText("✨ suggested");
+    await expect(screen.getByTestId("own-coat-white")).toContainText("Suggested");
     await expect(screen.getByTestId("own-coat-white")).not.toHaveAttribute("aria-pressed", "true");
     await screen.getByTestId("own-coat-cream").click();
     for (const id of ["age", "weight", "petIntro"]) {

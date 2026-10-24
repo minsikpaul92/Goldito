@@ -184,7 +184,7 @@ export const ALBUM_GROUPS: { key: FeedCategory | "moments"; emoji: string; label
   { key: "walk", emoji: "🐕", label: "Walks" },
   { key: "nap", emoji: "😴", label: "Naps" },
   { key: "play", emoji: "🎾", label: "Play" },
-  { key: "moments", emoji: "✨", label: "Moments" },
+  { key: "moments", emoji: "💛", label: "Moments" },
 ];
 
 export type AlbumDay = { day: string; groups: { key: string; emoji: string; label: string; posts: FeedTimelinePost[] }[] };

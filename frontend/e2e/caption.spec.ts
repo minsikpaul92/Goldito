@@ -124,7 +124,7 @@ test.describe("feed album", () => {
     await expect(screen.getByTestId(`album-group-${today}-play`)).toHaveCount(0);
     await expect(screen.getByTestId(`album-group-${yesterday}-nap`)).toContainText("😴 Naps · 1");
     // "other" and no category share "Moments".
-    await expect(screen.getByTestId(`album-group-${yesterday}-moments`)).toContainText("✨ Moments · 2");
+    await expect(screen.getByTestId(`album-group-${yesterday}-moments`)).toContainText("💛 Moments · 2");
 
     await screen.getByTestId(`album-photo-${post(3)}`).click();
     await expect(screen.getByTestId(`feed-viewer-page-${post(3)}`)).toBeVisible();

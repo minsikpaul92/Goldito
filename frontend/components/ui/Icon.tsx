@@ -8,6 +8,7 @@ import Camera from "lucide-react-native/icons/camera";
 import Car from "lucide-react-native/icons/car";
 import ChevronDown from "lucide-react-native/icons/chevron-down";
 import Check from "lucide-react-native/icons/check";
+import Clock from "lucide-react-native/icons/clock";
 import ChevronLeft from "lucide-react-native/icons/chevron-left";
 import ChevronRight from "lucide-react-native/icons/chevron-right";
 import Circle from "lucide-react-native/icons/circle";
@@ -31,6 +32,7 @@ import Moon from "lucide-react-native/icons/moon";
 import Mic from "lucide-react-native/icons/mic";
 import Minus from "lucide-react-native/icons/minus";
 import PawPrint from "lucide-react-native/icons/paw-print";
+import NotebookPen from "lucide-react-native/icons/notebook-pen";
 import Pill from "lucide-react-native/icons/pill";
 import PartyPopper from "lucide-react-native/icons/party-popper";
 import Plus from "lucide-react-native/icons/plus";
@@ -89,6 +91,8 @@ const ICONS = {
   refresh: RefreshCw,
   // choices
   check: Check,
+  clock: Clock,
+  tip: NotebookPen,
   selected: CircleCheck,
   radioOn: CircleDot,
   radioOff: Circle,

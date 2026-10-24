@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { Icon } from "../../../components/ui/Icon";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
 import { Sheet } from "../../../components/ui/Sheet";
@@ -19,7 +20,7 @@ import {
 } from "../../../features/care/carePlanApi";
 import { formatTime } from "../../../features/schedule/dates";
 import { useErrorDialog } from "../../../providers/ErrorDialogProvider";
-import { useThemedStyles } from "../../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../../providers/ThemeProvider";
 import { useToast } from "../../../providers/ToastProvider";
 import { Theme } from "../../../theme/themes";
 
@@ -31,6 +32,7 @@ export const DECLINE_REASONS = ["I can't fit this in today", "Let's talk first",
 /** The sitter reads an owner's care request while a stay is on, then approves or declines it. */
 export default function SitterCareRequest() {
   const { requestId } = useLocalSearchParams<{ requestId: string }>();
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const errorDialog = useErrorDialog();
@@ -50,7 +52,7 @@ export default function SitterCareRequest() {
   if (!request) {
     return (
       <Screen>
-        <EmptyState emoji="📝" title="Request not found" message="It may have been withdrawn." />
+        <EmptyState emoji="📋" title="Request not found" message="It may have been withdrawn." />
       </Screen>
     );
   }
@@ -66,7 +68,7 @@ export default function SitterCareRequest() {
     setBusy(true);
     try {
       await respondCareChangeRequest(request.id, approve, approve ? null : reason, approve ? null : note.trim() || null);
-      done(approve ? `Added to ${request.petName}'s tasks ✅` : "Declined. The owner was told");
+      done(approve ? `Added to ${request.petName}'s tasks` : "Declined. The owner was told");
     } catch (error) {
       errorDialog.show({ title: "Not sent", message: (error as Error).message, onRetry: () => void answer(approve) });
     } finally {
@@ -101,10 +103,10 @@ export default function SitterCareRequest() {
       {!open ? (
         <Text style={styles.muted} testID="request-answered">
           {{
-            approved: "✅ You approved this request.",
+            approved: "You approved this request.",
             declined: "You declined this request.",
-            countered: "💬 Counter-request sent. Waiting for the owner.",
-            accepted: "✅ The owner accepted your counter-request.",
+            countered: "Counter-request sent. Waiting for the owner.",
+            accepted: "The owner accepted your counter-request.",
             withdrawn: "The owner declined your counter-request.",
             closed: "The stay ended before this request was answered.",
             pending: "",
@@ -130,7 +132,10 @@ export default function SitterCareRequest() {
       ) : null}
       {request.cautions.length > 0 ? (
         <Card style={styles.card} testID="request-cautions">
-          <Text style={styles.label}>⚠️ Heads-up</Text>
+          <View style={styles.row}>
+            <Icon name="warning" size={16} strokeWidth={2.5} color={theme.color.warning} />
+            <Text style={styles.label}>Heads-up</Text>
+          </View>
           {request.cautions.map((c, i) => (
             <Text key={i} style={styles.title}>{`• ${c}`}</Text>
           ))}

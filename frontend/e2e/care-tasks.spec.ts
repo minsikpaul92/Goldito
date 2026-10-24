@@ -209,11 +209,11 @@ test.describe("care tasks", () => {
     );
     await page.reload();
     const screen = app(page);
-    await expect(screen.getByTestId("care-status-t-done")).toContainText("✅ Done");
-    await expect(screen.getByTestId("care-status-t-missed")).toHaveText("⚠️ Missed");
-    await expect(screen.getByTestId("care-status-t-later")).toHaveText("⏳ Pending");
+    await expect(screen.getByTestId("care-status-t-done")).toContainText("Done");
+    await expect(screen.getByTestId("care-status-t-missed")).toHaveText("Missed");
+    await expect(screen.getByTestId("care-status-t-later")).toHaveText("Pending");
     // D9: 20 minutes late is still pending; missed starts after 60 minutes.
-    await expect(screen.getByTestId("care-status-t-grace")).toHaveText("⏳ Pending");
+    await expect(screen.getByTestId("care-status-t-grace")).toHaveText("Pending");
   });
 
   test("dragging a drum hard to either end lands on its last row (12 · PM), not the one before", async ({ page }) => {
