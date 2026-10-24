@@ -7027,4 +7027,232 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 015j (#345): Feed tags and memo, each person's own remove / hide, the 30-minute unsend, stickers, after the stay
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  pip uuid;
+  pip_old uuid;
+  kit uuid;
+  m_task uuid;
+  m_mood uuid;
+  m uuid;
+  p_a uuid;
+  p_b uuid;
+  p_c uuid;
+  p_priv uuid;
+  p_own uuid;
+  p_past uuid;
+  v_notice int;
+  v_res jsonb;
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Pip15j') returning id into pip;
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Old15j') returning id into pip_old;
+  insert into public.pets (owner_id, species, name) values (joy, 'cat', 'Kit15j') returning id into kit;
+  perform _t_booking(robert, chloe, array[pip], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+  perform _t_booking(robert, chloe, array[pip_old], now() - interval '5 days', now() - interval '3 days', 'confirmed');
+
+  -- Tags and memo: a check-in photo carries its tag and the memo
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/015j/task', 'image', 'task_proof') returning id into m_task;
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/015j/mood', 'image', 'task_proof') returning id into m_mood;
+  perform _t_as(chloe);
+  perform public.log_care_checkin(pip, 'potty', 'normal', 'Firm and on time', m_task);
+  perform public.log_care_checkin(pip, 'mood', 'happy', null, m_mood);
+  perform _t_as(null);
+  perform _t_ok((select category = 'potty' and note = 'Firm and on time' from public.feed_posts where media_id = m_task),
+    '015j: a potty check-in photo is tagged Potty and keeps the memo');
+  perform _t_ok((select category = 'mood' and note is null from public.feed_posts where media_id = m_mood),
+    '015j: a mood check-in photo is tagged Mood');
+  begin
+    update public.feed_posts set category = 'cuddle' where media_id = m_task; v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '23514', '015j: an unknown tag is refused');
+  begin
+    update public.feed_posts set note = repeat('x', 201) where media_id = m_task; v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '23514', '015j: a memo is at most 200 characters');
+
+  -- A sitter's shared photo: each side removes it from their own Feed only
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/015j/a', 'image', 'feed') returning id into m;
+  perform _t_as(chloe);
+  insert into public.feed_posts (pet_id, sitter_id, posted_by, media_id, visibility, category, note)
+    values (pip, chloe, chloe, m, 'shared', 'meal', 'Ate it all') returning id into p_a;
+  perform _t_as(robert);
+  perform _t_ok(exists (select 1 from public.feed_posts where id = p_a), '015j: the owner sees the sitter''s shared photo');
+  v_res := public.remove_feed_post(p_a, 'me');
+  perform _t_ok((v_res ->> 'purge') = 'false' and not exists (select 1 from public.feed_posts where id = p_a),
+    '015j: the owner removes it from their Feed; it is not purged yet');
+  perform _t_as(chloe);
+  perform _t_ok(exists (select 1 from public.feed_posts where id = p_a), '015j: the sitter still has it after the owner removed it');
+  v_res := public.remove_feed_post(p_a, 'me');
+  perform _t_ok((v_res ->> 'purge') = 'true' and not exists (select 1 from public.feed_posts where id = p_a),
+    '015j: once both removed it, it can be purged');
+  begin perform public.remove_feed_post(p_a, 'me'); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '015j: a removed photo cannot be removed again');
+
+  -- The other way round: the sitter removes first, the owner keeps it
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/015j/b', 'image', 'feed') returning id into m;
+  perform _t_as(chloe);
+  insert into public.feed_posts (pet_id, sitter_id, posted_by, media_id, visibility)
+    values (pip, chloe, chloe, m, 'shared') returning id into p_b;
+  perform _t_as(null);
+  update public.feed_posts set created_at = now() - interval '31 minutes' where id = p_b;
+  perform _t_as(chloe);
+  begin perform public.remove_feed_post(p_b, 'everyone'); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'too_late', '015j: after 30 minutes the sitter cannot delete a shared photo for both');
+  v_res := public.remove_feed_post(p_b, 'me');
+  perform _t_ok((v_res ->> 'purge') = 'false' and not exists (select 1 from public.feed_posts where id = p_b),
+    '015j: after 30 minutes the sitter removes it from their own Feed only');
+  perform _t_as(robert);
+  perform _t_ok(exists (select 1 from public.feed_posts where id = p_b), '015j: the owner keeps what the sitter removed');
+  begin perform public.remove_feed_post(p_b, 'everyone'); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_author', '015j: only the author deletes for both');
+
+  -- Within 30 minutes the author can delete for both, and the notice goes
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/015j/c', 'image', 'feed') returning id into m;
+  perform _t_as(chloe);
+  insert into public.feed_posts (pet_id, sitter_id, posted_by, media_id, visibility)
+    values (pip, chloe, chloe, m, 'shared') returning id into p_c;
+  perform _t_as(null);
+  perform _t_ok(exists (select 1 from public.notifications where user_id = robert and ref_id = p_c), '015j: a shared photo notifies the owner');
+  perform _t_as(chloe);
+  v_res := public.remove_feed_post(p_c, 'everyone');
+  perform _t_as(null);
+  perform _t_ok((v_res ->> 'purge') = 'true' and not exists (select 1 from public.notifications where ref_id = p_c),
+    '015j: within 30 minutes delete-for-both purges the photo and clears its notice');
+
+  -- Hide: mine only, reversible, and only for what I can see
+  perform _t_as(robert);
+  perform public.hide_feed_post(p_b);
+  perform _t_ok((select state from public.feed_post_hidden where post_id = p_b) = 'hidden'
+      and exists (select 1 from public.feed_posts where id = p_b),
+    '015j: a hidden photo still comes back from the Feed, flagged by my own row');
+  perform _t_as(chloe);
+  perform _t_ok(not exists (select 1 from public.feed_post_hidden where user_id = robert), '015j: nobody reads another person''s hidden rows');
+  perform _t_as(robert);
+  perform public.unhide_feed_post(p_b);
+  perform _t_ok((select count(*) from public.feed_post_hidden where post_id = p_b) = 0, '015j: unhide brings it back');
+  perform _t_as(joy);
+  begin perform public.hide_feed_post(p_b); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '015j: another owner cannot hide my pet''s photo');
+  begin insert into public.feed_post_hidden (post_id, state) values (p_b, 'removed'); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '015j: hidden rows are written only through the functions');
+
+  -- An owner's shared photo: the sitter on duty reads it, both have to remove it
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, robert, 'smoke/015j/own', 'image', 'feed') returning id into m;
+  perform _t_as(robert);
+  insert into public.feed_posts (pet_id, sitter_id, posted_by, media_id, visibility)
+    values (pip, null, robert, m, 'shared') returning id into p_own;
+  perform _t_as(chloe);
+  perform _t_ok(exists (select 1 from public.feed_posts where id = p_own), '015j: the sitter on duty reads a photo the owner shared');
+  perform _t_as(robert);
+  v_res := public.remove_feed_post(p_own, 'me');
+  perform _t_ok((v_res ->> 'purge') = 'false', '015j: the owner removes their shared photo, the sitter on duty can still read it');
+  perform _t_as(chloe);
+  v_res := public.remove_feed_post(p_own, 'me');
+  perform _t_ok((v_res ->> 'purge') = 'true', '015j: when the sitter removes it too, it can be purged');
+
+  -- A private photo is only the author's, and is purged when they remove it
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/015j/priv', 'image', 'feed') returning id into m;
+  perform _t_as(chloe);
+  insert into public.feed_posts (pet_id, sitter_id, posted_by, media_id, visibility)
+    values (pip, chloe, chloe, m, 'private') returning id into p_priv;
+  perform _t_as(robert);
+  perform _t_ok(not exists (select 1 from public.feed_posts where id = p_priv), '015j: the owner does not see a private sitter photo');
+  perform _t_as(chloe);
+  v_res := public.remove_feed_post(p_priv, 'me');
+  perform _t_ok((v_res ->> 'purge') = 'true', '015j: removing a private photo purges it');
+
+  -- Stickers land in the maker's own Feed and nobody else's
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, robert, 'smoke/015j/sticker-o', 'image', 'sticker') returning id into m;
+  perform _t_as(robert);
+  insert into public.pet_stickers (pet_id, media_id) values (pip, m);
+  perform _t_ok((select visibility = 'private' and sitter_id is null and posted_by = robert
+        from public.feed_posts where media_id = m),
+    '015j: an owner''s sticker becomes a private post of theirs');
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/015j/sticker-s', 'image', 'sticker') returning id into m;
+  perform _t_as(chloe);
+  insert into public.pet_stickers (pet_id, media_id) values (pip, m);
+  perform _t_ok((select visibility = 'private' and sitter_id = chloe from public.feed_posts where media_id = m),
+    '015j: a sitter''s sticker becomes a private post of theirs');
+  perform _t_ok(not exists (select 1 from public.feed_posts fp join public.media md on md.id = fp.media_id
+        where md.purpose = 'sticker' and fp.posted_by = robert),
+    '015j: the sitter does not see the owner''s sticker post');
+  perform _t_as(robert);
+  perform _t_ok(not exists (select 1 from public.feed_posts fp join public.media md on md.id = fp.media_id
+        where md.purpose = 'sticker' and fp.posted_by = chloe),
+    '015j: the owner does not see the sitter''s sticker post');
+
+  -- After the stay: the sitter keeps their posts, adds only private ones, and loses the owner's shared photos
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip_old, chloe, 'smoke/015j/past', 'image', 'feed') returning id into m;
+  insert into public.feed_posts (pet_id, sitter_id, posted_by, media_id, visibility, created_at)
+    values (pip_old, chloe, chloe, m, 'shared', now() - interval '4 days') returning id into p_past;
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip_old, robert, 'smoke/015j/past-owner', 'image', 'feed') returning id into m;
+  insert into public.feed_posts (pet_id, sitter_id, posted_by, media_id, visibility)
+    values (pip_old, null, robert, m, 'shared');
+  perform _t_as(chloe);
+  perform _t_ok(exists (select 1 from public.feed_posts where id = p_past), '015j: after the stay the sitter still reads their own posts');
+  perform _t_ok(not exists (select 1 from public.feed_posts where pet_id = pip_old and posted_by = robert),
+    '015j: after the stay the sitter no longer reads the owner''s shared photos');
+  perform _t_ok(public.has_cared_for(pip_old) and not public.is_on_duty_for(pip_old), '015j: a past stay is cared-for, not on duty');
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip_old, chloe, 'smoke/015j/after-priv', 'image', 'feed') returning id into m;
+  perform _t_as(chloe);
+  insert into public.feed_posts (pet_id, sitter_id, posted_by, media_id, visibility)
+    values (pip_old, chloe, chloe, m, 'private');
+  perform _t_ok(true, '015j: after the stay the sitter can add a photo for themself');
+  begin
+    insert into public.feed_posts (pet_id, sitter_id, posted_by, media_id, visibility)
+      values (pip_old, chloe, chloe, m, 'shared'); v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '42501', '015j: after the stay a shared post is refused');
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (kit, chloe, 'smoke/015j/stranger', 'image', 'feed') returning id into m;
+  perform _t_as(chloe);
+  begin
+    insert into public.feed_posts (pet_id, sitter_id, posted_by, media_id, visibility)
+      values (kit, chloe, chloe, m, 'private'); v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '42501', '015j: a sitter cannot post, even privately, for a pet they never cared for');
+
+  perform _t_as(null, 'anon');
+  begin perform public.remove_feed_post(p_b, 'me'); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '015j: anon cannot remove');
+  begin perform public.hide_feed_post(p_b); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '015j: anon cannot hide');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;
