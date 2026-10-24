@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import path from "node:path";
 
+import { caring } from "./careFixtures";
 import { app, box, center, drag, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 import type { MockDb, MockUser } from "./supabaseMock";
@@ -23,7 +24,7 @@ async function setup(
   options: { failSignOnce?: boolean; user?: MockUser } = {},
 ): Promise<Calls & { db: MockDb }> {
   const { db } = await mockSupabase(page, [OWNER, SITTER]);
-  db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
+  caring(db, [{ id: PET_ID, name: "Max", species: "dog" }]);
 
   const calls: Calls & { db: MockDb } = { sign: [], upload: [], complete: [], db };
   let failed = false;
@@ -107,6 +108,9 @@ async function setup(
   return calls;
 }
 
+/** Nothing is uploaded or shared before Save in the sheet that follows the pick (#345). */
+const save = (page: Page) => app(page).getByTestId("feed-add-save").click();
+
 test.describe("pickMedia", () => {
   test("a sample photo goes through the same upload pipe as a real one", async ({ page }) => {
     const calls = await setup(page);
@@ -118,6 +122,10 @@ test.describe("pickMedia", () => {
       await expect(app(page).getByTestId(`sample-${id}`)).toBeVisible();
     }
     await app(page).getByTestId("sample-walk").click();
+    // Picked, not yet sent: the sheet shows it with the choice of who sees it.
+    await expect(app(page).getByTestId("feed-add-sheet")).toBeVisible();
+    expect(calls.sign).toHaveLength(0);
+    await save(page);
 
     await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
     await expect(app(page).getByTestId("media-picker")).toBeHidden();
@@ -149,6 +157,7 @@ test.describe("pickMedia", () => {
       return Array.from(new Uint8Array(await blob.arrayBuffer()));
     });
     await (await chooser).setFiles({ name: "big.png", mimeType: "image/png", buffer: Buffer.from(png) });
+    await save(page);
 
     await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
     const sent = calls.upload[0];
@@ -178,6 +187,7 @@ test.describe("pickMedia", () => {
     await drag(page, endHandle, { x: strip.x + strip.width + 40, y: endHandle.y });
 
     await app(page).getByTestId("trim-confirm").click();
+    await save(page);
     await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
 
     expect(calls.sign).toHaveLength(1);
@@ -213,6 +223,7 @@ test.describe("pickMedia", () => {
     const chooser = page.waitForEvent("filechooser");
     await app(page).getByTestId("media-choose-library").click();
     await (await chooser).setFiles(path.join(FIXTURES, "video-10s.webm"));
+    await save(page);
 
     await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
     await expect(app(page).getByTestId("trim-sheet")).toBeHidden();
@@ -224,14 +235,15 @@ test.describe("pickMedia", () => {
 
     await app(page).getByTestId("feed-add-photo").click();
     await app(page).getByTestId("sample-meal").click();
+    await save(page);
 
     // Not a toast: it stays until the sitter closes it or retries.
     await expect(app(page).getByTestId("error-dialog-message")).toContainText("Cloudinary is down.");
     await page.waitForTimeout(3500);
     await expect(app(page).getByTestId("error-dialog")).toBeVisible();
 
+    // Try again sends the same photo, without picking it again.
     await app(page).getByTestId("error-dialog-retry").click();
-    await app(page).getByTestId("sample-meal").click();
     await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
     expect(calls.sign).toHaveLength(2);
     expect(calls.complete).toHaveLength(1);
@@ -239,12 +251,14 @@ test.describe("pickMedia", () => {
 });
 
 test.describe("feed visibility (5.8)", () => {
-  test("sitter shares with the owner by default; the chip keeps a post sitter-only", async ({ page }) => {
+  test("sitter shares with the owner by default; Only me keeps a post sitter-only", async ({ page }) => {
     const calls = await setup(page);
 
-    await expect(app(page).getByTestId("feed-share-toggle")).toHaveAttribute("aria-checked", "true");
     await app(page).getByTestId("feed-add-photo").click();
     await app(page).getByTestId("sample-walk").click();
+    await expect(app(page).getByTestId("feed-add-share-share")).toHaveAttribute("aria-checked", "true");
+    await expect(app(page).getByTestId("feed-add-share-share")).toHaveText("Share with Robert");
+    await save(page);
     await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
     expect(calls.db.feed_posts).toHaveLength(1);
     expect(calls.db.feed_posts[0]).toMatchObject({
@@ -253,18 +267,41 @@ test.describe("feed visibility (5.8)", () => {
       posted_by: SITTER.id,
     });
 
-    await app(page).getByTestId("feed-share-toggle").click();
-    await expect(app(page).getByTestId("feed-share-toggle")).toHaveAttribute("aria-checked", "false");
     await app(page).getByTestId("feed-add-photo").click();
     await app(page).getByTestId("sample-meal").click();
+    await app(page).getByTestId("feed-add-share-me").click();
+    await expect(app(page).getByTestId("feed-add-share-me")).toHaveAttribute("aria-checked", "true");
+    await save(page);
     await expect(app(page).getByTestId("toast")).toContainText("Saved just for you");
     expect(calls.db.feed_posts[1]).toMatchObject({ visibility: "private", posted_by: SITTER.id });
-    await expect(
-      app(page).locator("[data-testid^='feed-private-']"),
-    ).toHaveCount(1);
   });
 
-  test("owner posts privately by default, can make a post visible to the sitter, and deletes only their own", async ({
+  test("a short memo goes with the photo, and nothing is sent until Save", async ({ page }) => {
+    const calls = await setup(page);
+
+    await app(page).getByTestId("feed-add-photo").click();
+    await app(page).getByTestId("sample-walk").click();
+    await expect(app(page).getByTestId("feed-add-note")).toHaveCount(0); // a note box waits behind the +
+    await app(page).getByTestId("feed-add-note-toggle").click();
+    await app(page).getByTestId("feed-add-note").fill("Loved the leaves");
+    expect(calls.db.feed_posts).toHaveLength(0);
+    await save(page);
+    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
+    expect(calls.db.feed_posts[0]).toMatchObject({ note: "Loved the leaves" });
+  });
+
+  test("closing the sheet sends nothing", async ({ page }) => {
+    const calls = await setup(page);
+
+    await app(page).getByTestId("feed-add-photo").click();
+    await app(page).getByTestId("sample-walk").click();
+    await app(page).getByTestId("feed-add-sheet-close").click();
+    await expect(app(page).getByTestId("feed-add-sheet")).toBeHidden();
+    expect(calls.sign).toHaveLength(0);
+    expect(calls.db.feed_posts).toHaveLength(0);
+  });
+
+  test("owner posts privately by default, can share with the sitter on duty, and can delete their own and the sitter's from their side", async ({
     page,
   }) => {
     const calls = await setup(page, { user: OWNER });
@@ -305,28 +342,49 @@ test.describe("feed visibility (5.8)", () => {
     await expect(app(page).getByTestId("feed-card-33333333-3333-4333-8333-333333333333")).toBeVisible();
     await expect(app(page).getByTestId("feed-card-44444444-4444-4444-8444-444444444444")).toHaveCount(0);
 
-    // Default: Only you.
-    await expect(app(page).getByTestId("feed-share-toggle")).toHaveAttribute("aria-checked", "false");
+    // Default: Only me.
     await app(page).getByTestId("feed-add-photo").click();
     await app(page).getByTestId("sample-walk").click();
+    await expect(app(page).getByTestId("feed-add-share-me")).toHaveAttribute("aria-checked", "true");
+    await save(page);
     await expect(app(page).getByTestId("toast")).toContainText("Saved just for you");
     expect(calls.sign[0]).toMatchObject({ pet_id: PET_ID, purpose: "feed" });
     const mine = calls.db.feed_posts.find((p) => p.posted_by === OWNER.id)!;
     expect(mine).toMatchObject({ visibility: "private", sitter_id: null });
 
-    await app(page).getByTestId("feed-share-toggle").click();
     await app(page).getByTestId("feed-add-photo").click();
     await app(page).getByTestId("sample-nap").click();
+    await app(page).getByTestId("feed-add-share-share").click();
+    await save(page);
     await expect(app(page).getByTestId("toast")).toContainText("Shared with your sitter");
     expect(calls.db.feed_posts.filter((p) => p.posted_by === OWNER.id && p.visibility === "shared")).toHaveLength(1);
 
-    // No Delete on the sitter's post; Delete on my own.
+    // Delete is on every photo now, the sitter's included (from my side only, the sheet says so).
     await app(page).getByTestId("feed-card-33333333-3333-4333-8333-333333333333").click();
     await expect(app(page).getByTestId("feed-viewer")).toBeVisible();
-    await expect(app(page).getByTestId("feed-viewer-delete")).toHaveCount(0);
+    await expect(app(page).getByTestId("feed-viewer-delete")).toBeVisible();
     await app(page).getByTestId("feed-viewer-close").click();
 
     await app(page).getByTestId(`feed-card-${mine.id}`).click();
     await expect(app(page).getByTestId("feed-viewer-delete")).toBeVisible();
+  });
+
+  test("after the stay a sitter can only save a photo for themself", async ({ page }) => {
+    const calls = await setup(page);
+    // The stay ended three days ago.
+    for (const h of calls.db.booking_handoffs) {
+      const at = new Date(Date.now() - (h.kind === "drop_off" ? 5 : 3) * 24 * 3_600_000).toISOString();
+      Object.assign(h, { scheduled_at: at, completed_at: at });
+    }
+    await page.reload();
+    await app(page).getByTestId("feed-add-photo").waitFor();
+
+    await app(page).getByTestId("feed-add-photo").click();
+    await app(page).getByTestId("sample-walk").click();
+    await expect(app(page).getByTestId("feed-add-share-me")).toHaveAttribute("aria-checked", "true");
+    await expect(app(page).getByTestId("feed-add-share-share")).toBeDisabled();
+    await save(page);
+    await expect(app(page).getByTestId("toast")).toContainText("Saved just for you");
+    expect(calls.db.feed_posts[0]).toMatchObject({ visibility: "private", posted_by: SITTER.id });
   });
 });
