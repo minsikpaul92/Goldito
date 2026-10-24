@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-import { app, box, signIn } from "./helpers";
+import { NOON_TORONTO, TODAY_TORONTO, app, box, signIn } from "./helpers";
 import { MockDb, MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // Bookings tab sitter search (03D 3D.1): one hotel-style line (place, dates, pets), favorites first as photo and name,
@@ -181,20 +181,27 @@ test.describe("find a sitter", () => {
   });
 
   test("a range on the calendar and exact times set the stay", async ({ page }) => {
-    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
+    // A fixed day: the calendar shows one month, so a range that crosses the end of the real month cannot be clicked.
+    await page.clock.setFixedTime(NOON_TORONTO);
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA], { now: NOON_TORONTO });
     seed(db);
+    const inFixedDays = (n: number) => {
+      const d = new Date(`${TODAY_TORONTO}T12:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + n);
+      return d.toISOString().slice(0, 10);
+    };
     const screen = await openBookings(page);
     await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
     const calls = db.nearbySearches.length;
 
     await screen.getByTestId("bar-dates").click();
-    await screen.getByTestId(`stay-calendar-${inDays(5)}`).click();
-    await screen.getByTestId(`stay-calendar-${inDays(8)}`).click();
+    await screen.getByTestId(`stay-calendar-${inFixedDays(5)}`).click();
+    await screen.getByTestId(`stay-calendar-${inFixedDays(8)}`).click();
     await screen.getByTestId("search-drop_off-time-plus").click(); // 9:15 AM
     await screen.getByTestId("stay-done").click();
     await expect.poll(() => db.nearbySearches.length).toBeGreaterThan(calls);
-    await expect.poll(() => String(db.nearbySearches.at(-1)?.p_drop_off_at)).toContain(`${inDays(5)}T13:15`);
-    expect(String(db.nearbySearches.at(-1)?.p_pick_up_at)).toContain(`${inDays(8)}T21:00`);
+    await expect.poll(() => String(db.nearbySearches.at(-1)?.p_drop_off_at)).toContain(`${inFixedDays(5)}T13:15`);
+    expect(String(db.nearbySearches.at(-1)?.p_pick_up_at)).toContain(`${inFixedDays(8)}T21:00`);
 
     // The clock opens from the time itself.
     await screen.getByTestId("bar-dates").click();
