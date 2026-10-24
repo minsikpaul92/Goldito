@@ -415,23 +415,23 @@ function ViewerPage({
               },
               "data-testid": "feed-viewer-video",
             })
-          : imageUri
-            ? (
-                <View
-                  ref={layerRef}
-                  style={[styles.zoomLayer, { transform: [{ translateX: view.x }, { translateY: view.y }, { scale: view.scale }] }]}
-                  testID="feed-viewer-zoom"
-                  {...zoomHandlers}
-                >
+          : (
+              <View
+                ref={layerRef}
+                style={[styles.zoomLayer, { transform: [{ translateX: view.x }, { translateY: view.y }, { scale: view.scale }] }]}
+                testID="feed-viewer-zoom"
+                {...zoomHandlers}
+              >
+                {imageUri ? (
                   <Image
                     source={{ uri: imageUri }}
                     style={styles.image}
                     resizeMode="contain"
                     accessibilityIgnoresInvertColors
                   />
-                </View>
-              )
-            : null}
+                ) : null}
+              </View>
+            )}
         {isVideo && paused ? (
           <View style={styles.centerPlay} pointerEvents="none">
             <Text style={styles.centerPlayIcon}>▶</Text>

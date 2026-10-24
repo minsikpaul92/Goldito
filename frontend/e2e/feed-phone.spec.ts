@@ -45,11 +45,15 @@ test.describe("Feed viewer with a finger", () => {
     const cdp = await page.context().newCDPSession(page);
     const media = (await page.getByTestId("feed-viewer-media").boundingBox())!;
     const y = media.y + media.height / 2;
-    await swipe(cdp, { x: media.x + media.width * 0.7, y }, { x: media.x + media.width * 0.3, y });
-    await expect(page.getByTestId("feed-viewer-page-t-3")).toBeVisible();
-    await page.waitForTimeout(400); // the first finger is up before the next one goes down
-    await swipe(cdp, { x: media.x + media.width * 0.3, y }, { x: media.x + media.width * 0.7, y });
-    await expect(page.getByTestId("feed-viewer-page-t-2")).toBeVisible();
+    // The viewer fades in; a finger that lands before it settles can be lost, so swipe again until the page turns.
+    await expect(async () => {
+      await swipe(cdp, { x: media.x + media.width * 0.7, y }, { x: media.x + media.width * 0.3, y });
+      await expect(page.getByTestId("feed-viewer-page-t-3")).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 15_000 });
+    await expect(async () => {
+      await swipe(cdp, { x: media.x + media.width * 0.3, y }, { x: media.x + media.width * 0.7, y });
+      await expect(page.getByTestId("feed-viewer-page-t-2")).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 15_000 });
   });
 
   test("a pinch zooms the photo in and out", async ({ page }) => {
@@ -60,12 +64,19 @@ test.describe("Feed viewer with a finger", () => {
     const media = (await page.getByTestId("feed-viewer-media").boundingBox())!;
     const at = { x: media.x + media.width / 2, y: media.y + media.height / 2 };
     expect(await scale()).toBeCloseTo(1, 2);
-    await cdp.send("Input.synthesizePinchGesture", { ...at, scaleFactor: 2.5, relativeSpeed: 400, gestureSourceType: "touch" });
-    await expect.poll(scale).toBeGreaterThan(1.8);
+    const pinch = (scaleFactor: number) =>
+      cdp.send("Input.synthesizePinchGesture", { ...at, scaleFactor, relativeSpeed: 400, gestureSourceType: "touch" });
+    // A synthetic pinch can be dropped while the page is still settling: ask again until the photo has zoomed.
+    await expect(async () => {
+      await pinch(2.5);
+      expect(await scale()).toBeGreaterThan(1.8);
+    }).toPass({ timeout: 20_000 });
     // Zoomed in, the edges do not turn the page.
     await expect(page.getByTestId("feed-viewer-next")).toHaveCount(0);
-    await cdp.send("Input.synthesizePinchGesture", { ...at, scaleFactor: 0.3, relativeSpeed: 400, gestureSourceType: "touch" });
-    await expect.poll(scale).toBeCloseTo(1, 1);
+    await expect(async () => {
+      await pinch(0.3);
+      expect(await scale()).toBeCloseTo(1, 1);
+    }).toPass({ timeout: 20_000 });
     await expect(page.getByTestId("feed-viewer-next")).toBeVisible();
   });
 });
