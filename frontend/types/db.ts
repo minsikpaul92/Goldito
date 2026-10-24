@@ -97,8 +97,8 @@ export type TaskLogRow = {
 /** feed_posts.caption_source — AI in Phase 09, task captions in Phase 06. */
 export type CaptionSource = "ai" | "fallback" | "task";
 
-/** Album bucket of a feed post (Phase 09): the vision model picks one; null = no answer (shown as "Moments"). */
-export type FeedCategory = "meal" | "walk" | "nap" | "play" | "other";
+/** Tag of a feed post: the vision model picks meal, walk, nap, play or other (Phase 09), a care check-in sets potty or mood (015j); null = no tag. */
+export type FeedCategory = "meal" | "walk" | "nap" | "play" | "other" | "potty" | "mood";
 
 /** One Kidsnote-style feed card (1 post = 1 media, D10). */
 export type FeedVisibility = "shared" | "private";
@@ -116,6 +116,8 @@ export type FeedPostRow = {
   caption: string | null;
   caption_source: CaptionSource | null;
   category: FeedCategory | null;
+  /** The author's short memo (015j), up to 200 characters. */
+  note: string | null;
   task_log_id: string | null;
   created_at: string;
 };

@@ -25,7 +25,7 @@ export type DiaryEntry = {
   petName?: string;
 };
 
-type MediaEmbed = { id: string; cloudinary_public_id: string; resource_type: MediaResourceType } | null;
+type MediaEmbed = { id: string; cloudinary_public_id: string; resource_type: MediaResourceType; purpose?: string } | null;
 type Named = { display_name: string } | null;
 
 type TaskLogRow = {
@@ -64,7 +64,7 @@ const toMedia = (m: MediaEmbed | MediaEmbed[]): DiaryMedia | null => {
   return media ? { publicId: media.cloudinary_public_id, resourceType: media.resource_type } : null;
 };
 
-const MEDIA = "media (id, cloudinary_public_id, resource_type)";
+const MEDIA = "media (id, cloudinary_public_id, resource_type, purpose)";
 
 const MOODS: Record<string, string> = {
   happy: "😊 Happy",
@@ -227,6 +227,7 @@ export async function listDiary(petId: string): Promise<DiaryEntry[]> {
   return buildDiary(
     (tasks.data ?? []) as unknown as TaskLogRow[],
     (checkins.data ?? []) as unknown as CheckinRow[],
-    (feed.data ?? []) as unknown as FeedRow[],
+    // A sticker in the Feed (015j) is not a photo of the day.
+    ((feed.data ?? []) as unknown as FeedRow[]).filter((row) => one(row.media as MediaEmbed | MediaEmbed[])?.purpose !== "sticker"),
   );
 }

@@ -8,7 +8,7 @@ import { EmptyState } from "../../../../components/ui/EmptyState";
 import { LoadingView } from "../../../../components/ui/LoadingView";
 import { Screen } from "../../../../components/ui/Screen";
 import { SitterDiary } from "../../../../features/diary/SitterDiary";
-import { caringPetsFromBookings } from "../../../../features/feed/caringPets";
+import { feedPetsFromBookings } from "../../../../features/feed/caringPets";
 import { SPECIES_EMOJI } from "../../../../features/pets/petFormat";
 import { listSitterBookings } from "../../../../lib/bookings";
 import { useSession } from "../../../../providers/SessionProvider";
@@ -21,7 +21,7 @@ type State =
   | { status: "error"; message: string };
 
 /**
- * Sitter Feed tab (D47b / phase-05): pets in care → `/sitter/feed/[petId]` (+ Photo FAB).
+ * Sitter Feed tab (D47b / phase-05, #345): pets in care and pets of stays that are over → `/sitter/feed/[petId]` (+ Photo FAB).
  */
 export default function SitterFeedTab() {
   return <FeedSwitch photos={<SitterFeed />} diary={<SitterDiary />} />;
@@ -32,13 +32,13 @@ function SitterFeed() {
   const { profile } = useSession();
   const sitterId = profile?.id;
   const [state, setState] = useState<State>({ status: "loading" });
-  const [pets, setPets] = useState(() => caringPetsFromBookings([]));
+  const [pets, setPets] = useState(() => feedPetsFromBookings([]));
 
   const load = useCallback(async () => {
     if (!sitterId) return;
     try {
       const bookings = await listSitterBookings(sitterId);
-      setPets(caringPetsFromBookings(bookings));
+      setPets(feedPetsFromBookings(bookings));
       setState({ status: "ready" });
     } catch (error) {
       setState({ status: "error", message: (error as Error).message });
@@ -93,7 +93,10 @@ function SitterFeed() {
             <Text style={styles.title}>
               {SPECIES_EMOJI[pet.species]} {pet.name}
             </Text>
-            <Text style={styles.muted}>With {pet.ownerName} · + Photo</Text>
+            <Text style={styles.muted}>
+              With {pet.ownerName}
+              {pet.caring ? " · + Photo" : " · Past stay"}
+            </Text>
           </Card>
         </Pressable>
       ))}

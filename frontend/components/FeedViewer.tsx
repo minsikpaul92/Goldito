@@ -2,9 +2,11 @@ import { createElement, useCallback, useEffect, useMemo, useRef, useState } from
 import { Image, Modal, PanResponder, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { FeedTagIcon } from "./FeedTagIcon";
+import { formatDay, formatTime, isoToZoned } from "../features/schedule/dates";
 import { deliveryUrl, videoPosterUrl, videoUrl } from "../lib/cloudinary";
-import { formatFeedTime, type FeedTimelinePost } from "../lib/feed";
-import { useThemedStyles } from "../providers/ThemeProvider";
+import { FEED_FILTERS, feedTag, type FeedTimelinePost } from "../lib/feed";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
 type Props = {
@@ -13,10 +15,11 @@ type Props = {
   initialPostId: string | null;
   onClose: () => void;
   onNearEnd?: () => void;
-  /** Author-only Delete shows on posts this user posted (5.7). */
-  currentUserId?: string | null;
-  /** Parent opens a confirm sheet (outside this Modal) then deletes. */
+  /** Parent opens a confirm sheet (outside this Modal) then deletes, from my Feed only or for both. */
   onRequestDelete?: (postId: string) => void;
+  /** Hide the photo from the grid / bring it back. */
+  onHide?: (postId: string) => void;
+  onUnhide?: (postId: string) => void;
 };
 
 const SWIPE_DISTANCE = 50;
@@ -33,8 +36,9 @@ export function FeedViewer({
   initialPostId,
   onClose,
   onNearEnd,
-  currentUserId,
   onRequestDelete,
+  onHide,
+  onUnhide,
 }: Props) {
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
@@ -102,9 +106,6 @@ export function FeedViewer({
 
   if (!visible || !initialPostId || !activePost) return null;
 
-  // Delete shows only on the viewer's own posts; the backend and RLS enforce it too.
-  const canDelete = !!onRequestDelete && !!currentUserId && activePost.postedBy === currentUserId;
-
   return (
     <Modal
       visible={visible}
@@ -153,17 +154,28 @@ export function FeedViewer({
           <Text style={styles.closeLabel}>✕</Text>
         </Pressable>
 
-        {canDelete ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Delete"
-            onPress={() => onRequestDelete?.(activePost.id)}
-            style={[styles.deleteBtn, { top: Math.max(insets.top, 12) }]}
-            testID="feed-viewer-delete"
-          >
-            <Text style={styles.deleteLabel}>🗑️</Text>
-          </Pressable>
-        ) : null}
+        <View style={[styles.actions, { top: Math.max(insets.top, 12) }]}>
+          {onHide && onUnhide ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => (activePost.hidden ? onUnhide(activePost.id) : onHide(activePost.id))}
+              style={styles.actionBtn}
+              testID="feed-viewer-hide"
+            >
+              <Text style={styles.actionLabel}>{activePost.hidden ? "Unhide" : "Hide"}</Text>
+            </Pressable>
+          ) : null}
+          {onRequestDelete ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => onRequestDelete(activePost.id)}
+              style={styles.actionBtn}
+              testID="feed-viewer-delete"
+            >
+              <Text style={[styles.actionLabel, styles.deleteLabel]}>Delete</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
     </Modal>
   );
@@ -171,6 +183,10 @@ export function FeedViewer({
 
 function ViewerPage({ post, bottomInset }: { post: FeedTimelinePost; bottomInset: number }) {
   const styles = useThemedStyles(makeStyles);
+  const theme = useTheme();
+  const tag = feedTag(post);
+  const tagLabel = tag ? FEED_FILTERS.find((f) => f.key === tag)?.label : null;
+  const { day, time } = isoToZoned(post.createdAt);
   const isVideo = post.media.resourceType === "video";
   const imageUri = isVideo
     ? videoPosterUrl(post.media.publicId, 1200)
@@ -248,11 +264,26 @@ function ViewerPage({ post, bottomInset }: { post: FeedTimelinePost; bottomInset
           </View>
         ) : null}
       </Pressable>
-      <View style={[styles.captionBar, { paddingBottom: Math.max(bottomInset, 16) }]} pointerEvents="none">
-        {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
+      <View style={[styles.captionBar, { paddingBottom: Math.max(bottomInset, 16) }]} pointerEvents="none" testID="feed-viewer-info">
+        {tag && tagLabel ? (
+          <View style={styles.tagPill} testID="feed-viewer-tag">
+            <FeedTagIcon tag={tag} size={20} color={theme.color.text} />
+            <Text style={styles.tagLabel}>{tagLabel}</Text>
+          </View>
+        ) : null}
+        {post.note ? (
+          <Text style={styles.caption} testID="feed-viewer-note">
+            {post.note}
+          </Text>
+        ) : post.captionSource === "ai" && post.caption ? (
+          <Text style={styles.caption}>{post.caption}</Text>
+        ) : null}
+        <Text style={styles.meta} testID="feed-viewer-date">
+          {`${formatDay(day)}, ${day.slice(0, 4)} · ${formatTime(time)}`}
+        </Text>
         <Text style={styles.meta}>
-          {post.authorName} · {formatFeedTime(post.createdAt)}
-          {post.visibility === "private" ? " · 🔒 Only you" : ""}
+          {post.authorName}
+          {post.visibility === "private" ? " · Only you" : ""}
         </Text>
       </View>
     </View>
@@ -327,10 +358,14 @@ const makeStyles = (theme: Theme) =>
       fontSize: 18,
       fontWeight: theme.fontWeight.semibold,
     },
-    deleteBtn: {
+    actions: {
       position: "absolute",
       left: theme.spacing.md,
       zIndex: 4,
+      flexDirection: "row",
+      gap: theme.spacing.sm,
+    },
+    actionBtn: {
       minHeight: 40,
       paddingHorizontal: theme.spacing.md,
       borderRadius: 20,
@@ -340,10 +375,29 @@ const makeStyles = (theme: Theme) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    deleteLabel: {
-      color: theme.color.error,
+    actionLabel: {
+      color: theme.color.onMedia,
       fontSize: theme.fontSize.body,
       fontWeight: theme.fontWeight.bold,
+    },
+    deleteLabel: {
+      color: theme.color.error,
+    },
+    tagPill: {
+      alignSelf: "flex-start",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingLeft: 4,
+      paddingRight: 10,
+      paddingVertical: 3,
+      borderRadius: theme.radius.pill,
+      backgroundColor: theme.color.surface,
+    },
+    tagLabel: {
+      fontSize: theme.fontSize.small,
+      fontWeight: theme.fontWeight.bold,
+      color: theme.color.text,
     },
     centerPlay: {
       position: "absolute",

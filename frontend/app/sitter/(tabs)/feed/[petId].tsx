@@ -1,28 +1,23 @@
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { FlatList, Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { DiaryFeedCell } from "../../../../components/DiaryFeedCell";
-import { FeedCard } from "../../../../components/FeedCard";
-import { FeedViewer } from "../../../../components/FeedViewer";
-import { Button } from "../../../../components/ui/Button";
+import { AddPhotoSheet } from "../../../../components/AddPhotoSheet";
+import { FeedBrowser } from "../../../../components/FeedBrowser";
 import { EmptyState } from "../../../../components/ui/EmptyState";
 import { LoadingView } from "../../../../components/ui/LoadingView";
-import { ShareToggle } from "../../../../components/ShareToggle";
-import { Sheet } from "../../../../components/ui/Sheet";
-import { TextButton } from "../../../../components/ui/TextButton";
+import { FeedPet, feedPetsFromBookings } from "../../../../features/feed/caringPets";
 import { UploadError, uploadMedia } from "../../../../lib/cloudinary";
+import { listSitterBookings } from "../../../../lib/bookings";
 import {
-  captionPhoto,
+  FALLBACK_CAPTION,
   FEED_PAGE_SIZE,
   FeedTimelinePost,
+  captionPhoto,
   createFeedPost,
-  deleteFeedPost,
   listFeedPosts,
 } from "../../../../lib/feed";
-import { DiaryCell, isDiaryCell, listDiaryCells, withDiaryCells } from "../../../../features/diary/diaryFeed";
-import { pickMedia } from "../../../../lib/media";
-import { getSupabase } from "../../../../lib/supabase";
+import { PickedMedia, pickMedia } from "../../../../lib/media";
 import { useNotifications } from "../../../../providers/NotificationsProvider";
 import { useSession } from "../../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../../providers/ThemeProvider";
@@ -30,16 +25,15 @@ import { useErrorDialog } from "../../../../providers/ErrorDialogProvider";
 import { useToast } from "../../../../providers/ToastProvider";
 import { Theme } from "../../../../theme/themes";
 
-type PetInfo = { id: string; name: string; ownerName: string };
-
 type FeedState =
   | { status: "loading" }
   | { status: "ready"; posts: FeedTimelinePost[]; hasMore: boolean }
   | { status: "error"; message: string; posts: FeedTimelinePost[]; hasMore: boolean };
 
 /**
- * Sitter pet feed (phase-05): 3-col album + **+ Photo** FAB → pickMedia → uploadMedia → createFeedPost.
- * No caption field (D38). Toast: "Shared with {owner} 🐾". Author can Delete from viewer (5.7).
+ * Sitter pet feed (#345): the same filterable mosaic as the owner's, for a pet in care and for one from a stay that is
+ * over. Photos taken while caring go to the owner on their own; a photo added here is Only me or shared with the owner
+ * (Save), and after the stay it can only be for me. The feed stays after the stay.
  */
 export default function SitterPetFeed() {
   const { petId } = useLocalSearchParams<{ petId: string }>();
@@ -48,44 +42,29 @@ export default function SitterPetFeed() {
   const errorDialog = useErrorDialog();
   const session = useSession();
   const currentUserId = session.status === "signedIn" ? session.profile.id : null;
-  const { feedRevision, diaryRevision } = useNotifications();
+  const { feedRevision } = useNotifications();
 
-  const [pet, setPet] = useState<PetInfo | null>(null);
+  const [pet, setPet] = useState<FeedPet | null>(null);
   const [petError, setPetError] = useState<string | null>(null);
   const [feed, setFeed] = useState<FeedState>({ status: "loading" });
   const [loadingMore, setLoadingMore] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  /** While a photo is on its way: what is happening to it, and its local thumbnail. */
-  const [stage, setStage] = useState<{ step: "uploading" | "captioning"; uri: string | null } | null>(null);
-  const [viewerPostId, setViewerPostId] = useState<string | null>(null);
-  // Diary book DB.4: the pages this sitter sent about the pet sit among the photos.
-  const [diaryCells, setDiaryCells] = useState<DiaryCell[]>([]);
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  // "Share with owner" — on by default; off keeps the post sitter-only (5.8).
-  const [shareWithOwner, setShareWithOwner] = useState(true);
+  const [picked, setPicked] = useState<PickedMedia | null>(null);
+  /** While a photo is on its way: what is happening to it. */
+  const [stage, setStage] = useState<"uploading" | "captioning" | null>(null);
 
+  // The pet comes from the stays, not the pets table: after the stay the sitter can no longer read the pet's profile.
   const loadPet = useCallback(async () => {
-    if (!petId) return;
+    if (!petId || !currentUserId) return;
     setPetError(null);
-    const { data, error } = await getSupabase()
-      .from("pets")
-      .select("id, name, owner:profiles!pets_owner_id_fkey(display_name)")
-      .eq("id", petId)
-      .maybeSingle();
-    if (error || !data) {
+    try {
+      const found = feedPetsFromBookings(await listSitterBookings(currentUserId)).find((p) => p.id === petId);
+      setPet(found ?? null);
+      if (!found) setPetError("Pet not found");
+    } catch (error) {
       setPet(null);
-      setPetError(error?.message ?? "Pet not found");
-      return;
+      setPetError((error as Error).message);
     }
-    const ownerRaw = data.owner as { display_name: string } | { display_name: string }[] | null;
-    const owner = Array.isArray(ownerRaw) ? ownerRaw[0] : ownerRaw;
-    setPet({
-      id: data.id as string,
-      name: data.name as string,
-      ownerName: owner?.display_name ?? "the owner",
-    });
-  }, [petId]);
+  }, [petId, currentUserId]);
 
   const loadPage = useCallback(
     async (offset: number, append: boolean, soft = false) => {
@@ -119,20 +98,11 @@ export default function SitterPetFeed() {
     void loadPage(0, false);
   }, [petId, loadPage]);
 
-  // The owner shared a photo (5.9) or a post was deleted — refetch without a spinner.
+  // The owner shared a photo (5.9) or a post was deleted: refetch without a spinner.
   useEffect(() => {
     if (!petId || feedRevision === 0) return;
     void loadPage(0, false, true);
   }, [feedRevision, petId, loadPage]);
-
-  useEffect(() => {
-    if (!petId) return;
-    let live = true;
-    listDiaryCells(petId).then((cells) => live && setDiaryCells(cells));
-    return () => {
-      live = false;
-    };
-  }, [petId, feedRevision, diaryRevision]);
 
   const loadMore = useCallback(async () => {
     if (feed.status !== "ready" || !feed.hasMore || loadingMore || !petId) return;
@@ -144,14 +114,15 @@ export default function SitterPetFeed() {
     }
   }, [feed, loadingMore, petId, loadPage]);
 
-  const sharePhoto = async () => {
-    if (!petId || !pet || uploading) return;
-    const picked = await pickMedia({ purpose: "feed", mediaTypes: ["image", "video"] });
-    if (!picked) return;
+  const addPhoto = async () => {
+    if (!pet || stage) return;
+    const next = await pickMedia({ purpose: "feed", mediaTypes: ["image", "video"] });
+    if (next) setPicked(next);
+  };
 
-    setUploading(true);
-    const uri = typeof URL !== "undefined" && picked.file.type.startsWith("image/") ? URL.createObjectURL(picked.file) : null;
-    setStage({ step: "uploading", uri });
+  const savePhoto = async ({ share, note }: { share: boolean; note: string }) => {
+    if (!petId || !pet || !picked || stage) return;
+    setStage("uploading");
     try {
       const kind = picked.file.type.startsWith("video/") ? "video" : "image";
       const uploaded = await uploadMedia({
@@ -161,9 +132,12 @@ export default function SitterPetFeed() {
         trim: picked.trim,
         resourceType: kind,
       });
-      setStage({ step: "captioning", uri });
-      // The sitter types nothing: the model writes the caption and picks the album; if it can't, the post still goes out.
-      const written = await captionPhoto(petId, uploaded.mediaId);
+      // The sitter types no caption: while caring the model writes it and picks the tag; after the stay, or if it can't, the post still goes.
+      let written = { caption: FALLBACK_CAPTION, category: null as Awaited<ReturnType<typeof captionPhoto>>["category"], source: "fallback" as "ai" | "fallback" };
+      if (pet.caring) {
+        setStage("captioning");
+        written = await captionPhoto(petId, uploaded.mediaId);
+      }
       await createFeedPost({
         petId,
         mediaId: uploaded.mediaId,
@@ -171,9 +145,11 @@ export default function SitterPetFeed() {
         captionSource: written.source,
         category: written.category,
         role: "sitter",
-        visibility: shareWithOwner ? "shared" : "private",
+        visibility: share ? "shared" : "private",
+        note,
       });
-      toast.show(shareWithOwner ? `Shared with ${pet.ownerName}` : "Saved just for you");
+      setPicked(null);
+      toast.show(share ? `Shared with ${pet.ownerName}` : "Saved just for you");
       await loadPage(0, false, true);
     } catch (err) {
       const message =
@@ -181,32 +157,10 @@ export default function SitterPetFeed() {
           ? err.message
           : err instanceof Error
             ? err.message
-            : "Couldn't share this photo. Try again.";
-      errorDialog.show({ title: "Photo not shared", message, onRetry: () => void sharePhoto() });
+            : "Couldn't save this photo. Try again.";
+      errorDialog.show({ title: "Photo not saved", message, onRetry: () => void savePhoto({ share, note }) });
     } finally {
-      if (uri) URL.revokeObjectURL(uri);
       setStage(null);
-      setUploading(false);
-    }
-  };
-
-  const confirmDelete = async () => {
-    if (!pendingDeleteId || deleting) return;
-    const id = pendingDeleteId;
-    setDeleting(true);
-    try {
-      await deleteFeedPost(id);
-      setPendingDeleteId(null);
-      setViewerPostId(null);
-      setFeed((prev) => {
-        if (prev.status === "loading") return prev;
-        return { ...prev, posts: prev.posts.filter((p) => p.id !== id) };
-      });
-      toast.show("Photo deleted");
-    } catch (err) {
-      toast.show(err instanceof Error ? err.message : "Couldn't delete this photo. Try again.");
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -240,129 +194,50 @@ export default function SitterPetFeed() {
     );
   }
 
-  const posts = feed.status === "ready" || feed.status === "error" ? feed.posts : [];
-  const timeline = withDiaryCells(posts, diaryCells, feed.status === "ready" ? feed.hasMore : false);
-  const hasMore = feed.status === "ready" ? feed.hasMore : false;
-
   return (
     <View style={styles.safe} testID="sitter-pet-feed">
       <Stack.Screen options={{ title: pet.name }} />
 
-      {feed.status === "error" && posts.length === 0 ? (
-        <EmptyState
-          emoji="📸"
-          title="Couldn't load posts"
-          message={feed.message}
-          action={{ label: "Try again", onPress: () => void loadPage(0, false) }}
-        />
-      ) : (
-        <FlatList
-          data={timeline}
-          keyExtractor={(item) => item.id}
-          numColumns={3}
-          columnWrapperStyle={timeline.length > 0 ? styles.row : undefined}
-          contentContainerStyle={[styles.list, timeline.length === 0 && !uploading && styles.listEmpty]}
-          onEndReached={() => void loadMore()}
-          onEndReachedThreshold={0.4}
-          ListHeaderComponent={
-            uploading ? (
-              <View style={styles.skeleton} testID="feed-uploading">
-                {stage?.uri ? (
-                  <Image source={{ uri: stage.uri }} style={styles.skeletonMedia} accessibilityIgnoresInvertColors />
-                ) : (
-                  <View style={styles.skeletonMedia} />
-                )}
-                <Text style={styles.skeletonText} testID="feed-uploading-text">
-                  {stage?.step === "captioning" ? "Writing a caption…" : "Uploading…"}
-                </Text>
-              </View>
-            ) : null
-          }
-          ListEmptyComponent={
-            uploading ? null : (
-              <EmptyState
-                emoji="📸"
-                title="No posts yet"
-                message={`No posts yet. Tap + to share ${pet.name}'s day.`}
-              />
-            )
-          }
-          ListFooterComponent={
-            hasMore ? (
-              <TextButton
-                label={loadingMore ? "Loading…" : "Load more"}
-                onPress={() => void loadMore()}
-                disabled={loadingMore}
-                testID="feed-load-more"
-              />
-            ) : null
-          }
-          renderItem={({ item }) => (
-            <View style={styles.cell}>
-              {isDiaryCell(item) ? (
-                <DiaryFeedCell cell={item} onOpen={() => router.push(`/sitter/feed?view=diary&page=${item.reportId}`)} />
-              ) : (
-                <FeedCard post={item} onOpen={() => setViewerPostId(item.id)} />
-              )}
-            </View>
-          )}
-        />
-      )}
+      <FeedBrowser
+        posts={feed.posts}
+        hasMore={feed.status === "ready" ? feed.hasMore : false}
+        loadingMore={loadingMore}
+        onLoadMore={() => void loadMore()}
+        currentUserId={currentUserId}
+        onRemoved={(id) => setFeed((prev) => (prev.status === "loading" ? prev : { ...prev, posts: prev.posts.filter((p) => p.id !== id) }))}
+        onHiddenChange={(id, hidden) =>
+          setFeed((prev) =>
+            prev.status === "loading" ? prev : { ...prev, posts: prev.posts.map((p) => (p.id === id ? { ...p, hidden } : p)) },
+          )
+        }
+        emptyMessage={pet.caring ? `Tap + to share ${pet.name}'s day.` : "Photos you save for yourself show up here."}
+        error={feed.status === "error" && feed.posts.length === 0 ? { message: feed.message, onRetry: () => void loadPage(0, false) } : null}
+        testID="sitter-feed-list"
+      />
 
       <View style={styles.fabRow}>
-        <ShareToggle
-          label={`Share with ${pet.ownerName}`}
-          on={shareWithOwner}
-          onToggle={() => setShareWithOwner((v) => !v)}
-          disabled={uploading}
-          testID="feed-share-toggle"
-        />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Add photo"
-          disabled={uploading}
-          onPress={() => void sharePhoto()}
-          style={({ pressed }) => [styles.fab, (pressed || uploading) && styles.fabPressed]}
+          disabled={stage != null}
+          onPress={() => void addPhoto()}
+          style={({ pressed }) => [styles.fab, (pressed || stage != null) && styles.fabPressed]}
           testID="feed-add-photo"
         >
-          <Text style={styles.fabLabel}>{uploading ? "…" : "+ Photo"}</Text>
+          <Text style={styles.fabLabel}>+ Photo</Text>
         </Pressable>
       </View>
 
-      <FeedViewer
-        visible={viewerPostId != null && pendingDeleteId == null}
-        posts={posts}
-        initialPostId={viewerPostId}
-        onClose={() => setViewerPostId(null)}
-        onNearEnd={() => void loadMore()}
-        currentUserId={currentUserId}
-        onRequestDelete={(id) => {
-          // Reopen on this post if the delete is cancelled (the viewer hides behind the sheet).
-          setViewerPostId(id);
-          setPendingDeleteId(id);
-        }}
+      <AddPhotoSheet
+        file={picked?.file ?? null}
+        shareWith={pet.ownerName}
+        canShare={pet.caring}
+        defaultShare={pet.caring}
+        saving={stage != null}
+        statusText={stage === "captioning" ? "Writing a caption…" : "Uploading…"}
+        onClose={() => setPicked(null)}
+        onSave={(choice) => void savePhoto(choice)}
       />
-
-      <Sheet
-        visible={pendingDeleteId != null}
-        title="Delete this photo?"
-        onClose={() => {
-          if (!deleting) setPendingDeleteId(null);
-        }}
-        testID="feed-delete-sheet"
-        footer={
-          <Button
-            label={deleting ? "…" : "🗑️"}
-            disabled={deleting}
-            onPress={() => void confirmDelete()}
-            testID="feed-delete-confirm"
-          />
-        }
-      >
-        <Text style={styles.deleteBody}>
-          {`This deletes the photo for good. ${pet.ownerName} won't see it anymore.`}
-        </Text>
-      </Sheet>
     </View>
   );
 }
@@ -373,48 +248,10 @@ const makeStyles = (theme: Theme) =>
       flex: 1,
       backgroundColor: theme.color.background,
     },
-    list: {
-      padding: theme.spacing.sm,
-      paddingBottom: theme.spacing.xl * 3,
-    },
-    listEmpty: {
-      flexGrow: 1,
-    },
-    row: {
-      gap: 2,
-      marginBottom: 2,
-    },
-    cell: {
-      flex: 1,
-      maxWidth: "33.333%",
-    },
-    skeleton: {
-      backgroundColor: theme.color.surface,
-      borderRadius: theme.radius.lg,
-      borderWidth: 1,
-      borderColor: theme.color.border,
-      overflow: "hidden",
-      marginBottom: theme.spacing.md,
-      alignSelf: "flex-start",
-      width: "33%",
-    },
-    skeletonMedia: {
-      width: "100%",
-      aspectRatio: 1,
-      backgroundColor: theme.color.border,
-    },
-    skeletonText: {
-      padding: theme.spacing.sm,
-      fontSize: theme.fontSize.small,
-      color: theme.color.textMuted,
-    },
     fabRow: {
       position: "absolute",
       right: theme.spacing.md,
       bottom: theme.spacing.lg,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: theme.spacing.sm,
     },
     fab: {
       minHeight: 48,
@@ -426,7 +263,7 @@ const makeStyles = (theme: Theme) =>
       ...Platform.select({
         web: { boxShadow: "0 4px 12px rgba(26, 26, 26, 0.2)" },
         default: {
-          shadowColor: "#1A1A1A",
+          shadowColor: "#1A1A1A", // tokens-ok: the floating button's shadow, as before
           shadowOpacity: 0.2,
           shadowRadius: 8,
           shadowOffset: { width: 0, height: 4 },
@@ -441,10 +278,5 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.body,
       fontWeight: theme.fontWeight.bold,
       color: theme.color.primaryText,
-    },
-    deleteBody: {
-      fontSize: theme.fontSize.body,
-      color: theme.color.text,
-      lineHeight: theme.fontSize.body * 1.4,
     },
   });
