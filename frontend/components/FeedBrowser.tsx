@@ -160,9 +160,9 @@ export function FeedBrowser({
                 </Text>
                 <TextButton label="Back" onPress={() => setShowHidden(false)} testID="feed-hidden-back" />
               </View>
-            ) : posts.length > 0 ? (
+            ) : (
               <FeedFilterChips value={filter} onChange={setFilter} />
-            ) : null}
+            )}
           </View>
         }
         ListEmptyComponent={width > 0 ? empty : null}

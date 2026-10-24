@@ -337,7 +337,8 @@ test.describe("Feed layout and filters", () => {
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/owner/feed");
     await expect(app(page).getByText("No photos yet")).toBeVisible();
-    await expect(app(page).getByTestId("feed-filters")).toHaveCount(0);
+    // The chips are there from the start, so the Feed looks like the design before there is a photo.
+    await expect(app(page).getByTestId("feed-filters")).toBeVisible();
   });
 });
 
