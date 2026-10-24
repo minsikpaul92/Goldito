@@ -107,7 +107,7 @@ test.describe("your sitters", () => {
     await expect(screen.getByTestId("sitter-service-house_sitting")).toBeVisible();
     await expect(screen.getByText("12 Maple St")).toHaveCount(0);
 
-    // #120: See schedule opens the month, and each day opens as its own page; the profile has no openings list.
+    // #120: See schedule opens the month (a day's hours show under it, #268); the profile has no openings list.
     await expect(screen.getByTestId(/^sitter-opening-/)).toHaveCount(0);
     await expect(screen.getByText("Next openings")).toHaveCount(0);
     await expect(screen.getByTestId("ask-about-stay")).toHaveCount(0);
@@ -115,14 +115,21 @@ test.describe("your sitters", () => {
     await expect(screen.getByTestId("start-chat")).toHaveText("Start chat");
     await screen.getByTestId("sitter-see-schedule").click();
     await expect(page).toHaveURL(new RegExp(`/owner/sitters/${SITTER.id}/calendar$`));
+    // It opens with today's hours under the month, no hint text to read.
+    await expect(screen.getByTestId("sitter-day-hours")).toBeVisible();
+    await expect(screen.getByText("Tap a day to see its hours.")).toHaveCount(0);
     await screen.getByTestId("calendar-next").click();
     // A blocked slot reads as not available to owners; a slot nobody touched is open by default (014d).
     await expect(screen.getByTestId(`day-${nextMonthDay(10)}`)).toHaveAttribute(
       "aria-label",
       /Morning open, Afternoon closed, Night open/,
     );
+    // #268: a day's hours show right under the month, no new page and no sheet; Start chat stays on the page.
     await screen.getByTestId(`day-${nextMonthDay(10)}`).click();
-    await expect(page).toHaveURL(new RegExp(`/day/${nextMonthDay(10)}$`));
+    await expect(page).toHaveURL(new RegExp(`/owner/sitters/${SITTER.id}/calendar$`));
+    await expect(screen.getByTestId("sitter-day-hours")).toBeVisible();
+    await expect(screen.getByTestId("sitter-day-morning")).toBeInViewport(); // scrolled into view on a short screen
+    await expect(screen.getByTestId("start-chat").last()).toBeVisible(); // the profile underneath has its own
     await expect(screen.getByTestId("sitter-day-morning")).toContainText("Morning");
     await expect(screen.getByTestId("sitter-day-morning")).toContainText("8 AM to 12 PM");
     await expect(screen.getByTestId("sitter-day-morning")).toContainText("1 spot left");
@@ -130,9 +137,7 @@ test.describe("your sitters", () => {
     await expect(screen.getByTestId("sitter-day-overnight")).toContainText("6 PM to 8 AM");
     await expect(screen.getByTestId("sitter-day-overnight")).toContainText("2 spots left");
 
-    await page.goBack();
-    await expect(page).toHaveURL(new RegExp(`/owner/sitters/${SITTER.id}/calendar$`));
-    // Back keeps the month that was open.
+    // Another day in the same month replaces the hours under it.
     await screen.getByTestId(`day-${nextMonthDay(11)}`).click();
     await expect(screen.getByTestId("sitter-day-morning")).toContainText("Full");
     await expect(screen.getByTestId("sitter-day")).not.toContainText("Robert");

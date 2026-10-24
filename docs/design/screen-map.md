@@ -300,25 +300,14 @@ Shows: `PhotoViewer` · `SitterActions` · `StarRating`
 
 ### `/owner/sitters/[sitterId]/calendar` — [app/owner/sitters/[sitterId]/calendar.tsx](../../frontend/app/owner/sitters/[sitterId]/calendar.tsx)
 
-#120 (D): the sitter's month on its own page. Tapping a day opens that day's page.
+#120 (D): the sitter's month on its own page, and under it the hours of one day (#268: no second screen, no sheet). It opens on the search's drop-off day (else today); a tap picks another day, and Start chat then carries that day.
 
-Shows: `SitterActions` · `SlotCalendar`
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| EmptyState | Sitter not found | — | 49 |
-| EmptyState | Couldn't load the schedule | — | 74 |
-
-### `/owner/sitters/[sitterId]/day/[date]` — [app/owner/sitters/[sitterId]/day/[date].tsx](../../frontend/app/owner/sitters/[sitterId]/day/[date].tsx)
-
-#120 (D): one day of a sitter's schedule as big rows, with Start chat. Back returns where it came from.
-
-Shows: `SitterActions` · `SlotRows`
+Shows: `SitterActions` · `SlotRows` · `SlotCalendar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Sitter not found | — | 46 |
-| EmptyState | Couldn't load this day | — | 59 |
+| EmptyState | Sitter not found | — | 59 |
+| EmptyState | Couldn't load the schedule | — | 99 |
 
 ### `/owner/snap` — [app/owner/(tabs)/snap.tsx](../../frontend/app/owner/(tabs)/snap.tsx)
 
@@ -1258,20 +1247,20 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `text` | `id` | 59 |
-| Sheet | Done | `place-done` | 89 |
-| Button | Done | `place-done` | 93 |
-| Button | Use this place | `place-use-address` | 107 |
-| CheckRow | 🏠 My home | `place-home` | 114 |
-| CheckRow | 📍 Current location | `place-here` | 115 |
-| TextButton | Open Profile | `place-open-profile` | 136 |
-| Sheet | Done | `stay-done` | 141 |
-| Button | Done | `stay-done` | 145 |
-| Stepper | Drop-off time | `search-drop_off-time` | 172 |
-| Stepper | Pick-up time | `search-pick_up-time` | 181 |
-| Sheet | Done | `pets-done` | 213 |
-| Button | Done | `pets-done` | 217 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 221 |
+| Pressable | `text` | `id` | 66 |
+| Sheet | Done | `place-done` | 96 |
+| Button | Done | `place-done` | 100 |
+| Button | Use this place | `place-use-address` | 114 |
+| CheckRow | 🏠 My home | `place-home` | 121 |
+| CheckRow | 📍 Current location | `place-here` | 128 |
+| TextButton | Open Profile | `place-open-profile` | 150 |
+| Sheet | Done | `stay-done` | 155 |
+| Button | Done | `stay-done` | 159 |
+| Stepper | Drop-off time | `search-drop_off-time` | 186 |
+| Stepper | Pick-up time | `search-pick_up-time` | 195 |
+| Sheet | Done | `pets-done` | 227 |
+| Button | Done | `pets-done` | 231 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 235 |
 
 ### SlotCalendar — [components/SlotCalendar.tsx](../../frontend/components/SlotCalendar.tsx)
 

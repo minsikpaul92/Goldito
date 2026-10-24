@@ -1,5 +1,6 @@
 """POST /api/geo/geocode — a home address → a point on the map (phase-06b 6B.2, D32).
-POST /api/geo/reverse — a point → "Trinity Bellwoods, Toronto", so the Profile can say where the home pin is.
+POST /api/geo/reverse — a point → "Trinity Bellwoods, Toronto", so the Profile can say where the home pin is. With
+`exact`, the point is looked up as it is and the whole address comes back too (the owner's own sitter search, #268).
 POST /api/geo/suggest — an address or postal code → up to five real addresses to pick from (Profile "Check address").
 
 Only used when someone saves their home address (or reads their location), so the trip screens have a destination
@@ -99,12 +100,14 @@ def postal_area_suggestion(address: str) -> "Suggestion | None":
     return Suggestion(label=f"{postal.group(1).upper()}, {city}, {province}", lat=lat, lng=lng)
 
 
-def _reverse(lat: float, lng: float) -> dict:
-    # The point is rounded to 3 decimals (about 100 m) before it leaves for OpenStreetMap: a neighbourhood name
-    # does not need more, and the exact spot of a home stays here.
+def _reverse(lat: float, lng: float, exact: bool = False) -> dict:
+    # By default the point is rounded to 3 decimals (about 100 m) before it leaves for OpenStreetMap: a neighbourhood
+    # name does not need more, and the exact spot of a home stays here. `exact` sends the point as it is, for a full
+    # address with the house number (the privacy page says when).
+    lat, lng = (lat, lng) if exact else (round(lat, 3), round(lng, 3))
     return _get(
         NOMINATIM_REVERSE_URL,
-        {"lat": round(lat, 3), "lon": round(lng, 3), "format": "jsonv2", "zoom": 18, "addressdetails": 1},
+        {"lat": lat, "lon": lng, "format": "jsonv2", "zoom": 18, "addressdetails": 1},
     )
 
 
@@ -200,6 +203,8 @@ def suggest(body: GeocodeRequest, _user: CurrentUser = Depends(get_current_user)
 class ReverseRequest(BaseModel):
     lat: float = Field(ge=-90, le=90)
     lng: float = Field(ge=-180, le=180)
+    # Look the point up as it is and return the whole address (house number included). Off by default.
+    exact: bool = False
 
 
 class ReverseResponse(BaseModel):
@@ -209,16 +214,24 @@ class ReverseResponse(BaseModel):
     postal: str | None = None
     # A street line without the house number, to start the home address from (see street_address).
     address: str | None = None
+    # Only with `exact`: the whole address, '127 Broadway Ave, Toronto, ON M4P 1V9' (see address_line).
+    full: str | None = None
 
 
 @router.post("/reverse", response_model=ReverseResponse)
 def reverse(body: ReverseRequest, _user: CurrentUser = Depends(get_current_user)) -> ReverseResponse:
     try:
-        hit = _reverse(body.lat, body.lng)
+        hit = _reverse(body.lat, body.lng, exact=True) if body.exact else _reverse(body.lat, body.lng)
     except (httpx.HTTPError, ValueError) as exc:
         log.info("reverse: lookup failed (%s)", exc.__class__.__name__)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="The map lookup is unavailable right now.") from exc
     if not isinstance(hit, dict):
         return ReverseResponse(found=False)
     label = place_label(hit)
-    return ReverseResponse(found=label is not None, label=label, postal=postal_area(hit), address=street_address(hit))
+    return ReverseResponse(
+        found=label is not None,
+        label=label,
+        postal=postal_area(hit),
+        address=street_address(hit),
+        full=address_line(hit) if body.exact else None,
+    )

@@ -121,19 +121,23 @@ export async function suggestAddresses(address: string): Promise<AddressSuggesti
   }
 }
 
-export type PinPlace = { label: string; postal: string | null; address: string | null };
+/** `full` (house number included) only comes with an exact lookup (#268). */
+export type PinPlace = { label: string; postal: string | null; address: string | null; full: string | null };
 
 /**
  * A point → "Trinity Bellwoods, Toronto" and the postal area ("M6J") (OpenStreetMap through our server), so the
- * Profile can say where the pin is. Never throws: a lookup that is down just means no name.
+ * Profile can say where the pin is. `exact` sends the point unrounded and also returns the whole address (the owner's
+ * own sitter search, #268). Never throws: a lookup that is down just means no name.
  */
-export async function reverseGeocode(point: LatLng): Promise<PinPlace | null> {
+export async function reverseGeocode(point: LatLng, options: { exact?: boolean } = {}): Promise<PinPlace | null> {
   try {
-    const result = await apiPost<{ found: boolean; label: string | null; postal?: string | null; address?: string | null }>(
+    const result = await apiPost<{ found: boolean; label: string | null; postal?: string | null; address?: string | null; full?: string | null }>(
       "/api/geo/reverse",
-      point,
+      options.exact ? { ...point, exact: true } : point,
     );
-    return result.found && result.label ? { label: result.label, postal: result.postal ?? null, address: result.address ?? null } : null;
+    return result.found && result.label
+      ? { label: result.label, postal: result.postal ?? null, address: result.address ?? null, full: result.full ?? null }
+      : null;
   } catch {
     return null;
   }

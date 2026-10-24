@@ -12,7 +12,7 @@ const slug = (title: string) => title.toLowerCase().replace(/[^a-z]+/g, "-").rep
 
 // What Goldito stores and who else receives it — kept next to the code that does it (backend/app/routers/geo.py,
 // meet_greet.py, ai/*). Update this page in the same change when a new service or kind of data is added.
-const UPDATED = "October 18, 2026";
+const UPDATED = "October 24, 2026";
 
 const SECTIONS: Section[] = [
   {
@@ -50,7 +50,7 @@ const SECTIONS: Section[] = [
   {
     title: "Other services that receive data",
     body: [
-      "OpenStreetMap: when you save a home address, the address text is sent once to OpenStreetMap's Nominatim search to place the pin on the map. When you read your current location, a rounded copy of that point (about 100 m) is sent once to the same search to name the neighbourhood and the first part of the postal code shown next to your pin. The map pictures on the trip screen load from OpenStreetMap tile servers in your browser, so they see your IP address and the map area you view.",
+      "OpenStreetMap: when you save a home address, the address text is sent once to OpenStreetMap's Nominatim search to place the pin on the map. When you read your current location for your home pin, a rounded copy of that point (about 100 m) is sent once to the same search to name the neighbourhood and the first part of the postal code shown next to your pin. When you search for sitters from your current location, the exact point is sent once to the same search so the search bar can show your full address; sitters never see it. The map pictures on the trip screen load from OpenStreetMap tile servers in your browser, so they see your IP address and the map area you view.",
       "Cloudinary stores and delivers photos.",
       "Vercel hosts the website and Render hosts our server. Both see ordinary request logs such as IP addresses.",
     ],

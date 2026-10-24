@@ -51,7 +51,14 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
 
   const { place, dropOff, pickUp, pets, petIds } = search;
   const datePicks = quickStays(search.today);
-  const placeText = place.kind === "home" ? "My home" : place.kind === "here" ? "Current location" : place.label;
+  // The bar names the place (#268): the home address as typed, the street of Current location; the sheet has the whole line.
+  const firstPart = (line: string) => line.split(",")[0].trim();
+  const placeText =
+    place.kind === "home"
+      ? (search.homeAddress ? firstPart(search.homeAddress) : "My home")
+      : place.kind === "here"
+        ? (place.label ? firstPart(place.label) : "Current location")
+        : place.label;
   const dateText = formatDayRange(dropOff.day, pickUp.day);
   const petText = petIds.length === 1 ? pets.find((p) => p.id === petIds[0])?.name ?? "1 pet" : `${petIds.length} pets`;
 
@@ -111,9 +118,16 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
           disabled={typed.trim().length < 3 || search.locating}
           testID="place-use-address"
         />
-        <CheckRow label="🏠 My home" checked={place.kind === "home"} onChange={() => search.useHome()} testID="place-home" />
+        <CheckRow
+          label="🏠 My home" // tokens-ok: the existing place row (as 📍 Current location); #268 only adds the address under it
+          hint={search.homeAddress ?? undefined}
+          checked={place.kind === "home"}
+          onChange={() => search.useHome()}
+          testID="place-home"
+        />
         <CheckRow
           label="📍 Current location"
+          hint={place.kind === "here" ? (place.label ?? undefined) : undefined}
           checked={place.kind === "here"}
           onChange={() => void search.useHere()}
           testID="place-here"
