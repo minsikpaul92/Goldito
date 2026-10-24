@@ -50,11 +50,12 @@ async function mockReverse(
   status = 200,
   postal: string | null = "M6J",
   address: string | null = "Dundas St W, Toronto, M6J",
+  full: string | null = null,
 ) {
   const asked: unknown[] = [];
   await page.route("**/api/geo/reverse", async (route) => {
     asked.push(route.request().postDataJSON());
-    const body = status >= 400 ? { detail: "down" } : { found: label !== null, label, postal, address };
+    const body = status >= 400 ? { detail: "down" } : { found: label !== null, label, postal, address, full };
     return route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
   });
   return asked;
@@ -114,7 +115,26 @@ test.describe("home map pin", () => {
     expect(row?.home_address).toBe("Dundas St W, Toronto");
     expect(row?.home_postal_code).toBe("M6J");
     expect(asked).toEqual([]); // a pin from the phone needs no address check
-    expect(reversed).toEqual([{ lat: 43.6477, lng: -79.4194 }]);
+    expect(reversed).toEqual([{ lat: 43.6477, lng: -79.4194, exact: true }]);
+  });
+
+  test("with a full address found, the location fills the house number and the whole postal code (#349)", async ({ page }) => {
+    await stubGps(page);
+    await mockSuggest(page, []);
+    await mockReverse(page, "Trinity Bellwoods, Toronto", 200, "M6J", "Dundas St W, Toronto, M6J", "12 Dundas St W, Toronto, ON M6J 1G1");
+    const { db } = await mockSupabase(page, [OWNER]);
+    await openProfile(page, OWNER, "owner");
+    const screen = app(page);
+
+    await screen.getByTestId("profile-use-location").click();
+    await expect(screen.getByTestId("profile-home_address")).toHaveValue("12 Dundas St W, Toronto, ON");
+    await expect(screen.getByTestId("profile-home_postal_code")).toHaveValue("M6J 1G1");
+    // Still the person's to change (a laptop's location can be a block off): the field is not locked.
+    await expect(screen.getByTestId("profile-home_address")).toBeEditable();
+    await screen.getByTestId("profile-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Profile saved");
+    const row = db.owner_profiles.find((r) => r.id === OWNER.id);
+    expect(row).toMatchObject({ home_address: "12 Dundas St W, Toronto, ON", home_postal_code: "M6J 1G1", home_lat: 43.6477, home_lng: -79.4194 });
   });
 
   test("a refused browser permission says so and leaves the pin as it was", async ({ page }) => {

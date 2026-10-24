@@ -59,12 +59,17 @@ export function statusTone(status: TodayStatus): "success" | "warning" | "neutra
 export function statusLabel(status: TodayStatus): string | null {
   switch (status.kind) {
     case "done":
-      return `✅ Done ${formatInstant(status.at).split(", ")[1]}`;
+      return `Done ${formatInstant(status.at).split(", ")[1]}`;
     case "pending":
-      return "⏳ Pending";
+      return "Pending";
     case "missed":
-      return "⚠️ Missed";
+      return "Missed";
     default:
       return null;
   }
+}
+
+/** The Lucide icon that goes with a status label (Icon.tsx names): done ✓, pending clock, missed ✕. */
+export function statusIcon(status: TodayStatus): "check" | "clock" | "close" | undefined {
+  return status.kind === "done" ? "check" : status.kind === "pending" ? "clock" : status.kind === "missed" ? "close" : undefined;
 }

@@ -14,6 +14,7 @@ import {
 import {
   careTypeMeta,
   sortTasks,
+  statusIcon,
   statusLabel,
   statusTone,
   todayStatus,
@@ -223,7 +224,7 @@ export function CareTasksSection({ pet, userId }: Props) {
                 {task.notes ? <Text style={styles.meta}>{task.notes}</Text> : null}
                 {!task.active ? <Tag label="Paused" /> : null}
                 {status ? (
-                  <Tag label={status} tone={statusTone(todayStatus(logByTask.get(task.id)))} testID={`care-status-${task.id}`} />
+                  <Tag label={status} tone={statusTone(todayStatus(logByTask.get(task.id)))} icon={statusIcon(todayStatus(logByTask.get(task.id)))} testID={`care-status-${task.id}`} />
                 ) : null}
               </View>
               <Text style={styles.chevron} accessibilityElementsHidden>

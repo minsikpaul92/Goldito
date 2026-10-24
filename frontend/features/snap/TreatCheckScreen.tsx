@@ -304,12 +304,12 @@ function ResultCard({
   const color = status === "DANGER" ? theme.color.error : status === "WARNING" ? theme.color.warning : theme.color.success;
   const headline =
     status === "DANGER"
-      ? `Not safe for ${petName} ⚠️`
+      ? `Not safe for ${petName}`
       : status === "WARNING"
         ? role === "sitter"
           ? "Ask the owner first"
           : "Check with your vet first"
-        : `Looks fine for ${petName} ✅`;
+        : `Looks fine for ${petName}`;
   const flagged = [...result.matched_allergens, ...result.toxic_ingredients];
 
   return (

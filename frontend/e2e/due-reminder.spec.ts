@@ -38,7 +38,7 @@ test("an alarm popup for what is due now, a toast when the next one becomes due,
   await screen.getByTestId("due-alert").waitFor();
 
   // First look: the popup shows what is due (not the overdue one), and no toast floods in.
-  await expect(screen.getByTestId("due-alert-label")).toHaveText("⏰ Due now");
+  await expect(screen.getByTestId("due-alert-label")).toHaveText("Due now");
   await expect(screen.getByTestId("due-alert-title")).toContainText("Lunch");
   await expect(screen.getByText("+ 1 more waiting", { exact: false })).toBeVisible();
   await expect(screen.getByTestId("toast")).toHaveCount(0);
@@ -57,7 +57,7 @@ test("an alarm popup for what is due now, a toast when the next one becomes due,
 
   // Dismiss Snack: only the overdue one is left, and it says so.
   await screen.getByTestId("due-alert-dismiss").click();
-  await expect(screen.getByTestId("due-alert-label")).toHaveText("⚠️ Overdue");
+  await expect(screen.getByTestId("due-alert-label")).toHaveText("Overdue");
   await expect(screen.getByTestId("due-alert-title")).toContainText("Early meal");
 
   // Dismissing the last one clears the banner.

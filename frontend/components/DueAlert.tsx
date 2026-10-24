@@ -6,9 +6,10 @@ import { careTypeMeta } from "../features/care/careFormat";
 import type { DueReminder } from "../features/care/useDueReminder";
 import type { TaskItem } from "../features/care/useTodayTasks";
 import { formatTime, isoToZoned } from "../features/schedule/dates";
-import { useThemedStyles } from "../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 import { Button } from "./ui/Button";
+import { Icon } from "./ui/Icon";
 import { TextButton } from "./ui/TextButton";
 
 /** A short double beep + a buzz where the browser allows it (needs a prior tap on the page). */
@@ -46,6 +47,7 @@ type Props = {
  * or dismiss. Opens by itself over whatever the sitter is looking at on Home.
  */
 export function DueAlert({ reminder, paused, onDone }: Props) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { current, more, dismiss, snooze } = reminder;
   const logId = current?.item.log.id;
@@ -61,9 +63,12 @@ export function DueAlert({ reminder, paused, onDone }: Props) {
     <Modal visible={!paused} transparent animationType="fade" onRequestClose={() => dismiss(item.log.id)}>
       <View style={styles.backdrop}>
         <View style={[styles.card, overdue && styles.overdue]} accessibilityRole="alert" accessibilityViewIsModal testID="due-alert">
-          <Text style={styles.label} testID="due-alert-label">
-            {overdue ? "⚠️ Overdue" : "⏰ Due now"}
-          </Text>
+          <View style={styles.labelRow}>
+            <Icon name="clock" size={20} strokeWidth={2.5} color={overdue ? theme.color.warning : theme.color.text} />
+            <Text style={styles.label} testID="due-alert-label">
+              {overdue ? "Overdue" : "Due now"}
+            </Text>
+          </View>
           <Text style={styles.title} testID="due-alert-title">
             {`${careTypeMeta(item.task.type).emoji} ${item.task.title}`}
           </Text>
@@ -71,7 +76,7 @@ export function DueAlert({ reminder, paused, onDone }: Props) {
             {[item.pet.name, formatTime(isoToZoned(item.log.due_at).time), item.task.dose].filter(Boolean).join(" · ")}
           </Text>
           <Button label="Done" onPress={() => onDone(item)} testID="due-alert-done" />
-          <Button label="💤 Remind me in 10 min" variant="secondary" onPress={() => snooze(item.log.id)} testID="due-alert-snooze" />
+          <Button label="Remind me in 10 min" variant="secondary" onPress={() => snooze(item.log.id)} testID="due-alert-snooze" />
           <View style={styles.foot}>
             <TextButton label="Dismiss" onPress={() => dismiss(item.log.id)} testID="due-alert-dismiss" />
             {more > 0 ? (
@@ -98,6 +103,7 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.surface,
     },
     overdue: { borderColor: theme.color.warning },
+    labelRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs },
     label: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     title: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     meta: { fontSize: theme.fontSize.body, color: theme.color.textMuted },

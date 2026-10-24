@@ -76,7 +76,7 @@ export function TripScreen({ role }: { role: Role }) {
   if (state.status === "missing") {
     return (
       <Screen>
-        <EmptyState emoji="🔍" title="Booking not found" message="It may have been cancelled or removed." />
+        <EmptyState emoji="📅" title="Booking not found" message="It may have been cancelled or removed." />
       </Screen>
     );
   }

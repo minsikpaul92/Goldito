@@ -96,7 +96,7 @@ export function checkinLabel(kind: CareCheckinKind, value: string | null): { emo
     case "wake":
       return { emoji: "☀️", label: "Awake" };
     default:
-      return { emoji: "📝", label: "Note" };
+      return { emoji: "🗒️", label: "Note" };
   }
 }
 
@@ -125,7 +125,7 @@ export function buildDiary(
       id: `task-${log.id}`,
       at: log.status === "done" ? (log.completed_at ?? log.due_at) : log.due_at,
       kind: "task",
-      emoji: missed ? "⚠️" : meta.emoji,
+      emoji: missed ? "✗" : meta.emoji,
       label: `${task.title} · ${missed ? "Missed" : "Done"}`,
       memo: null,
       media: toMedia(log.media),

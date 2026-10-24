@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Icon } from "./ui/Icon";
-import { formatInstant, formatTime, isoToZoned } from "../features/schedule/dates";
+import { formatDay, formatDayRange, formatInstant, formatTime, isoToZoned } from "../features/schedule/dates";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { SERVICE_LABEL } from "../features/sitters/sitterApi";
 import {
@@ -79,8 +79,9 @@ export function placeLabel(type: LocationType, note: string | null, b: BookingSu
 }
 
 /**
- * Who drives, per D28 (place = transport): "🚗 You drive · 🚙 Chloe brings them home". House
- * sitting has no drive — the sitter comes to the owner's home.
+ * Who drives, per D28 (place = transport), in one line (#181): "You drive both ways", "Chloe drives both ways", or the
+ * two halves when they differ ("You drive over · Chloe brings them home"). House sitting has no drive: the sitter comes
+ * to the owner's home.
  */
 export function transportLine(b: BookingSummary, viewer: Viewer): string | null {
   if (b.serviceType === "house_sitting") {
@@ -88,20 +89,33 @@ export function transportLine(b: BookingSummary, viewer: Viewer): string | null 
   }
   const you = viewer === "owner" ? "You" : b.ownerName;
   const sitter = viewer === "sitter" ? "You" : b.sitterName;
-  const part = (kind: "drop_off" | "pick_up", h: Handoff | null) => {
-    if (!h) return null;
-    if (h.locationType === "other") return `📍 Meet ${kind === "drop_off" ? "for drop-off" : "for pick-up"}`;
-    if (kind === "drop_off") {
-      return h.locationType === "sitter_home"
-        ? `🚗 ${you} drive${you === "You" ? "" : "s"} over`
-        : `🚙 ${sitter} pick${sitter === "You" ? "" : "s"} up`;
-    }
-    return h.locationType === "sitter_home"
-      ? `🚗 ${you} pick${you === "You" ? "" : "s"} up`
-      : `🚙 ${sitter} bring${sitter === "You" ? "" : "s"} them home`;
+  const s = (who: string, verb: string) => `${who} ${verb}${who === "You" ? "" : "s"}`;
+  // at the sitter's place the owner drives (to leave or to fetch); at the owner's the sitter comes; "other" = meet
+  const driver = (h: Handoff | null) => (!h ? null : h.locationType === "other" ? "meet" : h.locationType === "sitter_home" ? you : sitter);
+  const d = driver(b.dropOff), p = driver(b.pickUp);
+  if (d && d === p) return d === "meet" ? "Meet halfway both ways" : `${s(d, "drive")} both ways`;
+  const half = (kind: "drop_off" | "pick_up", who: string | null) => {
+    if (!who) return null;
+    if (who === "meet") return kind === "drop_off" ? "Meet for drop-off" : "Meet for pick-up";
+    if (kind === "drop_off") return who === you ? s(you, "drive") + " over" : s(sitter, "pick") + " up";
+    return who === you ? s(you, "pick") + " up" : `${s(sitter, "bring")} them home`;
   };
-  const parts = [part("drop_off", b.dropOff), part("pick_up", b.pickUp)].filter(Boolean);
+  const parts = [half("drop_off", d), half("pick_up", p)].filter(Boolean);
   return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+/**
+ * Dates and the place once (#181): "Oct 19, 6:00 PM to 8:00 PM at Chloe's place", or "Oct 19 to 21 at Chloe's place"
+ * over several days. The place is where the pets stay (the sitter's for boarding, home for house sitting); how they get
+ * there and back is the who-drives line.
+ */
+export function stayLine(b: BookingSummary, viewer: Viewer): string | null {
+  const first = b.dropOff ?? b.pickUp, last = b.pickUp ?? b.dropOff;
+  if (!first || !last) return null;
+  const a = isoToZoned(first.at), z = isoToZoned(last.at);
+  const when = a.day === z.day ? `${formatDay(a.day)}, ${formatTime(a.time)} to ${formatTime(z.time)}` : formatDayRange(a.day, z.day);
+  const where = placeLabel(b.serviceType === "house_sitting" ? "owner_home" : "sitter_home", null, b, viewer);
+  return `${when} at ${where}`;
 }
 
 export function handoffLine(label: string, h: Handoff | null, b: BookingSummary, viewer: Viewer): string {
@@ -118,14 +132,21 @@ type Props = {
   onPress?: () => void;
 };
 
-/** Booking row: the other person, pets, drop-off / pick-up, status badges. */
+/** Booking row (past stays): the other person, pets, status badges, then two lines: when and where, and who drives (#181). */
 export function BookingCard({ booking, viewer, onPress }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const badges = bookingBadges(booking, viewer);
   const pets = booking.pets.map((p) => `${SPECIES_EMOJI[p.species]} ${p.name}`).join("  ");
   const who = viewer === "owner" ? booking.sitterName : booking.ownerName;
-  const transport = transportLine(booking, viewer);
+  // the handoffs that happened ride on the who-drives line: "✓ Received 9:30 AM", "✓ Returned 5:00 PM"
+  const done = booking.pickUp?.completedAt
+    ? `✓ Returned ${formatTime(isoToZoned(booking.pickUp.completedAt).time)}`
+    : booking.dropOff?.completedAt
+      ? `✓ Received ${formatTime(isoToZoned(booking.dropOff.completedAt).time)}`
+      : null;
+  const transport = [transportLine(booking, viewer), done].filter(Boolean).join(" · ") || null;
+  const stay = stayLine(booking, viewer);
 
   return (
     <Pressable
@@ -143,8 +164,11 @@ export function BookingCard({ booking, viewer, onPress }: Props) {
           ))}
         </View>
         {pets ? <Text style={styles.pets}>{`${pets}  ·  ${SERVICE_LABEL[booking.serviceType]}`}</Text> : null}
-        <Text style={styles.line}>{handoffLine("Drop-off", booking.dropOff, booking, viewer)}</Text>
-        <Text style={styles.line}>{handoffLine("Pick-up", booking.pickUp, booking, viewer)}</Text>
+        {stay ? (
+          <Text style={styles.line} testID={`stay-${booking.id}`}>
+            {stay}
+          </Text>
+        ) : null}
         {transport ? (
           <Text style={styles.line} testID={`transport-${booking.id}`}>
             {transport}

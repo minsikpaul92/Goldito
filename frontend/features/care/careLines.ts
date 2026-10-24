@@ -1,15 +1,17 @@
 import { formatTime } from "../schedule/dates";
 import type { CareTaskType, Species } from "../../types/db";
 import type { DraftTask } from "./carePlanApi";
+import type { IconName } from "../../components/ui/Icon";
 
 /** The chips of the care request builder (Heads-up has no time: it is a warning, not a task). */
 export type LineKind = "meal" | "medication" | "walk" | "headsup";
 
-export const LINE_KINDS: { kind: LineKind; emoji: string; label: string; type: CareTaskType | null; title: string }[] = [
-  { kind: "meal", emoji: "🍽️", label: "Meals", type: "feeding", title: "Meal" },
-  { kind: "medication", emoji: "💊", label: "Medication", type: "medication", title: "Medication" },
-  { kind: "walk", emoji: "🦮", label: "Walk", type: "walk", title: "Walk" },
-  { kind: "headsup", emoji: "⚠️", label: "Heads-up", type: null, title: "Heads-up" },
+/** `icon` is the Lucide line icon the builder shows (Icon.tsx); `emoji` stays for plain-text summaries. */
+export const LINE_KINDS: { kind: LineKind; emoji: string; icon: IconName; label: string; type: CareTaskType | null; title: string }[] = [
+  { kind: "meal", emoji: "🍽️", icon: "meal", label: "Meals", type: "feeding", title: "Meal" },
+  { kind: "medication", emoji: "💊", icon: "pill", label: "Medication", type: "medication", title: "Medication" },
+  { kind: "walk", emoji: "🦮", icon: "walk", label: "Walk", type: "walk", title: "Walk" },
+  { kind: "headsup", emoji: "🚩", icon: "warning", label: "Heads-up", type: null, title: "Heads-up" },
 ];
 
 export const kindMeta = (kind: LineKind) => LINE_KINDS.find((k) => k.kind === kind)!;
@@ -53,16 +55,16 @@ export function spreadTimes(count: number): string[] {
   });
 }
 
-/** Short text for the list of lines already written. */
+/** Short text for the list of lines already written (the builder puts the kind's icon before it). */
 export function lineSummary(line: Line): string {
   const meta = kindMeta(line.kind);
-  if (line.kind === "headsup") return `${meta.emoji} ${line.text}`;
+  if (line.kind === "headsup") return line.text;
   const how = line.span === "day" ? "every day" : "once";
   const when =
     line.when.mode === "time"
       ? `${formatTime(line.when.time)} ${how}`
       : `${line.when.count} time${line.when.count === 1 ? "" : "s"} ${line.span === "day" ? "a day" : "in all"}`;
-  return `${meta.emoji} ${meta.label} · ${when} · ${line.text}`;
+  return `${meta.label} · ${when} · ${line.text}`;
 }
 
 /** The sentence the helper reads for one task (it also stays the fallback wording). */

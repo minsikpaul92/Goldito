@@ -30,6 +30,6 @@ export async function listSitterBadges(sitterId: string): Promise<SitterBadge[]>
   const firstFive = first(((reviews.data ?? []) as { created_at: string }[]).map((r) => r.created_at));
   return [
     { key: "first_stay", emoji: "🐾", title: "First stay", at: firstStay },
-    { key: "first_five_star", emoji: "⭐", title: "First 5-star review", at: firstFive },
+    { key: "first_five_star", emoji: "🏅", title: "First 5-star review", at: firstFive },
   ];
 }

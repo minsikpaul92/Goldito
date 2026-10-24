@@ -131,7 +131,7 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
             style={({ pressed }) => [styles.line, pressed && styles.pressed]}
             testID="request-line"
           >
-            <Text style={styles.lineText} numberOfLines={1}>{`📝 Care request for ${requests[0].petName}`}</Text>
+            <Text style={styles.lineText} numberOfLines={1}>{`📋 Care request for ${requests[0].petName}`}</Text>
             <Text style={styles.lineMore}>{requests.length > 1 ? `+${requests.length - 1}` : "›"}</Text>
           </Pressable>
         ) : null}

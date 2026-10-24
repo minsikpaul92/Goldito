@@ -161,7 +161,7 @@ export default function SitterHome() {
           style={({ pressed }) => [styles.requests, pressed && styles.pressed]}
           testID="today-chats"
         >
-          <Text style={styles.requestsText}>{`💬 Chats (${questions})`}</Text>
+          <Text style={styles.requestsText}>{`Chats (${questions})`}</Text>
         </Pressable>
       ) : null}
     </>

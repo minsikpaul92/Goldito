@@ -161,14 +161,14 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
         testID={`onboarding-q-${q.key}`}
       >
         {heard[q.key] ? (
-          <Text style={styles.heard} testID={`onboarding-heard-${q.key}`}>{`✨ You said: “${heard[q.key]}”`}</Text>
+          <Text style={styles.heard} testID={`onboarding-heard-${q.key}`}>{`You said: “${heard[q.key]}”`}</Text>
         ) : null}
         {(q.choices ?? []).map((c) => (
           <BigOption
             key={c.value}
             label={c.label}
             selected={picked.includes(c.value)}
-            badge={heard[q.key] && picked.includes(c.value) ? "✨ suggested" : undefined}
+            badge={heard[q.key] && picked.includes(c.value) ? "Suggested" : undefined}
             onPress={() => choose(c.value)}
             testID={`onboarding-choice-${q.key}-${c.value}`}
           />

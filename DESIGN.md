@@ -408,7 +408,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | `LoadingView` | Full-screen centered spinner (`primary`) while the session or a screen loads |
 | `RoleCard` (`components/`) | Big tappable role choice (radio): icon + title + one line; selected = `primary` border + `accent` fill. Sign up now, Welcome later (OB.2) |
 | `Chip` | `radius.sm`, `small` text, 1 px `border`; optional ✕ remove button (`Remove <label>`). Allergens now; task type, mood, slot later |
-| `Tag` | Status label (Figma Tag): `small` semibold text on its tone's light surface, never a faded color (D3). `brand` (accent / primary) · `success` · `warning` · `danger` · `neutral` (surface + border). Information only, never tappable. Late or missed = `warning`; `danger` only for DANGER and failed payments. Used for booking status, task status, report sent, treat result, the header role (**Owner** / **Sitter**) |
+| `Tag` | Status label (Figma Tag): `small` semibold text on its tone's light surface, never a faded color (D3). `brand` (accent / primary) · `success` · `warning` · `danger` · `neutral` (surface + border). Information only, never tappable. Late or missed = `warning`; `danger` only for DANGER and failed payments. Used for booking status, task status, report sent, treat result. An optional Lucide `icon` sits before the label in the label's colour: `check` done, `clock` pending, `close` missed, `warning` heads-up (D12) |
 | `Avatar` | Round (Figma Avatar): `initial` (`primary` + `primaryText` letter, people), `photo` (pet photo), `emoji` (species / tool emoji on `accent`). Default 40; cards use 56 |
 | `Banner` | Inline notice for an edge state (Figma Banner): icon + title in the tone color + one line on what happens next + optional action. `info` (accent) · `warning` · `error` · `offline`. **Never for DANGER** — that is `AlertModal` (§7.4) |
 | `SegmentedControl` | 2–4 options as 44-tall segments (radio); unselected = `borderStrong` border; selected = `primary` border + `accent` fill; `disabled` for locked values (pet species, D22) |
@@ -542,7 +542,7 @@ Always explain what will appear and who adds it.
 ### 7.6 Copy & emoji
 - Short, warm, specific. Use the pet's name ("Max had breakfast on time 🍽️").
 - At most **2 emoji** per message.
-- **Avoid the emoji AI text uses all the time**, in copy, buttons, rows, chips and empty states: ✨ 🚀 💡 🔥 ✅ ❌ ⚠️ 🎯 📌 🌟 🎉 👋 🙌 💪 🤖 🔍 📝 ⭐ 💬. Use plain words, a line icon, or nothing instead.
+- **Avoid the emoji AI text uses all the time**, in copy, buttons, rows, chips and empty states: ✨ 🚀 💡 🔥 ✅ ❌ ⚠️ 🎯 📌 🌟 🎉 👋 🙌 💪 🤖 🔍 📝 ⭐ 💬. Use plain words, a line icon, or nothing instead. Status and section labels use the line icons (`<Icon>` or `Tag icon`: check, clock, close, warning, meal, pill, paw, tip); emoji stay for content: empty-state art, pet species, album and badge names. Buttons are words, with no emoji.
 - Any other emoji is fine, in a button too, when it helps (📍 on a "use my current location" button, a pet's 🐶 / 🐱). Swapping one for a line icon is optional.
 - Times shown in the app timezone (America/Toronto) with AM/PM.
 

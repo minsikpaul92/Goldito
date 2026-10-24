@@ -15,10 +15,11 @@ import {
   presetText,
 } from "../features/care/careLines";
 import { formatTime } from "../features/schedule/dates";
-import { useThemedStyles } from "../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 import type { Species } from "../types/db";
 import { Button } from "./ui/Button";
+import { Icon } from "./ui/Icon";
 import { Stepper } from "./ui/Stepper";
 import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
@@ -41,6 +42,7 @@ const TEXT_MAX = 60;
  * "N times a day". **Add line** puts it on the list and a fresh chip row appears for the next one.
  */
 export function CareLineBuilder({ species, lines, onLines, disabled }: Props) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [kind, setKind] = useState<LineKind | null>(null);
   const [text, setText] = useState("");
@@ -90,6 +92,7 @@ export function CareLineBuilder({ species, lines, onLines, disabled }: Props) {
         <View style={styles.list} testID="lines">
           {lines.map((line) => (
             <View key={line.key} style={styles.lineRow} testID={`line-${line.key}`}>
+              <Icon name={kindMeta(line.kind).icon} size={18} color={line.kind === "headsup" ? theme.color.warning : theme.color.textMuted} />
               <Text style={styles.lineText}>{lineSummary(line)}</Text>
               <Pressable
                 accessibilityRole="button"
@@ -119,7 +122,8 @@ export function CareLineBuilder({ species, lines, onLines, disabled }: Props) {
                 style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
                 testID={`line-preset-${p.id}`}
               >
-                <Text style={styles.chipText}>{`${kindMeta(p.line.kind).emoji} ${p.label}`}</Text>
+                <Icon name={kindMeta(p.line.kind).icon} size={16} color={theme.color.text} />
+                <Text style={styles.chipText}>{p.label}</Text>
               </Pressable>
             ))}
           </View>
@@ -140,7 +144,8 @@ export function CareLineBuilder({ species, lines, onLines, disabled }: Props) {
               style={({ pressed }) => [styles.chip, on && styles.chipOn, pressed && styles.pressed]}
               testID={`line-kind-${k.kind}`}
             >
-              <Text style={[styles.chipText, on && styles.chipTextOn]}>{`${k.emoji} ${k.label}`}</Text>
+              <Icon name={k.icon} size={16} color={theme.color.text} />
+              <Text style={[styles.chipText, on && styles.chipTextOn]}>{k.label}</Text>
             </Pressable>
           );
         })}

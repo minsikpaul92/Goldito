@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View, ViewStyle } from "react-native";
 
+import { Icon, IconName } from "./Icon";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
@@ -9,6 +10,8 @@ export type TagTone = "brand" | "success" | "warning" | "danger" | "neutral";
 type Props = {
   label: string;
   tone?: TagTone;
+  /** A Lucide line icon before the label, in the label's colour (status: check, clock, close, warning). */
+  icon?: IconName;
   style?: ViewStyle;
   testID?: string;
 };
@@ -19,11 +22,13 @@ type Props = {
  * so no tone has a border (Chip = interactive, with a border; Tag = read-only, flat fill).
  * `danger` only for real problems (DANGER, failed payment); late or missed things are `warning`.
  */
-export function Tag({ label, tone = "neutral", style, testID }: Props) {
+export function Tag({ label, tone = "neutral", icon, style, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
+  const labelStyle = styles[`${tone}Label`];
   return (
-    <View style={[styles.base, styles[tone], style]} testID={testID}>
-      <Text style={[styles.label, styles[`${tone}Label`]]}>{label}</Text>
+    <View style={[styles.base, icon && styles.withIcon, styles[tone], style]} testID={testID}>
+      {icon ? <Icon name={icon} size={14} strokeWidth={2.5} color={StyleSheet.flatten(labelStyle).color as string} /> : null}
+      <Text style={[styles.label, labelStyle]}>{label}</Text>
     </View>
   );
 }
@@ -36,6 +41,7 @@ const makeStyles = (theme: Theme) =>
       paddingHorizontal: theme.spacing.sm,
       borderRadius: theme.ui.radius.tag,
     },
+    withIcon: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs },
     label: {
       fontSize: theme.fontSize.small,
       lineHeight: theme.lineHeight.small,
