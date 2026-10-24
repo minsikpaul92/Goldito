@@ -121,7 +121,7 @@ export default function OwnerBookings() {
 
   const sitterRow = (sitter: NearbySitter) => {
     const cover = covers.get(sitter.sitterId);
-    const years = sitter.experienceYears ? `${sitter.experienceYears} yrs experience` : null;
+    const years = sitter.experienceYears ? `${sitter.experienceYears} yrs exp` : null;
     return (
       <SitterResultCard
         key={sitter.sitterId}

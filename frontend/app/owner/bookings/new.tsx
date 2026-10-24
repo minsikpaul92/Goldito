@@ -266,7 +266,8 @@ export default function BookCare() {
       <View style={styles.sitterPick}>
         <CheckRow
           radio
-          label={favorites.has(id) ? `★ ${name}` : name}
+          label={name}
+          favorite={favorites.has(id)}
           hint={
             match && !offers(match)
               ? "Doesn't offer house sitting"

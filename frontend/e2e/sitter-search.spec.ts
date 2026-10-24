@@ -105,6 +105,9 @@ test.describe("find a sitter", () => {
     await expect(screen.getByTestId("sitter-rating-Chloe")).toHaveText("★ 4.5");
     await expect(screen.getByTestId("sitter-tile-Paul")).toBeVisible();
     await expect(screen.getByTestId("sitter-rating-Paul")).toHaveCount(0);
+    // A favorite wears the same heart as on the sitter's page, not a star.
+    await expect(screen.getByTestId("sitter-heart-Chloe")).toBeVisible();
+    await expect(screen.getByTestId("sitter-heart-Paul")).toHaveCount(0);
   });
 
   test("a heart on a sitter's page shows under Favorites at once, and removing it moves them back (#267)", async ({ page }) => {
