@@ -1,11 +1,14 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-import { app, box, drag, signIn } from "./helpers";
-import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
-import type { MockUser } from "./supabaseMock";
+import { caring } from "./careFixtures";
+import { HOUR } from "./careFixtures";
+import { NOON_TORONTO, app, box, drag, signIn } from "./helpers";
+import { OWNER, SITTER, mockFeedApi, mockSupabase } from "./supabaseMock";
+import type { MockDb, MockUser } from "./supabaseMock";
 
-// Feed album viewer, author delete, and the notification center (phase-05 5.2 · 5.5 · 5.7 · 5.10).
+// The Feed (phase-05 5.2 · 5.5 · 5.7 · 5.10, #345): viewer, mosaic and filters, hide, delete from my side or for both,
+// a stay that is over, and the notification center.
 
 const PET_ID = "00000000-0000-4000-8000-0000000000aa";
 const post = (n: number) => `00000000-0000-4000-8000-00000000f00${n}`;
@@ -15,7 +18,7 @@ const KINDS = ["video", "image", "image"] as const;
 
 async function setup(page: Page, user: MockUser) {
   const { db } = await mockSupabase(page, [OWNER, SITTER]);
-  db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
+  caring(db, [{ id: PET_ID, name: "Max", species: "dog" }]);
   KINDS.forEach((kind, i) => {
     db.media.push({
       id: media(i),
@@ -41,21 +44,11 @@ async function setup(page: Page, user: MockUser) {
     });
   });
 
-  const deleted: string[] = [];
-  await page.route("**/api/feed/*", (route) => {
-    const id = route.request().url().split("/").pop()!;
-    deleted.push(id);
-    db.feed_posts.splice(0, db.feed_posts.length, ...db.feed_posts.filter((p) => p.id !== id));
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ deleted: true, media_removed: true }),
-    });
-  });
+  const { calls } = await mockFeedApi(page, db);
 
   await signIn(page, user);
   await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
-  return { db, deleted };
+  return { db, calls };
 }
 
 test.describe("Feed viewer", () => {
@@ -86,18 +79,48 @@ test.describe("Feed viewer", () => {
     await expect(app(page).getByTestId(`feed-viewer-page-${post(1)}`)).toHaveCount(0);
   });
 
-  test("owner has no Delete button", async ({ page }) => {
+  test("the photo shows its tag, its date and time, and the memo", async ({ page }) => {
+    const { db } = await setup(page, OWNER);
+    Object.assign(db.feed_posts[1], { category: "meal", note: "Cleaned the bowl", created_at: "2026-10-09T13:02:00Z" });
+    await page.goto("/owner/feed");
+    await app(page).getByTestId(`feed-card-${post(1)}`).click();
+    await expect(app(page).getByTestId("feed-viewer-tag")).toContainText("Meals");
+    await expect(app(page).getByTestId("feed-viewer-note")).toHaveText("Cleaned the bowl");
+    await expect(app(page).getByTestId("feed-viewer-date")).toHaveText("Oct 9, 2026 · 9:02 AM");
+  });
+
+  test("a photo with no tag shows only its date and time", async ({ page }) => {
     await setup(page, OWNER);
     await page.goto("/owner/feed");
     await app(page).getByTestId(`feed-card-${post(1)}`).click();
-    await expect(app(page).getByTestId("feed-viewer")).toBeVisible();
-    await expect(app(page).getByTestId("feed-viewer-delete")).toHaveCount(0);
+    await expect(app(page).getByTestId("feed-viewer-page-" + post(1))).toBeVisible();
+    await expect(app(page).getByTestId("feed-viewer-tag")).toHaveCount(0);
+    await expect(app(page).getByTestId("feed-viewer-note")).toHaveCount(0);
+    await expect(app(page).getByTestId("feed-viewer-date")).toBeVisible();
   });
 });
 
-test.describe("Author delete", () => {
-  test("cancel keeps the post and reopens on it; confirm deletes it", async ({ page }) => {
-    const { deleted } = await setup(page, SITTER);
+test.describe("Delete and hide", () => {
+  const sheetBody = (page: Page) => app(page).getByTestId("feed-delete-body");
+
+  test("the owner deleting a sitter's photo says it goes from their side only, and the sitter keeps it", async ({ page }) => {
+    const { db, calls } = await setup(page, OWNER);
+    await page.goto("/owner/feed");
+    await app(page).getByTestId(`feed-card-${post(1)}`).click();
+    await app(page).getByTestId("feed-viewer-delete").click();
+    await expect(sheetBody(page)).toHaveText("It will be deleted on your side only.");
+    await expect(app(page).getByTestId("feed-delete-both")).toHaveCount(0);
+    await app(page).getByTestId("feed-delete-confirm").click();
+    await expect(app(page).getByTestId("toast")).toContainText("Photo deleted");
+    expect(calls).toEqual([{ id: post(1), scope: "me", by: OWNER.id }]);
+    await expect(app(page).getByTestId(`feed-card-${post(1)}`)).toHaveCount(0);
+    // The post is still there for the sitter, with the owner's removal on the side.
+    expect(db.feed_posts.some((p) => p.id === post(1))).toBe(true);
+    expect(db.feed_post_hidden).toMatchObject([{ post_id: post(1), user_id: OWNER.id, state: "removed" }]);
+  });
+
+  test("cancel keeps the photo and reopens on it; after 30 minutes the sitter's delete is on their side only", async ({ page }) => {
+    const { calls } = await setup(page, SITTER);
     await page.goto(`/sitter/feed/${PET_ID}`);
     await app(page).getByTestId(`feed-card-${post(1)}`).click();
     await app(page).getByTestId("feed-viewer-next").click();
@@ -105,17 +128,256 @@ test.describe("Author delete", () => {
 
     await app(page).getByTestId("feed-viewer-delete").click();
     await expect(app(page).getByTestId("feed-delete-sheet")).toBeVisible();
+    await expect(sheetBody(page)).toHaveText("It will be deleted on your side only.");
     await app(page).getByTestId("feed-delete-sheet-close").click();
-    expect(deleted).toEqual([]);
-    // Back on the post that was being deleted, not the one first tapped.
+    expect(calls).toEqual([]);
+    // Back on the photo that was being deleted, not the one first tapped.
     await expect(app(page).getByTestId(`feed-viewer-page-${post(2)}`)).toBeVisible();
 
     await app(page).getByTestId("feed-viewer-delete").click();
     await app(page).getByTestId("feed-delete-confirm").click();
     await expect(app(page).getByTestId("toast")).toContainText("Photo deleted");
-    expect(deleted).toEqual([post(2)]);
+    expect(calls).toEqual([{ id: post(2), scope: "me", by: SITTER.id }]);
     await expect(app(page).getByTestId(`feed-card-${post(2)}`)).toHaveCount(0);
     await expect(app(page).getByTestId(`feed-card-${post(1)}`)).toBeVisible();
+  });
+
+  async function freshPost(db: MockDb) {
+    db.media.push({ id: media(7), pet_id: PET_ID, cloudinary_public_id: `goldito/${PET_ID}/feed/new`, resource_type: "image", purpose: "feed" });
+    db.feed_posts.push({
+      id: post(7), pet_id: PET_ID, sitter_id: SITTER.id, posted_by: SITTER.id, visibility: "shared", media_id: media(7),
+      caption: "Just now", caption_source: "fallback", task_log_id: null, created_at: new Date(Date.now() - 10 * 60_000).toISOString(),
+    });
+  }
+
+  test("within 30 minutes the sitter picks both of you or only me", async ({ page }) => {
+    const { db, calls } = await setup(page, SITTER);
+    await freshPost(db);
+    await page.goto(`/sitter/feed/${PET_ID}`);
+    await app(page).getByTestId(`feed-card-${post(7)}`).click();
+    await app(page).getByTestId("feed-viewer-delete").click();
+    await expect(sheetBody(page)).toHaveText("Delete it for both of you, or only for you?");
+    await expect(app(page).getByTestId("feed-delete-both")).toHaveText("Delete for both");
+    await expect(app(page).getByTestId("feed-delete-me")).toHaveText("Delete for me only");
+
+    await app(page).getByTestId("feed-delete-both").click();
+    await expect(app(page).getByTestId("toast")).toContainText("Photo deleted for both");
+    expect(calls).toEqual([{ id: post(7), scope: "everyone", by: SITTER.id }]);
+    expect(db.feed_posts.some((p) => p.id === post(7))).toBe(false);
+  });
+
+  test("Delete for me only keeps the photo for the owner", async ({ page }) => {
+    const { db, calls } = await setup(page, SITTER);
+    await freshPost(db);
+    await page.goto(`/sitter/feed/${PET_ID}`);
+    await app(page).getByTestId(`feed-card-${post(7)}`).click();
+    await app(page).getByTestId("feed-viewer-delete").click();
+    await app(page).getByTestId("feed-delete-me").click();
+    await expect(app(page).getByTestId(`feed-card-${post(7)}`)).toHaveCount(0);
+    expect(calls).toEqual([{ id: post(7), scope: "me", by: SITTER.id }]);
+    expect(db.feed_posts.some((p) => p.id === post(7))).toBe(true);
+  });
+
+  test("a photo only I can see is deleted for good", async ({ page }) => {
+    const { db } = await setup(page, SITTER);
+    db.feed_posts[1].visibility = "private";
+    await page.goto(`/sitter/feed/${PET_ID}`);
+    await app(page).getByTestId(`feed-card-${post(1)}`).click();
+    await app(page).getByTestId("feed-viewer-delete").click();
+    await expect(sheetBody(page)).toHaveText("This deletes the photo for good.");
+    await app(page).getByTestId("feed-delete-confirm").click();
+    await expect(app(page).getByTestId(`feed-card-${post(1)}`)).toHaveCount(0);
+    expect(db.feed_posts.some((p) => p.id === post(1))).toBe(false);
+  });
+
+  test("Hide takes a photo out of the grid; Hidden brings it back and Unhide returns it", async ({ page }) => {
+    const { db } = await setup(page, OWNER);
+    await page.goto("/owner/feed");
+    await app(page).getByTestId(`feed-card-${post(1)}`).click();
+    await app(page).getByTestId("feed-viewer-hide").click();
+    await expect(app(page).getByTestId("toast")).toContainText("Photo hidden");
+    await expect(app(page).getByTestId(`feed-card-${post(1)}`)).toHaveCount(0);
+    expect(db.feed_post_hidden).toMatchObject([{ post_id: post(1), user_id: OWNER.id, state: "hidden" }]);
+    // The sitter's copy is untouched, and so is the post itself.
+    expect(db.feed_posts.some((p) => p.id === post(1))).toBe(true);
+
+    // The Hidden chip is there once something is hidden, after No tag.
+    const chips = await app(page).locator("[data-testid^='feed-filter-']").evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
+    expect(chips.at(-1)).toBe("feed-filter-hidden");
+    expect(chips.at(-2)).toBe("feed-filter-none");
+    await app(page).getByTestId("feed-filter-hidden").click();
+    await expect(app(page).getByTestId(`feed-card-${post(1)}`)).toBeVisible();
+    await expect(app(page).getByTestId(`feed-card-${post(0)}`)).toHaveCount(0);
+    await app(page).getByTestId(`feed-card-${post(1)}`).click();
+    await expect(app(page).getByTestId("feed-viewer-hide")).toHaveText("Unhide");
+    await app(page).getByTestId("feed-viewer-hide").click();
+    expect(db.feed_post_hidden).toHaveLength(0);
+    // Nothing hidden any more: the chip is gone and the grid is back.
+    await expect(app(page).getByTestId("feed-filter-hidden")).toHaveCount(0);
+    await expect(app(page).getByTestId(`feed-card-${post(1)}`)).toBeVisible();
+  });
+
+  test("a sitter hides a photo too", async ({ page }) => {
+    const { db } = await setup(page, SITTER);
+    await page.goto(`/sitter/feed/${PET_ID}`);
+    await app(page).getByTestId(`feed-card-${post(0)}`).click();
+    await app(page).getByTestId("feed-viewer-hide").click();
+    await expect(app(page).getByTestId(`feed-card-${post(0)}`)).toHaveCount(0);
+    expect(db.feed_post_hidden).toMatchObject([{ post_id: post(0), user_id: SITTER.id, state: "hidden" }]);
+  });
+});
+
+test.describe("Feed layout and filters", () => {
+  const id = (n: number) => `00000000-0000-4000-8000-00000000f20${n}`;
+  const mid = (n: number) => `00000000-0000-4000-8000-00000000e20${n}`;
+  // [tag, days ago, purpose]: today a meal, a meal, a walk, a nap, a plain photo; yesterday a mood, a potty, a sticker.
+  const SEED: [string | null, number, string][] = [
+    ["meal", 0, "feed"], ["meal", 0, "feed"], ["walk", 0, "feed"], ["nap", 0, "feed"], [null, 0, "feed"],
+    ["mood", 1, "feed"], ["potty", 1, "feed"], [null, 1, "sticker"],
+  ];
+
+  async function seeded(page: Page) {
+    await page.clock.setFixedTime(NOON_TORONTO);
+    const { db } = await mockSupabase(page, [OWNER, SITTER], { now: NOON_TORONTO });
+    db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
+    SEED.forEach(([category, daysAgo, purpose], i) => {
+      db.media.push({
+        id: mid(i), pet_id: PET_ID, cloudinary_public_id: `goldito/${PET_ID}/${purpose}/g${i}`, resource_type: "image",
+        purpose, width: 1200, height: 900, duration_s: null,
+      });
+      db.feed_posts.push({
+        id: id(i), pet_id: PET_ID, sitter_id: SITTER.id, posted_by: SITTER.id, visibility: "shared", media_id: mid(i),
+        caption: `Caption ${i}`, caption_source: "task", category, note: null, task_log_id: null,
+        created_at: new Date(NOON_TORONTO.getTime() - daysAgo * 86_400_000 - i * 60_000).toISOString(),
+      });
+    });
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/owner/feed");
+    await app(page).getByTestId("feed-filters").waitFor();
+    return db;
+  }
+
+  test("the newest photo takes 2 x 2 cells beside two small ones, the rest are three to a row, 8 px apart", async ({ page }) => {
+    await seeded(page);
+    const screen = app(page);
+    const hero = await box(screen.getByTestId(`feed-card-${id(0)}`));
+    const side1 = await box(screen.getByTestId(`feed-card-${id(1)}`));
+    const side2 = await box(screen.getByTestId(`feed-card-${id(2)}`));
+    const row = [await box(screen.getByTestId(`feed-card-${id(3)}`)), await box(screen.getByTestId(`feed-card-${id(4)}`))];
+
+    expect(hero.width).toBeCloseTo(2 * side1.width + 8, 0);
+    expect(hero.height).toBeCloseTo(hero.width, 0);
+    expect(side1.width).toBeCloseTo(side1.height, 0);
+    expect(side1.x - (hero.x + hero.width)).toBeCloseTo(8, 0); // the gap beside the big one
+    expect(side2.y - (side1.y + side1.height)).toBeCloseTo(8, 0); // and between the two small ones
+    expect(side1.y).toBeCloseTo(hero.y, 0);
+    expect(side2.y + side2.height).toBeCloseTo(hero.y + hero.height, 0);
+    // The next row: three across at most, same size as the small ones, 8 px apart, below the big one.
+    expect(row[0].width).toBeCloseTo(side1.width, 0);
+    expect(row[0].y - (hero.y + hero.height)).toBeCloseTo(8, 0);
+    expect(row[1].x - (row[0].x + row[0].width)).toBeCloseTo(8, 0);
+    expect(row[1].y).toBeCloseTo(row[0].y, 0);
+    // Asking for a photo lives in the chat now, not here.
+    await expect(screen.getByTestId("feed-request-photo")).toHaveCount(0);
+  });
+
+  test("a header per day with its count", async ({ page }) => {
+    await seeded(page);
+    const screen = app(page);
+    const headers = await screen.locator("[data-testid^='feed-day-']").allInnerTexts();
+    expect(headers).toEqual(["Today · Fri Oct 9\n5 photos", "Yesterday · Thu Oct 8\n3 photos"]);
+  });
+
+  test("the chips are All, Meals, Walks, Naps, Mood, Potty, and No tag last", async ({ page }) => {
+    await seeded(page);
+    const ids = await app(page).locator("[data-testid^='feed-filter-']").evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
+    expect(ids).toEqual(["feed-filter-all", "feed-filter-meal", "feed-filter-walk", "feed-filter-nap", "feed-filter-mood", "feed-filter-potty", "feed-filter-none"]);
+    await expect(app(page).getByTestId("feed-filter-none")).toHaveText("No tag");
+  });
+
+  test("a chip shows only the photos with that tag; No tag shows the rest, stickers included", async ({ page }) => {
+    await seeded(page);
+    const screen = app(page);
+    const shown = async () =>
+      (await screen.locator("[data-testid^='feed-card-']").evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")!.replace("feed-card-", "")))).sort();
+
+    await screen.getByTestId("feed-filter-meal").click();
+    expect(await shown()).toEqual([id(0), id(1)]);
+    await screen.getByTestId("feed-filter-walk").click();
+    expect(await shown()).toEqual([id(2)]);
+    await screen.getByTestId("feed-filter-mood").click();
+    expect(await shown()).toEqual([id(5)]);
+    await screen.getByTestId("feed-filter-potty").click();
+    expect(await shown()).toEqual([id(6)]);
+    await screen.getByTestId("feed-filter-none").click();
+    expect(await shown()).toEqual([id(4), id(7)]);
+    await screen.getByTestId("feed-filter-all").click();
+    expect(await shown()).toHaveLength(8);
+  });
+
+  test("a tag with no photos says so", async ({ page }) => {
+    const db = await seeded(page);
+    db.feed_posts.forEach((p) => {
+      if (p.category === "mood") p.category = null;
+    });
+    await page.reload();
+    await app(page).getByTestId("feed-filters").waitFor();
+    await app(page).getByTestId("feed-filter-mood").click();
+    await expect(app(page).getByText("No mood photos yet")).toBeVisible();
+  });
+
+  test("each photo carries its time, and its tag when it has one", async ({ page }) => {
+    await seeded(page);
+    // Newest first: 12:00 PM Toronto is "12:00".
+    await expect(app(page).getByTestId(`feed-card-${id(0)}`)).toHaveAccessibleName("Meals at 12:00");
+    await expect(app(page).getByTestId(`feed-card-${id(4)}`)).toHaveAccessibleName("Photo at 11:56");
+  });
+
+  test("an empty Feed says what will show", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/owner/feed");
+    await expect(app(page).getByText("No photos yet")).toBeVisible();
+    // The chips are there from the start, so the Feed looks like the design before there is a photo.
+    await expect(app(page).getByTestId("feed-filters")).toBeVisible();
+  });
+});
+
+test.describe("After the stay", () => {
+  async function pastStay(page: Page) {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [{ id: PET_ID, name: "Max", species: "dog" }]);
+    // The stay ended three days ago.
+    for (const h of db.booking_handoffs) {
+      Object.assign(h, {
+        scheduled_at: new Date(Date.now() - (h.kind === "drop_off" ? 5 : 3) * 24 * HOUR).toISOString(),
+        completed_at: new Date(Date.now() - (h.kind === "drop_off" ? 5 : 3) * 24 * HOUR).toISOString(),
+      });
+    }
+    db.media.push({ id: media(0), pet_id: PET_ID, cloudinary_public_id: `goldito/${PET_ID}/feed/old`, resource_type: "image", purpose: "feed" });
+    db.feed_posts.push({
+      id: post(0), pet_id: PET_ID, sitter_id: SITTER.id, posted_by: SITTER.id, visibility: "shared", media_id: media(0),
+      caption: "Day one", caption_source: "fallback", task_log_id: null, created_at: new Date(Date.now() - 4 * 24 * HOUR).toISOString(),
+    });
+    await mockFeedApi(page, db);
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    return db;
+  }
+
+  test("with no pet in care the Feed opens on the pet of the stay that is over, and its photos open", async ({ page }) => {
+    await pastStay(page);
+    await page.goto("/sitter/feed");
+    await expect(app(page).getByTestId("sitter-pet-feed")).toBeVisible();
+    await expect(app(page).getByTestId("feed-pet")).toContainText("Max");
+    await expect(app(page).getByTestId(`feed-card-${post(0)}`)).toBeVisible();
+    // The dropdown lists it under Past stay; there is no pet in care to list above a line.
+    await app(page).getByTestId("feed-pet").click();
+    await expect(app(page).getByTestId(`feed-pet-${PET_ID}`)).toContainText("Past stay");
+    await expect(app(page).getByTestId("feed-pet-line")).toHaveCount(0);
   });
 });
 
@@ -159,7 +421,7 @@ test.describe("Notification center", () => {
 
   test("a sitter's feed_post notice opens that pet's feed", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
-    db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
+    caring(db, [{ id: PET_ID, name: "Max", species: "dog" }]);
     db.notifications.push({
       id: n(7),
       user_id: SITTER.id,
@@ -176,7 +438,7 @@ test.describe("Notification center", () => {
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await app(page).locator("[data-testid='notification-bell']:visible").click();
     await app(page).getByTestId(`notification-${n(7)}`).click();
-    await expect(page).toHaveURL(new RegExp(`/sitter/feed/${PET_ID}`));
+    await expect(page).toHaveURL(new RegExp(`/sitter/feed\\?pet=${PET_ID}`));
     await expect(app(page).getByTestId("sitter-pet-feed")).toBeVisible();
   });
 
@@ -278,5 +540,323 @@ test.describe("Notification center", () => {
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await app(page).locator("[data-testid='notification-bell']:visible").click();
     await expect(app(page).getByText("You're all caught up.")).toBeVisible();
+  });
+});
+
+// The pet dropdown, the Photos / Diary switch, the time badge, and the viewer's swipe, edge taps and zoom (#345).
+test.describe("Feed pet dropdown and switch", () => {
+  const REX = "00000000-0000-4000-8000-0000000000cc";
+  const MOCHI_ID = "00000000-0000-4000-8000-0000000000bb";
+
+  /** A stay of `petId` that ended three days ago. */
+  function pastStayOf(db: MockDb, petId: string, name: string) {
+    db.pets.push({ id: petId, owner_id: OWNER.id, species: "dog", name, breed: null, notes: null });
+    db.bookings.push({ id: "b-past", owner_id: OWNER.id, sitter_id: SITTER.id, status: "confirmed", service_type: "boarding", meet_greet_status: "not_needed", created_at: "2026-10-01T10:00:00Z" });
+    db.booking_pets.push({ booking_id: "b-past", pet_id: petId });
+    for (const [kind, days] of [["drop_off", 5], ["pick_up", 3]] as const) {
+      const at = new Date(Date.now() - days * 24 * HOUR).toISOString();
+      db.booking_handoffs.push({ id: `b-past-${kind}`, booking_id: "b-past", kind, scheduled_at: at, location_type: "sitter_home", location_note: null, within_sitter_hours: true, status: "agreed", proposed_by: OWNER.id, completed_at: at, created_at: "2026-10-01T10:00:00Z" });
+    }
+  }
+
+  function photo(db: MockDb, id: string, petId: string, minutesAgo = 120) {
+    db.media.push({ id: `m-${id}`, pet_id: petId, cloudinary_public_id: `goldito/${petId}/feed/${id}`, resource_type: "image", purpose: "feed" });
+    db.feed_posts.push({
+      id, pet_id: petId, sitter_id: SITTER.id, posted_by: SITTER.id, visibility: "shared", media_id: `m-${id}`,
+      caption: id, caption_source: "fallback", task_log_id: null, created_at: new Date(Date.now() - minutesAgo * 60_000).toISOString(),
+    });
+  }
+
+  test("the owner's dropdown lists only their own pets, and picking one shows that pet's photos", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    db.pets.push(
+      { id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null, created_at: "2026-01-01T00:00:00Z" },
+      { id: MOCHI_ID, owner_id: OWNER.id, species: "cat", name: "Mochi", breed: null, notes: null, created_at: "2026-01-02T00:00:00Z" },
+      { id: REX, owner_id: SITTER.id, species: "dog", name: "Rex", breed: null, notes: null, created_at: "2026-01-03T00:00:00Z" },
+    );
+    photo(db, "max-1", PET_ID);
+    photo(db, "mochi-1", MOCHI_ID);
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/owner/feed");
+    await expect(app(page).getByTestId("feed-pet")).toContainText("Max");
+    await expect(app(page).getByTestId("feed-card-max-1")).toBeVisible();
+
+    await app(page).getByTestId("feed-pet").click();
+    await expect(app(page).getByTestId(`feed-pet-${PET_ID}`)).toBeVisible();
+    await expect(app(page).getByTestId(`feed-pet-${MOCHI_ID}`)).toBeVisible();
+    await expect(app(page).getByTestId(`feed-pet-${REX}`)).toHaveCount(0); // someone else's pet
+    await expect(app(page).getByTestId("feed-pet-line")).toHaveCount(0);
+    await app(page).getByTestId(`feed-pet-${MOCHI_ID}`).click();
+    await expect(app(page).getByTestId("feed-pet")).toContainText("Mochi");
+    await expect(app(page).getByTestId("feed-card-mochi-1")).toBeVisible();
+    await expect(app(page).getByTestId("feed-card-max-1")).toHaveCount(0);
+  });
+
+  test("a sitter's Feed opens on the first pet in care; the dropdown lists the pets in care, a line, then the past stays", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [{ id: PET_ID, name: "Max", species: "dog" }, { id: MOCHI_ID, name: "Mochi", species: "cat" }]);
+    pastStayOf(db, REX, "Rex");
+    photo(db, "max-1", PET_ID);
+    photo(db, "rex-1", REX);
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/sitter/feed");
+    // No list to pick from first: the photos of the pet in care are already there.
+    await expect(app(page).getByTestId("feed-pet")).toContainText("Max");
+    await expect(app(page).getByTestId("feed-card-max-1")).toBeVisible();
+
+    await app(page).getByTestId("feed-pet").click();
+    // In care first (first one, then the second), then the past stay.
+    const top = async (id: string) => (await box(app(page).getByTestId(`feed-pet-${id}`))).y;
+    expect(await top(PET_ID)).toBeLessThan(await top(MOCHI_ID));
+    expect(await top(MOCHI_ID)).toBeLessThan(await top(REX));
+    await expect(app(page).getByTestId(`feed-pet-${PET_ID}`)).toContainText("In care");
+    await expect(app(page).getByTestId(`feed-pet-${REX}`)).toContainText("Past stay");
+    // The line between the two groups is not a choice.
+    const line = await box(app(page).getByTestId("feed-pet-line"));
+    expect((await box(app(page).getByTestId(`feed-pet-${MOCHI_ID}`))).y).toBeLessThan(line.y);
+    expect((await box(app(page).getByTestId(`feed-pet-${REX}`))).y).toBeGreaterThan(line.y);
+
+    await app(page).getByTestId(`feed-pet-${REX}`).click();
+    await expect(app(page).getByTestId("feed-pet")).toContainText("Rex");
+    await expect(app(page).getByTestId("feed-card-rex-1")).toBeVisible();
+    await expect(app(page).getByTestId("feed-card-max-1")).toHaveCount(0);
+  });
+
+  test("Photos / Diary is a switch on both sides, the sitter's included", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [{ id: PET_ID, name: "Max", species: "dog" }]);
+    photo(db, "max-1", PET_ID);
+    await page.route("**/api/ai/report-chips", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ summary: { tasks_done: 0, tasks_missed: 0, checkins: 0 }, chips: [], photos: [] }) }),
+    );
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/sitter/feed");
+    await expect(app(page).getByTestId("feed-view-photos")).toHaveAttribute("aria-checked", "true");
+    await expect(app(page).getByTestId("feed-card-max-1")).toBeVisible();
+    await app(page).getByTestId("feed-view-diary").click();
+    await expect(app(page).getByTestId("feed-view-diary")).toHaveAttribute("aria-checked", "true");
+    await expect(app(page).getByTestId("sitter-diary-view-book")).toBeVisible();
+    await expect(app(page).getByTestId("feed-card-max-1")).toHaveCount(0);
+    await app(page).getByTestId("feed-view-photos").click();
+    await expect(app(page).getByTestId("feed-card-max-1")).toBeVisible();
+  });
+
+  test("the time of a photo with no tag sits in the middle of its pill", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [{ id: PET_ID, name: "Max", species: "dog" }]);
+    photo(db, "plain-1", PET_ID);
+    photo(db, "plain-2", PET_ID, 130);
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/sitter/feed");
+    for (const id of ["plain-1", "plain-2"]) {
+      const pill = await box(app(page).getByTestId(`feed-badge-${id}`));
+      const time = await box(app(page).getByTestId(`feed-badge-time-${id}`));
+      expect(time.x + time.width / 2).toBeCloseTo(pill.x + pill.width / 2, 0);
+      expect(time.y + time.height / 2).toBeCloseTo(pill.y + pill.height / 2, 0);
+    }
+  });
+
+  test("the viewer turns the page with a swipe or a tap on the left or right edge, with no arrow buttons", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [{ id: PET_ID, name: "Max", species: "dog" }]);
+    photo(db, "v-1", PET_ID, 10);
+    photo(db, "v-2", PET_ID, 20);
+    photo(db, "v-3", PET_ID, 30);
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/sitter/feed");
+    await app(page).getByTestId("feed-card-v-2").click();
+    await expect(app(page).getByTestId("feed-viewer-page-v-2")).toBeVisible();
+    // No arrow glyphs; the edges are invisible strips.
+    await expect(app(page).getByText("›")).toHaveCount(0);
+    await expect(app(page).getByText("‹")).toHaveCount(0);
+
+    await app(page).getByTestId("feed-viewer-next").click();
+    await expect(app(page).getByTestId("feed-viewer-page-v-3")).toBeVisible();
+    await expect(app(page).getByTestId("feed-viewer-next")).toHaveCount(0);
+    await app(page).getByTestId("feed-viewer-prev").click();
+    await expect(app(page).getByTestId("feed-viewer-page-v-2")).toBeVisible();
+
+    // A swipe to the left shows the next photo, to the right the one before.
+    const root = await box(app(page).getByTestId("feed-viewer-media"));
+    const y = root.y + root.height / 2;
+    await drag(page, { x: root.x + root.width * 0.7, y }, { x: root.x + root.width * 0.3, y }, 10);
+    await expect(app(page).getByTestId("feed-viewer-page-v-3")).toBeVisible();
+    await drag(page, { x: root.x + root.width * 0.3, y }, { x: root.x + root.width * 0.7, y }, 10);
+    await expect(app(page).getByTestId("feed-viewer-page-v-2")).toBeVisible();
+  });
+
+  test("a photo zooms with a pinch (ctrl + wheel on the desktop); while zoomed the edges and a swipe leave the page alone, and it resets on the next photo", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [{ id: PET_ID, name: "Max", species: "dog" }]);
+    photo(db, "z-1", PET_ID, 10);
+    photo(db, "z-2", PET_ID, 20);
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/sitter/feed");
+    await app(page).getByTestId("feed-card-z-1").click();
+    const layer = app(page).getByTestId("feed-viewer-zoom");
+    const scale = async () => layer.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a);
+    expect(await scale()).toBeCloseTo(1, 2);
+
+    await layer.dispatchEvent("wheel", { deltaY: -120, ctrlKey: true });
+    await expect.poll(scale).toBeGreaterThan(1.5);
+    // Zoomed: no edge strips, a swipe does not turn the page.
+    await expect(app(page).getByTestId("feed-viewer-next")).toHaveCount(0);
+    const media = await box(app(page).getByTestId("feed-viewer-media"));
+    const y = media.y + media.height / 2;
+    await drag(page, { x: media.x + media.width * 0.7, y }, { x: media.x + media.width * 0.3, y }, 10);
+    await expect(app(page).getByTestId("feed-viewer-page-z-1")).toBeVisible();
+
+    // Back out: the edges return and the page can turn.
+    await layer.dispatchEvent("wheel", { deltaY: 400, ctrlKey: true });
+    await expect.poll(scale).toBeCloseTo(1, 1);
+    await app(page).getByTestId("feed-viewer-next").click();
+    await expect(app(page).getByTestId("feed-viewer-page-z-2")).toBeVisible();
+    expect(await app(page).getByTestId("feed-viewer-zoom").evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a)).toBeCloseTo(1, 2);
+  });
+
+  test("the Hidden chip is not there while nothing is hidden", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [{ id: PET_ID, name: "Max", species: "dog" }]);
+    photo(db, "h-1", PET_ID);
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/sitter/feed");
+    await app(page).getByTestId("feed-filters").waitFor();
+    await expect(app(page).getByTestId("feed-filter-hidden")).toHaveCount(0);
+  });
+});
+
+// Editing a photo (#345): tags (several), the day and time it is from, the memo; and the dropdown that drops from its button.
+test.describe("Edit a photo", () => {
+  const ids = (n: number) => `00000000-0000-4000-8000-00000000f30${n}`;
+  const mids = (n: number) => `00000000-0000-4000-8000-00000000e30${n}`;
+
+  async function seeded(page: Page, user: MockUser) {
+    await page.clock.setFixedTime(NOON_TORONTO);
+    const { db } = await mockSupabase(page, [OWNER, SITTER], { now: NOON_TORONTO });
+    caring(db, [{ id: PET_ID, name: "Max", species: "dog" }], NOON_TORONTO);
+    [["walk", 60, SITTER.id], [null, 120, SITTER.id], [null, 180, OWNER.id]].forEach(([category, minutes, by], i) => {
+      db.media.push({ id: mids(i), pet_id: PET_ID, cloudinary_public_id: `goldito/${PET_ID}/feed/e${i}`, resource_type: "image", purpose: "feed" });
+      db.feed_posts.push({
+        id: ids(i), pet_id: PET_ID, sitter_id: by === SITTER.id ? SITTER.id : null, posted_by: by, visibility: "shared", media_id: mids(i),
+        caption: `c${i}`, caption_source: "fallback", category, tags: category ? [category] : [], note: i === 0 ? "Sunny walk" : null, task_log_id: null,
+        created_at: new Date(NOON_TORONTO.getTime() - (minutes as number) * 60_000).toISOString(),
+        taken_at: new Date(NOON_TORONTO.getTime() - (minutes as number) * 60_000).toISOString(),
+      });
+    });
+    await signIn(page, user);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto(user === SITTER ? "/sitter/feed" : "/owner/feed");
+    await app(page).getByTestId("feed-filters").waitFor();
+    return db;
+  }
+
+  test("the author edits the tags (several), the memo, the day and the time; the Feed and the detail follow", async ({ page }) => {
+    const db = await seeded(page, SITTER);
+    const screen = app(page);
+    await screen.getByTestId(`feed-card-${ids(0)}`).click();
+    await expect(screen.getByTestId("feed-viewer-edit")).toContainText("Edit");
+    await screen.getByTestId("feed-viewer-edit").click();
+    await expect(screen.getByTestId("feed-edit-sheet")).toBeVisible();
+    // The photo's own tag is on; Potty goes on too, so it is both a walk and a potty.
+    await expect(screen.getByTestId("feed-edit-tag-walk")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("feed-edit-tag-potty")).toHaveAttribute("aria-checked", "false");
+    await screen.getByTestId("feed-edit-tag-potty").click();
+    await screen.getByTestId("feed-edit-note").fill("Walk, then a potty break");
+    // The time: 9:30 AM.
+    await screen.getByTestId("feed-edit-time").click();
+    await screen.getByTestId("time-hour-9").click();
+    await screen.getByTestId("time-min-30").click();
+    await screen.getByTestId("time-ampm-am").click();
+    await screen.getByTestId("feed-edit-time-picker-set").click();
+    await expect(screen.getByTestId("feed-edit-time")).toContainText("9:30 AM");
+    // The day: yesterday.
+    await screen.getByTestId("feed-edit-date").click();
+    await screen.getByTestId("feed-edit-day-2026-10-08").click();
+    await expect(screen.getByTestId("feed-edit-date")).toContainText("Oct 8, 2026");
+    await screen.getByTestId("feed-edit-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Photo updated");
+
+    const row = db.feed_posts.find((p) => p.id === ids(0))!;
+    expect(row).toMatchObject({ tags: ["potty", "walk"], note: "Walk, then a potty break" });
+    expect(String(row.taken_at)).toBe("2026-10-08T13:30:00.000Z"); // 9:30 AM Toronto, a day back
+    expect(row.created_at).toBe(new Date(NOON_TORONTO.getTime() - 60 * 60_000).toISOString()); // the time it was sent stays
+
+    // The photo opens again with what was saved.
+    await expect(screen.getByTestId("feed-viewer-tag")).toContainText("Walks");
+    await expect(screen.getByTestId("feed-viewer-tag")).toContainText("Potty");
+    await expect(screen.getByTestId("feed-viewer-note")).toHaveText("Walk, then a potty break");
+    await expect(screen.getByTestId("feed-viewer-date")).toHaveText("Oct 8, 2026 · 9:30 AM");
+    await screen.getByTestId("feed-viewer-close").click();
+
+    // It is now under both chips, and under yesterday.
+    await screen.getByTestId("feed-filter-walk").click();
+    await expect(screen.getByTestId(`feed-card-${ids(0)}`)).toBeVisible();
+    await screen.getByTestId("feed-filter-potty").click();
+    await expect(screen.getByTestId(`feed-card-${ids(0)}`)).toBeVisible();
+    await screen.getByTestId("feed-filter-all").click();
+    const headers = await screen.locator("[data-testid^='feed-day-']").allInnerTexts();
+    expect(headers.map((h) => h.split("\n")[0])).toEqual(["Today · Fri Oct 9", "Yesterday · Thu Oct 8"]);
+    // Two tag drawings on the photo.
+    await expect(screen.getByTestId(`feed-badge-${ids(0)}`).locator("svg")).toHaveCount(2);
+  });
+
+  test("clearing the tags and the memo leaves a plain photo", async ({ page }) => {
+    const db = await seeded(page, SITTER);
+    const screen = app(page);
+    await screen.getByTestId(`feed-card-${ids(0)}`).click();
+    await screen.getByTestId("feed-viewer-edit").click();
+    await screen.getByTestId("feed-edit-tag-walk").click();
+    await screen.getByTestId("feed-edit-note").fill("");
+    await screen.getByTestId("feed-edit-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Photo updated");
+    expect(db.feed_posts.find((p) => p.id === ids(0))).toMatchObject({ tags: [], note: null });
+    await screen.getByTestId("feed-viewer-close").click();
+    await screen.getByTestId("feed-filter-none").click();
+    await expect(screen.getByTestId(`feed-card-${ids(0)}`)).toBeVisible();
+  });
+
+  test("only the author has Edit", async ({ page }) => {
+    await seeded(page, SITTER);
+    const screen = app(page);
+    await screen.getByTestId(`feed-card-${ids(2)}`).click(); // the owner's photo, seen by the sitter
+    await expect(screen.getByTestId("feed-viewer-page-" + ids(2))).toBeVisible();
+    await expect(screen.getByTestId("feed-viewer-edit")).toHaveCount(0);
+    await expect(screen.getByTestId("feed-viewer-hide")).toBeVisible();
+  });
+
+  test("a time that has not come yet is refused with a clear line", async ({ page }) => {
+    await seeded(page, SITTER);
+    const screen = app(page);
+    await screen.getByTestId(`feed-card-${ids(0)}`).click();
+    await screen.getByTestId("feed-viewer-edit").click();
+    await screen.getByTestId("feed-edit-time").click();
+    await screen.getByTestId("time-hour-11").click();
+    await screen.getByTestId("time-min-30").click();
+    await screen.getByTestId("time-ampm-pm").click();
+    await screen.getByTestId("feed-edit-time-picker-set").click();
+    await screen.getByTestId("feed-edit-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Pick a time that has already passed.");
+    await expect(screen.getByTestId("feed-edit-sheet")).toBeVisible();
+  });
+
+  test("the pet dropdown drops right under its button, and a tap outside closes it", async ({ page }) => {
+    await seeded(page, SITTER);
+    const screen = app(page);
+    const pill = await box(screen.getByTestId("feed-pet"));
+    await screen.getByTestId("feed-pet").click();
+    const menu = await box(screen.getByTestId("feed-pet-menu"));
+    expect(menu.y).toBeCloseTo(pill.y + pill.height + 4, 0);
+    expect(menu.x).toBeCloseTo(pill.x, 0);
+    // No bottom sheet: the menu is a small box, not a full-width panel.
+    expect(menu.width).toBeLessThan(330);
+    await screen.getByTestId("feed-pet-backdrop").click({ position: { x: 5, y: 600 } });
+    await expect(screen.getByTestId("feed-pet-menu")).toHaveCount(0);
   });
 });

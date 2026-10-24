@@ -77,6 +77,20 @@ def assert_on_duty_for(user: CurrentUser, pet_id: UUID) -> None:
         )
 
 
+def has_cared_for(user: CurrentUser, pet_id: UUID) -> bool:
+    """Has this sitter's stay with the pet started (it may be over)? JWT-scoped RPC."""
+    return _rpc_bool(user.access_token, "has_cared_for", {"pet": str(pet_id)})
+
+
+def assert_can_post_feed(user: CurrentUser, pet_id: UUID) -> None:
+    """Sitter on duty, or after the stay (then the post can only be private, the database enforces it)."""
+    try:
+        assert_on_duty_for(user, pet_id)
+    except HTTPException as exc:
+        if exc.status_code != status.HTTP_403_FORBIDDEN or user.role != "sitter" or not has_cared_for(user, pet_id):
+            raise
+
+
 def assert_owner_of(user: CurrentUser, pet_id: UUID) -> None:
     """Owner may write feed media for their own pet (any time, no booking needed)."""
     if user.role != "owner":
