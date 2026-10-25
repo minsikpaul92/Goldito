@@ -16,7 +16,7 @@ export default function SitterTabsLayout() {
       <Tabs.Screen name="chat" options={{ title: "Chat", tabBarIcon: tabIcon("chats"), tabBarBadge: unread > 0 ? unread : undefined }} />
       <Tabs.Screen
         name="feed"
-        options={{ title: "Feed", headerShown: false, tabBarIcon: tabIcon("feed") }}
+        options={{ title: "Moments", headerShown: false, tabBarIcon: tabIcon("feed") }}
       />
       <Tabs.Screen name="snap" options={{ title: "Snap", tabBarIcon: tabIcon("camera") }} />
     </RoleTabs>

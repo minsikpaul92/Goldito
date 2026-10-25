@@ -17,7 +17,7 @@ export default function SitterFeedStackLayout() {
     >
       <Stack.Screen
         name="index"
-        options={{ title: "Feed", headerTitle: tabTitle("Feed"), headerBackVisible: false, headerLeft: () => null }}
+        options={{ title: "Moments", headerTitle: tabTitle("Moments"), headerBackVisible: false, headerLeft: () => null }}
       />
       <Stack.Screen name="[petId]" options={{ title: "Pet" }} />
     </Stack>

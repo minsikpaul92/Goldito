@@ -1,7 +1,23 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "goldito-web", "runtimeExecutable": "bash", "runtimeArgs": ["-c", "cd /Users/paulsik/projects/Goldito/frontend && npx expo start --web --port 8081"], "port": 8081 },
-    { "name": "goldito-api", "runtimeExecutable": "bash", "runtimeArgs": ["-c", "cd /Users/paulsik/projects/Goldito/backend && /private/tmp/claude-501/-Users-paulsik-projects-Goldito/c9249287-a439-48ec-8d60-5d8025fa956f/scratchpad/venv/bin/python -m uvicorn app.main:app --port 8000"], "port": 8000 }
+    {
+      "name": "goldito-web",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd \"$(git rev-parse --show-toplevel)/frontend\" && npx expo start --web --port 8081"
+      ],
+      "port": 8081
+    },
+    {
+      "name": "goldito-api",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd \"$(git rev-parse --show-toplevel)/backend\" && .venv/bin/python -m uvicorn app.main:app --port 8000"
+      ],
+      "port": 8000
+    }
   ]
 }

@@ -250,7 +250,7 @@ export type ReportPhoto = { id: string; publicId: string; resourceType: "image" 
  * owner's private photos (RLS lets only the owner read them).
  */
 export async function listReportPhotos(petId: string, day: string, includePrivate = false): Promise<ReportPhoto[]> {
-  let query = getSupabase().from("feed_posts").select("id, media(cloudinary_public_id, resource_type)").eq("pet_id", petId);
+  let query = getSupabase().from("feed_posts").select("id, media(cloudinary_public_id, resource_type, purpose)").eq("pet_id", petId);
   if (!includePrivate) query = query.eq("visibility", "shared");
   const { data, error } = await query
     .gte("created_at", zonedToIso(day, "00:00"))
@@ -258,9 +258,10 @@ export async function listReportPhotos(petId: string, day: string, includePrivat
     .order("created_at", { ascending: true });
   if (error) return [];
   const out: ReportPhoto[] = [];
-  for (const row of (data ?? []) as unknown as { id: string; media: Embed<{ cloudinary_public_id: string; resource_type: "image" | "video" }> }[]) {
+  for (const row of (data ?? []) as unknown as { id: string; media: Embed<{ cloudinary_public_id: string; resource_type: "image" | "video"; purpose?: string }> }[]) {
     const media = first(row.media);
-    if (media) out.push({ id: row.id, publicId: media.cloudinary_public_id, resourceType: media.resource_type });
+    // A sticker in the Feed (015j) is not a photo of the day.
+    if (media && media.purpose !== "sticker") out.push({ id: row.id, publicId: media.cloudinary_public_id, resourceType: media.resource_type });
   }
   return out;
 }
@@ -270,15 +271,15 @@ export async function listPetCoverPhotos(petIds: string[]): Promise<Record<strin
   if (petIds.length === 0) return {};
   const { data, error } = await getSupabase()
     .from("feed_posts")
-    .select("id, pet_id, media(cloudinary_public_id, resource_type)")
+    .select("id, pet_id, media(cloudinary_public_id, resource_type, purpose)")
     .in("pet_id", petIds)
     .order("created_at", { ascending: false })
     .limit(100);
   if (error) return {};
   const out: Record<string, ReportPhoto> = {};
-  for (const row of (data ?? []) as unknown as { id: string; pet_id: string; media: Embed<{ cloudinary_public_id: string; resource_type: "image" | "video" }> }[]) {
+  for (const row of (data ?? []) as unknown as { id: string; pet_id: string; media: Embed<{ cloudinary_public_id: string; resource_type: "image" | "video"; purpose?: string }> }[]) {
     const media = first(row.media);
-    if (media && !out[row.pet_id]) out[row.pet_id] = { id: row.id, publicId: media.cloudinary_public_id, resourceType: media.resource_type };
+    if (media && media.purpose !== "sticker" && !out[row.pet_id]) out[row.pet_id] = { id: row.id, publicId: media.cloudinary_public_id, resourceType: media.resource_type };
   }
   return out;
 }

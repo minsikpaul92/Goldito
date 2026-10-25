@@ -90,7 +90,7 @@ test.describe("snap sticker", () => {
     expect((await download).suggestedFilename()).toBe("goldito-max-sticker.png");
 
     await screen.getByTestId("sticker-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Sticker saved");
+    await expect(screen.getByTestId("toast")).toContainText("Paw-fect! Saved to");
     expect(signed[0]).toMatchObject({ pet_id: MAX, purpose: "sticker", resource_type: "image" });
     // The cut-out PNG went up as it is — never re-encoded to a JPEG (that would paint the background white).
     expect(uploads[0].body).toContain('filename="sticker.png"');

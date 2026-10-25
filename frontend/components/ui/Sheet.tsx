@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -45,8 +45,10 @@ export function Sheet({ visible, title, onClose, children, footer, scrollbar, te
   fullRef.current = full;
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
-  useEffect(() => {
-    if (!visible) {
+  // Reset when the sheet opens, not when it closes: a sheet pulled down stays off screen while its backdrop fades,
+  // instead of jumping back for a moment.
+  useLayoutEffect(() => {
+    if (visible) {
       setFull(false);
       dragY.setValue(0);
     }

@@ -85,7 +85,7 @@ export function useStayToday(): StayToday | null {
         days,
         receivedLine,
         care: { done: care?.reduce((n, c) => n + c.done, 0) ?? 0, total: care?.reduce((n, c) => n + c.total, 0) ?? 0 },
-        photos: posts ? posts.flat().filter((p) => p.media.resourceType === "image" && isoToZoned(p.createdAt).day === today).length : 0,
+        photos: posts ? posts.flat().filter((p) => p.media.resourceType === "image" && p.media.purpose !== "sticker" && !p.hidden && isoToZoned(p.createdAt).day === today).length : 0,
         walkMinutes: walks,
       });
     } catch {

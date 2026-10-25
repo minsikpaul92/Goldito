@@ -128,7 +128,7 @@ test.describe("owner diary page", () => {
     expect(db.daily_reports.find((r) => r.sitter_id === OWNER.id)).toMatchObject({ media_id: "media-own" });
 
     await page.goto("/owner/feed");
-    await expect(screen.locator("[data-testid^='feed-private-']")).toHaveCount(1);
+    await expect(screen.locator("[data-testid^='feed-card-']")).toHaveCount(1);
   });
 
   test("a page with no photo saves as normal, without one", async ({ page }) => {

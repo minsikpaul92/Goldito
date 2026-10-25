@@ -225,6 +225,8 @@ export type MockDb = {
   notifications: Row[];
   /** Feed posts + media rows (Phase 05 upload path). */
   feed_posts: Row[];
+  /** 015j: a person's own hide / remove of a post (state `hidden` | `removed`). */
+  feed_post_hidden: Row[];
   media: Row[];
   /** AI drafts (private to the sitter) and sent reports (Phase 07). */
   daily_reports: Row[];
@@ -311,6 +313,7 @@ function createMockDb(): MockDb {
     agreements: [],
     notifications: [],
     feed_posts: [],
+    feed_post_hidden: [],
     media: [],
     daily_reports: [],
     reviews: [],
@@ -463,6 +466,48 @@ function callerId(authorization: string | undefined): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * The backend's `DELETE /api/feed/{id}?scope=me|everyone` with the rules of `remove_feed_post` (015j): `me` hides the post
+ * from the caller's Feed for good and purges it once the author and the other reader both removed it (or nobody else could
+ * see it); `everyone` is the author's, for a shared post, within 30 minutes. `calls` lists what was asked.
+ */
+export async function mockFeedApi(page: Page, db: MockDb) {
+  const calls: { id: string; scope: string; by: string | null }[] = [];
+  await page.route("**/api/feed/*", (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const id = url.pathname.split("/").pop()!;
+    const scope = url.searchParams.get("scope") ?? "me";
+    const me = callerId(request.headers().authorization);
+    calls.push({ id, scope, by: me });
+    const fail = (status: number, detail: string) => json(route, status, { detail });
+    const post = db.feed_posts.find((p) => p.id === id);
+    const removedByMe = db.feed_post_hidden.some((h) => h.post_id === id && h.user_id === me && h.state === "removed");
+    if (!post || removedByMe) return fail(404, "Post not found.");
+    const purge = () => {
+      db.feed_posts.splice(0, db.feed_posts.length, ...db.feed_posts.filter((p) => p.id !== id));
+      db.feed_post_hidden = db.feed_post_hidden.filter((h) => h.post_id !== id);
+      return json(route, 200, { removed: true, deleted: true, media_removed: true });
+    };
+    if (scope === "everyone") {
+      if (post.posted_by !== me) return fail(403, "Only the person who posted it can delete it for both.");
+      if (post.visibility === "shared" && nowMs() - Date.parse(String(post.created_at)) > 30 * 60_000) {
+        return fail(409, "It has been more than 30 minutes. It can only be deleted on your side.");
+      }
+      return purge();
+    }
+    db.feed_post_hidden = db.feed_post_hidden.filter((h) => !(h.post_id === id && h.user_id === me));
+    db.feed_post_hidden.push({ post_id: id, user_id: me, state: "removed", at: new Date(nowMs()).toISOString() });
+    const removed = (user: unknown) => db.feed_post_hidden.some((h) => h.post_id === id && h.user_id === user && h.state === "removed");
+    const pet = db.pets.find((p) => p.id === post.pet_id);
+    // A sitter's shared post is also the owner's; an owner's shared post is the sitter's on duty (the mock has one).
+    const other = post.visibility !== "shared" ? null : post.sitter_id ? pet?.owner_id : db.bookings.find((b) => b.status === "confirmed")?.sitter_id;
+    if (removed(post.posted_by) && (!other || removed(other))) return purge();
+    return json(route, 200, { removed: true, deleted: false, media_removed: false });
+  });
+  return { calls };
 }
 
 /** Meet & Greet RPCs (005): the same state machine, minus notifications. */
@@ -1752,6 +1797,38 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, id);
   }
 
+  if (path === "rpc/update_feed_post") {
+    // 015l: the author changes the tags, the day and time it is from, and the memo.
+    const { p_post, p_taken_at, p_note, p_tags } = request.postDataJSON();
+    const post = db.feed_posts.find((p) => p.id === p_post);
+    const fail = (message: string) => json(route, 400, { code: "P0001", message });
+    if (!post) return fail("not_found");
+    if (post.posted_by !== me) return fail("not_author");
+    if (Date.parse(p_taken_at) > nowMs() + 5 * 60_000) return fail("in_the_future");
+    const tags = [...new Set<string>(p_tags ?? [])].sort();
+    if (tags.some((t) => !["meal", "walk", "nap", "mood", "potty"].includes(t))) return fail("bad_tag");
+    Object.assign(post, {
+      taken_at: p_taken_at,
+      note: typeof p_note === "string" && p_note.trim() ? p_note.trim() : null,
+      tags,
+      category: tags[0] ?? null,
+    });
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/hide_feed_post" || path === "rpc/unhide_feed_post") {
+    const { p_post } = request.postDataJSON();
+    const own = (h: Row) => h.post_id === p_post && h.user_id === me;
+    if (path === "rpc/hide_feed_post") {
+      if (!db.feed_posts.some((p) => p.id === p_post)) return json(route, 400, { code: "P0001", message: "not_found" });
+      db.feed_post_hidden = db.feed_post_hidden.filter((h) => !own(h));
+      db.feed_post_hidden.push({ post_id: p_post, user_id: me, state: "hidden", at: new Date(nowMs()).toISOString() });
+    } else {
+      db.feed_post_hidden = db.feed_post_hidden.filter((h) => !(own(h) && h.state === "hidden"));
+    }
+    return route.fulfill({ status: 204 });
+  }
+
   if (path === "rpc/request_photo") {
     // 014: the owner of a pet in a confirmed stay asks its sitter; asking again returns the open ask.
     const { p_pet } = request.postDataJSON();
@@ -2310,24 +2387,29 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       });
     }
     if (path === "feed_posts" && select.includes("media")) {
-      rows = rows.map((post) => {
-        const media = db.media.find((m) => m.id === post.media_id) ?? null;
-        const author = users.find((u) => u.id === post.posted_by);
-        return {
-          ...post,
-          media: media
-            ? {
-                id: media.id,
-                cloudinary_public_id: media.cloudinary_public_id,
-                resource_type: media.resource_type,
-                width: media.width ?? null,
-                height: media.height ?? null,
-                duration_s: media.duration_s ?? null,
-              }
-            : null,
-          author: { display_name: author?.displayName ?? "Someone" },
-        };
-      });
+      // 015j: what I removed is gone from my Feed; what I hid comes back flagged by my own row.
+      rows = rows
+        .filter((post) => !db.feed_post_hidden.some((h) => h.post_id === post.id && h.user_id === me && h.state === "removed"))
+        .map((post) => {
+          const media = db.media.find((m) => m.id === post.media_id) ?? null;
+          const author = users.find((u) => u.id === post.posted_by);
+          return {
+            ...post,
+            media: media
+              ? {
+                  id: media.id,
+                  cloudinary_public_id: media.cloudinary_public_id,
+                  resource_type: media.resource_type,
+                  purpose: media.purpose ?? "feed",
+                  width: media.width ?? null,
+                  height: media.height ?? null,
+                  duration_s: media.duration_s ?? null,
+                }
+              : null,
+            author: { display_name: author?.displayName ?? "Someone" },
+            hidden: db.feed_post_hidden.filter((h) => h.post_id === post.id && h.user_id === me).map((h) => ({ state: h.state })),
+          };
+        });
     }
     // Diary reads (phase 06 6.11): embeds PostgREST would resolve from the foreign keys.
     const mediaOf = (id: unknown) => {
@@ -2405,6 +2487,12 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "pet_stickers" || path === "safety_checks") && params.get("order")!.endsWith(".desc")) {
         rows.reverse();
       }
+    }
+    // The Feed is read by the time a photo is from (015l), newest first.
+    if ((params.get("order") ?? "").startsWith("taken_at")) {
+      const at = (r: Row) => String(r.taken_at ?? r.created_at);
+      rows = [...rows].sort((a, b) => at(a).localeCompare(at(b)));
+      if (params.get("order")!.endsWith(".desc")) rows.reverse();
     }
     if ((params.get("order") ?? "").startsWith("started_at")) {
       rows = [...rows].sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)));

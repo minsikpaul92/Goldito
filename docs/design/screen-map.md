@@ -186,23 +186,15 @@ Shows: `OwnerDiaryBook`
 
 ### `/owner/feed` — [app/owner/(tabs)/feed.tsx](../../frontend/app/owner/(tabs)/feed.tsx)
 
-Owner Feed tab (phase-05): Instagram 3-col album. ▶ = play in cell; tap photo = full-screen viewer (swipe / arrows). Owner can add their own photos (private by default, optional "Visible to sitter") and delete the posts they made (5.8).
+Owner Feed tab (#345, Figma 1730:104019): everything saved for the pet in a filterable mosaic; photos you take or add and the ones your sitter sends are in it on their own, and so are your stickers. Add a photo: pick it, choose Only me or Share with your sitter, an optional memo, Save.
 
-Shows: `AlbumView` · `DiaryFeedCell` · `FeedCard` · `FeedSwitch` · `FeedViewer` · `ShareToggle` · `OwnerDiaryBook`
+Shows: `AddPhotoSheet` · `FeedBrowser` · `FeedPetPicker` · `FeedBarRight` · `FeedSwitch` · `OwnerDiaryBook`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 241 |
-| EmptyState | No pets yet | — | 254 |
-| SegmentedControl | — | `feed-pet` | 284 |
-| Button | openRequest ? "Requested · waiting for a photo" : requesting ? "…" : "📷 Request photo" | `feed-request-photo` | 294 |
-| SegmentedControl | — | `feed-mode` | 305 |
-| EmptyState | Couldn't load the feed | — | 321 |
-| EmptyState | No posts yet | — | 328 |
-| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 337 |
-| Pressable | Add photo | `feed-add-photo` | 365 |
-| Sheet | deleting ? "…" : "🗑️" | `feed-delete-sheet` | 391 |
-| Button | deleting ? "…" : "🗑️" | `feed-delete-confirm` | 399 |
+| EmptyState | Couldn't load your pets | — | 183 |
+| EmptyState | No pets yet | — | 196 |
+| Pressable | Add photo | `feed-add-photo` | 234 |
 
 ### `/owner/history` — [app/owner/history.tsx](../../frontend/app/owner/history.tsx)
 
@@ -501,32 +493,13 @@ The Diary tab moved into Feed (#329): an old link to /sitter/diary (with its pag
 
 ### `/sitter/feed` — [app/sitter/(tabs)/feed/index.tsx](../../frontend/app/sitter/(tabs)/feed/index.tsx)
 
-Sitter Feed tab (D47b / phase-05): pets in care → `/sitter/feed/[petId]` (+ Photo FAB).
+Sitter Moments tab (D47b / phase-05, #345): opens on the pets in care together (the pet chip picks one, or a pet of a stay that is over), with the Photos / Diary tabs on top.
 
-Shows: `FeedSwitch` · `SitterDiary`
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| EmptyState | Couldn't load pets | — | 58 |
-| EmptyState | Share a moment | — | 71 |
-| Pressable | ``${pet.name}, share photos`` | ``sitter-feed-pet-${pet.id}`` | 84 |
+Shows: `FeedSwitch` · `SitterDiary` · `SitterFeed`
 
 ### `/sitter/feed/[petId]` — [app/sitter/(tabs)/feed/[petId].tsx](../../frontend/app/sitter/(tabs)/feed/[petId].tsx)
 
-Sitter pet feed (phase-05): 3-col album + **+ Photo** FAB → pickMedia → uploadMedia → createFeedPost. No caption field (D38). Toast: "Shared with {owner} 🐾". Author can Delete from viewer (5.7).
-
-Shows: `DiaryFeedCell` · `FeedCard` · `FeedViewer` · `ShareToggle`
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| EmptyState | Pet not found | — | 216 |
-| EmptyState | Couldn't open this pet | — | 224 |
-| EmptyState | Couldn't load posts | — | 252 |
-| EmptyState | No posts yet | — | 283 |
-| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 292 |
-| Pressable | Add photo | `feed-add-photo` | 320 |
-| Sheet | deleting ? "…" : "🗑️" | `feed-delete-sheet` | 346 |
-| Button | deleting ? "…" : "🗑️" | `feed-delete-confirm` | 354 |
+Links to one pet's feed (notices, chat cards, Home) open the Feed tab on that pet.
 
 ### `/sitter/history` — [app/sitter/history.tsx](../../frontend/app/sitter/history.tsx)
 
@@ -644,6 +617,19 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | — | `active-trip-card` | 41 |
 
+### AddPhotoSheet — [components/AddPhotoSheet.tsx](../../frontend/components/AddPhotoSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | sharing ? `Save and share with ${shareWith}` : "Save, only you" | `feed-add-sheet` | 119 |
+| Button | sharing ? `Save and share with ${shareWith}` : "Save, only you" | `feed-add-save` | 127 |
+| Pressable | ``Use sample: ${sample.label}`` | ``sample-${sample.id}`` | 154 |
+| Pressable | More photos | `feed-add-more` | 166 |
+| Pressable | — | ``feed-add-pet-${p.id}`` | 182 |
+| Pressable | — | ``feed-add-tag-${t.key}`` | 202 |
+| Pressable | noteOpen ? "Hide note" : "Add a note" | `feed-add-note-toggle` | 218 |
+| Pressable | — | `feed-add-share` | 242 |
+
 ### AddressInput — [components/AddressInput.tsx](../../frontend/components/AddressInput.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -657,12 +643,6 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Sheet | I'd like to book | `agree-sheet` | 68 |
 | Button | I'd like to book | `agree-submit` | 73 |
-
-### AlbumView — [components/AlbumView.tsx](../../frontend/components/AlbumView.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Pressable | post.caption ?? "Photo" | ``album-photo-${post.id}`` | 34 |
 
 ### BookingCard — [components/BookingCard.tsx](../../frontend/components/BookingCard.tsx)
 
@@ -836,12 +816,6 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Sheet | Reset the demo? | `demo-reset-sheet` | 64 |
 | Button | busy ? "Resetting…" : "Reset now" | `demo-reset-confirm` | 71 |
 
-### DiaryFeedCell — [components/DiaryFeedCell.tsx](../../frontend/components/DiaryFeedCell.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Pressable | ``${cell.petName}'s diary, ${formatDay(cell.day)}: ${cell.preview}`` | ``feed-diary-${cell.reportId}`` | 18 |
-
 ### DiaryTimeline — [components/DiaryTimeline.tsx](../../frontend/components/DiaryTimeline.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -870,31 +844,64 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | favorite ? "Remove from favorites" : "Add to favorites" | `favorite-heart` | 43 |
 
-### FeedCard — [components/FeedCard.tsx](../../frontend/components/FeedCard.tsx)
+### FeedBrowser — [components/FeedBrowser.tsx](../../frontend/components/FeedBrowser.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Open full screen | ``feed-inline-open-${post.id}`` | 91 |
-| Pressable | Stop and show thumbnail | ``feed-inline-stop-${post.id}`` | 98 |
-| Pressable | paused ? "Play" : "Pause" | ``feed-inline-toggle-${post.id}`` | 107 |
-| Pressable | ``${post.caption ?? "Photo"} from ${post.authorName}, ${formatFeedTime(post.createdAt)}`` | ``feed-open-${post.id}`` | 119 |
-| Pressable | Play video here | ``feed-play-${post.id}`` | 143 |
+| EmptyState | Couldn't load the feed | — | 205 |
+| EmptyState | Nothing hidden | — | 207 |
+| EmptyState | No photos yet | — | 209 |
+| EmptyState | EMPTY_TITLE[filter as FeedFilterKey] | — | 211 |
+| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 234 |
+| Pressable | ``${tagLabel ?? "Photo"} at ${time}`` | ``feed-card-${post.id}`` | 359 |
 
-### FeedSwitch — [components/FeedSwitch.tsx](../../frontend/components/FeedSwitch.tsx)
+### FeedDeleteSheet — [components/FeedDeleteSheet.tsx](../../frontend/components/FeedDeleteSheet.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| SegmentedControl | — | `feed-view` | 27 |
+| Sheet | Delete for both | `feed-delete-sheet` | 28 |
+| Button | Delete for both | `feed-delete-both` | 39 |
+| Button | Delete for me only | `feed-delete-me` | 46 |
+| Button | Delete | `feed-delete-confirm` | 55 |
+
+### FeedEditSheet — [components/FeedEditSheet.tsx](../../frontend/components/FeedEditSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | Save | `feed-edit-sheet` | 52 |
+| Button | Save | `feed-edit-save` | 60 |
+| Pressable | — | ``feed-edit-tag-${tag.key}`` | 74 |
+| Pressable | — | `feed-edit-date` | 90 |
+| Pressable | — | `feed-edit-time` | 94 |
+
+### FeedFilterChips — [components/FeedFilterChips.tsx](../../frontend/components/FeedFilterChips.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | ``feed-filter-${filter.key}`` | 30 |
+| Pressable | — | `feed-filter-hidden` | 44 |
+
+### FeedPetPicker — [components/FeedPetPicker.tsx](../../frontend/components/FeedPetPicker.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``Pet: ${chosen ? chosen.name : "All pets"}`` | `testID` | 62 |
+| Pressable | Close | ``${testID}-backdrop`` | 79 |
+| Pressable | — | ``${testID}-all`` | 87 |
+| Pressable | — | ``${testID}-${pet.id}`` | 112 |
 
 ### FeedViewer — [components/FeedViewer.tsx](../../frontend/components/FeedViewer.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Previous | `feed-viewer-prev` | 124 |
-| Pressable | Next | `feed-viewer-next` | 135 |
-| Pressable | Close | `feed-viewer-close` | 146 |
-| Pressable | Delete | `feed-viewer-delete` | 157 |
-| Pressable | isVideo ? (paused ? "Play" : "Pause") : undefined | `feed-viewer-media` | 206 |
+| Pressable | — | `feed-viewer-sticker` | 198 |
+| Pressable | — | `feed-viewer-hide` | 212 |
+| Pressable | Edit | `feed-viewer-edit` | 222 |
+| Pressable | — | `feed-viewer-delete` | 233 |
+| Pressable | Previous | `feed-viewer-prev` | 249 |
+| Pressable | Next | `feed-viewer-next` | 258 |
+| Pressable | Close | `feed-viewer-close` | 269 |
+| Pressable | isVideo ? (paused ? "Play" : "Pause") : bare ? "Show details" : "Hide details" | `feed-viewer-media` | 460 |
 
 ### FinishedStay — [components/FinishedStay.tsx](../../frontend/components/FinishedStay.tsx)
 
@@ -1204,12 +1211,6 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Button | `alternative.label` | ``${testID}-alternative`` | 61 |
 | TextButton | `declineLabel` | ``${testID}-decline`` | 63 |
 
-### ShareToggle — [components/ShareToggle.tsx](../../frontend/components/ShareToggle.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Pressable | `label` | `testID` | 19 |
-
 ### SitterActions — [components/SitterActions.tsx](../../frontend/components/SitterActions.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1508,6 +1509,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | EmptyState | Couldn't load the diary | — | 138 |
 | EmptyState | No pages yet | — | 140 |
 
+### SitterFeed — [features/feed/SitterFeed.tsx](../../frontend/features/feed/SitterFeed.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| EmptyState | Couldn't load pets | — | 75 |
+| EmptyState | Share a moment | — | 80 |
+| Pressable | Add photo | `feed-add-photo` | 257 |
+
 ### NotificationsCenter — [features/notifications/NotificationsCenter.tsx](../../frontend/features/notifications/NotificationsCenter.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1591,17 +1600,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Sticker | — | 57 |
-| EmptyState | No pet in your care right now | — | 210 |
-| EmptyState | Add a pet first | — | 212 |
-| Pressable | Tap your pet to cut it out | `sticker-photo` | 243 |
-| Button | Save sticker | `sticker-save` | 293 |
-| TextButton | ⬇ Download sticker | `sticker-download` | 294 |
-| TextButton | Pick another photo | `sticker-pick-again` | 295 |
-| Button | photo ? "Pick another photo" : "Pick a photo" | `sticker-pick` | 298 |
-| Pressable | Download sticker | `sticker-tile-download` | 322 |
-| Pressable | Delete sticker | `sticker-delete` | 333 |
-| Sheet | Delete sticker | `sticker-delete-sheet` | 349 |
-| Button | Delete sticker | `sticker-delete-confirm` | 350 |
+| EmptyState | No pet in your care right now | — | 214 |
+| EmptyState | Add a pet first | — | 216 |
+| Pressable | Tap your pet to cut it out | `sticker-photo` | 247 |
+| Button | Save sticker | `sticker-save` | 297 |
+| TextButton | ⬇ Download sticker | `sticker-download` | 298 |
+| TextButton | Pick another photo | `sticker-pick-again` | 299 |
+| Button | photo ? "Pick another photo" : "Pick a photo" | `sticker-pick` | 302 |
+| Pressable | Download sticker | `sticker-tile-download` | 326 |
+| Pressable | Delete sticker | `sticker-delete` | 337 |
+| Sheet | Delete sticker | `sticker-delete-sheet` | 353 |
+| Button | Delete sticker | `sticker-delete-confirm` | 354 |
 
 ### TreatCheckScreen — [features/snap/TreatCheckScreen.tsx](../../frontend/features/snap/TreatCheckScreen.tsx)
 
@@ -1632,4 +1641,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-484 actions · 482 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+492 actions · 490 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
