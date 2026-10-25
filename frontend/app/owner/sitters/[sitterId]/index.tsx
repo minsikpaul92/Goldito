@@ -12,7 +12,9 @@ import { Chip } from "../../../../components/ui/Chip";
 import { EmptyState } from "../../../../components/ui/EmptyState";
 import { LoadingView } from "../../../../components/ui/LoadingView";
 import { Screen } from "../../../../components/ui/Screen";
+import { SummaryRow } from "../../../../components/ui/SummaryRow";
 import { StarRating } from "../../../../components/StarRating";
+import { loadContactPhone } from "../../../../features/contact/contactApi";
 import { RatingSummary, getRatingSummary } from "../../../../features/completion/completionApi";
 import { ProfilePhoto, loadProfilePhotos, photoThumb } from "../../../../features/profile/profilePhotosApi";
 import {
@@ -97,6 +99,12 @@ export default function SitterProfileScreen() {
 
   useEffect(() => {
     if (sitterId) void getRatingSummary(sitterId).then(setRating);
+  }, [sitterId]);
+
+  // Shown once a Meet & Greet is set with this sitter.
+  const [phone, setPhone] = useState<string | null>(null);
+  useEffect(() => {
+    if (sitterId) void loadContactPhone(sitterId).then(setPhone);
   }, [sitterId]);
 
   if (profile.status === "loading") return <LoadingView />;
@@ -194,6 +202,7 @@ export default function SitterProfileScreen() {
             </View>
           ) : null}
         </Card>
+        {phone ? <SummaryRow label="Phone" value={phone} testID="sitter-phone" /> : null}
   
         <Button
           label="See schedule"

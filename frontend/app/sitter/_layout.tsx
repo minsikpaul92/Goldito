@@ -34,6 +34,7 @@ export default function SitterLayout() {
       <OnboardingGate />
       <RoleStack role="sitter">
         <Stack.Screen name="schedule" options={{ title: "Schedule" }} />
+        <Stack.Screen name="owners/[ownerId]" options={{ title: "Owner" }} />
         <Stack.Screen name="bookings/[bookingId]/index" options={{ title: "Booking details" }} />
         <Stack.Screen name="bookings/[bookingId]/trip" options={{ title: "Trip" }} />
         <Stack.Screen name="notifications" options={{ title: "Notifications" }} />

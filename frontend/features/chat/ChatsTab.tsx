@@ -12,7 +12,7 @@ import { Theme } from "../../theme/themes";
  * The Chat tab (#329, Seulgi's five tabs): every chat of the signed-in owner or sitter, newest first. The newest chat
  * with something new for me is marked (#228). Swipe a row to leave the chat.
  */
-export function ChatsTab({ emptyMessage }: { emptyMessage: string }) {
+export function ChatsTab({ emptyMessage, showPets }: { emptyMessage: string; showPets?: boolean }) {
   const styles = useThemedStyles(makeStyles);
   const chats = useMyChats();
   if (!chats.loaded) return <LoadingView />;
@@ -22,7 +22,7 @@ export function ChatsTab({ emptyMessage }: { emptyMessage: string }) {
       {chats.items.length === 0 ? (
         <EmptyState emoji="✉️" title="No chats yet" message={emptyMessage} />
       ) : (
-        <ChatList items={chats.items} onLeave={(id) => void chats.leave(id)} highlightId={newest?.threadId ?? null} />
+        <ChatList items={chats.items} onLeave={(id) => void chats.leave(id)} highlightId={newest?.threadId ?? null} showPets={showPets} />
       )}
     </Screen>
   );

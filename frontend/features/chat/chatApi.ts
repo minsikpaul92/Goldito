@@ -1,5 +1,6 @@
 import { PriceQuote, asQuote, priceErrorMessage } from "../../lib/bookings";
 import { getSupabase } from "../../lib/supabase";
+import type { Species } from "../../types/db";
 
 export type ChatPet = { id: string; name: string };
 
@@ -65,6 +66,9 @@ export type ChatHeader = {
   myRole: "owner" | "sitter";
 };
 
+/** A pet of the stay a chat is about, as the list and header show it (round face and name). */
+export type ChatPetFace = { id: string; name: string; species: Species | null; photo: string | null; breed?: string | null };
+
 /** One row of the chat list. */
 export type ChatListItem = {
   threadId: string;
@@ -75,6 +79,7 @@ export type ChatListItem = {
   lastCardType: string | null;
   lastAt: string;
   unread: number;
+  pets: ChatPetFace[];
 };
 
 export type Stay = { dropOffAt: string; pickUpAt: string; petIds: string[] };
@@ -206,6 +211,7 @@ export async function listMyChats(): Promise<ChatListItem[]> {
     last_card_type: string | null;
     last_at: string;
     unread_count: number;
+    pets: { id: string; name: string; species: Species | null; photo: string | null }[] | null;
   }[]).map((r) => ({
     threadId: r.thread_id,
     otherId: r.other_id,
@@ -215,6 +221,20 @@ export async function listMyChats(): Promise<ChatListItem[]> {
     lastCardType: r.last_card_type,
     lastAt: r.last_at,
     unread: r.unread_count,
+    pets: (r.pets ?? []).map((p) => ({ id: p.id, name: p.name, species: p.species, photo: p.photo })),
+  }));
+}
+
+/** The pets on the latest stay or request card of a chat, for its header (one call, both people of the chat can make it). */
+export async function loadChatThreadPets(threadId: string): Promise<ChatPetFace[]> {
+  const { data, error } = await getSupabase().rpc("get_chat_thread_pets", { p_thread: threadId });
+  if (error) return [];
+  return ((data ?? []) as { id: string; name: string; species: Species | null; breed: string | null; photo: string | null }[]).map((p) => ({
+    id: p.id,
+    name: p.name,
+    species: p.species,
+    breed: p.breed,
+    photo: p.photo,
   }));
 }
 
