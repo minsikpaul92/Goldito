@@ -46,7 +46,7 @@ test.describe("photo caption", () => {
     });
     await addSamplePhoto(page);
     await expect(app(page).getByTestId("feed-uploading-text")).toHaveText("Writing a caption…");
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
+    await expect(app(page).getByTestId("toast")).toContainText("Pawsted! Robert can see it");
 
     expect(asked).toEqual([{ pet_id: PET_ID, media_id: "media-proof" }]);
     expect(db.feed_posts).toHaveLength(1);
@@ -60,7 +60,7 @@ test.describe("photo caption", () => {
   test("when the caption fails the post still goes out with the fallback caption and no tag", async ({ page }) => {
     const { db } = await openSitterFeed(page, { status: 502, body: { detail: "down" } });
     await addSamplePhoto(page);
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
+    await expect(app(page).getByTestId("toast")).toContainText("Pawsted! Robert can see it");
     expect(db.feed_posts[0]).toMatchObject({ caption: "A moment from today's care 🐾", caption_source: "fallback", category: null });
   });
 
@@ -70,7 +70,7 @@ test.describe("photo caption", () => {
       body: { caption: "Max had a lovely moment today 🐾", category: null, source: "fallback", model: "fallback", latency_ms: 0 },
     });
     await addSamplePhoto(page);
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
+    await expect(app(page).getByTestId("toast")).toContainText("Pawsted! Robert can see it");
     expect(db.feed_posts[0]).toMatchObject({ caption: "Max had a lovely moment today 🐾", caption_source: "fallback", category: null });
   });
 });

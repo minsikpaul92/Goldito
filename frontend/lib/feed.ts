@@ -356,11 +356,11 @@ export async function unhideFeedPost(postId: string): Promise<void> {
 }
 
 /**
- * Owner (or on-duty sitter) timeline for one pet — newest first, page of FEED_PAGE_SIZE.
+ * Owner (or on-duty sitter) timeline for one pet or several — newest first, page of FEED_PAGE_SIZE.
  * Pass `offset` for Load more / onEndReached (0, 20, 40, …).
  */
 export async function listFeedPosts(
-  petId: string,
+  petIds: string | string[],
   options: { offset?: number; limit?: number } = {},
 ): Promise<FeedTimelinePost[]> {
   const offset = options.offset ?? 0;
@@ -369,7 +369,7 @@ export async function listFeedPosts(
   const { data, error } = await getSupabase()
     .from("feed_posts")
     .select(TIMELINE_SELECT)
-    .eq("pet_id", petId)
+    .in("pet_id", [petIds].flat())
     .order("taken_at", { ascending: false })
     .range(offset, offset + limit - 1);
 

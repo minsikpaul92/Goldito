@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Art } from "./art/Art";
 import { HOME_TEXT } from "./home/homeType";
+import { PetFace } from "./PetFace";
 import { Icon } from "./ui/Icon";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
@@ -12,47 +12,66 @@ export type FeedPetOption = { id: string; name: string; species: "dog" | "cat" }
 /** Pets in the order shown; a line is drawn between groups (it cannot be picked). */
 export type FeedPetGroup = { key: string; hint?: string; pets: FeedPetOption[] };
 
+/** The value of the picker when every pet is shown together. */
+export const ALL_PETS = "all";
+
 type Props = {
   groups: FeedPetGroup[];
-  value: string | null;
-  onChange: (petId: string) => void;
+  /** The pets "All pets" covers; with fewer than two there is no All pets row. */
+  allPets: FeedPetOption[];
+  /** A pet id, or ALL_PETS. */
+  value: string;
+  onChange: (value: string) => void;
+  /** First photo of each pet, for the faces. */
+  faces: Record<string, string | null>;
   testID?: string;
 };
 
 type Anchor = { x: number; y: number; width: number; height: number };
 
 /**
- * The pet of the Feed as a dropdown next to the filter chips: the pet on screen is the chosen one, the list drops down
- * right under it. A sitter sees the pets in care first, a line, then the pets of stays that are over; an owner sees
- * their own.
+ * The first filter chip of the Feed (Muk's trial, #345): "All pets" with their faces, a menu that drops right under it
+ * to narrow to one pet. A sitter sees the pets in care first, a line, then the pets of stays that are over; an owner
+ * sees their own. With one pet there is nothing to pick and the chip is not there.
  */
-export function FeedPetPicker({ groups, value, onChange, testID = "feed-pet" }: Props) {
+export function FeedPetPicker({ groups, allPets, value, onChange, faces, testID = "feed-pet" }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const pill = useRef<View>(null);
   const [anchor, setAnchor] = useState<Anchor | null>(null);
   const all = groups.flatMap((g) => g.pets);
-  const chosen = all.find((p) => p.id === value) ?? all[0];
-  if (!chosen) return null;
+  const hasAll = allPets.length > 1;
+  const chosen = value === ALL_PETS && hasAll ? null : (all.find((p) => p.id === value) ?? all[0]);
+  if (all.length < 2) return null;
 
   const open = () => pill.current?.measureInWindow((x, y, width, height) => setAnchor({ x, y, width, height }));
   const close = () => setAnchor(null);
+  const face = (p: FeedPetOption, size: number) => <PetFace pet={{ species: p.species, photo: faces[p.id] }} size={size} />;
+  const stack = (size: number) => (
+    <View style={styles.stack}>
+      {allPets.slice(0, 3).map((p, i) => (
+        <View key={p.id} style={i > 0 ? { marginLeft: -size * 0.35 } : undefined}>
+          {face(p, size)}
+        </View>
+      ))}
+    </View>
+  );
 
   return (
     <>
       <Pressable
         ref={pill}
         accessibilityRole="button"
-        accessibilityLabel={`Pet: ${chosen.name}`}
+        accessibilityLabel={`Pet: ${chosen ? chosen.name : "All pets"}`}
         aria-haspopup="listbox"
         aria-expanded={anchor != null}
         onPress={open}
         style={styles.pill}
         testID={testID}
       >
-        <Art name={chosen.species === "cat" ? "snap/chip-cat" : "snap/chip-dog"} size={28} />
+        {chosen ? face(chosen, 28) : stack(28)}
         <Text style={styles.name} numberOfLines={1}>
-          {chosen.name}
+          {chosen ? chosen.name : "All pets"}
         </Text>
         <Icon name="expand" size={16} color={theme.color.textMuted} />
       </Pressable>
@@ -64,13 +83,31 @@ export function FeedPetPicker({ groups, value, onChange, testID = "feed-pet" }: 
             style={[styles.menu, { top: anchor.y + anchor.height + 4, left: anchor.x, minWidth: Math.max(anchor.width, 200) }]}
             testID={`${testID}-menu`}
           >
+            {hasAll ? (
+              <Pressable
+                accessibilityRole="radio"
+                aria-checked={!chosen}
+                onPress={() => {
+                  onChange(ALL_PETS);
+                  close();
+                }}
+                style={[styles.row, !chosen && styles.rowOn]}
+                testID={`${testID}-all`}
+              >
+                {stack(24)}
+                <View style={styles.rowText}>
+                  <Text style={[styles.rowName, !chosen && styles.rowNameOn]}>All pets</Text>
+                </View>
+                {!chosen ? <Icon name="check" size={18} color={theme.color.primary} /> : null}
+              </Pressable>
+            ) : null}
             {groups
               .filter((g) => g.pets.length > 0)
               .map((group, index) => (
                 <View key={group.key}>
                   {index > 0 ? <View style={styles.line} testID={`${testID}-line`} /> : null}
                   {group.pets.map((pet) => {
-                    const on = pet.id === chosen.id;
+                    const on = chosen?.id === pet.id;
                     return (
                       <Pressable
                         key={pet.id}
@@ -83,7 +120,7 @@ export function FeedPetPicker({ groups, value, onChange, testID = "feed-pet" }: 
                         style={[styles.row, on && styles.rowOn]}
                         testID={`${testID}-${pet.id}`}
                       >
-                        <Art name={pet.species === "cat" ? "snap/chip-cat" : "snap/chip-dog"} size={24} />
+                        {face(pet, 24)}
                         <View style={styles.rowText}>
                           <Text style={[styles.rowName, on && styles.rowNameOn]} numberOfLines={1}>
                             {pet.name}
@@ -116,8 +153,9 @@ const makeStyles = (theme: Theme) =>
       borderWidth: 1,
       borderColor: theme.color.borderStrong,
       backgroundColor: theme.color.surface,
-      maxWidth: 150,
+      maxWidth: 170,
     },
+    stack: { flexDirection: "row", alignItems: "center" },
     name: { flexShrink: 1, fontSize: HOME_TEXT.chip, lineHeight: 18.2, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     menu: {
       position: "absolute",

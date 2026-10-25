@@ -5,12 +5,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AddPhotoSheet } from "../../../components/AddPhotoSheet";
 import { FeedBrowser } from "../../../components/FeedBrowser";
-import { FeedPetPicker } from "../../../components/FeedPetPicker";
+import { ALL_PETS, FeedPetPicker } from "../../../components/FeedPetPicker";
 import { FeedSwitch } from "../../../components/FeedSwitch";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { useInCare } from "../../../features/care/useInCare";
 import { OwnerDiaryBook } from "../../../features/diary/OwnerDiaryBook";
+import { usePetFaces } from "../../../features/feed/usePetFaces";
 import { useMyPets } from "../../../features/pets/useMyPets";
 import { UploadError, uploadMedia } from "../../../lib/cloudinary";
 import {
@@ -52,7 +53,9 @@ function OwnerFeed() {
   const { status: petsStatus, pets, error: petsError, reload: reloadPets } = useMyPets();
   // A notice opens this screen on the pet it is about (`?pet=`).
   const { pet: petParam } = useLocalSearchParams<{ pet?: string }>();
-  const [petId, setPetId] = useState<string | null>(null);
+  // "all" (every pet together, the default with two or more) or one pet's id.
+  const [petSel, setPetSel] = useState<string | null>(null);
+  const [addPetId, setAddPetId] = useState<string | null>(null);
   const [feed, setFeed] = useState<FeedState>({ status: "loading" });
   const [loadingMore, setLoadingMore] = useState(false);
   const [picked, setPicked] = useState<PickedMedia | null>(null);
@@ -61,19 +64,24 @@ function OwnerFeed() {
 
   useEffect(() => {
     if (pets.length === 0) {
-      setPetId(null);
+      setPetSel(null);
       return;
     }
     const wanted = petParam && pets.some((p) => p.id === petParam) ? petParam : null;
-    setPetId((current) => wanted ?? (current && pets.some((p) => p.id === current) ? current : pets[0].id));
+    const usual = pets.length > 1 ? ALL_PETS : pets[0].id;
+    setPetSel((current) => wanted ?? (current && (current === ALL_PETS ? pets.length > 1 : pets.some((p) => p.id === current)) ? current : usual));
   }, [pets, petParam]);
+
+  const selectedIds = petSel === ALL_PETS ? pets.map((p) => p.id) : petSel ? [petSel] : [];
+  const selKey = selectedIds.join(",");
+  const faces = usePetFaces(pets.map((p) => p.id));
 
   const loadPage = useCallback(
     async (offset: number, append: boolean, soft = false) => {
-      if (!petId) return;
+      if (!selKey) return;
       if (!append && !soft) setFeed({ status: "loading" });
       try {
-        const page = await listFeedPosts(petId, { offset, limit: FEED_PAGE_SIZE });
+        const page = await listFeedPosts(selKey.split(","), { offset, limit: FEED_PAGE_SIZE });
         setFeed((prev) => {
           const existing = append && prev.status !== "loading" ? prev.posts : [];
           const posts = append ? [...existing, ...page] : page;
@@ -88,54 +96,56 @@ function OwnerFeed() {
         }));
       }
     },
-    [petId],
+    [selKey],
   );
 
   useEffect(() => {
-    if (!petId) {
+    if (!selKey) {
       if (petsStatus === "ready") setFeed({ status: "ready", posts: [], hasMore: false });
       return;
     }
     void loadPage(0, false);
-  }, [petId, petsStatus, loadPage]);
+  }, [selKey, petsStatus, loadPage]);
 
   useEffect(() => {
-    if (!petId || feedRevision === 0) return;
+    if (!selKey || feedRevision === 0) return;
     void loadPage(0, false, true);
-  }, [feedRevision, petId, loadPage]);
+  }, [feedRevision, selKey, loadPage]);
 
   const loadMore = useCallback(async () => {
-    if (feed.status !== "ready" || !feed.hasMore || loadingMore || !petId) return;
+    if (feed.status !== "ready" || !feed.hasMore || loadingMore || !selKey) return;
     setLoadingMore(true);
     try {
       await loadPage(feed.posts.length, true);
     } finally {
       setLoadingMore(false);
     }
-  }, [feed, loadingMore, petId, loadPage]);
+  }, [feed, loadingMore, selKey, loadPage]);
 
-  const caring = petId != null && inCare[petId] != null;
+  // The pet a new photo is of: the pet on screen, or the one picked in the sheet when every pet is shown.
+  const targetPetId = petSel === ALL_PETS ? (addPetId && pets.some((p) => p.id === addPetId) ? addPetId : pets[0]?.id) : petSel;
+  const caring = targetPetId != null && inCare[targetPetId] != null;
 
   const addPhoto = async () => {
-    if (!petId || saving) return;
+    if (!targetPetId || saving) return;
     const next = await pickMedia({ purpose: "feed", mediaTypes: ["image", "video"] });
     if (next) setPicked(next);
   };
 
   const savePhoto = async ({ share, note }: { share: boolean; note: string }) => {
-    if (!petId || !picked || saving) return;
+    if (!targetPetId || !picked || saving) return;
     setSaving(true);
     try {
       const kind = picked.file.type.startsWith("video/") ? "video" : "image";
       const uploaded = await uploadMedia({
-        petId,
+        petId: targetPetId,
         purpose: "feed",
         file: picked.file,
         trim: picked.trim,
         resourceType: kind,
       });
       await createFeedPost({
-        petId,
+        petId: targetPetId,
         mediaId: uploaded.mediaId,
         caption: FALLBACK_CAPTION,
         captionSource: "fallback",
@@ -144,7 +154,7 @@ function OwnerFeed() {
         note,
       });
       setPicked(null);
-      toast.show(share ? "Shared with your sitter" : "Saved just for you");
+      toast.show(share ? `Pawsted! ${inCare[targetPetId]?.sitterName ?? "Your sitter"} can see it` : "Saved just for you");
       await loadPage(0, false, true);
     } catch (err) {
       errorDialog.show({
@@ -182,7 +192,11 @@ function OwnerFeed() {
   }
 
   const posts = feed.status === "loading" ? [] : feed.posts;
-  const petGroups = [{ key: "mine", pets: pets.map((p) => ({ id: p.id, name: p.name, species: p.species })) }];
+  const petOptions = pets.map((p) => ({ id: p.id, name: p.name, species: p.species }));
+  const petGroups = [{ key: "mine", pets: petOptions }];
+  // With several pets together each photo carries its pet's face.
+  const facePets =
+    petSel === ALL_PETS ? Object.fromEntries(pets.map((p) => [p.id, { species: p.species, photo: faces[p.id], name: p.name }])) : undefined;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
@@ -199,7 +213,8 @@ function OwnerFeed() {
             prev.status === "loading" ? prev : { ...prev, posts: prev.posts.map((p) => (p.id === id ? { ...p, ...change } : p)) },
           )
         }
-        petPicker={<FeedPetPicker groups={petGroups} value={petId} onChange={setPetId} />}
+        petPicker={<FeedPetPicker groups={petGroups} allPets={petOptions} value={petSel ?? ALL_PETS} onChange={setPetSel} faces={faces} />}
+        faces={facePets}
         emptyMessage="Your sitter will share photos here."
         error={feed.status === "error" && posts.length === 0 ? { message: feed.message, onRetry: () => void loadPage(0, false) } : null}
         testID="owner-feed-list"
@@ -220,7 +235,10 @@ function OwnerFeed() {
 
       <AddPhotoSheet
         file={picked?.file ?? null}
-        shareWith={petId ? (inCare[petId]?.sitterName ?? "your sitter") : "your sitter"}
+        pets={petSel === ALL_PETS ? petOptions : undefined}
+        petId={targetPetId ?? undefined}
+        onPetChange={setAddPetId}
+        shareWith={targetPetId ? (inCare[targetPetId]?.sitterName ?? "your sitter") : "your sitter"}
         canShare={caring}
         defaultShare={false}
         saving={saving}

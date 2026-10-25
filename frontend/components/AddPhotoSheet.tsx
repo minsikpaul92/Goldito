@@ -16,6 +16,10 @@ export const FEED_NOTE_MAX = 200;
 type Props = {
   /** The picked photo or video; the sheet is open while there is one. */
   file: File | null;
+  /** When the Feed shows several pets together: which pet this photo is of. */
+  pets?: { id: string; name: string }[];
+  petId?: string;
+  onPetChange?: (petId: string) => void;
   /** Who else may see it if shared: "Robert", "your sitter". */
   shareWith: string;
   /** False after a stay: the photo can only be kept for me. */
@@ -33,7 +37,7 @@ type Props = {
  * Adding a photo to the Feed (#345): see it, choose Only me or Share with the other person, add a short memo if you
  * like, then Save. Nothing is uploaded or shared before Save.
  */
-export function AddPhotoSheet({ file, shareWith, canShare, defaultShare, saving, statusText, onClose, onSave }: Props) {
+export function AddPhotoSheet({ file, pets, petId, onPetChange, shareWith, canShare, defaultShare, saving, statusText, onClose, onSave }: Props) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const [share, setShare] = useState(defaultShare);
@@ -87,6 +91,15 @@ export function AddPhotoSheet({ file, shareWith, canShare, defaultShare, saving,
             <Icon name="video" size={32} color={theme.color.onMedia} />
           )}
         </View>
+        {pets && pets.length > 1 && petId && onPetChange ? (
+          <SegmentedControl
+            options={pets.map((p) => ({ value: p.id, label: p.name }))}
+            value={petId}
+            onChange={onPetChange}
+            scrollable
+            testID="feed-add-pet"
+          />
+        ) : null}
         <SegmentedControl
           options={[
             { value: "me", label: "Only me" },

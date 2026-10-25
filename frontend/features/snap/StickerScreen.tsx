@@ -70,7 +70,8 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
   const photoRef = useRef<View>(null);
 
   // The Snap tab passes the pet it had picked (`?pet=`).
-  const { pet: petParam } = useLocalSearchParams<{ pet?: string }>();
+  // A photo from Moments comes as `?photo=` (its Cloudinary id): it is cut out at once.
+  const { pet: petParam, photo: photoParam } = useLocalSearchParams<{ pet?: string; photo?: string }>();
   const [petId, setPetId] = useState<string | null>(petParam ?? null);
   const [step, setStep] = useState<Step | null>(null);
   const [photo, setPhoto] = useState<Photo | null>(null);
@@ -130,7 +131,10 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
   const pickPhoto = async () => {
     if (step) return;
     const picked = await pickMedia({ purpose: "sticker", mediaTypes: ["image"] });
-    if (!picked) return;
+    if (picked) await startFrom(picked.file);
+  };
+
+  const startFrom = async (file: File) => {
     setSticker(null);
     setMissed(false);
     setPoint(null);
@@ -138,7 +142,7 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
     let current: Photo | null = null;
     let start: Point = { x: 0.5, y: 0.5 };
     try {
-      const [frame] = await loadFrames(picked.file);
+      const [frame] = await loadFrames(file);
       current = { frame, url: frame.toDataURL("image/jpeg", 0.85), aspect: frame.width / frame.height };
       setPhoto(current);
       // The biggest pet, tapped at its centre — like a long press on the pet. No pet found: the middle.
@@ -155,6 +159,24 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
     }
     if (current) await cut(current, start);
   };
+
+  const fromMoments = useRef<string | null>(null);
+  useEffect(() => {
+    if (!photoParam || !petId || fromMoments.current === photoParam) return;
+    fromMoments.current = photoParam;
+    void (async () => {
+      setStep("preparing");
+      try {
+        const blob = await (await fetch(deliveryUrl(photoParam, 1200))).blob();
+        await startFrom(new File([blob], "photo.jpg", { type: blob.type || "image/jpeg" }));
+      } catch {
+        setStep(null);
+        errorDialog.show({ title: "Sticker not made", message: "Couldn't open that photo. Try again." });
+      }
+    })();
+    // startFrom only uses state setters and refs; the photo is started once per link
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photoParam, petId]);
 
   const onTapPhoto = (event: GestureResponderEvent) => {
     if (!photo || step) return;
@@ -175,7 +197,8 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
       const file = new File([sticker.blob], "sticker.png", { type: "image/png" });
       const uploaded = await uploadMedia({ petId, purpose: "sticker", file, resourceType: "image" });
       await saveSticker(petId, uploaded.mediaId, me);
-      toast.show("Sticker saved");
+      const name = pets.status === "ready" ? pets.pets.find((p) => p.id === petId)?.name : null;
+      toast.show(name ? `Paw-fect! Saved to ${name}'s stickers` : "Paw-fect! Sticker saved");
       setSticker(null);
       setPhoto(null);
       setPoint(null);

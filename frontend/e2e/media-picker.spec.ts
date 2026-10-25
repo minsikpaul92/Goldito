@@ -127,7 +127,7 @@ test.describe("pickMedia", () => {
     expect(calls.sign).toHaveLength(0);
     await save(page);
 
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
+    await expect(app(page).getByTestId("toast")).toContainText("Pawsted! Robert can see it");
     await expect(app(page).getByTestId("media-picker")).toBeHidden();
 
     expect(calls.sign).toEqual([{ pet_id: PET_ID, resource_type: "image", purpose: "feed", booking_id: null }]);
@@ -159,7 +159,7 @@ test.describe("pickMedia", () => {
     await (await chooser).setFiles({ name: "big.png", mimeType: "image/png", buffer: Buffer.from(png) });
     await save(page);
 
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
+    await expect(app(page).getByTestId("toast")).toContainText("Pawsted! Robert can see it");
     const sent = calls.upload[0];
     expect(sent.body).toContain('filename="big.jpg"');
     expect(sent.body).toContain("Content-Type: image/jpeg");
@@ -188,7 +188,7 @@ test.describe("pickMedia", () => {
 
     await app(page).getByTestId("trim-confirm").click();
     await save(page);
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
+    await expect(app(page).getByTestId("toast")).toContainText("Pawsted! Robert can see it");
 
     expect(calls.sign).toHaveLength(1);
     const body = calls.sign[0] as { resource_type: string; trim_start: number; trim_duration: number };
@@ -225,7 +225,7 @@ test.describe("pickMedia", () => {
     await (await chooser).setFiles(path.join(FIXTURES, "video-10s.webm"));
     await save(page);
 
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
+    await expect(app(page).getByTestId("toast")).toContainText("Pawsted! Robert can see it");
     await expect(app(page).getByTestId("trim-sheet")).toBeHidden();
     expect(calls.sign[0]).toEqual({ pet_id: PET_ID, resource_type: "video", purpose: "feed", booking_id: null });
   });
@@ -244,7 +244,7 @@ test.describe("pickMedia", () => {
 
     // Try again sends the same photo, without picking it again.
     await app(page).getByTestId("error-dialog-retry").click();
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
+    await expect(app(page).getByTestId("toast")).toContainText("Pawsted! Robert can see it");
     expect(calls.sign).toHaveLength(2);
     expect(calls.complete).toHaveLength(1);
   });
@@ -259,7 +259,7 @@ test.describe("feed visibility (5.8)", () => {
     await expect(app(page).getByTestId("feed-add-share-share")).toHaveAttribute("aria-checked", "true");
     await expect(app(page).getByTestId("feed-add-share-share")).toHaveText("Share with Robert");
     await save(page);
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
+    await expect(app(page).getByTestId("toast")).toContainText("Pawsted! Robert can see it");
     expect(calls.db.feed_posts).toHaveLength(1);
     expect(calls.db.feed_posts[0]).toMatchObject({
       visibility: "shared",
@@ -286,7 +286,7 @@ test.describe("feed visibility (5.8)", () => {
     await app(page).getByTestId("feed-add-note").fill("Loved the leaves");
     expect(calls.db.feed_posts).toHaveLength(0);
     await save(page);
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
+    await expect(app(page).getByTestId("toast")).toContainText("Pawsted! Robert can see it");
     expect(calls.db.feed_posts[0]).toMatchObject({ note: "Loved the leaves" });
   });
 
@@ -356,7 +356,7 @@ test.describe("feed visibility (5.8)", () => {
     await app(page).getByTestId("sample-nap").click();
     await app(page).getByTestId("feed-add-share-share").click();
     await save(page);
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with your sitter");
+    await expect(app(page).getByTestId("toast")).toContainText("Pawsted!");
     expect(calls.db.feed_posts.filter((p) => p.posted_by === OWNER.id && p.visibility === "shared")).toHaveLength(1);
 
     // Delete is on every photo now, the sitter's included (from my side only, the sheet says so).

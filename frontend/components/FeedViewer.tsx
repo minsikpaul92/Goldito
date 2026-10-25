@@ -17,12 +17,17 @@ type Props = {
   onNearEnd?: () => void;
   /** Parent opens a confirm sheet (outside this Modal) then deletes, from my Feed only or for both. */
   onRequestDelete?: (postId: string) => void;
+  /** Pet names by id, when several pets are shown together: the detail then says which pet it is. */
+  petNames?: Record<string, string>;
   /** The author can edit their photo (tags, day, time, memo): the parent says for which, and opens the sheet. */
   canEdit?: (post: FeedTimelinePost) => boolean;
   onRequestEdit?: (postId: string) => void;
   /** Hide the photo from the grid / bring it back. */
   onHide?: (postId: string) => void;
   onUnhide?: (postId: string) => void;
+  /** Turn a photo into a sticker: the parent says for which photos, and opens the sticker maker. */
+  canSticker?: (post: FeedTimelinePost) => boolean;
+  onMakeSticker?: (postId: string) => void;
 };
 
 const SWIPE_DISTANCE = 50;
@@ -45,10 +50,13 @@ export function FeedViewer({
   onClose,
   onNearEnd,
   onRequestDelete,
+  petNames,
   canEdit,
   onRequestEdit,
   onHide,
   onUnhide,
+  canSticker,
+  onMakeSticker,
 }: Props) {
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
@@ -162,6 +170,7 @@ export function FeedViewer({
           post={activePost}
           bottomInset={insets.bottom}
           zoom={zoom}
+          petName={petNames?.[activePost.petId]}
           onZoom={(scale) => setZoomed(scale > ZOOM_REST)}
         />
 
@@ -206,6 +215,16 @@ export function FeedViewer({
               <Text style={styles.actionLabel}>{activePost.hidden ? "Unhide" : "Hide"}</Text>
             </Pressable>
           ) : null}
+          {onMakeSticker && canSticker?.(activePost) ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => onMakeSticker(activePost.id)}
+              style={styles.actionBtn}
+              testID="feed-viewer-sticker"
+            >
+              <Text style={styles.actionLabel}>Make a sticker</Text>
+            </Pressable>
+          ) : null}
           {onRequestEdit && canEdit?.(activePost) ? (
             <Pressable
               accessibilityRole="button"
@@ -239,10 +258,12 @@ function ViewerPage({
   post,
   bottomInset,
   zoom,
+  petName,
   onZoom,
 }: {
   post: FeedTimelinePost;
   bottomInset: number;
+  petName?: string;
   zoom: { current: ZoomState };
   onZoom: (scale: number) => void;
 }) {
@@ -461,6 +482,7 @@ function ViewerPage({
         </Text>
         <Text style={styles.meta}>
           {post.authorName}
+          {petName ? ` · ${petName}` : ""}
           {post.visibility === "private" ? " · Only you" : ""}
         </Text>
       </View>
@@ -531,8 +553,10 @@ const makeStyles = (theme: Theme) =>
     actions: {
       position: "absolute",
       left: theme.spacing.md,
+      right: theme.spacing.md + 48, // clear of the close button
       zIndex: 4,
       flexDirection: "row",
+      flexWrap: "wrap",
       gap: theme.spacing.sm,
     },
     actionBtn: {

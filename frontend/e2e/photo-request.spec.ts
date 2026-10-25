@@ -28,7 +28,7 @@ test.describe("photo request", () => {
     await screen.getByTestId("feed-add-photo").click();
     await screen.getByTestId("sample-walk").click();
     await screen.getByTestId("feed-add-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Shared with Robert");
+    await expect(screen.getByTestId("toast")).toContainText("Pawsted! Robert can see it");
 
     expect(db.photo_requests[0]).toMatchObject({ status: "fulfilled", fulfilled_post_id: db.feed_posts[0].id });
     const owner = db.notifications.filter((n) => n.user_id === OWNER.id);
@@ -51,7 +51,7 @@ test.describe("photo request", () => {
     await page.goto("/owner/notifications");
     const card = screen.getByTestId("notification-n-answer");
     await expect(card).toContainText("Here's the photo of Max you asked for");
-    // No photo on the notice in this mock, so it goes straight to the feed (with one, the detail sheet says See in Feed).
+    // No photo on the notice in this mock, so it goes straight to the feed (with one, the detail sheet says See in Moments).
     await card.click();
     await expect(page).toHaveURL(new RegExp(`/owner/feed\\?pet=${MAX}$`));
   });

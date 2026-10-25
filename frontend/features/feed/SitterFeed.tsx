@@ -4,7 +4,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AddPhotoSheet } from "../../components/AddPhotoSheet";
 import { FeedBrowser } from "../../components/FeedBrowser";
-import { FeedPetPicker } from "../../components/FeedPetPicker";
+import { ALL_PETS, FeedPetPicker } from "../../components/FeedPetPicker";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { listSitterBookings } from "../../lib/bookings";
@@ -25,6 +25,7 @@ import { useThemedStyles } from "../../providers/ThemeProvider";
 import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
 import { FeedPet, feedPetsFromBookings } from "./caringPets";
+import { usePetFaces } from "./usePetFaces";
 
 type FeedState =
   | { status: "loading" }
@@ -32,10 +33,11 @@ type FeedState =
   | { status: "error"; message: string; posts: FeedTimelinePost[]; hasMore: boolean };
 
 /**
- * The sitter's Feed tab (#345): it opens on the first pet in care (else the latest pet of a stay that is over) with the
- * same filterable mosaic as the owner's. The pet dropdown next to the chips lists the pets in care, a line, then the
- * pets of stays that are over. A photo added here is Only me or shared with the owner (Save); after the stay it can
- * only be for me. `?pet=` opens a given pet (a notice, a chat card).
+ * The sitter's Moments tab (#345, Muk's trial): it opens on the pets in care together (a single pet when there is one)
+ * with the same filterable mosaic as the owner's, and a pet chip first in the filter row narrows it to one pet. The chip
+ * lists All pets (the pets in care), then a line, then the pets of stays that are over; with no pet in care it opens on
+ * the latest of those. A photo added here is Only me or shared with the owner (Save); after the stay it can only be for
+ * me. `?pet=` opens a given pet (a notice, a chat card).
  */
 export function SitterFeed() {
   const { pet: petParam } = useLocalSearchParams<{ pet?: string }>();
@@ -44,6 +46,7 @@ export function SitterFeed() {
   const [pets, setPets] = useState<FeedPet[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [chosen, setChosen] = useState<string | null>(null);
+  const faces = usePetFaces((pets ?? []).map((p) => p.id));
 
   const load = useCallback(async () => {
     if (!sitterId) return;
@@ -80,15 +83,44 @@ export function SitterFeed() {
     );
   }
 
-  const pet = pets.find((p) => p.id === chosen) ?? pets[0];
+  const inCare = pets.filter((p) => p.caring);
+  const past = pets.filter((p) => !p.caring);
+  // Every pet in care together when there are two or more; else the one in care; else the latest past stay.
+  const usual = inCare.length > 1 ? ALL_PETS : (inCare[0] ?? past[0]).id;
+  const valid = chosen && (chosen === ALL_PETS ? inCare.length > 1 : pets.some((p) => p.id === chosen));
+  const selection = valid ? chosen : usual;
+  const selected = selection === ALL_PETS ? inCare : pets.filter((p) => p.id === selection);
   const groups = [
-    { key: "care", hint: "In care", pets: pets.filter((p) => p.caring) },
-    { key: "past", hint: "Past stay", pets: pets.filter((p) => !p.caring) },
+    { key: "care", hint: "In care", pets: inCare },
+    { key: "past", hint: "Past stay", pets: past },
   ];
-  return <SitterPetFeed key={pet.id} pet={pet} petPicker={<FeedPetPicker groups={groups} value={pet.id} onChange={setChosen} />} />;
+  return (
+    <SitterPetFeed
+      key={selection}
+      pets={selected}
+      several={selection === ALL_PETS}
+      faces={faces}
+      petPicker={<FeedPetPicker groups={groups} allPets={inCare} value={selection} onChange={setChosen} faces={faces} />}
+    />
+  );
 }
 
-function SitterPetFeed({ pet, petPicker }: { pet: FeedPet; petPicker: React.ReactNode }) {
+function SitterPetFeed({
+  pets,
+  several,
+  faces,
+  petPicker,
+}: {
+  pets: FeedPet[];
+  several: boolean;
+  faces: Record<string, string | null>;
+  petPicker: React.ReactNode;
+}) {
+  const petIds = pets.map((p) => p.id);
+  const idsKey = petIds.join(",");
+  const [addPetId, setAddPetId] = useState<string | null>(null);
+  // The pet a new photo is of: the pet on screen, or the one picked in the sheet when several are shown.
+  const pet = pets.find((p) => p.id === addPetId) ?? pets[0];
   const petId = pet.id;
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
@@ -107,7 +139,7 @@ function SitterPetFeed({ pet, petPicker }: { pet: FeedPet; petPicker: React.Reac
     async (offset: number, append: boolean, soft = false) => {
       if (!append && !soft) setFeed({ status: "loading" });
       try {
-        const page = await listFeedPosts(petId, { offset, limit: FEED_PAGE_SIZE });
+        const page = await listFeedPosts(idsKey.split(","), { offset, limit: FEED_PAGE_SIZE });
         setFeed((prev) => {
           const existing = append && prev.status !== "loading" ? prev.posts : [];
           const posts = append ? [...existing, ...page] : page;
@@ -122,7 +154,7 @@ function SitterPetFeed({ pet, petPicker }: { pet: FeedPet; petPicker: React.Reac
         }));
       }
     },
-    [petId],
+    [idsKey],
   );
 
   useEffect(() => {
@@ -180,7 +212,7 @@ function SitterPetFeed({ pet, petPicker }: { pet: FeedPet; petPicker: React.Reac
         note,
       });
       setPicked(null);
-      toast.show(share ? `Shared with ${pet.ownerName}` : "Saved just for you");
+      toast.show(share ? `Pawsted! ${pet.ownerName} can see it` : "Saved just for you");
       await loadPage(0, false, true);
     } catch (err) {
       const message =
@@ -211,6 +243,7 @@ function SitterPetFeed({ pet, petPicker }: { pet: FeedPet; petPicker: React.Reac
           )
         }
         petPicker={petPicker}
+        faces={several ? Object.fromEntries(pets.map((p) => [p.id, { species: p.species, photo: faces[p.id], name: p.name }])) : undefined}
         emptyMessage={pet.caring ? `Tap + to share ${pet.name}'s day.` : "Photos you save for yourself show up here."}
         error={feed.status === "error" && feed.posts.length === 0 ? { message: feed.message, onRetry: () => void loadPage(0, false) } : null}
         testID="sitter-feed-list"
@@ -231,6 +264,9 @@ function SitterPetFeed({ pet, petPicker }: { pet: FeedPet; petPicker: React.Reac
 
       <AddPhotoSheet
         file={picked?.file ?? null}
+        pets={several ? pets.map((p) => ({ id: p.id, name: p.name })) : undefined}
+        petId={petId}
+        onPetChange={setAddPetId}
         shareWith={pet.ownerName}
         canShare={pet.caring}
         defaultShare={pet.caring}

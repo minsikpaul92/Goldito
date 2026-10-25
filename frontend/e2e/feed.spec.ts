@@ -372,12 +372,9 @@ test.describe("After the stay", () => {
     await pastStay(page);
     await page.goto("/sitter/feed");
     await expect(app(page).getByTestId("sitter-pet-feed")).toBeVisible();
-    await expect(app(page).getByTestId("feed-pet")).toContainText("Max");
     await expect(app(page).getByTestId(`feed-card-${post(0)}`)).toBeVisible();
-    // The dropdown lists it under Past stay; there is no pet in care to list above a line.
-    await app(page).getByTestId("feed-pet").click();
-    await expect(app(page).getByTestId(`feed-pet-${PET_ID}`)).toContainText("Past stay");
-    await expect(app(page).getByTestId("feed-pet-line")).toHaveCount(0);
+    // One pet only: there is nothing to pick between, so no pet chip.
+    await expect(app(page).getByTestId("feed-pet")).toHaveCount(0);
   });
 });
 
@@ -567,7 +564,7 @@ test.describe("Feed pet dropdown and switch", () => {
     });
   }
 
-  test("the owner's dropdown lists only their own pets, and picking one shows that pet's photos", async ({ page }) => {
+  test("the owner opens on All pets with a face on each photo; the dropdown lists only their own pets, and picking one shows that pet's photos", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     db.pets.push(
       { id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null, created_at: "2026-01-01T00:00:00Z" },
@@ -579,10 +576,15 @@ test.describe("Feed pet dropdown and switch", () => {
     await signIn(page, OWNER);
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/owner/feed");
-    await expect(app(page).getByTestId("feed-pet")).toContainText("Max");
+    await expect(app(page).getByTestId("feed-pet")).toContainText("All pets");
     await expect(app(page).getByTestId("feed-card-max-1")).toBeVisible();
+    await expect(app(page).getByTestId("feed-card-mochi-1")).toBeVisible();
+    // Several pets together: each photo says whose it is.
+    await expect(app(page).getByTestId("feed-face-max-1")).toBeVisible();
+    await expect(app(page).getByTestId("feed-face-mochi-1")).toBeVisible();
 
     await app(page).getByTestId("feed-pet").click();
+    await expect(app(page).getByTestId("feed-pet-all")).toBeVisible();
     await expect(app(page).getByTestId(`feed-pet-${PET_ID}`)).toBeVisible();
     await expect(app(page).getByTestId(`feed-pet-${MOCHI_ID}`)).toBeVisible();
     await expect(app(page).getByTestId(`feed-pet-${REX}`)).toHaveCount(0); // someone else's pet
@@ -591,29 +593,86 @@ test.describe("Feed pet dropdown and switch", () => {
     await expect(app(page).getByTestId("feed-pet")).toContainText("Mochi");
     await expect(app(page).getByTestId("feed-card-mochi-1")).toBeVisible();
     await expect(app(page).getByTestId("feed-card-max-1")).toHaveCount(0);
+    // One pet on screen: no face on the photo.
+    await expect(app(page).getByTestId("feed-face-mochi-1")).toHaveCount(0);
+
+    await app(page).getByTestId("feed-pet").click();
+    await app(page).getByTestId("feed-pet-all").click();
+    await expect(app(page).getByTestId("feed-card-max-1")).toBeVisible();
   });
 
-  test("a sitter's Feed opens on the first pet in care; the dropdown lists the pets in care, a line, then the past stays", async ({ page }) => {
+  test("an owner with one pet has no pet chip and no faces", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
+    photo(db, "max-1", PET_ID);
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/owner/feed");
+    await expect(app(page).getByTestId("feed-card-max-1")).toBeVisible();
+    await expect(app(page).getByTestId("feed-pet")).toHaveCount(0);
+    await expect(app(page).getByTestId("feed-face-max-1")).toHaveCount(0);
+  });
+
+  test("Make a sticker in the detail, or a long press on a photo, opens the sticker maker with that photo; a clip has neither", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
+    photo(db, "max-1", PET_ID);
+    db.media.push({ id: "m-clip", pet_id: PET_ID, cloudinary_public_id: `goldito/${PET_ID}/feed/clip`, resource_type: "video", purpose: "feed" });
+    db.feed_posts.push({
+      id: "clip", pet_id: PET_ID, sitter_id: SITTER.id, posted_by: SITTER.id, visibility: "shared", media_id: "m-clip",
+      caption: "clip", caption_source: "fallback", task_log_id: null, created_at: new Date(Date.now() - 60 * 60_000).toISOString(),
+    });
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/owner/feed");
+    await app(page).getByTestId("feed-card-clip").click();
+    await expect(app(page).getByTestId("feed-viewer-close")).toBeVisible();
+    await expect(app(page).getByTestId("feed-viewer-sticker")).toHaveCount(0);
+    await app(page).getByTestId("feed-viewer-close").click();
+
+    await app(page).getByTestId("feed-card-max-1").click();
+    await app(page).getByTestId("feed-viewer-sticker").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/snap/sticker\\?pet=${PET_ID}&photo=`));
+
+    // The pet finder is not there in this test, so the maker says so; close that and come back.
+    await app(page).getByRole("button", { name: "Close" }).click();
+    await page.goBack();
+    await app(page).getByTestId("feed-filters").waitFor();
+    const card = await box(app(page).getByTestId("feed-card-max-1"));
+    await page.mouse.move(card.x + card.width / 2, card.y + card.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(800);
+    await page.mouse.up();
+    await expect(page).toHaveURL(new RegExp(`/owner/snap/sticker\\?pet=${PET_ID}&photo=`));
+  });
+
+  test("a sitter opens on All pets in care; the dropdown lists All pets, the pets in care, a line, then the past stays", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     caring(db, [{ id: PET_ID, name: "Max", species: "dog" }, { id: MOCHI_ID, name: "Mochi", species: "cat" }]);
     pastStayOf(db, REX, "Rex");
     photo(db, "max-1", PET_ID);
+    photo(db, "mochi-1", MOCHI_ID);
     photo(db, "rex-1", REX);
     await signIn(page, SITTER);
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/sitter/feed");
-    // No list to pick from first: the photos of the pet in care are already there.
-    await expect(app(page).getByTestId("feed-pet")).toContainText("Max");
+    // The pets in care together, a face on each photo; the past stay is not mixed in.
+    await expect(app(page).getByTestId("feed-pet")).toContainText("All pets");
     await expect(app(page).getByTestId("feed-card-max-1")).toBeVisible();
+    await expect(app(page).getByTestId("feed-card-mochi-1")).toBeVisible();
+    await expect(app(page).getByTestId("feed-face-max-1")).toBeVisible();
+    await expect(app(page).getByTestId("feed-card-rex-1")).toHaveCount(0);
 
     await app(page).getByTestId("feed-pet").click();
-    // In care first (first one, then the second), then the past stay.
-    const top = async (id: string) => (await box(app(page).getByTestId(`feed-pet-${id}`))).y;
-    expect(await top(PET_ID)).toBeLessThan(await top(MOCHI_ID));
-    expect(await top(MOCHI_ID)).toBeLessThan(await top(REX));
+    // All pets, then the pets in care, then the past stay.
+    const top = async (id: string) => (await box(app(page).getByTestId(id))).y;
+    expect(await top("feed-pet-all")).toBeLessThan(await top(`feed-pet-${PET_ID}`));
+    expect(await top(`feed-pet-${PET_ID}`)).toBeLessThan(await top(`feed-pet-${MOCHI_ID}`));
+    expect(await top(`feed-pet-${MOCHI_ID}`)).toBeLessThan(await top(`feed-pet-${REX}`));
     await expect(app(page).getByTestId(`feed-pet-${PET_ID}`)).toContainText("In care");
     await expect(app(page).getByTestId(`feed-pet-${REX}`)).toContainText("Past stay");
-    // The line between the two groups is not a choice.
+    // The one line sits between the groups (not under All pets) and is not a choice.
+    await expect(app(page).getByTestId("feed-pet-line")).toHaveCount(1);
     const line = await box(app(page).getByTestId("feed-pet-line"));
     expect((await box(app(page).getByTestId(`feed-pet-${MOCHI_ID}`))).y).toBeLessThan(line.y);
     expect((await box(app(page).getByTestId(`feed-pet-${REX}`))).y).toBeGreaterThan(line.y);
@@ -622,6 +681,23 @@ test.describe("Feed pet dropdown and switch", () => {
     await expect(app(page).getByTestId("feed-pet")).toContainText("Rex");
     await expect(app(page).getByTestId("feed-card-rex-1")).toBeVisible();
     await expect(app(page).getByTestId("feed-card-max-1")).toHaveCount(0);
+  });
+
+  test("a sitter with one pet in care opens on it and has no All pets", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [{ id: PET_ID, name: "Max", species: "dog" }]);
+    pastStayOf(db, REX, "Rex");
+    photo(db, "max-1", PET_ID);
+    photo(db, "rex-1", REX);
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/sitter/feed");
+    await expect(app(page).getByTestId("feed-pet")).toContainText("Max");
+    await expect(app(page).getByTestId("feed-card-max-1")).toBeVisible();
+    await expect(app(page).getByTestId("feed-face-max-1")).toHaveCount(0);
+    await app(page).getByTestId("feed-pet").click();
+    await expect(app(page).getByTestId("feed-pet-all")).toHaveCount(0);
+    await expect(app(page).getByTestId(`feed-pet-${REX}`)).toContainText("Past stay");
   });
 
   test("Photos / Diary is a switch on both sides, the sitter's included", async ({ page }) => {
@@ -634,10 +710,10 @@ test.describe("Feed pet dropdown and switch", () => {
     await signIn(page, SITTER);
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/sitter/feed");
-    await expect(app(page).getByTestId("feed-view-photos")).toHaveAttribute("aria-checked", "true");
+    await expect(app(page).getByTestId("feed-view-photos")).toHaveAttribute("aria-selected", "true");
     await expect(app(page).getByTestId("feed-card-max-1")).toBeVisible();
     await app(page).getByTestId("feed-view-diary").click();
-    await expect(app(page).getByTestId("feed-view-diary")).toHaveAttribute("aria-checked", "true");
+    await expect(app(page).getByTestId("feed-view-diary")).toHaveAttribute("aria-selected", "true");
     await expect(app(page).getByTestId("sitter-diary-view-book")).toBeVisible();
     await expect(app(page).getByTestId("feed-card-max-1")).toHaveCount(0);
     await app(page).getByTestId("feed-view-photos").click();
@@ -847,7 +923,13 @@ test.describe("Edit a photo", () => {
   });
 
   test("the pet dropdown drops right under its button, and a tap outside closes it", async ({ page }) => {
-    await seeded(page, SITTER);
+    const MOCHI_ID = "00000000-0000-4000-8000-0000000000bb";
+    const { db } = await mockSupabase(page, [OWNER, SITTER], { now: NOON_TORONTO });
+    caring(db, [{ id: PET_ID, name: "Max", species: "dog" }, { id: MOCHI_ID, name: "Mochi", species: "cat" }], NOON_TORONTO);
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/sitter/feed");
+    await app(page).getByTestId("feed-filters").waitFor();
     const screen = app(page);
     const pill = await box(screen.getByTestId("feed-pet"));
     await screen.getByTestId("feed-pet").click();

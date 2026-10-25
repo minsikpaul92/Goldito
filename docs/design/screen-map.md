@@ -192,9 +192,9 @@ Shows: `AddPhotoSheet` · `FeedBrowser` · `FeedPetPicker` · `FeedSwitch` · `O
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 166 |
-| EmptyState | No pets yet | — | 179 |
-| Pressable | Add photo | `feed-add-photo` | 209 |
+| EmptyState | Couldn't load your pets | — | 176 |
+| EmptyState | No pets yet | — | 189 |
+| Pressable | Add photo | `feed-add-photo` | 224 |
 
 ### `/owner/history` — [app/owner/history.tsx](../../frontend/app/owner/history.tsx)
 
@@ -493,7 +493,7 @@ The Diary tab moved into Feed (#329): an old link to /sitter/diary (with its pag
 
 ### `/sitter/feed` — [app/sitter/(tabs)/feed/index.tsx](../../frontend/app/sitter/(tabs)/feed/index.tsx)
 
-Sitter Feed tab (D47b / phase-05, #345): opens on the pet in care (the pet dropdown picks another, or a pet of a stay that is over), with the Photos / Diary switch on top.
+Sitter Moments tab (D47b / phase-05, #345): opens on the pets in care together (the pet chip picks one, or a pet of a stay that is over), with the Photos / Diary tabs on top.
 
 Shows: `FeedSwitch` · `SitterDiary` · `SitterFeed`
 
@@ -621,9 +621,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | Save | `feed-add-sheet` | 61 |
-| Button | Save | `feed-add-save` | 69 |
-| SegmentedControl | — | `feed-add-share` | 90 |
+| Sheet | Save | `feed-add-sheet` | 65 |
+| Button | Save | `feed-add-save` | 73 |
+| SegmentedControl | — | `feed-add-pet` | 95 |
+| SegmentedControl | — | `feed-add-share` | 103 |
 
 ### AddressInput — [components/AddressInput.tsx](../../frontend/components/AddressInput.tsx)
 
@@ -843,12 +844,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load the feed | — | 173 |
-| EmptyState | Nothing hidden | — | 175 |
-| EmptyState | No photos yet | — | 177 |
-| EmptyState | EMPTY_TITLE[filter as FeedFilterKey] | — | 179 |
-| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 203 |
-| Pressable | ``${tagLabel ?? "Photo"} at ${time}`` | ``feed-card-${post.id}`` | 310 |
+| EmptyState | Couldn't load the feed | — | 189 |
+| EmptyState | Nothing hidden | — | 191 |
+| EmptyState | No photos yet | — | 193 |
+| EmptyState | EMPTY_TITLE[filter as FeedFilterKey] | — | 195 |
+| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 219 |
+| Pressable | ``${tagLabel ?? "Photo"} at ${time}`` | ``feed-card-${post.id}`` | 350 |
 
 ### FeedDeleteSheet — [components/FeedDeleteSheet.tsx](../../frontend/components/FeedDeleteSheet.tsx)
 
@@ -880,21 +881,23 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``Pet: ${chosen.name}`` | `testID` | 43 |
-| Pressable | Close | ``${testID}-backdrop`` | 60 |
-| Pressable | — | ``${testID}-${pet.id}`` | 75 |
+| Pressable | ``Pet: ${chosen ? chosen.name : "All pets"}`` | `testID` | 62 |
+| Pressable | Close | ``${testID}-backdrop`` | 79 |
+| Pressable | — | ``${testID}-all`` | 87 |
+| Pressable | — | ``${testID}-${pet.id}`` | 112 |
 
 ### FeedViewer — [components/FeedViewer.tsx](../../frontend/components/FeedViewer.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Previous | `feed-viewer-prev` | 170 |
-| Pressable | Next | `feed-viewer-next` | 179 |
-| Pressable | Close | `feed-viewer-close` | 188 |
-| Pressable | — | `feed-viewer-hide` | 200 |
-| Pressable | Edit | `feed-viewer-edit` | 210 |
-| Pressable | — | `feed-viewer-delete` | 221 |
-| Pressable | isVideo ? (paused ? "Play" : "Pause") : undefined | `feed-viewer-media` | 389 |
+| Pressable | Previous | `feed-viewer-prev` | 179 |
+| Pressable | Next | `feed-viewer-next` | 188 |
+| Pressable | Close | `feed-viewer-close` | 197 |
+| Pressable | — | `feed-viewer-hide` | 209 |
+| Pressable | — | `feed-viewer-sticker` | 219 |
+| Pressable | Edit | `feed-viewer-edit` | 229 |
+| Pressable | — | `feed-viewer-delete` | 240 |
+| Pressable | isVideo ? (paused ? "Play" : "Pause") : undefined | `feed-viewer-media` | 410 |
 
 ### FinishedStay — [components/FinishedStay.tsx](../../frontend/components/FinishedStay.tsx)
 
@@ -1506,9 +1509,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load pets | — | 70 |
-| EmptyState | Share a moment | — | 75 |
-| Pressable | Add photo | `feed-add-photo` | 220 |
+| EmptyState | Couldn't load pets | — | 73 |
+| EmptyState | Share a moment | — | 78 |
+| Pressable | Add photo | `feed-add-photo` | 253 |
 
 ### NotificationsCenter — [features/notifications/NotificationsCenter.tsx](../../frontend/features/notifications/NotificationsCenter.tsx)
 
@@ -1593,17 +1596,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Sticker | — | 57 |
-| EmptyState | No pet in your care right now | — | 210 |
-| EmptyState | Add a pet first | — | 212 |
-| Pressable | Tap your pet to cut it out | `sticker-photo` | 243 |
-| Button | Save sticker | `sticker-save` | 293 |
-| TextButton | ⬇ Download sticker | `sticker-download` | 294 |
-| TextButton | Pick another photo | `sticker-pick-again` | 295 |
-| Button | photo ? "Pick another photo" : "Pick a photo" | `sticker-pick` | 298 |
-| Pressable | Download sticker | `sticker-tile-download` | 322 |
-| Pressable | Delete sticker | `sticker-delete` | 333 |
-| Sheet | Delete sticker | `sticker-delete-sheet` | 349 |
-| Button | Delete sticker | `sticker-delete-confirm` | 350 |
+| EmptyState | No pet in your care right now | — | 233 |
+| EmptyState | Add a pet first | — | 235 |
+| Pressable | Tap your pet to cut it out | `sticker-photo` | 266 |
+| Button | Save sticker | `sticker-save` | 316 |
+| TextButton | ⬇ Download sticker | `sticker-download` | 317 |
+| TextButton | Pick another photo | `sticker-pick-again` | 318 |
+| Button | photo ? "Pick another photo" : "Pick a photo" | `sticker-pick` | 321 |
+| Pressable | Download sticker | `sticker-tile-download` | 345 |
+| Pressable | Delete sticker | `sticker-delete` | 356 |
+| Sheet | Delete sticker | `sticker-delete-sheet` | 372 |
+| Button | Delete sticker | `sticker-delete-confirm` | 373 |
 
 ### TreatCheckScreen — [features/snap/TreatCheckScreen.tsx](../../frontend/features/snap/TreatCheckScreen.tsx)
 
@@ -1634,4 +1637,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-485 actions · 483 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+488 actions · 486 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
