@@ -760,8 +760,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Confirm quote | `quote-confirm` | 108 |
-| TextButton | Decline | `quote-decline` | 111 |
+| Button | Confirm | `quote-confirm` | 108 |
+| Button | Decline | `quote-decline` | 109 |
 
 ### ChatQuoteSheets — [components/ChatQuoteSheets.tsx](../../frontend/components/ChatQuoteSheets.tsx)
 

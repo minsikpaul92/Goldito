@@ -805,7 +805,7 @@ const makeStyles = (theme: Theme) =>
     requestLive: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary, marginTop: 2 },
     next: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
     chipsScroll: { flexGrow: 0, maxWidth: 480, width: "100%", alignSelf: "center" },
-    chips: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs },
+    chips: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.md },
     // Reply chips share the picker look (selectable); the action chip stays ink because it does something (F06: 44 px).
     chip: selectable(theme).chip,
     actionChip: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },

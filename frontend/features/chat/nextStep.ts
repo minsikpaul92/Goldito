@@ -143,7 +143,7 @@ export function nextStep(i: Input): NextStep {
           ? {
               primary: {
                 kind: "confirm_quote",
-                label: "Confirm quote",
+                label: "Confirm",
                 messageId: final.id,
                 disabled: final.card.extras.some((e) => e.status === "offered"),
               },

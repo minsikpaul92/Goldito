@@ -2,7 +2,6 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
-import { TextButton } from "./ui/TextButton";
 import { ChatCard } from "../features/chat/chatApi";
 import { formatDay, formatTime, isoToZoned } from "../features/schedule/dates";
 import { useThemedStyles } from "../providers/ThemeProvider";
@@ -105,10 +104,10 @@ export function ChatQuoteCard({ card, role, final, side, from, busy, onConfirm, 
         </Text>
       ) : null}
       {open && role === "owner" ? (
-        <Button label="Confirm quote" disabled={busy || pending} onPress={onConfirm} testID="quote-confirm" />
-      ) : null}
-      {open && role === "owner" && final && onDecline ? (
-        <TextButton label="Decline" danger disabled={busy} onPress={onDecline} style={styles.left} testID="quote-decline" />
+        <View style={styles.actions}>
+          <Button label="Confirm" disabled={busy || pending} onPress={onConfirm} testID="quote-confirm" />
+          {final && onDecline ? <Button label="Decline" variant="danger" disabled={busy} onPress={onDecline} testID="quote-decline" /> : null}
+        </View>
       ) : null}
     </Card>
   );
@@ -124,7 +123,7 @@ const makeStyles = (theme: Theme) =>
     // Figma owner quote bubble colors: cream ground, light green outline, ink text, muted gray-green labels.
     theirs: { backgroundColor: QUOTE_BG, borderColor: QUOTE_LINE },
     row: { flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.md },
-    left: { alignSelf: "flex-start", paddingHorizontal: 0 },
+    actions: { gap: theme.spacing.sm, marginTop: theme.spacing.md },
     from: { fontSize: 11, fontWeight: theme.fontWeight.bold, letterSpacing: 0.33, textTransform: "uppercase", color: QUOTE_MUTED },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, letterSpacing: 0.3, color: QUOTE_INK },
     body: { fontSize: theme.fontSize.body, letterSpacing: 0.3, color: QUOTE_INK, flexShrink: 1 },
