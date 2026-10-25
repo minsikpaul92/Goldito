@@ -282,7 +282,7 @@ export default function Chat() {
         return species ? `${SPECIES_EMOJI[species]} ${p.name}` : p.name;
       })
       .join(", ");
-    return `${short(c.dropOffAt)} to ${short(c.pickUpAt)} · ${c.pets.length > 1 ? `${c.pets.length} pets: ` : ""}${names}`;
+    return `${short(c.dropOffAt)} to ${short(c.pickUpAt)}\n${c.pets.length > 1 ? `${c.pets.length} pets: ` : ""}${names}`;
   };
   const newerBooking = !!booking && booking.id !== returnedStay?.id;
   const latestCardAt = [...messages].reverse().find((m) => m.card?.type === "stay" || m.card?.type === "request")?.at;

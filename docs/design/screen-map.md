@@ -1239,7 +1239,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | opening ? "Opening…" : "Start chat" | `start-chat` | 38 |
+| Button | opening ? "Opening…" : "Start chat" | `start-chat` | 43 |
 
 ### SitterAnswersForm — [components/SitterAnswersForm.tsx](../../frontend/components/SitterAnswersForm.tsx)
 
