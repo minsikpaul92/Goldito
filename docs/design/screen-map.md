@@ -137,7 +137,8 @@ Shows: `ConsentCard` · `QuoteCard`
 | --- | --- | --- | --- |
 | EmptyState | Can't open checkout | — | 170 |
 | Button | Add entry info | `checkout-entry-add` | 198 |
-| Button | `totalLabel` | `checkout-pay` | 254 |
+| Pressable | — | `checkout-agree-all` | 210 |
+| Button | `totalLabel` | `checkout-pay` | 268 |
 
 ### `/owner/bookings/[bookingId]/review` — [app/owner/bookings/[bookingId]/review.tsx](../../frontend/app/owner/bookings/[bookingId]/review.tsx)
 
@@ -819,8 +820,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `testID ? `${testID}-toggle` : undefined` | 37 |
-| CheckRow | I agree | `testID ? `${testID}-check` : undefined` | 56 |
+| CheckRow | `template.title` | `testID ? `${testID}-check` : undefined` | 34 |
+| Pressable | — | `testID ? `${testID}-toggle` : undefined` | 41 |
 
 ### DemoTools — [components/DemoTools.tsx](../../frontend/components/DemoTools.tsx)
 
@@ -1656,4 +1657,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-493 actions · 491 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+494 actions · 492 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).

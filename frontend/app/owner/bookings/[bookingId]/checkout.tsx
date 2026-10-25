@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { ConsentCard } from "../../../../components/ConsentCard";
 import { Card } from "../../../../components/ui/Card";
@@ -185,9 +185,9 @@ export default function CheckoutScreen() {
     <View style={styles.root}>
       <Screen ref={scroller} contentStyle={styles.content}>
         <Text accessibilityRole="header" style={styles.heading} testID="checkout-title">
-          {`Finish booking with ${booking.sitterName}`}
+          {`✓ ${booking.sitterName} accepted. Finish booking`}
         </Text>
-        <QuoteCard quote={quote} testID="checkout-quote" />
+        <QuoteCard quote={quote} plain testID="checkout-quote" />
 
         {entryMissing ? (
           <Card style={styles.entryCard} testID="checkout-entry-missing">
@@ -203,6 +203,20 @@ export default function CheckoutScreen() {
             />
           </Card>
         ) : null}
+
+        <View style={styles.consentsHead}>
+          <Text style={styles.consentsLabel} testID="checkout-consents-count">{`Consents (${required.length - missing.length}/${required.length})`}</Text>
+          {missing.length > 0 ? (
+            <Pressable
+              accessibilityRole="button"
+              disabled={busy}
+              onPress={() => setChecks((c) => ({ ...c, ...Object.fromEntries(missing.map((k) => [k, true])) }))}
+              testID="checkout-agree-all"
+            >
+              <Text style={styles.selectAll}>Select all</Text>
+            </Pressable>
+          ) : null}
+        </View>
 
         {required.map((kind) => {
           const existing = signed.find((s) => s.kind === kind);
@@ -226,7 +240,7 @@ export default function CheckoutScreen() {
             value={signerName}
             onChangeText={setSignerName}
             // Typed by the person, never filled in (#236): the name is only a hint.
-            placeholder={profileName || undefined}
+            placeholder={profileName ? `e.g. ${profileName}` : undefined}
             autoCapitalize="words"
             autoComplete="off"
             autoCorrect={false}
@@ -267,7 +281,10 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: { flex: 1 },
     content: { gap: theme.spacing.md, paddingBottom: theme.spacing.xl },
-    heading: sectionTitleStyle(theme),
+    heading: { ...sectionTitleStyle(theme), color: theme.color.success },
+    consentsHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    consentsLabel: { fontSize: 13, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    selectAll: { fontSize: 13, fontWeight: theme.fontWeight.bold, color: theme.color.primary, paddingVertical: 6 },
     footer: { fontSize: theme.fontSize.caption, color: theme.color.textMuted, fontStyle: "italic" },
     footerBar: {
       padding: theme.spacing.md,
