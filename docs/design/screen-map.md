@@ -725,14 +725,21 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${name}'s photos`` | `chat-header-avatar` | 26 |
-| Pressable | ``${name}'s profile`` | `chat-header-name` | 30 |
+| Pressable | ``${name}'s photos`` | `chat-header-avatar` | 45 |
+| Pressable | ``${name}'s profile`` | `chat-header-name` | 49 |
+| Sheet | open?.name ?? "" | `chat-pet-sheet` | 56 |
 
 ### ChatList — [components/ChatList.tsx](../../frontend/components/ChatList.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${chat.otherName}${chat.unread > 0 ? `, ${chat.unread} unread` : ""}`` | ``chat-row-${chat.otherName}`` | 30 |
+| Pressable | ``${chat.otherName}${chat.unread > 0 ? `, ${chat.unread} unread` : ""}`` | ``chat-row-${chat.otherName}`` | 43 |
+
+### ChatPetAvatars — [components/ChatPetAvatars.tsx](../../frontend/components/ChatPetAvatars.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``${pet.name}, details`` | ``chat-header-pet-${pet.name}`` | 27 |
 
 ### ChatPlusMenu — [components/ChatPlusMenu.tsx](../../frontend/components/ChatPlusMenu.tsx)
 
@@ -1641,4 +1648,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-492 actions · 490 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+493 actions · 491 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).

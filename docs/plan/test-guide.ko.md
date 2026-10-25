@@ -1131,6 +1131,7 @@
 | NAV-1 | 오너 · 시터로 로그인 → 탭 바 | **Home · Bookings · Chat · Feed · Snap**, 402 px에서 이름이 잘리지 않음. Chat 아이콘은 발바닥이 있는 네모 말풍선 | 🤖 `auth` | 사람 확인 대기 |
 | NAV-2 | 오너 → Bookings | 검색 · 즐겨찾기 · 예약만, **Chats 섹션 없음**. 채팅 목록은 Chat 탭에 | 🤖 `chat` | ➖ |
 | NAV-3 | Chat 탭 | 채팅 목록(이름 · 마지막 메시지 · 시간 · 안 읽은 수), 밀어서 나가기. 채팅이 없으면 "No chats yet" | 🤖 `chat` | ➖ |
+| NAV-3b | 오너와 시터 각각 Chat 탭 · 채팅 열기 (#263) | 목록 줄: 상대 사진(없으면 이니셜), 이름과 마지막 메시지, 시간 옆에 스테이의 펫 얼굴(사진 없으면 개 · 고양이 그림, 이름 없음). 채팅 머리글: 상대 이름 아래 펫 얼굴 + 이름(이름이 18자를 넘으면 얼굴만, 마우스를 올리면 그 펫 이름). 펫을 누르면 Sheet에 펫 "at a glance" 카드 (내용이 없으면 "No details yet.") | 🟡 `chat` · `pets` · `pet-room` 기존 53개 통과, 새 화면은 e2e 없음 · `015m` 호스팅 DB 적용은 머지 때 | 사람 확인 대기 |
 | NAV-4 | Feed 탭 | 맨 위 **Photos · Diary** 전환. Photos는 예전 Feed, Diary는 예전 Diary 탭(오너: 다이어리 책, 시터: Today · Diary book). 주소는 `?view=diary` | 🤖 `report` · `diary-book` | 사람 확인 대기 |
 | NAV-5 | 옛 주소 `/owner/diary` · `/sitter/diary?page=…`, 펫 방 · 반납 시트의 Diary 링크, 리포트 알림 | Feed의 Diary가 열림(시터는 그 페이지로) | 🤖 `pet-room` · `diary-book` | ➖ |
 | NAV-6 | 시터 Home의 **💬 Chats (n)** | Chat 탭으로 감 | **👤** | ➖ |

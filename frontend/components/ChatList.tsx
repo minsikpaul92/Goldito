@@ -1,10 +1,13 @@
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ChatListItem, previewOf } from "../features/chat/chatApi";
+import { ProfilePhoto, loadCoverPhotos, photoThumb } from "../features/profile/profilePhotosApi";
 import { formatStamp } from "../features/schedule/dates";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { ChatPetStack } from "./ChatPetAvatars";
 import { Avatar } from "./ui/Avatar";
 import { SwipeToDelete } from "./ui/SwipeToDelete";
 
@@ -23,6 +26,16 @@ function shortStamp(iso: string): string {
 /** The chats, WhatsApp style: initial, name, last message, day and unread count. Swipe a row to leave the chat. */
 export function ChatList({ items, onLeave, highlightId }: Props) {
   const styles = useThemedStyles(makeStyles);
+  // The other person's photo, when they have one; the initial circle otherwise.
+  const [covers, setCovers] = useState<Map<string, ProfilePhoto>>(new Map());
+  const otherIds = items.map((c) => c.otherId).join(",");
+  useEffect(() => {
+    let live = true;
+    void loadCoverPhotos(otherIds ? otherIds.split(",") : []).then((m) => live && setCovers(m));
+    return () => {
+      live = false;
+    };
+  }, [otherIds]);
   return (
     <View style={styles.list} testID="chat-list">
       {items.map((chat) => (
@@ -35,7 +48,11 @@ export function ChatList({ items, onLeave, highlightId }: Props) {
             testID={`chat-row-${chat.otherName}`}
           >
             {chat.threadId === highlightId ? <View style={styles.bar} testID={`chat-row-${chat.otherName}-new`} /> : null}
-            <Avatar kind="initial" name={chat.otherName} size={48} />
+            {covers.get(chat.otherId) ? (
+              <Avatar kind="photo" uri={photoThumb(covers.get(chat.otherId) as ProfilePhoto, 144)} size={48} testID={`chat-row-${chat.otherName}-photo`} />
+            ) : (
+              <Avatar kind="initial" name={chat.otherName} size={48} />
+            )}
             <View style={styles.body}>
               <Text style={[styles.name, chat.unread > 0 && styles.bold]} numberOfLines={1}>
                 {chat.otherName}
@@ -44,6 +61,7 @@ export function ChatList({ items, onLeave, highlightId }: Props) {
                 {previewOf(chat)}
               </Text>
             </View>
+            <ChatPetStack pets={chat.pets} testID={`chat-row-${chat.otherName}-pets`} />
             <View style={styles.side}>
               <Text style={styles.time}>{shortStamp(chat.lastAt)}</Text>
               {chat.unread > 0 ? (

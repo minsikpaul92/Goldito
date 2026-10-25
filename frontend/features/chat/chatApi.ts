@@ -1,5 +1,6 @@
 import { PriceQuote, asQuote, priceErrorMessage } from "../../lib/bookings";
 import { getSupabase } from "../../lib/supabase";
+import type { Species } from "../../types/db";
 
 export type ChatPet = { id: string; name: string };
 
@@ -65,6 +66,9 @@ export type ChatHeader = {
   myRole: "owner" | "sitter";
 };
 
+/** A pet of the stay a chat is about, as the list and header show it (round face and name). */
+export type ChatPetFace = { id: string; name: string; species: Species | null; photo: string | null };
+
 /** One row of the chat list. */
 export type ChatListItem = {
   threadId: string;
@@ -75,6 +79,7 @@ export type ChatListItem = {
   lastCardType: string | null;
   lastAt: string;
   unread: number;
+  pets: ChatPetFace[];
 };
 
 export type Stay = { dropOffAt: string; pickUpAt: string; petIds: string[] };
@@ -206,6 +211,7 @@ export async function listMyChats(): Promise<ChatListItem[]> {
     last_card_type: string | null;
     last_at: string;
     unread_count: number;
+    pets: { id: string; name: string; species: Species | null; photo: string | null }[] | null;
   }[]).map((r) => ({
     threadId: r.thread_id,
     otherId: r.other_id,
@@ -215,7 +221,28 @@ export async function listMyChats(): Promise<ChatListItem[]> {
     lastCardType: r.last_card_type,
     lastAt: r.last_at,
     unread: r.unread_count,
+    pets: (r.pets ?? []).map((p) => ({ id: p.id, name: p.name, species: p.species, photo: p.photo })),
   }));
+}
+
+/**
+ * Species and first photo of pets, read as the signed-in person (RLS lets a sitter with a chat or booking read them).
+ * A pet that cannot be read has no entry: the face falls back to the paw.
+ */
+export async function loadChatPetMeta(ids: string[]): Promise<Map<string, { species: Species; photo: string | null }>> {
+  const meta = new Map<string, { species: Species; photo: string | null }>();
+  if (ids.length === 0) return meta;
+  const db = getSupabase();
+  const [pets, photos] = await Promise.all([
+    db.from("pets").select("id, species").in("id", ids),
+    db.from("pet_photos").select("pet_id, public_id, position").in("pet_id", ids).order("position"),
+  ]);
+  for (const row of (pets.data ?? []) as { id: string; species: Species }[]) meta.set(row.id, { species: row.species, photo: null });
+  for (const row of (photos.data ?? []) as { pet_id: string; public_id: string }[]) {
+    const entry = meta.get(row.pet_id);
+    if (entry && entry.photo === null) entry.photo = row.public_id;
+  }
+  return meta;
 }
 
 export async function getChatHeader(threadId: string): Promise<ChatHeader | null> {
