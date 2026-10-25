@@ -25,6 +25,11 @@ type Props = {
   onDecline?: () => void;
 };
 
+const QUOTE_BG = "#FFF9F0";
+const QUOTE_LINE = "#E3EADF";
+const QUOTE_INK = "#1A1A1A";
+const QUOTE_MUTED = "#4F5B53";
+
 const money = (n: number) => `$${n.toFixed(2)}`;
 const SERVICE: Record<string, string> = { boarding: "Boarding", house_sitting: "House sitting", daycare: "Daycare" };
 
@@ -114,16 +119,17 @@ const makeStyles = (theme: Theme) =>
     // Figma owner quote bubble: 14 padding, 16 corners (the tail corner is set per side below), the sitter's name small on top.
     card: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%", padding: 14, borderRadius: theme.radius.lg },
     cardFaded: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%", padding: 14, borderRadius: theme.radius.lg, opacity: 0.5 },
-    // The same sides as the text bubbles: mine tinted with the tail corner on the right, theirs white on the left (#289).
-    mine: { backgroundColor: theme.color.accent, borderColor: theme.color.primary, borderBottomRightRadius: 4 },
-    theirs: { borderBottomLeftRadius: 4 },
+    // Mine is tinted, theirs is cream; every corner stays round (no tail corner).
+    mine: { backgroundColor: theme.color.accent, borderColor: theme.color.primary },
+    // Figma owner quote bubble colors: cream ground, light green outline, ink text, muted gray-green labels.
+    theirs: { backgroundColor: QUOTE_BG, borderColor: QUOTE_LINE },
     row: { flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.md },
     left: { alignSelf: "flex-start", paddingHorizontal: 0 },
-    from: { fontSize: 11, fontWeight: theme.fontWeight.bold, letterSpacing: 0.33, textTransform: "uppercase", color: theme.color.textMuted },
-    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, letterSpacing: 0.3, color: theme.color.text },
-    body: { fontSize: theme.fontSize.body, letterSpacing: 0.3, color: theme.color.text, flexShrink: 1 },
-    muted: { fontSize: theme.fontSize.small, letterSpacing: 0.3, color: theme.color.textMuted },
+    from: { fontSize: 11, fontWeight: theme.fontWeight.bold, letterSpacing: 0.33, textTransform: "uppercase", color: QUOTE_MUTED },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, letterSpacing: 0.3, color: QUOTE_INK },
+    body: { fontSize: theme.fontSize.body, letterSpacing: 0.3, color: QUOTE_INK, flexShrink: 1 },
+    muted: { fontSize: theme.fontSize.small, letterSpacing: 0.3, color: QUOTE_MUTED },
     ok: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
-    totalRow: { marginTop: theme.spacing.xs, paddingTop: theme.spacing.sm, borderTopWidth: 1, borderTopColor: theme.color.border },
-    total: { fontSize: theme.fontSize.body + 2, letterSpacing: 0.3, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    totalRow: { marginTop: theme.spacing.xs, paddingTop: theme.spacing.sm, borderTopWidth: 1, borderTopColor: QUOTE_LINE },
+    total: { fontSize: theme.fontSize.body + 2, letterSpacing: 0.3, fontWeight: theme.fontWeight.bold, color: QUOTE_INK },
   });
