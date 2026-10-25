@@ -130,8 +130,8 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
 
   if (status === "done" || status === "skipped" || !open) {
     return (
-      <Card style={styles.card} tone="blush" testID="meet-greet">
-        <Text style={styles.muted}>
+      <Card style={StyleSheet.flatten([styles.card, styles.folded])} tone="blush" testID="meet-greet">
+        <Text style={styles.foldedText}>
           {status === "done"
             ? `Met${summary ? ` · ${summary}` : ""}`
             : status === "skipped"
@@ -404,6 +404,9 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.body,
       color: theme.color.text,
     },
+    // The folded one-line card matches "Booked, you both agreed": 92% wide, one size, centered.
+    folded: { width: "92%", maxWidth: "92%", alignSelf: "center" },
+    foldedText: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
     muted: {
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
