@@ -70,25 +70,27 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Next | `own-next` | 176 |
-| Stepper | `plural` | ``own-count-${kind}`` | 231 |
-| Button | Next | `own-next` | 251 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 252 |
-| Banner | `error` | — | 264 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 303 |
-| Stepper | Age | `own-age` | 396 |
-| Button | Next | `own-next` | 408 |
-| SegmentedControl | — | `own-weight-unit` | 427 |
-| LinkButton | `source.label` | ``own-source-${i + 1}`` | 477 |
-| Button | Start | `own-next` | 482 |
-| TextButton | Skip questions | `own-skip-questions` | 483 |
-| CheckRow | I checked this list | `own-foods-checked` | 602 |
-| Button | Add | `own-food-other-add` | 620 |
-| Button | locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location" | `own-use-location` | 681 |
-| Banner | `error` | `own-error` | 737 |
-| Button | Save and finish later | `own-save-later` | 739 |
-| Button | saving ? "Saving…" : draft.pending.length > 0 ? "Save, add next" : `Save ${petName}` | `own-save` | 750 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 772 |
+| Button | Next | `own-next` | 178 |
+| Sheet | Sign out | `own-leave-sheet` | 208 |
+| Button | Sign out | `own-leave-confirm` | 214 |
+| Stepper | `plural` | ``own-count-${kind}`` | 262 |
+| Button | Next | `own-next` | 283 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 284 |
+| Banner | `error` | — | 296 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 336 |
+| Stepper | Age | `own-age` | 429 |
+| Button | Next | `own-next` | 441 |
+| SegmentedControl | — | `own-weight-unit` | 460 |
+| LinkButton | `source.label` | ``own-source-${i + 1}`` | 510 |
+| Button | Start | `own-next` | 515 |
+| TextButton | Skip questions | `own-skip-questions` | 516 |
+| Button | Add | `own-food-other-add` | 647 |
+| Button | Next | `own-next` | 655 |
+| Button | locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location" | `own-use-location` | 717 |
+| Banner | `error` | `own-error` | 773 |
+| Button | Save and finish later | `own-save-later` | 775 |
+| Button | saving ? "Saving…" : draft.pending.length > 0 ? "Save, add next" : `Save ${petName}` | `own-save` | 786 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 808 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -1662,4 +1664,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-494 actions · 492 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+495 actions · 493 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
