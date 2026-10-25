@@ -913,7 +913,7 @@ test.describe("chat hub", () => {
 
     // The owner confirms the quote and only then can pay; Checkout shows the same total.
     screen = await openChatAs(page, OWNER);
-    await screen.getByTestId("chat-next-confirm_quote").click();
+    await screen.getByTestId("chat-quote-card").last().getByTestId("quote-confirm").click(); // on the card only (#289)
     await expect(screen.getByTestId("chat-next-pay")).toHaveText("Pay $268.13");
     await expect(screen.getByTestId("payment-total")).toHaveText("$268.13");
     await screen.getByTestId("chat-next-pay").click();
@@ -1043,8 +1043,11 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("quote-decline")).toHaveCount(0);
 
     screen = await openChatAs(page, OWNER);
-    await expect(screen.getByTestId("chat-next-confirm_quote")).toBeVisible();
-    await expect(screen.getByTestId("chat-decline")).toBeVisible();
+    // The final quote's two answers show once, on the card; the footer does not repeat them (#289).
+    await expect(screen.getByTestId("quote-confirm")).toBeVisible();
+    await expect(screen.getByTestId("quote-decline")).toBeVisible();
+    await expect(screen.getByTestId("chat-next-confirm_quote")).toHaveCount(0);
+    await expect(screen.getByTestId("chat-decline")).toHaveCount(0);
     await screen.getByTestId("quote-decline").click();
     const sheet = screen.getByTestId("chat-decline-sheet");
     await expect(sheet).toContainText("Decline the final quote?");
@@ -1230,6 +1233,25 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("chat-mg-update").last()).toContainText("Chloe accepted the Meet & Greet");
     await expect(screen.getByTestId("meet-greet")).toContainText("Meet & Greet set");
     expect(db.chat_messages.filter((m) => (m.card as { type?: string } | null)?.type === "meet_greet")).toHaveLength(1);
+  });
+
+  test("cards take sides like the bubbles: mine tinted on the right, theirs white on the left (#289)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedBooking(db, true);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/chat/${THREAD}`);
+    const screen = app(page);
+    const card = screen.getByTestId("chat-request-card");
+    await expect(card).toHaveCSS("background-color", "rgb(216, 243, 220)"); // my request: the mint of my side
+    const frame = await box(page.locator("iframe"));
+    const mine = await box(card);
+    expect(mine.x + mine.width / 2).toBeGreaterThan(frame.x + frame.width / 2);
+
+    await openChatAs(page, SITTER);
+    await expect(screen.getByTestId("chat-request-card")).toHaveCSS("background-color", "rgb(255, 255, 255)"); // theirs: white
+    const theirs = await box(screen.getByTestId("chat-request-card"));
+    expect(theirs.x + theirs.width / 2).toBeLessThan(frame.x + frame.width / 2);
   });
 
   test("someone outside the chat cannot open it", async ({ page }) => {
