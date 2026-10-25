@@ -14,12 +14,6 @@ type Props = {
   testID?: string;
 };
 
-// Figma owner quote bubble colors.
-const QUOTE_BG = "#FFF9F0";
-const QUOTE_LINE = "#E3EADF";
-const QUOTE_INK = "#1A1A1A";
-const QUOTE_MUTED = "#4F5B53";
-
 function money(n: number): string {
   return `$${n.toFixed(2)}`;
 }
@@ -95,17 +89,17 @@ export function QuoteCard({ quote, compact, plain, testID }: Props) {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     // Same look as the chat quote bubble (Figma): 14 padding, 16 corners, a little letter spacing.
-    card: { gap: theme.spacing.sm, padding: 14, borderRadius: theme.radius.lg, backgroundColor: QUOTE_BG, borderColor: QUOTE_LINE },
+    card: { gap: theme.spacing.sm, padding: 14, borderRadius: theme.radius.lg, backgroundColor: theme.color.cardGround, borderColor: theme.color.cardLine },
     plain: { gap: theme.spacing.xs, padding: 16, borderRadius: 26, borderWidth: 0, backgroundColor: theme.color.surface },
-    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, letterSpacing: 0.3, color: QUOTE_INK },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, letterSpacing: 0.3, color: theme.color.cardText },
     row: { flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.md },
     totalRow: {
       marginTop: theme.spacing.xs,
       paddingTop: theme.spacing.sm,
       borderTopWidth: 1,
-      borderTopColor: QUOTE_LINE,
+      borderTopColor: theme.color.cardLine,
     },
-    body: { fontSize: theme.fontSize.body, letterSpacing: 0.3, color: QUOTE_INK, flexShrink: 1 },
-    total: { fontSize: theme.fontSize.body + 2, letterSpacing: 0.3, fontWeight: theme.fontWeight.bold, color: QUOTE_INK },
-    muted: { fontSize: theme.fontSize.small, letterSpacing: 0.3, color: QUOTE_MUTED },
+    body: { fontSize: theme.fontSize.body, letterSpacing: 0.3, color: theme.color.cardText, flexShrink: 1 },
+    total: { fontSize: theme.fontSize.body + 2, letterSpacing: 0.3, fontWeight: theme.fontWeight.bold, color: theme.color.cardText },
+    muted: { fontSize: theme.fontSize.small, letterSpacing: 0.3, color: theme.color.cardTextMuted },
   });

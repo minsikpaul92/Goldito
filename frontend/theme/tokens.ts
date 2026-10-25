@@ -42,6 +42,11 @@ export const tokens = {
     goldOnLight: "#C9962E",
     /** Warm expressive ground for brand moments (welcome, celebration). */
     cream: "#FBF6EA",
+    // Cards the chat and checkout send (quote, consents; Figma "D" screens). Never skinned: both roles see the same card.
+    cardGround: "#FFF9F0",
+    cardLine: "#E3EADF",
+    cardText: "#1A1A1A",
+    cardTextMuted: "#4F5B53",
     // Color blocks (Expressive): tinted card grounds. Text on them uses `text`.
     blockMint: "#D8F3DC",
     blockPeach: "#FDE2CC",

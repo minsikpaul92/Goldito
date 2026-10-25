@@ -64,9 +64,9 @@ export function ConsentCard({ template, checked, onCheckedChange, signedAt, disa
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     // Figma consent card: no fill, light green outline, 14 corners, 14 × 12 padding.
-    card: { gap: 6, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 14, borderColor: "#E3EADF", backgroundColor: "transparent" },
+    card: { gap: 6, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 14, borderColor: theme.color.cardLine, backgroundColor: "transparent" },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    summary: { fontSize: theme.fontSize.small, color: "#4F5B53", lineHeight: 19 },
+    summary: { fontSize: theme.fontSize.small, color: theme.color.cardTextMuted, lineHeight: 19 },
     linkWrap: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center" },
     link: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
     bodyBox: {

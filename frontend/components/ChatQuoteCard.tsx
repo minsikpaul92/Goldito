@@ -14,8 +14,6 @@ type Props = {
   role: "owner" | "sitter";
   /** Sent after the booking's payment card: the price the owner pays (3D.8, #235). */
   final?: boolean;
-  /** Who sent it: mine is tinted like my bubbles, theirs is white like theirs (#289). */
-  side?: "me" | "them";
   /** Who sent it and when, shown small above the quote ("Chloe · Oct 25 4:05 PM"). */
   from?: string;
   busy?: boolean;
@@ -24,10 +22,6 @@ type Props = {
   onDecline?: () => void;
 };
 
-const QUOTE_BG = "#FFF9F0";
-const QUOTE_LINE = "#E3EADF";
-const QUOTE_INK = "#1A1A1A";
-const QUOTE_MUTED = "#4F5B53";
 
 const money = (n: number) => `$${n.toFixed(2)}`;
 const SERVICE: Record<string, string> = { boarding: "Boarding", house_sitting: "House sitting", daycare: "Daycare" };
@@ -43,7 +37,7 @@ function short(iso: string): string {
  * fee lines: an accepted one is part of its total and shows as a plain line; an unanswered one can't be answered any
  * more, so the card says a new quote replaces it.
  */
-export function ChatQuoteCard({ card, role, final, side, from, busy, onConfirm, onDecline }: Props) {
+export function ChatQuoteCard({ card, role, final, from, busy, onConfirm, onDecline }: Props) {
   const styles = useThemedStyles(makeStyles);
   const q = card.quote;
   const open = card.status === "sent";
@@ -55,7 +49,7 @@ export function ChatQuoteCard({ card, role, final, side, from, busy, onConfirm, 
 
   return (
     <Card
-      style={StyleSheet.flatten([card.status === "replaced" ? styles.cardFaded : styles.card, side === "me" ? styles.mine : side === "them" ? styles.theirs : null])}
+      style={card.status === "replaced" ? styles.cardFaded : styles.card}
       testID="chat-quote-card"
     >
       {from ? <Text style={styles.from}>{from}</Text> : null}
@@ -115,20 +109,16 @@ export function ChatQuoteCard({ card, role, final, side, from, busy, onConfirm, 
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    // Figma owner quote bubble: 14 padding, 16 corners (the tail corner is set per side below), the sitter's name small on top.
-    card: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%", padding: 14, borderRadius: theme.radius.lg },
-    cardFaded: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%", padding: 14, borderRadius: theme.radius.lg, opacity: 0.5 },
-    // Mine is tinted, theirs is cream; every corner stays round (no tail corner).
-    mine: { backgroundColor: theme.color.accent, borderColor: theme.color.primary },
-    // Figma owner quote bubble colors: cream ground, light green outline, ink text, muted gray-green labels.
-    theirs: { backgroundColor: QUOTE_BG, borderColor: QUOTE_LINE },
+    // Figma owner quote bubble: 14 padding, 16 corners, same for both roles, the sender's name small on top.
+    card: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%", padding: 14, borderRadius: theme.radius.lg, backgroundColor: theme.color.cardGround, borderColor: theme.color.cardLine },
+    cardFaded: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%", padding: 14, borderRadius: theme.radius.lg, backgroundColor: theme.color.cardGround, borderColor: theme.color.cardLine, opacity: 0.5 },
     row: { flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.md },
     actions: { gap: theme.spacing.sm, marginTop: theme.spacing.md },
-    from: { fontSize: 11, fontWeight: theme.fontWeight.bold, letterSpacing: 0.33, textTransform: "uppercase", color: QUOTE_MUTED },
-    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, letterSpacing: 0.3, color: QUOTE_INK },
-    body: { fontSize: theme.fontSize.body, letterSpacing: 0.3, color: QUOTE_INK, flexShrink: 1 },
-    muted: { fontSize: theme.fontSize.small, letterSpacing: 0.3, color: QUOTE_MUTED },
+    from: { fontSize: 11, fontWeight: theme.fontWeight.bold, letterSpacing: 0.33, textTransform: "uppercase", color: theme.color.cardTextMuted },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, letterSpacing: 0.3, color: theme.color.cardText },
+    body: { fontSize: theme.fontSize.body, letterSpacing: 0.3, color: theme.color.cardText, flexShrink: 1 },
+    muted: { fontSize: theme.fontSize.small, letterSpacing: 0.3, color: theme.color.cardTextMuted },
     ok: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
-    totalRow: { marginTop: theme.spacing.xs, paddingTop: theme.spacing.sm, borderTopWidth: 1, borderTopColor: QUOTE_LINE },
-    total: { fontSize: theme.fontSize.body + 2, letterSpacing: 0.3, fontWeight: theme.fontWeight.bold, color: QUOTE_INK },
+    totalRow: { marginTop: theme.spacing.xs, paddingTop: theme.spacing.sm, borderTopWidth: 1, borderTopColor: theme.color.cardLine },
+    total: { fontSize: theme.fontSize.body + 2, letterSpacing: 0.3, fontWeight: theme.fontWeight.bold, color: theme.color.cardText },
   });
