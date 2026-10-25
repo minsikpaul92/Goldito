@@ -1,35 +1,28 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { FlatList, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AlbumView } from "../../../components/AlbumView";
-import { DiaryFeedCell } from "../../../components/DiaryFeedCell";
-import { FeedCard } from "../../../components/FeedCard";
-import { FeedSwitch } from "../../../components/FeedSwitch";
-import { FeedViewer } from "../../../components/FeedViewer";
-import { ShareToggle } from "../../../components/ShareToggle";
-import { Button } from "../../../components/ui/Button";
+import { AddPhotoSheet } from "../../../components/AddPhotoSheet";
+import { FeedBrowser } from "../../../components/FeedBrowser";
+import { ALL_PETS, FeedPetPicker } from "../../../components/FeedPetPicker";
+import { FeedBarRight, FeedSwitch } from "../../../components/FeedSwitch";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
-import { SegmentedControl } from "../../../components/ui/SegmentedControl";
-import { Sheet } from "../../../components/ui/Sheet";
-import { TextButton } from "../../../components/ui/TextButton";
 import { useInCare } from "../../../features/care/useInCare";
 import { OwnerDiaryBook } from "../../../features/diary/OwnerDiaryBook";
-import { DiaryCell, isDiaryCell, listDiaryCells, withDiaryCells } from "../../../features/diary/diaryFeed";
+import { usePetFaces } from "../../../features/feed/usePetFaces";
 import { useMyPets } from "../../../features/pets/useMyPets";
 import { UploadError, uploadMedia } from "../../../lib/cloudinary";
 import {
   FALLBACK_CAPTION,
   FEED_PAGE_SIZE,
+  FeedTag,
   FeedTimelinePost,
   createFeedPost,
-  deleteFeedPost,
   listFeedPosts,
 } from "../../../lib/feed";
-import { pickMedia } from "../../../lib/media";
-import { PhotoRequest, getOpenPhotoRequest, requestPhoto } from "../../../lib/photoRequests";
+import { PickedMedia } from "../../../lib/media";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useNotifications } from "../../../providers/NotificationsProvider";
 import { useSession } from "../../../providers/SessionProvider";
@@ -43,10 +36,9 @@ type FeedState =
   | { status: "error"; message: string; posts: FeedTimelinePost[]; hasMore: boolean };
 
 /**
- * Owner Feed tab (phase-05): Instagram 3-col album.
- * ▶ = play in cell; tap photo = full-screen viewer (swipe / arrows).
- * Owner can add their own photos (private by default, optional "Visible to sitter") and
- * delete the posts they made (5.8).
+ * Owner Feed tab (#345, Figma 1730:104019): everything saved for the pet in a filterable mosaic; photos you take or add and
+ * the ones your sitter sends are in it on their own, and so are your stickers. Add a photo: pick it, choose Only me or Share
+ * with your sitter, an optional memo, Save.
  */
 export default function OwnerFeedTab() {
   return <FeedSwitch photos={<OwnerFeed />} diary={<OwnerDiaryBook />} />;
@@ -54,7 +46,7 @@ export default function OwnerFeedTab() {
 
 function OwnerFeed() {
   const styles = useThemedStyles(makeStyles);
-  const { feedRevision, diaryRevision } = useNotifications();
+  const { feedRevision } = useNotifications();
   const toast = useToast();
   const errorDialog = useErrorDialog();
   const session = useSession();
@@ -62,39 +54,36 @@ function OwnerFeed() {
   const { status: petsStatus, pets, error: petsError, reload: reloadPets } = useMyPets();
   // A notice opens this screen on the pet it is about (`?pet=`).
   const { pet: petParam } = useLocalSearchParams<{ pet?: string }>();
-  const [petId, setPetId] = useState<string | null>(null);
+  // "all" (every pet together, the default with two or more) or one pet's id.
+  const [petSel, setPetSel] = useState<string | null>(null);
+  const [addPetId, setAddPetId] = useState<string | null>(null);
   const [feed, setFeed] = useState<FeedState>({ status: "loading" });
   const [loadingMore, setLoadingMore] = useState(false);
-  const [viewerPostId, setViewerPostId] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  /** Timeline = newest first, Album = by day then by what the photo shows (phase-09 9.5). */
-  const [mode, setMode] = useState<"timeline" | "album">("timeline");
-  // Owner posts are private unless this chip is on (5.8).
-  const [visibleToSitter, setVisibleToSitter] = useState(false);
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  // Diary book DB.4: the sent diary pages of this pet sit among the photos, by when they were sent.
-  const [diaryCells, setDiaryCells] = useState<DiaryCell[]>([]);
-  const [deleting, setDeleting] = useState(false);
-  // 11.1: ask the sitter on duty for a photo; the next shared photo answers it.
+  const [picked, setPicked] = useState<PickedMedia | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [saving, setSaving] = useState(false);
   const inCare = useInCare();
-  const [openRequest, setOpenRequest] = useState<PhotoRequest | null>(null);
-  const [requesting, setRequesting] = useState(false);
 
   useEffect(() => {
     if (pets.length === 0) {
-      setPetId(null);
+      setPetSel(null);
       return;
     }
     const wanted = petParam && pets.some((p) => p.id === petParam) ? petParam : null;
-    setPetId((current) => wanted ?? (current && pets.some((p) => p.id === current) ? current : pets[0].id));
+    const usual = pets.length > 1 ? ALL_PETS : pets[0].id;
+    setPetSel((current) => wanted ?? (current && (current === ALL_PETS ? pets.length > 1 : pets.some((p) => p.id === current)) ? current : usual));
   }, [pets, petParam]);
+
+  const selectedIds = petSel === ALL_PETS ? pets.map((p) => p.id) : petSel ? [petSel] : [];
+  const selKey = selectedIds.join(",");
+  const faces = usePetFaces(pets.map((p) => p.id));
 
   const loadPage = useCallback(
     async (offset: number, append: boolean, soft = false) => {
-      if (!petId) return;
+      if (!selKey) return;
       if (!append && !soft) setFeed({ status: "loading" });
       try {
-        const page = await listFeedPosts(petId, { offset, limit: FEED_PAGE_SIZE });
+        const page = await listFeedPosts(selKey.split(","), { offset, limit: FEED_PAGE_SIZE });
         setFeed((prev) => {
           const existing = append && prev.status !== "loading" ? prev.posts : [];
           const posts = append ? [...existing, ...page] : page;
@@ -109,127 +98,80 @@ function OwnerFeed() {
         }));
       }
     },
-    [petId],
+    [selKey],
   );
 
   useEffect(() => {
-    if (!petId) {
+    if (!selKey) {
       if (petsStatus === "ready") setFeed({ status: "ready", posts: [], hasMore: false });
       return;
     }
     void loadPage(0, false);
-  }, [petId, petsStatus, loadPage]);
+  }, [selKey, petsStatus, loadPage]);
 
   useEffect(() => {
-    if (!petId || feedRevision === 0) return;
+    if (!selKey || feedRevision === 0) return;
     void loadPage(0, false, true);
-  }, [feedRevision, petId, loadPage]);
-
-  // A page just sent (diaryRevision) or a new photo that may become its thumbnail (feedRevision): look again.
-  useEffect(() => {
-    if (!petId) {
-      setDiaryCells([]);
-      return;
-    }
-    let live = true;
-    listDiaryCells(petId).then((cells) => live && setDiaryCells(cells));
-    return () => {
-      live = false;
-    };
-  }, [petId, feedRevision, diaryRevision]);
-
-  const caring = petId != null && inCare[petId] != null;
-  useEffect(() => {
-    if (!petId || !caring) {
-      setOpenRequest(null);
-      return;
-    }
-    let live = true;
-    // A fulfilled ask comes with a new photo, so the feed revision is also when to look again.
-    getOpenPhotoRequest(petId)
-      .then((row) => live && setOpenRequest(row))
-      .catch(() => live && setOpenRequest(null)); // The button stays usable; asking again returns the open ask.
-    return () => {
-      live = false;
-    };
-  }, [petId, caring, feedRevision]);
-
-  const askForPhoto = async () => {
-    if (!petId || requesting) return;
-    setRequesting(true);
-    try {
-      setOpenRequest(await requestPhoto(petId));
-      toast.show(`Asked ${inCare[petId]?.sitterName ?? "your sitter"} for a photo`);
-    } catch (err) {
-      toast.show(err instanceof Error ? err.message : "Couldn't send the request. Try again.");
-    } finally {
-      setRequesting(false);
-    }
-  };
+  }, [feedRevision, selKey, loadPage]);
 
   const loadMore = useCallback(async () => {
-    if (feed.status !== "ready" || !feed.hasMore || loadingMore || !petId) return;
+    if (feed.status !== "ready" || !feed.hasMore || loadingMore || !selKey) return;
     setLoadingMore(true);
     try {
       await loadPage(feed.posts.length, true);
     } finally {
       setLoadingMore(false);
     }
-  }, [feed, loadingMore, petId, loadPage]);
+  }, [feed, loadingMore, selKey, loadPage]);
 
-  const sharePhoto = async () => {
-    if (!petId || uploading) return;
-    const picked = await pickMedia({ purpose: "feed", mediaTypes: ["image", "video"] });
-    if (!picked) return;
+  // The pet a new photo is of: the pet on screen, or the one picked in the sheet when every pet is shown.
+  const targetPetId = petSel === ALL_PETS ? (addPetId && pets.some((p) => p.id === addPetId) ? addPetId : pets[0]?.id) : petSel;
+  const caring = targetPetId != null && inCare[targetPetId] != null;
 
-    setUploading(true);
+  const addPhoto = () => {
+    if (!targetPetId || saving) return;
+    setAdding(true);
+  };
+
+  const closeAdd = () => {
+    setAdding(false);
+    setPicked(null);
+  };
+
+  const savePhoto = async ({ share, note, tag }: { share: boolean; note: string; tag: FeedTag | null }) => {
+    if (!targetPetId || !picked || saving) return;
+    setSaving(true);
     try {
       const kind = picked.file.type.startsWith("video/") ? "video" : "image";
       const uploaded = await uploadMedia({
-        petId,
+        petId: targetPetId,
         purpose: "feed",
         file: picked.file,
         trim: picked.trim,
         resourceType: kind,
       });
       await createFeedPost({
-        petId,
+        petId: targetPetId,
         mediaId: uploaded.mediaId,
         caption: FALLBACK_CAPTION,
         captionSource: "fallback",
+        category: tag,
         role: "owner",
-        visibility: visibleToSitter ? "shared" : "private",
+        visibility: share ? "shared" : "private",
+        note,
       });
-      toast.show(visibleToSitter ? "Shared with your sitter" : "Saved just for you");
+      closeAdd();
+      toast.show(share ? `Pawsted! ${inCare[targetPetId]?.sitterName ?? "Your sitter"} can see it` : "Saved just for you");
       await loadPage(0, false, true);
     } catch (err) {
       errorDialog.show({
-        title: "Photo not shared",
+        title: "Photo not saved",
         message:
-          err instanceof UploadError || err instanceof Error ? err.message : "Couldn't share this photo. Try again.",
-        onRetry: () => void sharePhoto(),
+          err instanceof UploadError || err instanceof Error ? err.message : "Couldn't save this photo. Try again.",
+        onRetry: () => void savePhoto({ share, note, tag }),
       });
     } finally {
-      setUploading(false);
-    }
-  };
-
-  const confirmDelete = async () => {
-    if (!pendingDeleteId || deleting) return;
-    const id = pendingDeleteId;
-    setDeleting(true);
-    try {
-      await deleteFeedPost(id);
-      setPendingDeleteId(null);
-      setViewerPostId(null);
-      setFeed((prev) =>
-        prev.status === "loading" ? prev : { ...prev, posts: prev.posts.filter((p) => p.id !== id) },
-      );
-      toast.show("Photo deleted");
-    } catch (err) {
-      toast.show(err instanceof Error ? err.message : "Couldn't delete this photo. Try again.");
-    } finally {
-      setDeleting(false);
+      setSaving(false);
     }
   };
 
@@ -251,161 +193,75 @@ function OwnerFeed() {
   if (pets.length === 0) {
     return (
       <SafeAreaView style={styles.safe}>
-        <EmptyState
-          emoji="🐾"
-          title="No pets yet"
-          message="Add a pet on Home first."
-        />
+        <EmptyState emoji="🐾" title="No pets yet" message="Add a pet on Home first." />
       </SafeAreaView>
     );
   }
 
-  if (feed.status === "loading") return <LoadingView />;
-
-  const posts = feed.status === "ready" || feed.status === "error" ? feed.posts : [];
-  const timeline = withDiaryCells(posts, diaryCells, feed.status === "ready" ? feed.hasMore : false);
-  const hasMore = feed.status === "ready" ? feed.hasMore : false;
-  const petOptions = pets.slice(0, 4).map((p) => ({ value: p.id, label: p.name }));
+  const posts = feed.status === "loading" ? [] : feed.posts;
+  const petOptions = pets.map((p) => ({ id: p.id, name: p.name, species: p.species }));
+  const petGroups = [{ key: "mine", pets: petOptions }];
+  // With several pets together each photo carries its pet's face.
+  const facePets =
+    petSel === ALL_PETS ? Object.fromEntries(pets.map((p) => [p.id, { species: p.species, photo: faces[p.id], name: p.name }])) : undefined;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
-      <FlatList
-        data={mode === "album" ? [] : timeline}
-        keyExtractor={(item) => item.id}
-        numColumns={3}
-        columnWrapperStyle={timeline.length > 0 && mode === "timeline" ? styles.row : undefined}
-        contentContainerStyle={[styles.list, timeline.length === 0 && styles.listEmpty]}
-        onEndReached={() => void loadMore()}
-        onEndReachedThreshold={0.4}
-        ListHeaderComponent={
-          <>
-            {petOptions.length > 1 ? (
-              <View style={styles.petSwitch}>
-                <SegmentedControl
-                  options={petOptions}
-                  value={petId}
-                  onChange={setPetId}
-                  testID="feed-pet"
-                />
-              </View>
-            ) : null}
-            {caring ? (
-              <View style={styles.petSwitch}>
-                <Button
-                  label={openRequest ? "Requested · waiting for a photo" : requesting ? "…" : "📷 Request photo"}
-                  onPress={() => void askForPhoto()}
-                  disabled={openRequest != null || requesting}
-                  variant="secondary"
-                  testID="feed-request-photo"
-                />
-              </View>
-            ) : null}
-            {posts.length > 0 ? (
-              <View style={styles.petSwitch}>
-                <SegmentedControl
-                  options={[
-                    { value: "timeline", label: "Timeline" },
-                    { value: "album", label: "Album" },
-                  ]}
-                  value={mode}
-                  onChange={setMode}
-                  testID="feed-mode"
-                />
-              </View>
-            ) : null}
-            {mode === "album" && posts.length > 0 ? <AlbumView posts={posts} onOpen={setViewerPostId} /> : null}
-          </>
-        }
-        ListEmptyComponent={
-          mode === "album" && posts.length > 0 ? null : feed.status === "error" ? (
-            <EmptyState
-              emoji="📸"
-              title="Couldn't load the feed"
-              message={feed.message}
-              action={{ label: "Try again", onPress: () => void loadPage(0, false) }}
-            />
-          ) : (
-            <EmptyState
-              emoji="📸"
-              title="No posts yet"
-              message="Your sitter will share photos here."
-            />
+      <FeedBarRight signature={`${petSel ?? ALL_PETS}|${petOptions.map((p) => p.id).join(",")}|${JSON.stringify(faces)}`}>
+        <FeedPetPicker groups={petGroups} allPets={petOptions} value={petSel ?? ALL_PETS} onChange={setPetSel} faces={faces} />
+      </FeedBarRight>
+      <FeedBrowser
+        posts={posts}
+        loading={feed.status === "loading"}
+        hasMore={feed.status === "ready" ? feed.hasMore : false}
+        loadingMore={loadingMore}
+        onLoadMore={() => void loadMore()}
+        currentUserId={currentUserId}
+        onRemoved={(id) => setFeed((prev) => (prev.status === "loading" ? prev : { ...prev, posts: prev.posts.filter((p) => p.id !== id) }))}
+        onPostChange={(id, change) =>
+          setFeed((prev) =>
+            prev.status === "loading" ? prev : { ...prev, posts: prev.posts.map((p) => (p.id === id ? { ...p, ...change } : p)) },
           )
         }
-        ListFooterComponent={
-          hasMore ? (
-            <TextButton
-              label={loadingMore ? "Loading…" : "Load more"}
-              onPress={() => void loadMore()}
-              disabled={loadingMore}
-              testID="feed-load-more"
-            />
-          ) : null
-        }
-        renderItem={({ item }) => (
-          <View style={styles.cell}>
-            {isDiaryCell(item) ? (
-              <DiaryFeedCell cell={item} onOpen={() => router.push(`/owner/diary/${item.reportId}`)} />
-            ) : (
-              <FeedCard post={item} onOpen={() => setViewerPostId(item.id)} />
-            )}
-          </View>
-        )}
+        faces={facePets}
+        onRefresh={() => void loadPage(0, false, true)}
+        emptyMessage="Your sitter will share photos here."
+        error={feed.status === "error" && posts.length === 0 ? { message: feed.message, onRetry: () => void loadPage(0, false) } : null}
         testID="owner-feed-list"
       />
 
       <View style={styles.fabRow}>
-        <ShareToggle
-          label="Visible to sitter"
-          on={visibleToSitter}
-          onToggle={() => setVisibleToSitter((v) => !v)}
-          disabled={uploading}
-          testID="feed-share-toggle"
-        />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Add photo"
-          disabled={uploading}
-          onPress={() => void sharePhoto()}
-          style={({ pressed }) => [styles.fab, (pressed || uploading) && styles.fabPressed]}
+          disabled={saving}
+          onPress={addPhoto}
+          style={({ pressed }) => [styles.fab, (pressed || saving) && styles.fabPressed]}
           testID="feed-add-photo"
         >
-          <Text style={styles.fabLabel}>{uploading ? "…" : "+ Photo"}</Text>
+          <Text style={styles.fabLabel}>+ Photo</Text>
         </Pressable>
       </View>
 
-      <FeedViewer
-        visible={viewerPostId != null && pendingDeleteId == null}
-        posts={posts}
-        initialPostId={viewerPostId}
-        onClose={() => setViewerPostId(null)}
-        onNearEnd={() => void loadMore()}
-        currentUserId={currentUserId}
-        onRequestDelete={(id) => {
-          // Reopen on this post if the delete is cancelled (the viewer hides behind the sheet).
-          setViewerPostId(id);
-          setPendingDeleteId(id);
-        }}
-      />
-
-      <Sheet
-        visible={pendingDeleteId != null}
-        title="Delete this photo?"
-        onClose={() => {
-          if (!deleting) setPendingDeleteId(null);
-        }}
-        testID="feed-delete-sheet"
-        footer={
-          <Button
-            label={deleting ? "…" : "🗑️"}
-            disabled={deleting}
-            onPress={() => void confirmDelete()}
-            testID="feed-delete-confirm"
-          />
+      <AddPhotoSheet
+        visible={adding}
+        picked={picked}
+        onPicked={setPicked}
+        pets={
+          petSel === ALL_PETS
+            ? petOptions.map((p) => ({ id: p.id, name: p.name, face: { species: p.species, photo: faces[p.id], name: p.name } }))
+            : undefined
         }
-      >
-        <Text style={styles.deleteBody}>This deletes the photo for good.</Text>
-      </Sheet>
+        petId={targetPetId ?? undefined}
+        onPetChange={setAddPetId}
+        shareWithId={targetPetId ? inCare[targetPetId]?.sitterId : undefined}
+        shareWith={targetPetId ? (inCare[targetPetId]?.sitterName ?? "your sitter") : "your sitter"}
+        canShare={caring}
+        defaultShare={false}
+        saving={saving}
+        onClose={closeAdd}
+        onSave={(choice) => void savePhoto(choice)}
+      />
     </SafeAreaView>
   );
 }
@@ -416,35 +272,10 @@ const makeStyles = (theme: Theme) =>
       flex: 1,
       backgroundColor: theme.color.background,
     },
-    list: {
-      flexGrow: 1,
-      padding: theme.spacing.sm,
-      maxWidth: 480,
-      width: "100%",
-      alignSelf: "center",
-    },
-    listEmpty: {
-      flexGrow: 1,
-    },
-    petSwitch: {
-      marginBottom: theme.spacing.md,
-      paddingHorizontal: theme.spacing.xs,
-    },
-    row: {
-      gap: 2,
-      marginBottom: 2,
-    },
-    cell: {
-      flex: 1,
-      maxWidth: "33.333%",
-    },
     fabRow: {
       position: "absolute",
       right: theme.spacing.md,
       bottom: theme.spacing.lg,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: theme.spacing.sm,
     },
     fab: {
       minHeight: 48,
@@ -456,7 +287,7 @@ const makeStyles = (theme: Theme) =>
       ...Platform.select({
         web: { boxShadow: "0 4px 12px rgba(26, 26, 26, 0.2)" },
         default: {
-          shadowColor: "#1A1A1A",
+          shadowColor: "#1A1A1A", // tokens-ok: the floating button's shadow, as before
           shadowOpacity: 0.2,
           shadowRadius: 8,
           shadowOffset: { width: 0, height: 4 },
@@ -471,10 +302,5 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.body,
       fontWeight: theme.fontWeight.bold,
       color: theme.color.primaryText,
-    },
-    deleteBody: {
-      fontSize: theme.fontSize.body,
-      color: theme.color.text,
-      lineHeight: theme.fontSize.body * 1.4,
     },
   });

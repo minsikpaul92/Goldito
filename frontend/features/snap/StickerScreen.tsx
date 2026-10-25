@@ -130,7 +130,10 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
   const pickPhoto = async () => {
     if (step) return;
     const picked = await pickMedia({ purpose: "sticker", mediaTypes: ["image"] });
-    if (!picked) return;
+    if (picked) await startFrom(picked.file);
+  };
+
+  const startFrom = async (file: File) => {
     setSticker(null);
     setMissed(false);
     setPoint(null);
@@ -138,7 +141,7 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
     let current: Photo | null = null;
     let start: Point = { x: 0.5, y: 0.5 };
     try {
-      const [frame] = await loadFrames(picked.file);
+      const [frame] = await loadFrames(file);
       current = { frame, url: frame.toDataURL("image/jpeg", 0.85), aspect: frame.width / frame.height };
       setPhoto(current);
       // The biggest pet, tapped at its centre — like a long press on the pet. No pet found: the middle.
@@ -175,7 +178,8 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
       const file = new File([sticker.blob], "sticker.png", { type: "image/png" });
       const uploaded = await uploadMedia({ petId, purpose: "sticker", file, resourceType: "image" });
       await saveSticker(petId, uploaded.mediaId, me);
-      toast.show("Sticker saved");
+      const name = pets.status === "ready" ? pets.pets.find((p) => p.id === petId)?.name : null;
+      toast.show(name ? `Paw-fect! Saved to ${name}'s stickers` : "Paw-fect! Sticker saved");
       setSticker(null);
       setPhoto(null);
       setPoint(null);

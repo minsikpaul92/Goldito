@@ -6,8 +6,8 @@ import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 // Sign in, sign up, and role routing inside the desktop phone frame (phase-03 3.1–3.3).
 
 // Bottom tabs per role (phase-03b 3B.0, architecture §3; Snap replaced Mood, D61).
-const OWNER_TABS = ["Home", "Bookings", "Chat", "Feed", "Snap"];
-const SITTER_TABS = ["Home", "Bookings", "Chat", "Feed", "Snap"];
+const OWNER_TABS = ["Home", "Bookings", "Chat", "Moments", "Snap"];
+const SITTER_TABS = ["Home", "Bookings", "Chat", "Moments", "Snap"];
 
 /** Exactly these tabs, in order, and no label cut off in height or width. */
 async function expectTabs(page: Page, labels: string[]) {
@@ -224,7 +224,7 @@ test.describe("auth and role routing", () => {
     await expect(page).toHaveURL(/\/sitter$/);
 
     const screen = app(page);
-    await app(page).getByRole("tab").getByText("Feed", { exact: true }).click();
+    await app(page).getByRole("tab").getByText("Moments", { exact: true }).click();
     await expect(page).toHaveURL(/\/sitter\/feed$/);
 
     // No back button on the feed index screen

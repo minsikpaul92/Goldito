@@ -14,6 +14,7 @@ import ChevronRight from "lucide-react-native/icons/chevron-right";
 import Circle from "lucide-react-native/icons/circle";
 import CircleCheck from "lucide-react-native/icons/circle-check";
 import CircleDot from "lucide-react-native/icons/circle-dot";
+import EyeOff from "lucide-react-native/icons/eye-off";
 import FaceGrinning from "lucide-react-native/icons/face-grinning";
 import FaceSlightlyFrowning from "lucide-react-native/icons/face-slightly-frowning";
 import FaceSlightlySmiling from "lucide-react-native/icons/face-slightly-smiling";
@@ -110,6 +111,7 @@ const ICONS = {
   received: LogIn,
   returned: LogOut,
   photo: Image,
+  hidden: EyeOff,
   video: Video,
   warning: TriangleAlert,
   meal: Utensils,

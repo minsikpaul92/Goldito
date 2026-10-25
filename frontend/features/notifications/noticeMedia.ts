@@ -9,7 +9,7 @@ import type { DiaryMedia } from "../diary/diaryApi";
 export const DETAIL_TYPES = new Set(["task_done", "care_checkin", "feed_post", "photo_request_fulfilled", "care_request_declined", "care_request_countered"]);
 
 export function detailNextLabel(type: string, role: "owner" | "sitter"): string {
-  if (type === "feed_post" || type === "photo_request_fulfilled") return "See in Feed";
+  if (type === "feed_post" || type === "photo_request_fulfilled") return "See in Moments";
   if (type.startsWith("care_request")) return "Open the request";
   return role === "owner" ? "See in History" : "Continue";
 }

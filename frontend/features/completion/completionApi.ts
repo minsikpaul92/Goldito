@@ -109,7 +109,7 @@ export async function getStaySummary(petIds: string[], fromIso: string, toIso: s
       .order("sent_at", { ascending: false }),
     supabase
       .from("feed_posts")
-      .select("id", { count: "exact", head: true })
+      .select("id, media(purpose)")
       .in("pet_id", petIds)
       .gte("created_at", fromIso)
       .lte("created_at", toIso),
@@ -125,7 +125,10 @@ export async function getStaySummary(petIds: string[], fromIso: string, toIso: s
   const rows = (reports.data ?? []) as { body: string }[];
   return {
     reports: rows.length,
-    photos: photos.count ?? 0,
+    // A sticker in the Feed (015j) is not a photo of the stay.
+    photos: ((photos.data ?? []) as unknown as { media: { purpose: string } | { purpose: string }[] | null }[]).filter(
+      (row) => [row.media ?? []].flat()[0]?.purpose !== "sticker",
+    ).length,
     tasksDone: tasks.count ?? 0,
     lastReport: rows[0] ? previewOf(rows[0].body) : null,
   };

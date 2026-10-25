@@ -658,8 +658,8 @@
 | :--- | :--- | :--- | :--- | :--- |
 | PHOTO-1 | (DB) 견주가 돌봄 중인 펫에 `request_photo` → 다시 한 번 | 열린 요청 1개(같은 예약 · 펫에 하나만, 두 번째는 같은 요청을 돌려줌), 시터에게 `photo_request` 알림 1개 "{견주} asked for a photo of {펫} 📷". 돌봄 중이 아닌 펫은 `not_in_care`, 남의 펫은 `not_allowed`, 표에 직접 쓰기 · 시터가 손으로 닫기는 막힘 | SQL `rls_smoke` 014 | 자동 통과 대기(CI) |
 | PHOTO-2 | (DB) 시터가 그 펫의 **나만 보기** 사진 → **공유** 사진 | 나만 보기는 요청을 그대로 둠. 공유 사진이 요청을 `fulfilled`로(`fulfilled_post_id`), 견주에게 "Here's the photo of {펫} you asked for 📷" **하나만**(같은 사진의 `feed_post` 알림은 안 감). 그 뒤 견주는 다시 요청 가능 | SQL `rls_smoke` 014 | 자동 통과 대기(CI) |
-| PHOTO-3 | 견주 → Feed → 돌봄 중인 펫(Max) → **📷 Request photo** → 새로고침 → 집에 있는 펫(Mochi) | 토스트 "Asked {시터} for a photo", 버튼이 **Requested · waiting for a photo**(비활성)로 바뀌고 새로고침해도 그대로. 집에 있는 펫에는 버튼 없음. 요청이 답을 받으면(`photo_request_fulfilled` 알림) 피드가 새 사진을 다시 불러오고 버튼이 돌아옴 | 🤖 `photo-request.spec.ts` | ✅ 2026-10-15 Minsik (두 브라우저 · 로컬 앱 + 호스팅 DB, 새로고침 없이) |
-| PHOTO-4 | 시터 → Home (견주가 Max 사진을 요청한 상태) → 배너 **📷 {견주} asked for a photo of Max — tap to share** → Max 피드 → **+ Photo** 로 공유 → Home | 배너 탭(또는 벨의 `photo_request` 알림)이 `/sitter/feed/{펫}`를 연다. 공유 사진이 요청을 끝내고 견주에게는 `photo_request_fulfilled` 알림 하나만, Home에 돌아오면 배너 없음. 새 요청은 Home을 떠나지 않아도 배너로 보인다(알림 수신 때 다시 읽음) | 🤖 `photo-request.spec.ts` | ✅ 2026-10-15 Minsik (두 브라우저 · 로컬 앱 + 호스팅 DB, 새로고침 없이) |
+| PHOTO-3 | (옮김, #345) 견주의 **Request photo**는 채팅 카드에 있고 Feed에는 버튼이 없음 | Feed 화면에 Request photo 버튼 없음. 요청이 답을 받으면(`photo_request_fulfilled` 알림) 피드가 새 사진을 다시 불러옴 | 채팅 쪽은 `chat-trip` 등 | 사람 확인 대기 |
+| PHOTO-4 | 시터 → Home (견주가 Max 사진을 요청한 상태) → 배너 **📷 {견주} asked for a photo of Max — tap to share** → Max 피드 → **+ Photo** → 샘플 → **Save**로 공유 → Home | 배너 탭(또는 벨의 `photo_request` 알림)이 `/sitter/feed/{펫}`를 연다. 공유 사진이 요청을 끝내고 견주에게는 `photo_request_fulfilled` 알림 하나만, Home에 돌아오면 배너 없음. 새 요청은 Home을 떠나지 않아도 배너로 보인다(알림 수신 때 다시 읽음) | 🤖 `photo-request.spec.ts` | ✅ 2026-10-15 Minsik (두 브라우저 · 로컬 앱 + 호스팅 DB, 새로고침 없이) |
 | PHOTO-5 | 견주 → Home (요청이 답을 받은 뒤) | `photo_request_fulfilled` 알림이 `feed_post`처럼 Home 라이브 카드(📷)·Diary Live 새로고침·벨 상세(사진이 있으면 **See in Feed**)로 보이고, 누르면 그 펫의 Feed | 🤖 `photo-request.spec.ts` | ✅ 2026-10-15 Minsik (두 브라우저 · 로컬 앱 + 호스팅 DB, 새로고침 없이) |
 
 ### 3.23 Split view (SPLIT) — Phase 10 · 10.10 · *방식 A: 기본은 폰 하나, `?view=split`일 때만 두 폰*
@@ -705,8 +705,8 @@
 | DBK-4 | 손가락(폰) / 마우스로 쪽을 **왼쪽으로 끌기**, **오른쪽으로 끌기**, 조금만 끌다 놓기 | 왼쪽 → 다음 날, 오른쪽 → 전날: 끄는 만큼 종이가 들리고 놓으면 넘어감(폭의 30% 넘게, 또는 빠르게 튕기기). 조금만 끌면 제자리로. 위아래로는 화면이 그대로 스크롤. ✨ Decorate 중에는 책이 안 넘어감(스티커 끌기와 안 섞임) | 🤖 `diary-book.spec.ts`(마우스 끌기) · 폰 손가락 · Safari는 👤 | 사람 확인 대기 |
 | DBK-5 | 알림 "…sent Max's daily report" 누르기(`/owner/diary/{id}`) | 책이 **그 장으로** 열림, 앞뒤로 넘길 수 있음 | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
 | DBK-6 | 시터 → **Diary** → **Diary book** | 지금까지 보낸 쪽 전부(돌봤던 펫마다 표지, 누르면 그 펫의 책), 최신 장부터, 초안 없음. 지금 돌보는 펫이 없으면 Diary를 열면 바로 표지들 | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
-| DBK-7 | (DB.4) 견주 → **Feed** (알림장을 보낸 날의 펫) | 사진 사이에 **📔 다이어리 칸**이 보낸 시각 순서대로(최신이 위): 그날 **첫 공유 사진**이 썸네일, 사진이 없던 날은 📔, 아래 "Diary · Oct 5". 초안은 안 보임. 칸을 누르면 다이어리 책이 그 장으로 열림. 사진을 더 불러오기 전(Load more)에는 화면에 있는 가장 오래된 사진보다 오래된 장은 기다렸다가 같이 나옴 | 🤖 `diary-book.spec.ts`(순서 · 썸네일 `data-public-id` · 열기) · 실제 썸네일 이미지는 👤 | 사람 확인 대기 |
-| DBK-8 | (DB.4) 시터 → Feed → 펫 | 내가 보낸 장이 같은 방식으로 사진 사이에, 누르면 **Diary → Diary book**이 그 장으로(`/sitter/diary?page=…`) | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
+| DBK-7 | (대체됨, #345) 예전에는 Feed 그리드 사진 사이에 다이어리 칸이 끼었음 | 지금은 Feed 안의 **Photos · Diary** 전환 탭에서 다이어리를 봄(칸은 그리드에서 뺌) | 🤖 `diary-book.spec.ts`(책 열기 · 알림) | 사람 확인 대기 |
+| DBK-8 | (대체됨, #345) 시터 쪽도 같음 | 시터는 Feed의 **Photos · Diary** 전환 탭 → Diary book에서 보낸 장을 봄 | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
 | DBK-9 | (DB.5) 보낸 장 아래 **↗ Share** | 시트 "Share {펫}'s page": **↗ Share image**(폰 브라우저처럼 파일 공유가 되는 곳에서만 — 카톡 · 메시지 등 공유 시트로 PNG), **⬇ Download image**(`goldito-max-diary-2026-10-05.png`), 안내 "A link is a public copy of this page as an image: anyone who has the link can open it." 뒤 **🔗 Copy public link** → 그때 처음 이미지를 올림(`diary_page`, 014b) → 링크가 클립보드에 복사되고 칸에도 보임. 같은 장 · 같은 스티커면 다시 눌러도 같은 링크(다시 안 올림), 스티커를 바꾸면 새 링크 | 🤖 `decor.spec.ts`(다운로드 PNG · 링크 업로드 1번 · 목적 `diary_page`) · 폰 공유 시트 · 실제 Cloudinary 링크는 `014b` 적용 뒤 👤 | 사람 확인 대기 |
 | DBK-10 | (DB) `rls_smoke.sql`의 014p 블록 | 오너가 자기 펫의 일기 쪽을 `add_owner_diary_entry`로 씀: 곧바로 **보냄** 상태, 앞뒤 공백 제거, 작성자는 오너, 하루에 여러 장 가능, 알림 없음 · 같은 펫을 돌보는 시터는 **못 봄**(작성자 열이 오너라서) · 다른 오너 · 시터는 쓸 수 없음(`not_owner`) · 빈 글(`body_required`)과 2000자 초과(`body_too_long`) 거부 · anon 불가 · 오너는 자기 쪽에 스티커 가능 | SQL `rls_smoke` | ➖ |
 | DBK-11 | 견주 → **Diary** → **✏️ Write a page** (펫이 둘 이상이면 위에서 펫 고르기) | 시트 "New page": 그림일기 종이 위에 바로 쓰기("Dear diary, today…"), 글이 비면 Save page는 꺼짐. **+ Photo**로 사진 한 장(선택). Save page → "Page saved", 책이 새 장("Your page")으로 열림. 사진은 **Feed에 비공개**로도 남고 종이의 그림 칸에 보임. 알림 없음, 시터는 못 봄. ✨ Decorate로 스티커도 붙임. 일기가 하나도 없어도 버튼이 있음 | 🤖 `diary-owner-entry.spec.ts` | 사람 확인 대기 |
@@ -1135,7 +1135,40 @@
 | NAV-5 | 옛 주소 `/owner/diary` · `/sitter/diary?page=…`, 펫 방 · 반납 시트의 Diary 링크, 리포트 알림 | Feed의 Diary가 열림(시터는 그 페이지로) | 🤖 `pet-room` · `diary-book` | ➖ |
 | NAV-6 | 시터 Home의 **💬 Chats (n)** | Chat 탭으로 감 | **👤** | ➖ |
 
-### 3.54 Pay가 꺼진 이유 (PAYWHY) · #282
+### 3.54 Feed 개편 (FEEDX) · #345 · *사전: 호스팅 DB에 `015j` 적용 뒤(10/24 적용됨)*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| FEEDX-1 | (DB) `rls_smoke.sql`의 015j 블록, 태그 · 메모 | 체크인 사진 글은 종류대로 태그가 붙고(potty, mood 포함) 메모가 `note`에 들어감. 없는 태그 · 200자가 넘는 메모는 거절 | SQL `rls_smoke` 015j(로컬 Postgres 17, 어시스턴트 실행) | 사람 확인 대기 |
+| FEEDX-2 | (DB) 내 쪽에서만 지우기 | 오너가 시터의 공유 사진을 지워도 시터는 그대로 가짐, 시터가 지워도 오너는 그대로 가짐. 둘 다 지우면 `purge`. 같은 사진을 두 번 지우면 `not_found` | SQL `rls_smoke` 015j | 사람 확인 대기 |
+| FEEDX-3 | (DB) 30분 규칙 | 보낸 지 30분 안에는 작성자가 둘 다에게서 삭제(`everyone`, 알림도 같이 삭제), 30분이 지나면 `too_late`(내 쪽에서만은 가능). 작성자가 아니면 `not_author` | SQL `rls_smoke` 015j | 사람 확인 대기 |
+| FEEDX-4 | (DB) 숨기기 | 내 숨김 행은 나만 읽음. 숨긴 사진은 목록에 오되 표시가 붙고, 다시 보이게 하면 행이 사라짐. 남의 사진은 `not_found` | SQL `rls_smoke` 015j | 사람 확인 대기 |
+| FEEDX-5 | (DB) 스티커 | 스티커를 저장하면 만든 사람의 비공개 글이 생김. 오너 스티커는 시터가, 시터 스티커는 오너가 못 봄 | SQL `rls_smoke` 015j | 사람 확인 대기 |
+| FEEDX-6 | (DB) 돌봄이 끝난 뒤 | 시터는 자기가 올린 글을 계속 읽고, 비공개 글만 새로 올림(공유는 거절). 오너가 공유한 사진은 더 못 읽음. 돌본 적 없는 펫에는 비공개로도 못 올림 | SQL `rls_smoke` 015j | 사람 확인 대기 |
+| FEEDX-7 | (백엔드) `DELETE /api/feed/{id}?scope=me`(기본) · `scope=everyone` | 내 쪽에서만이면 글은 그대로이고 `deleted: false`. 아무도 못 보게 되면 글 · 사진 파일 · media 행이 지워짐(다른 기록이 쓰는 사진은 파일이 남음, 스티커 칸 포함). 30분이 지났으면 409 "…only be deleted on your side", 작성자가 아니면 403, 없으면 404. 파일 삭제가 실패해도 지우기는 성공으로 처리 | pytest `test_feed_delete` | 사람 확인 대기 |
+| FEEDX-8 | (백엔드) 돌봄이 끝난 시터의 사진 서명 | 돌본 적 있는 시터는 `feed` 사진만 서명됨(비공개로만 올라감), 그 밖의 용도는 여전히 403 | pytest `test_media_sign` | 사람 확인 대기 |
+| FEEDX-9 | 오너 → Feed (사진 여러 장, 오늘 · 어제) | 날짜마다 헤더(**Today · Fri Oct 9** · 5 photos, **Yesterday · Thu Oct 8**). 가장 최근 사진이 **2×2칸**이고 옆에 작은 사진 둘이 세로로, 그 아래부터는 **가로 최대 3장**씩. 사진 사이 8 px(Figma 그대로), 세로로 계속 늘어나고 스크롤 | 🤖 `feed`(칸 크기 · 간격 · 헤더) · 모양은 사람 확인 대기 | 사람 확인 대기 |
+| FEEDX-10 | 칩 줄 | **All · Meals · Walks · Naps · Mood · Potty · No tag**(No tag가 맨 뒤), 숨긴 사진이 있을 때만 그 뒤에 **Hidden** 칩. 옆으로 밀면 넘어감(마우스는 휠). 칩을 누르면 그 태그의 사진만(태그가 여러 개인 사진은 각 칩에 다 걸림), No tag는 태그 없는 사진 · 놀이 · 기타 · 스티커. 태그가 비면 "No mood photos yet" 같은 한 줄 | 🤖 `feed` | 사람 확인 대기 |
+| FEEDX-11 | 사진 칸 | 태그가 있으면 **태그 그림(여러 개면 모두) + 시간**(예: 9:02), 태그가 없으면 시간만 **알약 한가운데**. 영상은 ▶. 스티커는 흰 바탕이 아닌 연한 노랑 바탕에 잘리지 않게 | 🤖 `feed`(접근 이름 "Meals at 12:00" · 시간이 알약 가운데) · 그림은 사람 확인 대기 | 사람 확인 대기 |
+| FEEDX-12 | 사진 누르기 | 전체화면에 **태그(여러 개면 모두), 날짜(Oct 9, 2026), 시간(9:02 AM)**, 내가 남긴 메모가 있으면 메모. 작성자 이름, 나만 보는 글이면 "Only you". 위에 **‹**(닫기) + "펫 · 시간" 제목. 아래에 큰 **Make a sticker** 단추(사진만, 영상 · 스티커는 없음)와 **Hide · ✏️ Edit**(내가 올린 사진만) **· Delete** 한 줄. **사진을 한 번 더 누르면** 설명과 단추가 사라지고 사진만 보이고, 다시 누르면 돌아옴(확대 중에는 안 바뀜). **‹ ›** 버튼은 없음 | 🤖 `feed` | 사람 확인 대기 |
+| FEEDX-13 | **Hide** → 칩 줄 맨 끝 **Hidden** 칩 → 사진 → **Unhide** | 숨기면 그리드에서 사라지고 토스트 "Photo hidden", 칩 줄 No tag 뒤에 Hidden 칩이 생김. Hidden에서 흐리게 보이고 Unhide로 돌아옴, 마지막 하나를 되돌리면 칩이 사라지고 All로 돌아감. 상대 쪽은 그대로 | 🤖 `feed` | 사람 확인 대기 |
+| FEEDX-14 | 시터가 사진을 보낸 직후 Delete(30분 안) / 30분 뒤 Delete | 30분 안: 고르기 둘(양쪽 / 내 쪽만). 30분 뒤: "It will be deleted on your side only." | 🤖 `feed` | 사람 확인 대기 |
+| FEEDX-15 | 돌봄이 끝난 시터 → Feed 탭 | 돌보는 펫이 없으면 **가장 최근에 끝난 펫의 Feed**가 바로 열림(펫 고르기 화면 없음, 펫이 하나면 펫 칩도 없음). **+ Photo**의 Share 칸은 눌러지지 않고 Only me만, 저장하면 "Saved just for you", 오너는 못 봄 | 🤖 `feed` · `media-picker` | 사람 확인 대기 |
+| FEEDX-16 | Snap에서 스티커를 만듦(오너 / 시터) | 만든 사람의 Feed(No tag)에만 스티커가 올라옴. 상대는 못 봄. 다이어리 사진 고르기 · 표지 · 사진 수에는 안 끼임 | SQL `015j` · 화면은 사람 확인 대기 | 사람 확인 대기 |
+| FEEDX-17 | Feed에서 Request photo | 버튼 없음(채팅에 있음) | 🤖 `feed` | 사람 확인 대기 |
+| FEEDX-18 | 시터 → Moments 탭(돌보는 펫이 둘 + 끝난 펫 하나) | **돌보는 펫 전부(All pets)**의 사진이 한꺼번에 열리고 사진마다 펫 얼굴이 붙음(끝난 펫은 안 섞임). **Photos / Diary 줄 오른쪽 끝**의 **펫 칩**(겹친 얼굴 + All pets + ⌄)을 누르면 **버튼 바로 밑에** 작은 목록: All pets, In care 펫들, **줄**(All pets 밑이 아니라 그룹 사이에만, 고를 수 없음), Past stay 펫들. 고르면 그 펫만. 돌보는 펫이 하나면 그 펫이 열리고 All pets는 없음. 바깥을 누르면 닫힘 | 🤖 `feed` | 사람 확인 대기 |
+| FEEDX-19 | 오너 → Moments 탭 | 펫이 둘 이상이면 **All pets**로 열려 모든 펫의 사진이 같이 보이고 사진마다 펫 얼굴이 붙음. **Photos / Diary 줄 오른쪽 끝**의 같은 **펫 칩**(Diary 탭에서는 안 보임) 목록에는 **내 펫만**(줄 없음). 한 마리를 고르면 얼굴이 사라짐. 펫이 하나면 펫 칩도 얼굴도 없음. **+ Photo**는 보고 있는 펫의 사진이고, All pets일 때는 시트에서 어느 펫인지 고름 | 🤖 `feed` | 사람 확인 대기 |
+| FEEDX-20 | Photos / Diary | 둘 다 **밑줄 탭**(고른 쪽에 밑줄, 안 고른 쪽은 연하게). 시터 Moments에도 있어서 Diary(Today · Diary book)에 들어갈 수 있음 | 🤖 `feed` | 사람 확인 대기 |
+| FEEDX-21 | 사진 → **✏️ Edit**(내가 올린 사진만; 오너가 본 시터 사진 · 스티커에는 없음) | 시트에서 **태그를 여러 개**(예: Walks + Potty), **날짜 · 시간**(선택 시트), **메모**를 고쳐 Save → "Photo updated", 사진이 다시 열려 바뀐 내용이 보임. 두 칩에 모두 걸리고, 날짜를 바꾸면 그 날 묶음으로 이동. **보낸 시각은 그대로**(30분 삭제 규칙이 늘어나지 않음). 아직 안 온 시각은 "Pick a time that has already passed." | 🤖 `feed` · SQL `rls_smoke` 015l | 사람 확인 대기 |
+| FEEDX-22 | 전체화면에서 사진 넘기기 | **좌우로 스와이프**(손가락 · 마우스 드래그)하면 다음 · 이전 사진. 화면 **왼쪽 끝 · 오른쪽 끝**을 누르면 넘어감(버튼은 보이지 않음). 키보드 ← → 도 | 🤖 `feed`(마우스) · `feed-phone`(손가락, 실제 터치 이벤트) | 사람 확인 대기 |
+| FEEDX-23 | 전체화면에서 **핀치 줌** | 두 손가락으로 벌리면 확대(최대 4배), 줄이면 원래대로. 확대 중에는 한 손가락으로 사진을 옮기고 스와이프 · 가장자리 누르기로 페이지가 넘어가지 않음. 다음 사진으로 가면 원래 크기. 데스크톱은 트랙패드 핀치(ctrl + 휠), 확대 중 마우스 드래그로 옮김 | 🤖 `feed-phone`(핀치 · 실제 터치 이벤트) · `feed`(ctrl + 휠) | 사람 확인 대기 |
+| FEEDX-24 | (DB) `rls_smoke.sql`의 015l 블록 | 새 글은 `category`를 `tags`로 복사하고 `taken_at`은 보낸 시각으로 시작. 작성자만 `update_feed_post`로 태그(중복 없이, 다섯 가지만) · 날짜 · 시간 · 메모(200자) 변경, 비우면 지워짐. 오너는 시터 사진 `not_author`, 미래 시각 `in_the_future`, 모르는 태그 `bad_tag`, anon 불가 | SQL `rls_smoke`(로컬 Postgres 17, 어시스턴트 실행) | 사람 확인 대기 |
+| FEEDX-25 | 탭 이름 | 오너 · 시터 탭바와 화면 제목이 **Moments**(주소는 그대로 `/feed`). 알림의 "See in Moments"가 이 탭을 엶 | 🤖 `auth` · `report` · `feed` | 사람 확인 대기 |
+| FEEDX-26 | 사진 상세 → **Make a sticker** 단추, 또는 사진을 **꾹 누름**(0.6초) | 화면을 옮기지 않고 사진 위에 **스피너**("Making a sticker…")가 돌면서 펫을 오려 냄. 끝나면 상세가 닫히고 토스트 "Paw-fect! …", 그 펫의 스티커 칸에 들어가고 만든 사람의 Moments(No tag)에 올라옴. 펫을 못 찾으면 "We couldn't cut out a pet there." 영상 · 스티커에는 단추도 꾹 누르기도 없음. 목록에서 꾹 누르기는 없음 | 🤖 `feed`(단추 · 꾹 누르기 · 저장) · 오려 내기 자체는 사람 확인 대기 | 사람 확인 대기 |
+| FEEDX-27 | 말투(재치 한 줄) | 사진을 공유하면 "Pawsted! Robert can see it", 스티커를 저장하면 "Paw-fect! …". 화면에 재치 한 줄은 하나까지, 안전 · 돈 · 동의 · 오류 · 로그인에는 안 씀 | 🤖 `media-picker` · `caption` · `sticker` | 사람 확인 대기 |
+| FEEDX-28 | **+ Photo** → Add a photo 시트 | 시트가 바로 열리고 맨 위 **사진 줄**(데모에서는 샘플 3장 + **+** 더보기, 실제 폰에서는 **+**만)에서 고름. 그 아래 **Pet**(펫 얼굴 칩, All pets일 때만), **Tag (optional)**(Meals 등, 한 번 더 누르면 해제), **✏️ Note**(누르면 메모 칸), 맨 아래 **스위치 카드**("Only you" 🔒 ↔ "Share with Robert" + 그 사람 **프로필 사진**, 사진이 없으면 이름 첫 글자). 저장 단추는 "Save, only you" / "Save and share with Robert"이고 사진을 고르기 전에는 눌리지 않음. 돌봄이 끝난 시터는 스위치가 꺼진 채 잠김. 시트를 아래로 끌어 닫으면 바로 닫힘(다시 떴다 닫히지 않음) | 🤖 `media-picker` · `feed` · 끌어 닫기는 사람 확인 대기 | 사람 확인 대기 |
+
+### 3.55 Pay가 꺼진 이유 (PAYWHY) · #282
 
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |
@@ -1164,6 +1197,8 @@
 | HOMEADDR-4 | 처리방침(Privacy) | "현재 위치를 쓰면(집 주소 또는 시터 검색) 정확한 좌표를 OpenStreetMap에 한 번 보내 전체 주소를 읽는다, 저장 전에 고칠 수 있다, 시터는 보지 못한다" | **👤** | ➖ |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
+
+- **Feed 삭제 · 숨기기 (FEEDX, #345):** 시터가 오너에게 보낸 사진은 **보낸 지 30분 안**에만 둘 다에게서 지울 수 있다(서버 시계 기준, 앱은 같은 30분으로 버튼을 보여 준다). 그 뒤의 삭제는 내 쪽에서만이고 상대 Feed에는 남는다. 숨기기는 되돌릴 수 있고(Feed 맨 아래 Hidden), 삭제는 되돌릴 수 없다. 사진 파일은 아무도 못 보게 됐을 때만 지워진다. 돌봄이 끝난 시터는 자기가 올린 글만 계속 읽고(오너가 공유해 준 사진은 돌봄 기간까지만), 새로 올리는 사진은 나만 보기로만 된다. 호스팅 DB에는 `015j`를 2026-10-24에 적용했다(예전 앱 코드도 그대로 동작한다).
 
 - **업데이트 줄은 Meet & Greet만 (MGUPD):** 동의(I'd like to book · I accept) · 결제 카드는 예전처럼 제자리에서 바뀌고 새 줄은 없다. 채팅 목록 미리보기는 어떤 변화든 "Meet & Greet update"로 같다(목록은 카드 종류만 안다).
 

@@ -5,7 +5,7 @@ import { listOwnerBookings } from "../../lib/bookings";
 import { useSession } from "../../providers/SessionProvider";
 import { isCaring } from "../feed/caringPets";
 
-export type InCare = { sitterName: string; until: string };
+export type InCare = { sitterId: string; sitterName: string; until: string };
 
 /** The owner's pets that are with a sitter right now → who has them and until when (pick-up time). */
 export function useInCare(): Record<string, InCare> {
@@ -23,7 +23,7 @@ export function useInCare(): Record<string, InCare> {
           const next: Record<string, InCare> = {};
           for (const b of bookings) {
             if (!isCaring(b) || !b.pickUp) continue;
-            for (const p of b.pets) if (p.id) next[p.id] = { sitterName: b.sitterName, until: b.pickUp.at };
+            for (const p of b.pets) if (p.id) next[p.id] = { sitterId: b.sitterId, sitterName: b.sitterName, until: b.pickUp.at };
           }
           setInCare(next);
         })
