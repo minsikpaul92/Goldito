@@ -26,16 +26,16 @@ Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreement
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load this chat | — | 239 |
 | EmptyState | Chat not found | — | 247 |
-| Pressable | — | `chat-stage` | 537 |
-| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 592 |
-| Button | Send quote | `chat-send-quote` | 599 |
-| TextButton | Send quote | `chat-send-quote` | 602 |
-| TextButton | Decline | `chat-decline` | 605 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 632 |
-| Pressable | — | `chat-action-chip` | 653 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 664 |
-| Pressable | Send a card | `chat-plus` | 680 |
-| Pressable | Send | `chat-send` | 713 |
+| Pressable | — | `chat-stage` | 539 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 594 |
+| Button | Send quote | `chat-send-quote` | 601 |
+| TextButton | Send quote | `chat-send-quote` | 604 |
+| TextButton | Decline | `chat-decline` | 607 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 634 |
+| Pressable | — | `chat-action-chip` | 655 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 666 |
+| Pressable | Send a card | `chat-plus` | 682 |
+| Pressable | Send | `chat-send` | 715 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -725,15 +725,15 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${name}'s photos`` | `chat-header-avatar` | 45 |
-| Pressable | ``${name}'s profile`` | `chat-header-name` | 49 |
-| Sheet | open?.name ?? "" | `chat-pet-sheet` | 56 |
+| Pressable | ``${name}'s photos`` | `chat-header-avatar` | 44 |
+| Pressable | ``${name}'s profile`` | `chat-header-name` | 48 |
+| Sheet | open?.name ?? "" | `chat-pet-sheet` | 55 |
 
 ### ChatList — [components/ChatList.tsx](../../frontend/components/ChatList.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${chat.otherName}${chat.unread > 0 ? `, ${chat.unread} unread` : ""}`` | ``chat-row-${chat.otherName}`` | 43 |
+| Pressable | ``${chat.otherName}${chat.unread > 0 ? `, ${chat.unread} unread` : ""}`` | ``chat-row-${chat.otherName}`` | 45 |
 
 ### ChatPetAvatars — [components/ChatPetAvatars.tsx](../../frontend/components/ChatPetAvatars.tsx)
 

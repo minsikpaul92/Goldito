@@ -98,10 +98,8 @@ test.describe("chat hub", () => {
     // #227: one line, the dates and the pets with their species, no "Stay" title, no drop-off or pick-up wording.
     await expect(screen.getByTestId("chat-stay-line")).toHaveText(/^\w{3} \d{1,2} \d{1,2}:\d{2} [AP]M to \w{3} \d{1,2} \d{1,2}:\d{2} [AP]M · 2 pets: 🐶 Max, 🐱 Mochi$/);
     for (const word of ["Stay", "Drop-off", "Pick-up"]) await expect(screen.getByTestId("chat-stay-card")).not.toContainText(word);
-    // The header has the pets only (no dates, they are on the card); my stay card sits on the right like my messages.
-    await expect(screen.getByTestId("chat-header-stay")).not.toContainText(" to ");
-    await expect(screen.getByTestId("chat-header-pet-Max")).toBeVisible();
-    await expect(screen.getByTestId("chat-header-pet-Mochi")).toBeVisible();
+    // The owner's header has no pets (the sitter's does, #263); my stay card sits on the right like my messages.
+    await expect(screen.getByTestId("chat-header-stay")).toHaveCount(0);
     const frame = await box(page.locator("iframe"));
     const card = await box(screen.getByTestId("chat-stay-card"));
     expect(card.x + card.width / 2).toBeGreaterThan(frame.x + frame.width / 2);
@@ -329,7 +327,7 @@ test.describe("chat hub", () => {
     await screen.getByTestId("chat-row-Chloe").click();
 
     await expect(screen.getByTestId("chat-header-name")).toHaveText("Chloe");
-    await expect(screen.getByTestId("chat-header-pet-Max")).toBeVisible();
+    await expect(screen.getByTestId("chat-header-stay")).toHaveCount(0);
     await screen.getByTestId("chat-header-avatar").click();
     await expect(screen.getByTestId("chat-photos-photo-1")).toBeVisible();
     await screen.getByTestId("chat-photos-close").click();

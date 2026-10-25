@@ -523,6 +523,8 @@ export default function Chat() {
           title: header.otherName,
           headerTitle: () => (
             <ChatHeaderTitle
+              threadId={header.threadId}
+              showPets={!owner}
               name={header.otherName}
               cover={photos[0] ?? null}
               stay={headerStay}

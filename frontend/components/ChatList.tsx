@@ -16,6 +16,8 @@ type Props = {
   onLeave: (threadId: string) => void;
   /** The chat to point at (the newest one with something new for me, #228): an accent bar and a tinted row. */
   highlightId?: string | null;
+  /** The sitter's list shows the owner's pets of the stay; the owner's does not. */
+  showPets?: boolean;
 };
 
 /** "Oct 20" or the time of day: a short stamp for the list. */
@@ -24,7 +26,7 @@ function shortStamp(iso: string): string {
 }
 
 /** The chats, WhatsApp style: initial, name, last message, day and unread count. Swipe a row to leave the chat. */
-export function ChatList({ items, onLeave, highlightId }: Props) {
+export function ChatList({ items, onLeave, highlightId, showPets }: Props) {
   const styles = useThemedStyles(makeStyles);
   // The other person's photo, when they have one; the initial circle otherwise.
   const [covers, setCovers] = useState<Map<string, ProfilePhoto>>(new Map());
@@ -61,7 +63,7 @@ export function ChatList({ items, onLeave, highlightId }: Props) {
                 {previewOf(chat)}
               </Text>
             </View>
-            <ChatPetStack pets={chat.pets} testID={`chat-row-${chat.otherName}-pets`} />
+            {showPets ? <ChatPetStack pets={chat.pets} size={36} testID={`chat-row-${chat.otherName}-pets`} /> : null}
             <View style={styles.side}>
               <Text style={styles.time}>{shortStamp(chat.lastAt)}</Text>
               {chat.unread > 0 ? (

@@ -67,7 +67,7 @@ export type ChatHeader = {
 };
 
 /** A pet of the stay a chat is about, as the list and header show it (round face and name). */
-export type ChatPetFace = { id: string; name: string; species: Species | null; photo: string | null };
+export type ChatPetFace = { id: string; name: string; species: Species | null; photo: string | null; breed?: string | null };
 
 /** One row of the chat list. */
 export type ChatListItem = {
@@ -225,24 +225,17 @@ export async function listMyChats(): Promise<ChatListItem[]> {
   }));
 }
 
-/**
- * Species and first photo of pets, read as the signed-in person (RLS lets a sitter with a chat or booking read them).
- * A pet that cannot be read has no entry: the face falls back to the paw.
- */
-export async function loadChatPetMeta(ids: string[]): Promise<Map<string, { species: Species; photo: string | null }>> {
-  const meta = new Map<string, { species: Species; photo: string | null }>();
-  if (ids.length === 0) return meta;
-  const db = getSupabase();
-  const [pets, photos] = await Promise.all([
-    db.from("pets").select("id, species").in("id", ids),
-    db.from("pet_photos").select("pet_id, public_id, position").in("pet_id", ids).order("position"),
-  ]);
-  for (const row of (pets.data ?? []) as { id: string; species: Species }[]) meta.set(row.id, { species: row.species, photo: null });
-  for (const row of (photos.data ?? []) as { pet_id: string; public_id: string }[]) {
-    const entry = meta.get(row.pet_id);
-    if (entry && entry.photo === null) entry.photo = row.public_id;
-  }
-  return meta;
+/** The pets on the latest stay or request card of a chat, for its header (one call, both people of the chat can make it). */
+export async function loadChatThreadPets(threadId: string): Promise<ChatPetFace[]> {
+  const { data, error } = await getSupabase().rpc("get_chat_thread_pets", { p_thread: threadId });
+  if (error) return [];
+  return ((data ?? []) as { id: string; name: string; species: Species | null; breed: string | null; photo: string | null }[]).map((p) => ({
+    id: p.id,
+    name: p.name,
+    species: p.species,
+    breed: p.breed,
+    photo: p.photo,
+  }));
 }
 
 export async function getChatHeader(threadId: string): Promise<ChatHeader | null> {
