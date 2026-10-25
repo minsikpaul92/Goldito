@@ -11,14 +11,29 @@ import { TextButton } from "../../components/ui/TextButton";
 import { Select } from "../../components/ui/Select";
 import { TextField } from "../../components/ui/TextField";
 import { describeAuthError } from "../../lib/authErrors";
-import { DEMO_PASSWORD, DEMO_SETS, demoSetFor, isDemoEnabled, isDemoRole, isDemoToolsBuild } from "../../lib/demo";
+import {
+  DEMO_PASSWORD,
+  DEMO_SETS,
+  demoSetFor,
+  isDemoEnabled,
+  isDemoRole,
+  isDemoToolsBuild,
+} from "../../lib/demo";
 import { Role } from "../../providers/SessionProvider";
-import { SUPABASE_NOT_CONFIGURED, getSupabase, isSupabaseConfigured } from "../../lib/supabase";
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import {
+  SUPABASE_NOT_CONFIGURED,
+  getSupabase,
+  isSupabaseConfigured,
+} from "../../lib/supabase";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
+import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
+import { AppleLogo, GoogleLogo } from "../../components/ui/SocialIcons";
 
 export default function LoginScreen() {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const toast = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +44,11 @@ export default function LoginScreen() {
   const [setKey, setSetKey] = useState(() => demoSetFor(params.set).key);
   const demoTried = useRef(false);
 
-  const canSubmit = isSupabaseConfigured && email.trim() !== "" && password !== "" && !submitting;
+  const canSubmit =
+    isSupabaseConfigured &&
+    email.trim() !== "" &&
+    password !== "" &&
+    !submitting;
 
   async function signInWith(emailValue: string, passwordValue: string) {
     setSubmitting(true);
@@ -72,7 +91,9 @@ export default function LoginScreen() {
         <View style={styles.header}>
           <BrandLogo height={32} />
           <Text style={styles.title}>Welcome back</Text>
-          <Text style={styles.subtitle}>Sign in to see today's care updates.</Text>
+          <Text style={styles.subtitle}>
+            Sign in to see today's care updates.
+          </Text>
         </View>
 
         {!isSupabaseConfigured ? (
@@ -105,14 +126,44 @@ export default function LoginScreen() {
             testID="login-password"
           />
           {error ? (
-            <Text accessibilityRole="alert" style={styles.error} testID="login-error">
+            <Text
+              accessibilityRole="alert"
+              style={styles.error}
+              testID="login-error"
+            >
               {error}
             </Text>
           ) : null}
-          <Button label={submitting ? "Signing in…" : "Sign in"} onPress={signIn} disabled={!canSubmit} testID="sign-in" />
+          <Button
+            label={submitting ? "Signing in…" : "Sign in"}
+            onPress={signIn}
+            disabled={!canSubmit}
+            testID="sign-in"
+          />
+          {/* TODO: enable social login */}
+          {/* <View style={styles.social}>
+            <Button
+              label="Continue with Apple"
+              variant="secondary"
+              icon={<AppleLogo size={20} color={theme.color.primary} />}
+              onPress={() => toast.show("Coming soon")}
+              testID="login-apple"
+            />
+            <Button
+              label="Continue with Google"
+              variant="secondary"
+              icon={<GoogleLogo size={20} />}
+              onPress={() => toast.show("Coming soon")}
+              testID="login-google"
+            />
+          </View> */}
         </View>
 
-        <TextButton label="New here? Create an account" onPress={() => router.push("/signup")} testID="go-signup" />
+        <TextButton
+          label="New here? Create an account"
+          onPress={() => router.push("/signup")}
+          testID="go-signup"
+        />
 
         {isDemoEnabled ? (
           <View style={styles.demo} testID="demo-block">
@@ -125,7 +176,10 @@ export default function LoginScreen() {
               <Select
                 label="Whose demo"
                 value={setKey}
-                options={DEMO_SETS.map((set) => ({ value: set.key, label: set.label }))}
+                options={DEMO_SETS.map((set) => ({
+                  value: set.key,
+                  label: set.label,
+                }))}
                 onChange={setSetKey}
                 testID="demo-set"
               />
@@ -179,6 +233,9 @@ const makeStyles = (theme: Theme) =>
     },
     form: {
       gap: theme.spacing.md,
+    },
+    social: {
+      gap: theme.spacing.sm,
     },
     error: {
       fontSize: theme.fontSize.small,
