@@ -112,10 +112,9 @@ export default function SignupScreen() {
     <Screen contentStyle={styles.content}>
       <BackLink onPress={goBack} testID="signup-back" />
 
-      <View style={styles.header}>
-        <BrandLogo height={32} testID="signup-brand" />
-        <Text style={styles.title}>Create your account</Text>
-      </View>
+      <BrandLogo height={32} testID="signup-brand" />
+
+      <Text style={styles.title}>Create your account</Text>
 
       {!isSupabaseConfigured ? (
         <Card>
@@ -228,7 +227,25 @@ export default function SignupScreen() {
       </View>
 
       <Text style={styles.terms}>
-        By continuing you agree to the Terms and Privacy Policy.
+        By continuing you agree to the{" "}
+        <Text
+          accessibilityRole="link"
+          style={styles.termsLink}
+          onPress={() => router.push("/terms")}
+          testID="signup-terms-link"
+        >
+          Terms
+        </Text>{" "}
+        and{" "}
+        <Text
+          accessibilityRole="link"
+          style={styles.termsLink}
+          onPress={() => router.push("/privacy")}
+          testID="signup-privacy-link"
+        >
+          Privacy Policy
+        </Text>
+        .
       </Text>
 
       <TextButton
@@ -317,6 +334,10 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
       textAlign: "center",
+    },
+    termsLink: {
+      color: theme.color.primary,
+      textDecorationLine: "underline",
     },
     login: {
       marginTop: -theme.spacing.sm,

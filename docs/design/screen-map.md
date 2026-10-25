@@ -371,9 +371,9 @@ Menu → Settings (Phase 11.11, D47): the account, What's New, notifications, Pr
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | BackLink | — | `settings-back` | 73 |
-| Sheet | Sign out? | `settings-log-out-sheet` | 124 |
-| Button | Sign out | `settings-log-out-confirm` | 126 |
-| Button | Cancel | **none** | 127 |
+| Sheet | Sign out? | `settings-log-out-sheet` | 125 |
+| Button | Sign out | `settings-log-out-confirm` | 127 |
+| Button | Cancel | **none** | 128 |
 
 ### `/signup` — [app/(auth)/signup.tsx](../../frontend/app/(auth)/signup.tsx)
 
@@ -382,8 +382,8 @@ Shows: `BrandLogo` · `RoleCard`
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | BackLink | — | `signup-back` | 113 |
-| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 222 |
-| TextButton | Already have an account? Sign in | `go-login` | 234 |
+| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 221 |
+| TextButton | Already have an account? Sign in | `go-login` | 251 |
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 
@@ -579,6 +579,12 @@ Shows: `TodayTasks`
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load tasks | — | 14 |
 | EmptyState | No pets in your care right now | — | 26 |
+
+### `/terms` — [app/terms.tsx](../../frontend/app/terms.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | ``terms-${id}-toggle`` | 100 |
 
 ### `/welcome` — [app/(public)/welcome/index.tsx](../../frontend/app/(public)/welcome/index.tsx)
 
@@ -1656,4 +1662,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-493 actions · 491 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+494 actions · 492 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
