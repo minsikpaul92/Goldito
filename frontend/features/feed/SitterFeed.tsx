@@ -5,6 +5,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { AddPhotoSheet } from "../../components/AddPhotoSheet";
 import { FeedBrowser } from "../../components/FeedBrowser";
 import { ALL_PETS, FeedPetPicker } from "../../components/FeedPetPicker";
+import { FeedBarRight } from "../../components/FeedSwitch";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { listSitterBookings } from "../../lib/bookings";
@@ -13,11 +14,12 @@ import {
   FALLBACK_CAPTION,
   FEED_PAGE_SIZE,
   FeedTimelinePost,
+  FeedTag,
   captionPhoto,
   createFeedPost,
   listFeedPosts,
 } from "../../lib/feed";
-import { PickedMedia, pickMedia } from "../../lib/media";
+import { PickedMedia } from "../../lib/media";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useNotifications } from "../../providers/NotificationsProvider";
 import { useSession } from "../../providers/SessionProvider";
@@ -95,13 +97,12 @@ export function SitterFeed() {
     { key: "past", hint: "Past stay", pets: past },
   ];
   return (
-    <SitterPetFeed
-      key={selection}
-      pets={selected}
-      several={selection === ALL_PETS}
-      faces={faces}
-      petPicker={<FeedPetPicker groups={groups} allPets={inCare} value={selection} onChange={setChosen} faces={faces} />}
-    />
+    <>
+      <FeedBarRight signature={`${selection}|${pets.map((p) => p.id).join(",")}|${JSON.stringify(faces)}`}>
+        <FeedPetPicker groups={groups} allPets={inCare} value={selection} onChange={setChosen} faces={faces} />
+      </FeedBarRight>
+      <SitterPetFeed key={selection} pets={selected} several={selection === ALL_PETS} faces={faces} />
+    </>
   );
 }
 
@@ -109,12 +110,10 @@ function SitterPetFeed({
   pets,
   several,
   faces,
-  petPicker,
 }: {
   pets: FeedPet[];
   several: boolean;
   faces: Record<string, string | null>;
-  petPicker: React.ReactNode;
 }) {
   const petIds = pets.map((p) => p.id);
   const idsKey = petIds.join(",");
@@ -132,6 +131,7 @@ function SitterPetFeed({
   const [feed, setFeed] = useState<FeedState>({ status: "loading" });
   const [loadingMore, setLoadingMore] = useState(false);
   const [picked, setPicked] = useState<PickedMedia | null>(null);
+  const [adding, setAdding] = useState(false);
   /** While a photo is on its way: what is happening to it. */
   const [stage, setStage] = useState<"uploading" | "captioning" | null>(null);
 
@@ -177,13 +177,17 @@ function SitterPetFeed({
     }
   }, [feed, loadingMore, loadPage]);
 
-  const addPhoto = async () => {
+  const addPhoto = () => {
     if (stage) return;
-    const next = await pickMedia({ purpose: "feed", mediaTypes: ["image", "video"] });
-    if (next) setPicked(next);
+    setAdding(true);
   };
 
-  const savePhoto = async ({ share, note }: { share: boolean; note: string }) => {
+  const closeAdd = () => {
+    setAdding(false);
+    setPicked(null);
+  };
+
+  const savePhoto = async ({ share, note, tag }: { share: boolean; note: string; tag: FeedTag | null }) => {
     if (!picked || stage) return;
     setStage("uploading");
     try {
@@ -206,12 +210,12 @@ function SitterPetFeed({
         mediaId: uploaded.mediaId,
         caption: written.caption,
         captionSource: written.source,
-        category: written.category,
+        category: tag ?? written.category,
         role: "sitter",
         visibility: share ? "shared" : "private",
         note,
       });
-      setPicked(null);
+      closeAdd();
       toast.show(share ? `Pawsted! ${pet.ownerName} can see it` : "Saved just for you");
       await loadPage(0, false, true);
     } catch (err) {
@@ -221,7 +225,7 @@ function SitterPetFeed({
           : err instanceof Error
             ? err.message
             : "Couldn't save this photo. Try again.";
-      errorDialog.show({ title: "Photo not saved", message, onRetry: () => void savePhoto({ share, note }) });
+      errorDialog.show({ title: "Photo not saved", message, onRetry: () => void savePhoto({ share, note, tag }) });
     } finally {
       setStage(null);
     }
@@ -242,7 +246,6 @@ function SitterPetFeed({
             prev.status === "loading" ? prev : { ...prev, posts: prev.posts.map((p) => (p.id === id ? { ...p, ...change } : p)) },
           )
         }
-        petPicker={petPicker}
         faces={several ? Object.fromEntries(pets.map((p) => [p.id, { species: p.species, photo: faces[p.id], name: p.name }])) : undefined}
         emptyMessage={pet.caring ? `Tap + to share ${pet.name}'s day.` : "Photos you save for yourself show up here."}
         error={feed.status === "error" && feed.posts.length === 0 ? { message: feed.message, onRetry: () => void loadPage(0, false) } : null}
@@ -254,7 +257,7 @@ function SitterPetFeed({
           accessibilityRole="button"
           accessibilityLabel="Add photo"
           disabled={stage != null}
-          onPress={() => void addPhoto()}
+          onPress={addPhoto}
           style={({ pressed }) => [styles.fab, (pressed || stage != null) && styles.fabPressed]}
           testID="feed-add-photo"
         >
@@ -263,16 +266,19 @@ function SitterPetFeed({
       </View>
 
       <AddPhotoSheet
-        file={picked?.file ?? null}
-        pets={several ? pets.map((p) => ({ id: p.id, name: p.name })) : undefined}
+        visible={adding}
+        picked={picked}
+        onPicked={setPicked}
+        pets={several ? pets.map((p) => ({ id: p.id, name: p.name, face: { species: p.species, photo: faces[p.id], name: p.name } })) : undefined}
         petId={petId}
         onPetChange={setAddPetId}
         shareWith={pet.ownerName}
+        shareWithId={pet.ownerId}
         canShare={pet.caring}
         defaultShare={pet.caring}
         saving={stage != null}
         statusText={stage === "captioning" ? "Writing a caption…" : "Uploading…"}
-        onClose={() => setPicked(null)}
+        onClose={closeAdd}
         onSave={(choice) => void savePhoto(choice)}
       />
     </View>

@@ -10,16 +10,18 @@ type Props<T extends string> = {
   value: T;
   onChange: (value: T) => void;
   testID?: string;
+  /** The line under the tabs (default); a parent that draws one for a whole row turns it off. */
+  rule?: boolean;
 };
 
 /**
  * Underline tabs that switch the view (Photos / Diary), as in Muk's feed trial (#345): the chosen tab is bold with a line
  * under it. Pills stay for filters.
  */
-export function ViewTabs<T extends string>({ options, value, onChange, testID }: Props<T>) {
+export function ViewTabs<T extends string>({ options, value, onChange, testID, rule = true }: Props<T>) {
   const styles = useThemedStyles(makeStyles);
   return (
-    <View accessibilityRole="tablist" style={styles.bar} testID={testID}>
+    <View accessibilityRole="tablist" style={[styles.bar, !rule && styles.bare]} testID={testID}>
       {options.map((option) => {
         const on = option.value === value;
         return (
@@ -42,6 +44,7 @@ export function ViewTabs<T extends string>({ options, value, onChange, testID }:
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     bar: { flexDirection: "row", gap: theme.spacing.lg, borderBottomWidth: 1, borderBottomColor: theme.color.border },
+    bare: { borderBottomWidth: 0 },
     tab: { minHeight: theme.layout.touchTarget, justifyContent: "center", borderBottomWidth: 3, borderBottomColor: "transparent", marginBottom: -1 },
     tabOn: { borderBottomColor: theme.color.primary },
     label: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },

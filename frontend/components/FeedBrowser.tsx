@@ -58,7 +58,6 @@ type Props = {
   /** A photo changed: hidden or brought back, or edited by its author. */
   onPostChange: (postId: string, change: Partial<FeedTimelinePost>) => void;
   /** The pet dropdown, left of the chips. */
-  petPicker?: ReactNode;
   /** Pets by id, when the Feed shows several together: each photo then carries its pet's face. */
   faces?: Record<string, PetFaceInfo>;
   /** What the empty Feed says it will show. */
@@ -92,7 +91,6 @@ export function FeedBrowser({
   currentUserId,
   onRemoved,
   onPostChange,
-  petPicker,
   faces,
   emptyMessage,
   error,
@@ -206,7 +204,6 @@ export function FeedBrowser({
         ListHeaderComponent={
           <View style={styles.top}>
             <View style={styles.filters}>
-              {petPicker}
               <View style={styles.chips}>
                 <FeedFilterChips value={filter} onChange={setFilter} hiddenCount={hiddenCount} />
               </View>

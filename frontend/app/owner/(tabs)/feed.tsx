@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AddPhotoSheet } from "../../../components/AddPhotoSheet";
 import { FeedBrowser } from "../../../components/FeedBrowser";
 import { ALL_PETS, FeedPetPicker } from "../../../components/FeedPetPicker";
-import { FeedSwitch } from "../../../components/FeedSwitch";
+import { FeedBarRight, FeedSwitch } from "../../../components/FeedSwitch";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { useInCare } from "../../../features/care/useInCare";
@@ -17,11 +17,12 @@ import { UploadError, uploadMedia } from "../../../lib/cloudinary";
 import {
   FALLBACK_CAPTION,
   FEED_PAGE_SIZE,
+  FeedTag,
   FeedTimelinePost,
   createFeedPost,
   listFeedPosts,
 } from "../../../lib/feed";
-import { PickedMedia, pickMedia } from "../../../lib/media";
+import { PickedMedia } from "../../../lib/media";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useNotifications } from "../../../providers/NotificationsProvider";
 import { useSession } from "../../../providers/SessionProvider";
@@ -59,6 +60,7 @@ function OwnerFeed() {
   const [feed, setFeed] = useState<FeedState>({ status: "loading" });
   const [loadingMore, setLoadingMore] = useState(false);
   const [picked, setPicked] = useState<PickedMedia | null>(null);
+  const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
   const inCare = useInCare();
 
@@ -126,13 +128,17 @@ function OwnerFeed() {
   const targetPetId = petSel === ALL_PETS ? (addPetId && pets.some((p) => p.id === addPetId) ? addPetId : pets[0]?.id) : petSel;
   const caring = targetPetId != null && inCare[targetPetId] != null;
 
-  const addPhoto = async () => {
+  const addPhoto = () => {
     if (!targetPetId || saving) return;
-    const next = await pickMedia({ purpose: "feed", mediaTypes: ["image", "video"] });
-    if (next) setPicked(next);
+    setAdding(true);
   };
 
-  const savePhoto = async ({ share, note }: { share: boolean; note: string }) => {
+  const closeAdd = () => {
+    setAdding(false);
+    setPicked(null);
+  };
+
+  const savePhoto = async ({ share, note, tag }: { share: boolean; note: string; tag: FeedTag | null }) => {
     if (!targetPetId || !picked || saving) return;
     setSaving(true);
     try {
@@ -149,11 +155,12 @@ function OwnerFeed() {
         mediaId: uploaded.mediaId,
         caption: FALLBACK_CAPTION,
         captionSource: "fallback",
+        category: tag,
         role: "owner",
         visibility: share ? "shared" : "private",
         note,
       });
-      setPicked(null);
+      closeAdd();
       toast.show(share ? `Pawsted! ${inCare[targetPetId]?.sitterName ?? "Your sitter"} can see it` : "Saved just for you");
       await loadPage(0, false, true);
     } catch (err) {
@@ -161,7 +168,7 @@ function OwnerFeed() {
         title: "Photo not saved",
         message:
           err instanceof UploadError || err instanceof Error ? err.message : "Couldn't save this photo. Try again.",
-        onRetry: () => void savePhoto({ share, note }),
+        onRetry: () => void savePhoto({ share, note, tag }),
       });
     } finally {
       setSaving(false);
@@ -200,6 +207,9 @@ function OwnerFeed() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+      <FeedBarRight signature={`${petSel ?? ALL_PETS}|${petOptions.map((p) => p.id).join(",")}|${JSON.stringify(faces)}`}>
+        <FeedPetPicker groups={petGroups} allPets={petOptions} value={petSel ?? ALL_PETS} onChange={setPetSel} faces={faces} />
+      </FeedBarRight>
       <FeedBrowser
         posts={posts}
         loading={feed.status === "loading"}
@@ -213,7 +223,6 @@ function OwnerFeed() {
             prev.status === "loading" ? prev : { ...prev, posts: prev.posts.map((p) => (p.id === id ? { ...p, ...change } : p)) },
           )
         }
-        petPicker={<FeedPetPicker groups={petGroups} allPets={petOptions} value={petSel ?? ALL_PETS} onChange={setPetSel} faces={faces} />}
         faces={facePets}
         emptyMessage="Your sitter will share photos here."
         error={feed.status === "error" && posts.length === 0 ? { message: feed.message, onRetry: () => void loadPage(0, false) } : null}
@@ -225,7 +234,7 @@ function OwnerFeed() {
           accessibilityRole="button"
           accessibilityLabel="Add photo"
           disabled={saving}
-          onPress={() => void addPhoto()}
+          onPress={addPhoto}
           style={({ pressed }) => [styles.fab, (pressed || saving) && styles.fabPressed]}
           testID="feed-add-photo"
         >
@@ -234,15 +243,22 @@ function OwnerFeed() {
       </View>
 
       <AddPhotoSheet
-        file={picked?.file ?? null}
-        pets={petSel === ALL_PETS ? petOptions : undefined}
+        visible={adding}
+        picked={picked}
+        onPicked={setPicked}
+        pets={
+          petSel === ALL_PETS
+            ? petOptions.map((p) => ({ id: p.id, name: p.name, face: { species: p.species, photo: faces[p.id], name: p.name } }))
+            : undefined
+        }
         petId={targetPetId ?? undefined}
         onPetChange={setAddPetId}
+        shareWithId={targetPetId ? inCare[targetPetId]?.sitterId : undefined}
         shareWith={targetPetId ? (inCare[targetPetId]?.sitterName ?? "your sitter") : "your sitter"}
         canShare={caring}
         defaultShare={false}
         saving={saving}
-        onClose={() => setPicked(null)}
+        onClose={closeAdd}
         onSave={(choice) => void savePhoto(choice)}
       />
     </SafeAreaView>

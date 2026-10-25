@@ -10,6 +10,7 @@ export type CaringPet = {
   id: string;
   name: string;
   species: "dog" | "cat";
+  ownerId: string;
   ownerName: string;
   bookingId: string;
 };
@@ -27,6 +28,7 @@ export function caringPetsFromBookings(bookings: BookingSummary[], now = Date.no
         id: p.id,
         name: p.name,
         species: p.species,
+        ownerId: b.ownerId,
         ownerName: b.ownerName,
         bookingId: b.id,
       });
@@ -57,7 +59,7 @@ export function feedPetsFromBookings(bookings: BookingSummary[], now = Date.now(
     for (const p of b.pets) {
       if (!p.id || seen.has(p.id)) continue;
       seen.add(p.id);
-      out.push({ id: p.id, name: p.name, species: p.species, ownerName: b.ownerName, bookingId: b.id, caring: isCaring(b, now) });
+      out.push({ id: p.id, name: p.name, species: p.species, ownerId: b.ownerId, ownerName: b.ownerName, bookingId: b.id, caring: isCaring(b, now) });
     }
   }
   return out;

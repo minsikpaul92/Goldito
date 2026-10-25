@@ -613,6 +613,51 @@ test.describe("Feed pet dropdown and switch", () => {
     await expect(app(page).getByTestId("feed-face-max-1")).toHaveCount(0);
   });
 
+  test("the pet chip sits at the right end of the Photos / Diary row, and goes with the Diary tab", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    db.pets.push(
+      { id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null, created_at: "2026-01-01T00:00:00Z" },
+      { id: MOCHI_ID, owner_id: OWNER.id, species: "cat", name: "Mochi", breed: null, notes: null, created_at: "2026-01-02T00:00:00Z" },
+    );
+    photo(db, "max-1", PET_ID);
+    await page.route("**/api/ai/report-chips", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ summary: { tasks_done: 0, tasks_missed: 0, checkins: 0 }, chips: [], photos: [] }) }),
+    );
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/owner/feed");
+    const tabs = await box(app(page).getByTestId("feed-view"));
+    const diary = await box(app(page).getByTestId("feed-view-diary"));
+    const chip = await box(app(page).getByTestId("feed-pet"));
+    expect(chip.x).toBeGreaterThan(diary.x + diary.width);
+    const middle = chip.y + chip.height / 2;
+    expect(middle).toBeGreaterThanOrEqual(tabs.y);
+    expect(middle).toBeLessThanOrEqual(tabs.y + tabs.height + 8);
+    // The filter row no longer starts with it.
+    expect((await box(app(page).getByTestId("feed-filters"))).y).toBeGreaterThan(chip.y + chip.height - 1);
+    await app(page).getByTestId("feed-view-diary").click();
+    await expect(app(page).getByTestId("feed-pet")).toHaveCount(0);
+  });
+
+  test("one more tap on an open photo hides the details and the buttons; another brings them back", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
+    photo(db, "max-1", PET_ID);
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/owner/feed");
+    await app(page).getByTestId("feed-card-max-1").click();
+    await expect(app(page).getByTestId("feed-viewer-info")).toBeVisible();
+    await expect(app(page).getByTestId("feed-viewer-close")).toBeVisible();
+    await app(page).getByTestId("feed-viewer-media").click();
+    await expect(app(page).getByTestId("feed-viewer-info")).toHaveCount(0);
+    await expect(app(page).getByTestId("feed-viewer-close")).toHaveCount(0);
+    await expect(app(page).getByTestId("feed-viewer-zoom")).toBeVisible();
+    await app(page).getByTestId("feed-viewer-media").click();
+    await expect(app(page).getByTestId("feed-viewer-info")).toBeVisible();
+    await expect(app(page).getByTestId("feed-viewer-close")).toBeVisible();
+  });
+
   test("Make a sticker in the detail, or a long press on a photo, opens the sticker maker with that photo; a clip has neither", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
@@ -747,9 +792,8 @@ test.describe("Feed pet dropdown and switch", () => {
     await page.goto("/sitter/feed");
     await app(page).getByTestId("feed-card-v-2").click();
     await expect(app(page).getByTestId("feed-viewer-page-v-2")).toBeVisible();
-    // No arrow glyphs; the edges are invisible strips.
+    // No next arrow; the edges are invisible strips (the ‹ at the top left is the way back).
     await expect(app(page).getByText("›")).toHaveCount(0);
-    await expect(app(page).getByText("‹")).toHaveCount(0);
 
     await app(page).getByTestId("feed-viewer-next").click();
     await expect(app(page).getByTestId("feed-viewer-page-v-3")).toBeVisible();

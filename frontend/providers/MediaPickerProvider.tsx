@@ -1,4 +1,3 @@
-import { Asset } from "expo-asset";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 
@@ -8,7 +7,8 @@ import { VideoTrimSheet } from "../components/VideoTrimSheet";
 import { useShell } from "../components/shell/useShell";
 import { findDemoAccount } from "../lib/demo";
 import { DemoSample, samplesFor } from "../lib/demoSamples";
-import { MediaKind, PickMediaOptions, PickedMedia, registerMediaPicker } from "../lib/media";
+import { MediaKind, PickMediaOptions, PickedMedia, registerMediaPicker, sampleTray } from "../lib/media";
+import { sampleToFile } from "../lib/sampleFile";
 import { VIDEO_MAX_SECONDS, VideoTrim, readVideoDuration } from "../lib/mediaNormalize";
 import { useSession } from "./SessionProvider";
 import { useToast } from "./ToastProvider";
@@ -73,6 +73,7 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
   const useTray = embedded || findDemoAccount(email) !== null;
   const useTrayRef = useRef(useTray);
   useTrayRef.current = useTray;
+  sampleTray.on = useTray;
 
   const current = useRef<Current | null>(null);
   const [tray, setTray] = useState<Options | null>(null);
@@ -147,13 +148,7 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
 
   const onPickSample = async (sample: DemoSample) => {
     try {
-      const uri = Asset.fromModule(sample.source).uri;
-      const blob = await (await fetch(uri)).blob();
-      const kind = sample.kind ?? "image";
-      const ext = kind === "video" ? "mp4" : "jpg";
-      // A host that serves the file as application/octet-stream must not turn a sample into "not a photo or video".
-      const type = blob.type.startsWith(`${kind}/`) ? blob.type : kind === "video" ? "video/mp4" : "image/jpeg";
-      await settle(new File([blob], `${sample.id}.${ext}`, { type }));
+      await settle(await sampleToFile(sample));
     } catch {
       toast.show("Could not load that sample. Try again.");
     }

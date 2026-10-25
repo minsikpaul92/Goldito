@@ -116,11 +116,18 @@ test.describe("pickMedia", () => {
     const calls = await setup(page);
 
     await app(page).getByTestId("feed-add-photo").click();
-    await expect(app(page).getByTestId("media-picker")).toBeVisible();
-    // Photo + video samples (pet FAB allows both).
-    for (const id of ["meal", "walk", "nap", "play_fetch", "mumu_kitchen", "mumu_party_hat", "mumu_blossom_basket"]) {
+    // The sheet is open at once with a few sample photos in a row; More opens the whole picker.
+    await expect(app(page).getByTestId("feed-add-sheet")).toBeVisible();
+    for (const id of ["meal", "walk", "nap"]) {
       await expect(app(page).getByTestId(`sample-${id}`)).toBeVisible();
     }
+    await app(page).getByTestId("feed-add-more").click();
+    await expect(app(page).getByTestId("media-picker")).toBeVisible();
+    // Photo + video samples (pet FAB allows both).
+    for (const id of ["play_fetch", "mumu_kitchen", "mumu_party_hat", "mumu_blossom_basket"]) {
+      await expect(app(page).getByTestId(`sample-${id}`)).toBeVisible();
+    }
+    await app(page).getByTestId("media-picker-close").click();
     await app(page).getByTestId("sample-walk").click();
     // Picked, not yet sent: the sheet shows it with the choice of who sees it.
     await expect(app(page).getByTestId("feed-add-sheet")).toBeVisible();
@@ -144,6 +151,7 @@ test.describe("pickMedia", () => {
     const calls = await setup(page);
 
     await app(page).getByTestId("feed-add-photo").click();
+    await app(page).getByTestId("feed-add-more").click();
     const chooser = page.waitForEvent("filechooser");
     await app(page).getByTestId("media-choose-library").click();
     const png = await page.evaluate(async () => {
@@ -170,6 +178,7 @@ test.describe("pickMedia", () => {
     const calls = await setup(page);
 
     await app(page).getByTestId("feed-add-photo").click();
+    await app(page).getByTestId("feed-add-more").click();
     const chooser = page.waitForEvent("filechooser");
     await app(page).getByTestId("media-choose-library").click();
     await (await chooser).setFiles(path.join(FIXTURES, "video-35s.webm"));
@@ -204,6 +213,7 @@ test.describe("pickMedia", () => {
     const calls = await setup(page);
 
     await app(page).getByTestId("feed-add-photo").click();
+    await app(page).getByTestId("feed-add-more").click();
     const chooser = page.waitForEvent("filechooser");
     await app(page).getByTestId("media-choose-library").click();
     await (await chooser).setFiles(path.join(FIXTURES, "video-35s.webm"));
@@ -220,6 +230,7 @@ test.describe("pickMedia", () => {
     const calls = await setup(page);
 
     await app(page).getByTestId("feed-add-photo").click();
+    await app(page).getByTestId("feed-add-more").click();
     const chooser = page.waitForEvent("filechooser");
     await app(page).getByTestId("media-choose-library").click();
     await (await chooser).setFiles(path.join(FIXTURES, "video-10s.webm"));
@@ -256,8 +267,12 @@ test.describe("feed visibility (5.8)", () => {
 
     await app(page).getByTestId("feed-add-photo").click();
     await app(page).getByTestId("sample-walk").click();
-    await expect(app(page).getByTestId("feed-add-share-share")).toHaveAttribute("aria-checked", "true");
-    await expect(app(page).getByTestId("feed-add-share-share")).toHaveText("Share with Robert");
+    await expect(app(page).getByTestId("feed-add-share")).toHaveAttribute("aria-checked", "true");
+    await expect(app(page).getByTestId("feed-add-share")).toContainText("Share with Robert");
+    await expect(app(page).getByTestId("feed-add-save")).toContainText("Save and share with Robert");
+    // Robert's photo (his initial when he has none) is on the switch, and the note button says what it is.
+    await expect(app(page).getByTestId("feed-add-share").locator('[data-testid^="feed-add-share-avatar"]')).toHaveCount(1);
+    await expect(app(page).getByTestId("feed-add-note-toggle")).toContainText("Note");
     await save(page);
     await expect(app(page).getByTestId("toast")).toContainText("Pawsted! Robert can see it");
     expect(calls.db.feed_posts).toHaveLength(1);
@@ -269,11 +284,26 @@ test.describe("feed visibility (5.8)", () => {
 
     await app(page).getByTestId("feed-add-photo").click();
     await app(page).getByTestId("sample-meal").click();
-    await app(page).getByTestId("feed-add-share-me").click();
-    await expect(app(page).getByTestId("feed-add-share-me")).toHaveAttribute("aria-checked", "true");
+    await app(page).getByTestId("feed-add-share").click();
+    await expect(app(page).getByTestId("feed-add-share")).toHaveAttribute("aria-checked", "false");
+    await expect(app(page).getByTestId("feed-add-save")).toContainText("Save, only you");
     await save(page);
     await expect(app(page).getByTestId("toast")).toContainText("Saved just for you");
     expect(calls.db.feed_posts[1]).toMatchObject({ visibility: "private", posted_by: SITTER.id });
+  });
+
+  test("a tag picked in the sheet goes with the photo, and a second tap on it takes it off", async ({ page }) => {
+    const calls = await setup(page);
+
+    await app(page).getByTestId("feed-add-photo").click();
+    await expect(app(page).getByTestId("feed-add-save")).toBeDisabled(); // no photo picked yet
+    await app(page).getByTestId("sample-walk").click();
+    await expect(app(page).getByTestId("feed-add-save")).toBeEnabled();
+    await app(page).getByTestId("feed-add-tag-potty").click();
+    await expect(app(page).getByTestId("feed-add-tag-potty")).toHaveAttribute("aria-pressed", "true");
+    await save(page);
+    await expect(app(page).getByTestId("toast")).toContainText("Pawsted!");
+    expect(calls.db.feed_posts[0]).toMatchObject({ category: "potty" });
   });
 
   test("a short memo goes with the photo, and nothing is sent until Save", async ({ page }) => {
@@ -345,7 +375,7 @@ test.describe("feed visibility (5.8)", () => {
     // Default: Only me.
     await app(page).getByTestId("feed-add-photo").click();
     await app(page).getByTestId("sample-walk").click();
-    await expect(app(page).getByTestId("feed-add-share-me")).toHaveAttribute("aria-checked", "true");
+    await expect(app(page).getByTestId("feed-add-share")).toHaveAttribute("aria-checked", "false");
     await save(page);
     await expect(app(page).getByTestId("toast")).toContainText("Saved just for you");
     expect(calls.sign[0]).toMatchObject({ pet_id: PET_ID, purpose: "feed" });
@@ -354,7 +384,7 @@ test.describe("feed visibility (5.8)", () => {
 
     await app(page).getByTestId("feed-add-photo").click();
     await app(page).getByTestId("sample-nap").click();
-    await app(page).getByTestId("feed-add-share-share").click();
+    await app(page).getByTestId("feed-add-share").click();
     await save(page);
     await expect(app(page).getByTestId("toast")).toContainText("Pawsted!");
     expect(calls.db.feed_posts.filter((p) => p.posted_by === OWNER.id && p.visibility === "shared")).toHaveLength(1);
@@ -381,8 +411,8 @@ test.describe("feed visibility (5.8)", () => {
 
     await app(page).getByTestId("feed-add-photo").click();
     await app(page).getByTestId("sample-walk").click();
-    await expect(app(page).getByTestId("feed-add-share-me")).toHaveAttribute("aria-checked", "true");
-    await expect(app(page).getByTestId("feed-add-share-share")).toBeDisabled();
+    await expect(app(page).getByTestId("feed-add-share")).toHaveAttribute("aria-checked", "false");
+    await expect(app(page).getByTestId("feed-add-share")).toBeDisabled();
     await save(page);
     await expect(app(page).getByTestId("toast")).toContainText("Saved just for you");
     expect(calls.db.feed_posts[0]).toMatchObject({ visibility: "private", posted_by: SITTER.id });

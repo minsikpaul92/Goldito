@@ -188,13 +188,13 @@ Shows: `OwnerDiaryBook`
 
 Owner Feed tab (#345, Figma 1730:104019): everything saved for the pet in a filterable mosaic; photos you take or add and the ones your sitter sends are in it on their own, and so are your stickers. Add a photo: pick it, choose Only me or Share with your sitter, an optional memo, Save.
 
-Shows: `AddPhotoSheet` · `FeedBrowser` · `FeedPetPicker` · `FeedSwitch` · `OwnerDiaryBook`
+Shows: `AddPhotoSheet` · `FeedBrowser` · `FeedPetPicker` · `FeedBarRight` · `FeedSwitch` · `OwnerDiaryBook`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 176 |
-| EmptyState | No pets yet | — | 189 |
-| Pressable | Add photo | `feed-add-photo` | 224 |
+| EmptyState | Couldn't load your pets | — | 183 |
+| EmptyState | No pets yet | — | 196 |
+| Pressable | Add photo | `feed-add-photo` | 233 |
 
 ### `/owner/history` — [app/owner/history.tsx](../../frontend/app/owner/history.tsx)
 
@@ -621,10 +621,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | Save | `feed-add-sheet` | 65 |
-| Button | Save | `feed-add-save` | 73 |
-| SegmentedControl | — | `feed-add-pet` | 95 |
-| SegmentedControl | — | `feed-add-share` | 103 |
+| Sheet | sharing ? `Save and share with ${shareWith}` : "Save, only you" | `feed-add-sheet` | 119 |
+| Button | sharing ? `Save and share with ${shareWith}` : "Save, only you" | `feed-add-save` | 127 |
+| Pressable | ``Use sample: ${sample.label}`` | ``sample-${sample.id}`` | 154 |
+| Pressable | More photos | `feed-add-more` | 166 |
+| Pressable | — | ``feed-add-pet-${p.id}`` | 182 |
+| Pressable | — | ``feed-add-tag-${t.key}`` | 202 |
+| Pressable | — | `feed-add-share` | 217 |
+| Pressable | noteOpen ? "Hide note" : "Add a note" | `feed-add-note-toggle` | 248 |
 
 ### AddressInput — [components/AddressInput.tsx](../../frontend/components/AddressInput.tsx)
 
@@ -844,12 +848,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load the feed | — | 189 |
-| EmptyState | Nothing hidden | — | 191 |
-| EmptyState | No photos yet | — | 193 |
-| EmptyState | EMPTY_TITLE[filter as FeedFilterKey] | — | 195 |
-| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 219 |
-| Pressable | ``${tagLabel ?? "Photo"} at ${time}`` | ``feed-card-${post.id}`` | 350 |
+| EmptyState | Couldn't load the feed | — | 187 |
+| EmptyState | Nothing hidden | — | 189 |
+| EmptyState | No photos yet | — | 191 |
+| EmptyState | EMPTY_TITLE[filter as FeedFilterKey] | — | 193 |
+| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 216 |
+| Pressable | ``${tagLabel ?? "Photo"} at ${time}`` | ``feed-card-${post.id}`` | 347 |
 
 ### FeedDeleteSheet — [components/FeedDeleteSheet.tsx](../../frontend/components/FeedDeleteSheet.tsx)
 
@@ -890,14 +894,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Previous | `feed-viewer-prev` | 179 |
-| Pressable | Next | `feed-viewer-next` | 188 |
-| Pressable | Close | `feed-viewer-close` | 197 |
-| Pressable | — | `feed-viewer-hide` | 209 |
-| Pressable | — | `feed-viewer-sticker` | 219 |
-| Pressable | Edit | `feed-viewer-edit` | 229 |
-| Pressable | — | `feed-viewer-delete` | 240 |
-| Pressable | isVideo ? (paused ? "Play" : "Pause") : undefined | `feed-viewer-media` | 410 |
+| Pressable | — | `feed-viewer-sticker` | 193 |
+| Pressable | — | `feed-viewer-hide` | 204 |
+| Pressable | Edit | `feed-viewer-edit` | 214 |
+| Pressable | — | `feed-viewer-delete` | 225 |
+| Pressable | Previous | `feed-viewer-prev` | 241 |
+| Pressable | Next | `feed-viewer-next` | 250 |
+| Pressable | Close | `feed-viewer-close` | 261 |
+| Pressable | isVideo ? (paused ? "Play" : "Pause") : bare ? "Show details" : "Hide details" | `feed-viewer-media` | 443 |
 
 ### FinishedStay — [components/FinishedStay.tsx](../../frontend/components/FinishedStay.tsx)
 
@@ -1509,9 +1513,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load pets | — | 73 |
-| EmptyState | Share a moment | — | 78 |
-| Pressable | Add photo | `feed-add-photo` | 253 |
+| EmptyState | Couldn't load pets | — | 75 |
+| EmptyState | Share a moment | — | 80 |
+| Pressable | Add photo | `feed-add-photo` | 256 |
 
 ### NotificationsCenter — [features/notifications/NotificationsCenter.tsx](../../frontend/features/notifications/NotificationsCenter.tsx)
 
@@ -1637,4 +1641,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-488 actions · 486 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+492 actions · 490 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).

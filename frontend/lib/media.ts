@@ -40,6 +40,9 @@ type PickerHandler = (options: Required<PickMediaOptions>) => Promise<PickedMedi
 
 let handler: PickerHandler | null = null;
 
+/** Whether the sample photos are offered here (the desktop frame and demo accounts); set by `MediaPickerProvider`. */
+export const sampleTray = { on: false };
+
 /** Called by `MediaPickerProvider` on mount / unmount. */
 export function registerMediaPicker(next: PickerHandler | null): void {
   handler = next;

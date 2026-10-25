@@ -65,6 +65,8 @@ export function FeedViewer({
   // The zoom of the photo on screen: while it is zoomed or being pinched a swipe moves the photo, not the viewer.
   const zoom = useRef({ scale: 1, pinching: false });
   const [zoomed, setZoomed] = useState(false);
+  // One more tap on a photo hides the details and buttons so only the photo is left; another tap brings them back.
+  const [bare, setBare] = useState(false);
 
   // Open on the tapped post each time the viewer opens (or a different post is requested).
   // Reset during render, not in an effect, so the first frame never shows a stale post
@@ -74,6 +76,7 @@ export function FeedViewer({
   if (seenKey !== openKey) {
     setSeenKey(openKey);
     setActiveId(initialPostId);
+    setBare(false);
     nearEndSent.current = false;
   }
 
@@ -102,14 +105,23 @@ export function FeedViewer({
 
   const goRef = useRef(go);
   goRef.current = go;
+  // One drag can end in both the finger handler and the mouse handler below: turn the page once per gesture
+  // (a gesture starts at each pointer down).
+  const gesture = useRef(0);
+  const turned = useRef(-1);
+  const swipeRef = useRef((delta: number) => {
+    if (turned.current === gesture.current) return;
+    turned.current = gesture.current;
+    goRef.current(delta);
+  });
   const pan = useMemo(
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: (_e, g) =>
           !zoom.current.pinching && zoom.current.scale <= ZOOM_REST && Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
         onPanResponderRelease: (_e, g) => {
-          if (g.dx <= -SWIPE_DISTANCE) goRef.current(1);
-          else if (g.dx >= SWIPE_DISTANCE) goRef.current(-1);
+          if (g.dx <= -SWIPE_DISTANCE) swipeRef.current(1);
+          else if (g.dx >= SWIPE_DISTANCE) swipeRef.current(-1);
         },
       }),
     [],
@@ -121,6 +133,7 @@ export function FeedViewer({
     if (Platform.OS !== "web" || !visible) return;
     let start: { x: number; y: number } | null = null;
     const down = (e: PointerEvent) => {
+      gesture.current += 1;
       const free = !zoom.current.pinching && zoom.current.scale <= ZOOM_REST;
       start = e.pointerType === "mouse" && e.button === 0 && free ? { x: e.clientX, y: e.clientY } : null;
     };
@@ -129,7 +142,7 @@ export function FeedViewer({
       const dx = e.clientX - start.x;
       const dy = e.clientY - start.y;
       start = null;
-      if (Math.abs(dx) >= SWIPE_DISTANCE && Math.abs(dx) > Math.abs(dy) * 1.5) goRef.current(dx < 0 ? 1 : -1);
+      if (Math.abs(dx) >= SWIPE_DISTANCE && Math.abs(dx) > Math.abs(dy) * 1.5) swipeRef.current(dx < 0 ? 1 : -1);
     };
     window.addEventListener("pointerdown", down, true);
     window.addEventListener("pointerup", up, true);
@@ -172,6 +185,55 @@ export function FeedViewer({
           zoom={zoom}
           petName={petNames?.[activePost.petId]}
           onZoom={(scale) => setZoomed(scale > ZOOM_REST)}
+          bare={bare}
+          onToggleBare={() => setBare((on) => !on)}
+          actions={
+            <>
+              {onMakeSticker && canSticker?.(activePost) ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => onMakeSticker(activePost.id)}
+                  style={styles.sticker}
+                  testID="feed-viewer-sticker"
+                >
+                  <Text style={styles.stickerLabel}>Make a sticker</Text>
+                </Pressable>
+              ) : null}
+              <View style={styles.actions}>
+                {onHide && onUnhide ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => (activePost.hidden ? onUnhide(activePost.id) : onHide(activePost.id))}
+                    style={styles.actionBtn}
+                    testID="feed-viewer-hide"
+                  >
+                    <Text style={styles.actionLabel}>{activePost.hidden ? "Unhide" : "Hide"}</Text>
+                  </Pressable>
+                ) : null}
+                {onRequestEdit && canEdit?.(activePost) ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Edit"
+                    onPress={() => onRequestEdit(activePost.id)}
+                    style={styles.actionBtn}
+                    testID="feed-viewer-edit"
+                  >
+                    <Text style={styles.actionLabel}>{"✏️ Edit"}</Text>
+                  </Pressable>
+                ) : null}
+                {onRequestDelete ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => onRequestDelete(activePost.id)}
+                    style={styles.actionBtn}
+                    testID="feed-viewer-delete"
+                  >
+                    <Text style={[styles.actionLabel, styles.deleteLabel]}>Delete</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            </>
+          }
         />
 
         {/* The left and right edges turn the page (no arrow buttons); not while a photo is zoomed. */}
@@ -194,59 +256,22 @@ export function FeedViewer({
           />
         ) : null}
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Close"
-          onPress={onClose}
-          style={[styles.close, { top: Math.max(insets.top, 12) }]}
-          testID="feed-viewer-close"
-        >
-          <Text style={styles.closeLabel}>✕</Text>
-        </Pressable>
-
-        <View style={[styles.actions, { top: Math.max(insets.top, 12) }]}>
-          {onHide && onUnhide ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => (activePost.hidden ? onUnhide(activePost.id) : onHide(activePost.id))}
-              style={styles.actionBtn}
-              testID="feed-viewer-hide"
-            >
-              <Text style={styles.actionLabel}>{activePost.hidden ? "Unhide" : "Hide"}</Text>
-            </Pressable>
-          ) : null}
-          {onMakeSticker && canSticker?.(activePost) ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => onMakeSticker(activePost.id)}
-              style={styles.actionBtn}
-              testID="feed-viewer-sticker"
-            >
-              <Text style={styles.actionLabel}>Make a sticker</Text>
-            </Pressable>
-          ) : null}
-          {onRequestEdit && canEdit?.(activePost) ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Edit"
-              onPress={() => onRequestEdit(activePost.id)}
-              style={styles.actionBtn}
-              testID="feed-viewer-edit"
-            >
-              <Text style={styles.actionLabel}>{"✏️ Edit"}</Text>
-            </Pressable>
-          ) : null}
-          {onRequestDelete ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => onRequestDelete(activePost.id)}
-              style={styles.actionBtn}
-              testID="feed-viewer-delete"
-            >
-              <Text style={[styles.actionLabel, styles.deleteLabel]}>Delete</Text>
-            </Pressable>
-          ) : null}
+        {bare ? null : (
+        <View style={[styles.header, { top: Math.max(insets.top, 12) }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+            onPress={onClose}
+            style={styles.back}
+            testID="feed-viewer-close"
+          >
+            <Text style={styles.backLabel}>‹</Text>
+          </Pressable>
+          <Text style={styles.title} numberOfLines={1} testID="feed-viewer-title">
+            {[petNames?.[activePost.petId], formatTime(isoToZoned(activePost.takenAt).time)].filter(Boolean).join(" · ")}
+          </Text>
         </View>
+        )}
       </View>
     </Modal>
   );
@@ -260,10 +285,18 @@ function ViewerPage({
   zoom,
   petName,
   onZoom,
+  actions,
+  bare,
+  onToggleBare,
 }: {
   post: FeedTimelinePost;
+  /** Only the photo is shown: no details, no buttons. A tap on the photo turns this on and off. */
+  bare: boolean;
+  onToggleBare: () => void;
   bottomInset: number;
   petName?: string;
+  /** The buttons under the details: Make a sticker, Hide, Edit, Delete. */
+  actions?: React.ReactNode;
   zoom: { current: ZoomState };
   onZoom: (scale: number) => void;
 }) {
@@ -409,9 +442,11 @@ function ViewerPage({
     >
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={isVideo ? (paused ? "Play" : "Pause") : undefined}
-        disabled={!isVideo}
-        onPress={() => isVideo && setPaused((p) => !p)}
+        accessibilityLabel={isVideo ? (paused ? "Play" : "Pause") : bare ? "Show details" : "Hide details"}
+        onPress={() => {
+          if (isVideo) setPaused((p) => !p);
+          else if (zoom.current.scale <= ZOOM_REST) onToggleBare();
+        }}
         style={styles.mediaFrame}
         testID="feed-viewer-media"
       >
@@ -459,7 +494,8 @@ function ViewerPage({
           </View>
         ) : null}
       </Pressable>
-      <View style={[styles.captionBar, { paddingBottom: Math.max(bottomInset, 16) }]} pointerEvents="none" testID="feed-viewer-info">
+      {bare ? null : (
+      <View style={[styles.captionBar, { paddingBottom: Math.max(bottomInset, 16) }]} pointerEvents="box-none" testID="feed-viewer-info">
         {tags.length > 0 ? (
           <View style={styles.tagRow} testID="feed-viewer-tag">
             {tags.map((tag) => (
@@ -485,7 +521,9 @@ function ViewerPage({
           {petName ? ` · ${petName}` : ""}
           {post.visibility === "private" ? " · Only you" : ""}
         </Text>
+        {actions}
       </View>
+      )}
     </View>
   );
 }
@@ -502,7 +540,7 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
     },
     // Invisible strips down both sides of the photo; the middle stays free for a video's play / pause.
-    edge: { position: "absolute", bottom: 150, width: "22%", zIndex: 3 },
+    edge: { position: "absolute", bottom: 260, width: "22%", zIndex: 3 },
     edgeLeft: { left: 0 },
     edgeRight: { right: 0 },
     zoomLayer: { width: "100%", height: "100%" },
@@ -534,34 +572,32 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.small,
       color: "rgba(255,255,255,0.75)",
     },
-    close: {
-      position: "absolute",
-      right: theme.spacing.md,
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: "rgba(0,0,0,0.45)",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 4,
-    },
-    closeLabel: {
-      color: theme.color.onMedia,
-      fontSize: 18,
-      fontWeight: theme.fontWeight.semibold,
-    },
-    actions: {
+    header: {
       position: "absolute",
       left: theme.spacing.md,
-      right: theme.spacing.md + 48, // clear of the close button
+      right: theme.spacing.md,
       zIndex: 4,
       flexDirection: "row",
-      flexWrap: "wrap",
+      alignItems: "center",
       gap: theme.spacing.sm,
     },
+    back: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+    backLabel: { color: theme.color.onMedia, fontSize: 34, lineHeight: 36, fontWeight: theme.fontWeight.semibold },
+    title: { flex: 1, color: theme.color.onMedia, fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold },
+    sticker: {
+      minHeight: 52,
+      marginTop: theme.spacing.sm,
+      borderRadius: 26,
+      backgroundColor: theme.color.accent,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    stickerLabel: { color: theme.color.text, fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold },
+    actions: { flexDirection: "row", gap: theme.spacing.sm, marginTop: theme.spacing.xs },
     actionBtn: {
+      flex: 1,
       minHeight: 40,
-      paddingHorizontal: theme.spacing.md,
+      paddingHorizontal: theme.spacing.sm,
       borderRadius: 20,
       backgroundColor: "rgba(0,0,0,0.55)",
       borderWidth: 1,
