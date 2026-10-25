@@ -48,12 +48,13 @@ cd backend
 .venv/bin/python -m scripts.reset_demo --state ready --apply      # reset 입력 (--yes면 생략)
 ```
 
-`--state`는 `empty` · `pets` · `confirmed` · `ready` · `in_care`. 위 스크립트는 `backend/.env`(서비스 키)가 있는 개발자 PC에서만 — 보통은 앱의 Demo tools를 쓰면 됩니다. `in_care`는 드롭오프를 "지금 + 3분"으로 잡지만 Received까지 끝난 상태라 바로 기록할 수 있습니다(CW-1) — 단 호스팅 DB에 `011i`가 적용되기 전에는 3분 동안 체크인이 막힙니다.
+`--state`는 `empty` · `pets` · `past` · `confirmed` · `ready` · `in_care`. 위 스크립트는 `backend/.env`(서비스 키)가 있는 개발자 PC에서만 — 보통은 앱의 Demo tools를 쓰면 됩니다. `in_care`는 드롭오프를 "지금 + 3분"으로 잡지만 Received까지 끝난 상태라 바로 기록할 수 있습니다(CW-1) — 단 호스팅 DB에 `011i`가 적용되기 전에는 3분 동안 체크인이 막힙니다.
 
 | 상태 | 만들어지는 것 |
 | :--- | :--- |
 | `empty` | 오너 펫 없음, 시터는 스케줄 · 요금 준비됨 |
-| `pets` | Max + Mochi, 예약 없음 |
+| `pets` | Max + Mochi, 예약 없음, 만난 적 없음 (UI 이름 **Pets only**) |
+| `past` | `pets` + 지난 기록: 8월 · 9월에 끝난 돌봄 2건, 취소된 요청 1건, 사진과 Diary, 오너 비공개 글 3개. 이미 만난 사이, 현재 예약 없음 (UI 이름 **Past stays**) |
 | `confirmed` | 시터가 수락한 예약, **체크아웃 전** (드롭오프 모레 9:30 AM) |
 | `ready` | 결제까지 끝, **드롭오프 1시간 뒤** → 시터 Received가 바로 열림 |
 | `in_care` | 결제 + **Received까지 끝**, 드롭오프 3분 뒤 → 돌보는 중 (체크인 · 사진 · 알림장 가능) |

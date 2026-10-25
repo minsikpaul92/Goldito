@@ -29,7 +29,7 @@ _running: dict[str, threading.Lock] = {}
 
 
 class ResetRequest(BaseModel):
-    state: Literal["empty", "pets", "confirmed", "ready", "in_care"]
+    state: Literal["empty", "pets", "past", "confirmed", "ready", "in_care"]
 
 
 class ResetResponse(BaseModel):

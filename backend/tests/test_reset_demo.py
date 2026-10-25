@@ -16,9 +16,19 @@ MAX = "00000000-0000-4000-8000-0000000000c1"
 TODAY = date(2026, 10, 9)
 
 
+@pytest.fixture(autouse=True)
+def no_history(monkeypatch):
+    """The past stays have their own tests (test_demo_history.py); here the reset only has to call them."""
+    monkeypatch.setattr(demo_reset, "cancelled_request", lambda *_a: "b-cancelled")
+    monkeypatch.setattr(demo_reset.demo_history, "seed_history", lambda *_a: None)
+
+
 def world() -> FakeDB:
     return FakeDB(
-        pets=[{"id": MAX, "owner_id": OWNER, "name": "Max"}, {"id": "other-pet", "owner_id": OTHER_OWNER, "name": "Coco"}],
+        pets=[
+            {"id": MAX, "owner_id": OWNER, "name": "Max"},
+            {"id": "other-pet", "owner_id": OTHER_OWNER, "name": "Coco"},
+        ],
         pet_allergies=[],
         bookings=[
             {"id": "b-demo", "owner_id": OWNER, "sitter_id": SITTER},
@@ -35,21 +45,54 @@ def world() -> FakeDB:
         feed_posts=[{"id": "f1", "pet_id": MAX}, {"id": "f2", "pet_id": "other-pet"}],
         pet_life_records=[{"id": "l1", "pet_id": MAX}],
         knowledge_chunks=[
-            {"id": "k-life", "source_type": "life_record", "pet_id": MAX, "owner_id": None, "sitter_id": None},
-            {"id": "k-inq", "source_type": "inquiry", "pet_id": None, "owner_id": OWNER, "sitter_id": SITTER},
-            {"id": "k-policy", "source_type": "sitter_policy", "pet_id": None, "owner_id": None, "sitter_id": SITTER},
-            {"id": "k-other", "source_type": "life_record", "pet_id": "other-pet", "owner_id": None, "sitter_id": None},
+            {
+                "id": "k-life",
+                "source_type": "life_record",
+                "pet_id": MAX,
+                "owner_id": None,
+                "sitter_id": None,
+            },
+            {
+                "id": "k-inq",
+                "source_type": "inquiry",
+                "pet_id": None,
+                "owner_id": OWNER,
+                "sitter_id": SITTER,
+            },
+            {
+                "id": "k-policy",
+                "source_type": "sitter_policy",
+                "pet_id": None,
+                "owner_id": None,
+                "sitter_id": SITTER,
+            },
+            {
+                "id": "k-other",
+                "source_type": "life_record",
+                "pet_id": "other-pet",
+                "owner_id": None,
+                "sitter_id": None,
+            },
         ],
         tone_samples=[
             {"id": "t-history", "sitter_id": SITTER, "source": "history"},
-            {"id": "t-approved", "sitter_id": SITTER, "source": "approved", "source_message_id": "m-demo"},
+            {
+                "id": "t-approved",
+                "sitter_id": SITTER,
+                "source": "approved",
+                "source_message_id": "m-demo",
+            },
         ],
         sitter_availability=[{"id": "a-old", "sitter_id": SITTER, "kind": "blocked"}],
         sitter_profiles=[
             {
                 "id": SITTER,
                 "default_max_pets": 2,
-                "default_hours": {"morning": ["08:00", "12:00"], "afternoon": ["12:00", "18:00"], "overnight": ["18:00", "08:00"]},
+                "default_hours": {
+                    "morning": ["08:00", "12:00"],
+                    "afternoon": ["12:00", "18:00"],
+                    "overnight": ["18:00", "08:00"],
+                },
                 "services": ["boarding"],
             }
         ],
@@ -69,7 +112,9 @@ def test_a_dry_run_counts_and_changes_nothing():
 
     report = dict(demo_reset.reset(db, OWNER, SITTER, TODAY, apply=False))
 
-    assert {name: db.tables[name] for name in before} == before  # (the fake adds empty tables when queried)
+    assert {
+        name: db.tables[name] for name in before
+    } == before  # (the fake adds empty tables when queried)
     assert report["bookings"] == 1
     assert report["notifications"] == 2
     assert report["Life Records"] == 1
@@ -93,7 +138,9 @@ def test_apply_removes_only_the_demo_accounts_stay_data():
 
 def with_a_third_account(db: FakeDB) -> FakeDB:
     """Another owner (a judge, say) booked and asked the demo sitter; the demo owner asked another sitter."""
-    db.tables["bookings"].append({"id": "b-judge", "owner_id": OTHER_OWNER, "sitter_id": SITTER, "status": "confirmed"})
+    db.tables["bookings"].append(
+        {"id": "b-judge", "owner_id": OTHER_OWNER, "sitter_id": SITTER, "status": "confirmed"}
+    )
     db.tables["inquiries"] += [
         {"id": "q-judge", "owner_id": OTHER_OWNER, "sitter_id": SITTER},
         {"id": "q-elsewhere", "owner_id": OWNER, "sitter_id": OTHER_SITTER},
@@ -104,9 +151,21 @@ def with_a_third_account(db: FakeDB) -> FakeDB:
         {"id": "n-plain", "user_id": SITTER, "booking_id": None},
     ]
     db.tables["daily_reports"].append({"id": "r-judge", "pet_id": "other-pet", "sitter_id": SITTER})
-    db.tables["pet_life_records"].append({"id": "l-judge", "pet_id": "other-pet", "booking_id": "b-judge"})
-    db.tables["knowledge_chunks"].append({"id": "k-judge-inq", "source_type": "inquiry", "pet_id": None, "owner_id": OTHER_OWNER, "sitter_id": SITTER})
-    db.tables["tone_samples"].append({"id": "t-judge", "sitter_id": SITTER, "source": "approved", "source_message_id": "m-judge"})
+    db.tables["pet_life_records"].append(
+        {"id": "l-judge", "pet_id": "other-pet", "booking_id": "b-judge"}
+    )
+    db.tables["knowledge_chunks"].append(
+        {
+            "id": "k-judge-inq",
+            "source_type": "inquiry",
+            "pet_id": None,
+            "owner_id": OTHER_OWNER,
+            "sitter_id": SITTER,
+        }
+    )
+    db.tables["tone_samples"].append(
+        {"id": "t-judge", "sitter_id": SITTER, "source": "approved", "source_message_id": "m-judge"}
+    )
     return db
 
 
@@ -129,8 +188,12 @@ def test_the_sitters_schedule_stays_while_she_has_another_owners_confirmed_booki
 
     report = dict(demo_reset.reset(db, OWNER, SITTER, TODAY, apply=True))
 
-    assert ids(db, "sitter_availability") == {"a-old"}  # not removed (the guard would refuse), not doubled
-    assert "schedule rows" not in report and any(label.startswith("schedule kept") for label in report)
+    assert ids(db, "sitter_availability") == {
+        "a-old"
+    }  # not removed (the guard would refuse), not doubled
+    assert "schedule rows" not in report and any(
+        label.startswith("schedule kept") for label in report
+    )
 
 
 def test_apply_rebuilds_the_starting_state():
@@ -149,11 +212,20 @@ def test_apply_rebuilds_the_starting_state():
     assert {r["max_pets"] for r in rows} == {2}
     # Prices exist, and the names match the demo story.
     assert len(db.tables["sitter_rates"]) == 1
-    assert {p["id"]: p["display_name"] for p in db.tables["profiles"]} == {OWNER: "Robert", SITTER: "Chloe"}
+    assert {p["id"]: p["display_name"] for p in db.tables["profiles"]} == {
+        OWNER: "Robert",
+        SITTER: "Chloe",
+    }
     assert db.tables["sitter_profiles"][0]["services"] == ["boarding", "house_sitting"]
     # Both homes have a map point, so Start trip has a destination (06B).
-    assert (db.tables["sitter_profiles"][0]["home_lat"], db.tables["sitter_profiles"][0]["home_lng"]) == (43.6502, -79.3896)  # Chloe: 299 Queen St W
-    assert (db.tables["owner_profiles"][0]["home_lat"], db.tables["owner_profiles"][0]["home_lng"]) == (43.6534, -79.3841)  # Robert: 100 Queen St W
+    assert (
+        db.tables["sitter_profiles"][0]["home_lat"],
+        db.tables["sitter_profiles"][0]["home_lng"],
+    ) == (43.6502, -79.3896)  # Chloe: 299 Queen St W
+    assert (
+        db.tables["owner_profiles"][0]["home_lat"],
+        db.tables["owner_profiles"][0]["home_lng"],
+    ) == (43.6534, -79.3841)  # Robert: 100 Queen St W
 
 
 def test_an_owner_with_no_pets_yet_does_not_break_the_plan():
@@ -188,7 +260,16 @@ def test_the_confirmed_state_books_after_everything_is_ready_and_pets_does_not()
 
     def book(client, owner_id, sitter_id, today, state, demo_set):
         # By now the pets, prices and schedule must already exist for the booking RPCs to accept it.
-        calls.append((owner_id, sitter_id, today, state, len(client.tables["sitter_availability"]), len(client.tables["sitter_rates"])))
+        calls.append(
+            (
+                owner_id,
+                sitter_id,
+                today,
+                state,
+                len(client.tables["sitter_availability"]),
+                len(client.tables["sitter_rates"]),
+            )
+        )
         return "b-new"
 
     demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True, book=book)
@@ -224,7 +305,11 @@ def test_each_booked_state_starts_where_its_test_needs_it():
     now = datetime(2026, 10, 9, 22, 15, tzinfo=ZoneInfo("America/Toronto"))
 
     confirmed_drop, confirmed_pick = demo_reset.stay_times("confirmed", now, TODAY)
-    assert (confirmed_drop.date().isoformat(), confirmed_drop.hour, confirmed_drop.minute) == ("2026-10-11", 9, 30)
+    assert (confirmed_drop.date().isoformat(), confirmed_drop.hour, confirmed_drop.minute) == (
+        "2026-10-11",
+        9,
+        30,
+    )
     assert confirmed_pick.date().isoformat() == "2026-10-14"
 
     # `ready`: an hour away, inside the 2 h before which the sitter cannot tap Received.
@@ -246,9 +331,15 @@ def test_the_stay_is_checked_out_then_received_in_the_right_order(monkeypatch):
         return ["emergency_vet", "safe_return"] if fn == "required_consents" else "b-1"
 
     monkeypatch.setattr(demo_reset.authz, "rpc_json", fake_rpc)
-    monkeypatch.setattr(demo_reset, "sign_in", lambda email: "owner-token" if "owner" in email else "sitter-token")
+    monkeypatch.setattr(
+        demo_reset, "sign_in", lambda email: "owner-token" if "owner" in email else "sitter-token"
+    )
     inserted = []
-    monkeypatch.setattr(demo_reset, "_insert_as", lambda token, table, row: inserted.append((token, table, row["kind"], row["signer_id"])))
+    monkeypatch.setattr(
+        demo_reset,
+        "_insert_as",
+        lambda token, table, row: inserted.append((token, table, row["kind"], row["signer_id"])),
+    )
     monkeypatch.setattr(demo_reset, "owner_pet_ids", lambda *_: ["pet-1"])
     db = world()
 
@@ -258,13 +349,26 @@ def test_the_stay_is_checked_out_then_received_in_the_right_order(monkeypatch):
         demo_reset.book_for_state(db, OWNER, SITTER, TODAY, state)
         return [fn for _t, fn in calls]
 
-    base = ["request_booking", "express_interest", "request_skip_meet_greet", "respond_skip_meet_greet", "agree_to_book", "respond_booking"]
+    base = [
+        "request_booking",
+        "express_interest",
+        "request_skip_meet_greet",
+        "respond_skip_meet_greet",
+        "agree_to_book",
+        "respond_booking",
+    ]
     assert run("confirmed") == base
     assert inserted == []
     assert run("ready") == [*base, "required_consents", "pay_booking_demo"]
-    assert inserted == [("owner-token", "booking_consents", "emergency_vet", OWNER), ("owner-token", "booking_consents", "safe_return", OWNER)]
+    assert inserted == [
+        ("owner-token", "booking_consents", "emergency_vet", OWNER),
+        ("owner-token", "booking_consents", "safe_return", OWNER),
+    ]
     assert run("in_care") == [*base, "required_consents", "pay_booking_demo", "complete_handoff"]
-    assert calls[-1] == ("sitter-token", "complete_handoff")  # Received is the sitter's, after the owner paid
+    assert calls[-1] == (
+        "sitter-token",
+        "complete_handoff",
+    )  # Received is the sitter's, after the owner paid
 
 
 def test_a_pair_that_has_met_before_just_goes_on_without_a_first_yes(monkeypatch):
@@ -282,7 +386,14 @@ def test_a_pair_that_has_met_before_just_goes_on_without_a_first_yes(monkeypatch
 
     demo_reset.book_for_state(world(), OWNER, SITTER, TODAY, "confirmed")
 
-    assert calls == ["request_booking", "express_interest", "request_skip_meet_greet", "respond_skip_meet_greet", "agree_to_book", "respond_booking"]
+    assert calls == [
+        "request_booking",
+        "express_interest",
+        "request_skip_meet_greet",
+        "respond_skip_meet_greet",
+        "agree_to_book",
+        "respond_booking",
+    ]
 
 
 def test_any_other_error_on_the_first_yes_stops_the_reset(monkeypatch):
@@ -339,14 +450,28 @@ def test_each_set_gets_its_own_pets():
     db = world()
     db.tables["pets"] = []
 
-    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True, demo_set=set_for_key("paul"), scope="owner")
+    demo_reset.reset(
+        db,
+        OWNER,
+        SITTER,
+        TODAY,
+        state="pets",
+        apply=True,
+        demo_set=set_for_key("paul"),
+        scope="owner",
+    )
 
     assert sorted(p["name"] for p in db.tables["pets"]) == ["Biscuit", "Luna"]
     dog = next(p for p in db.tables["pets"] if p["name"] == "Biscuit")
     assert dog["species"] == "dog"
-    assert [a["allergen"] for a in db.tables["pet_allergies"]] == ["chicken"]  # the Treat check demo still works
+    assert [a["allergen"] for a in db.tables["pet_allergies"]] == [
+        "chicken"
+    ]  # the Treat check demo still works
     # No sign-up answers for these two, but the pixel pet still gets its coat.
-    assert {p["name"]: p["profile"].get("coat") for p in db.tables["pets"]} == {"Biscuit": "mixed", "Luna": "cream"}
+    assert {p["name"]: p["profile"].get("coat") for p in db.tables["pets"]} == {
+        "Biscuit": "mixed",
+        "Luna": "cream",
+    }
 
 
 def test_all_pet_names_in_the_demo_sets_differ():
@@ -365,9 +490,10 @@ def test_every_demo_pet_has_a_coat_from_the_sign_up_colors():
             assert DEMO_COATS[pet[0]] in coats
 
 
-
 def chat_of(db: FakeDB):
-    threads = [t for t in db.tables["chat_threads"] if t["owner_id"] == OWNER and t["sitter_id"] == SITTER]
+    threads = [
+        t for t in db.tables["chat_threads"] if t["owner_id"] == OWNER and t["sitter_id"] == SITTER
+    ]
     assert len(threads) == 1
     return [m for m in db.tables["chat_messages"] if m["thread_id"] == threads[0]["id"]]
 
@@ -379,7 +505,9 @@ def test_the_reset_replaces_the_pairs_chat_and_keeps_another_pairs():
         {"id": "t-other", "owner_id": OTHER_OWNER, "sitter_id": SITTER},
     ]
 
-    demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new")
+    demo_reset.reset(
+        db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new"
+    )
 
     assert "t-old" not in ids(db, "chat_threads")
     assert "t-other" in ids(db, "chat_threads")
@@ -399,10 +527,16 @@ def test_a_pets_state_has_no_chat_and_no_favorite_even_when_an_earlier_one_exist
 def test_a_booked_state_chat_starts_with_the_stay_card_and_a_short_talk():
     db = world()
 
-    demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new")
+    demo_reset.reset(
+        db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new"
+    )
 
     messages = chat_of(db)
-    assert [(m["kind"], (m["card"] or {}).get("type")) for m in messages[:3]] == [("card", "stay"), ("text", None), ("text", None)]
+    assert [(m["kind"], (m["card"] or {}).get("type")) for m in messages[:3]] == [
+        ("card", "stay"),
+        ("text", None),
+        ("text", None),
+    ]
     assert [p["name"] for p in messages[0]["card"]["pets"]] == ["Max", "Mochi"]
     assert messages[0]["sender_id"] == OWNER and messages[2]["sender_id"] == SITTER
 
@@ -410,13 +544,17 @@ def test_a_booked_state_chat_starts_with_the_stay_card_and_a_short_talk():
 def test_a_booked_state_chat_also_has_the_request_card_and_the_booking_steps():
     db = world()
 
-    demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new")
+    demo_reset.reset(
+        db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new"
+    )
 
     cards = [m["card"] for m in chat_of(db) if m["kind"] == "card"]
     assert [c["type"] for c in cards] == ["stay", "request", "meet_greet", "agreement", "payment"]
     assert cards[1]["booking_id"] == "b-new" and cards[1]["service_type"] == "boarding"
     # The step cards hold only the booking's id (the app reads the booking to draw them).
-    assert all(set(c) == {"type", "booking_id", "rev"} and c["booking_id"] == "b-new" for c in cards[2:])
+    assert all(
+        set(c) == {"type", "booking_id", "rev"} and c["booking_id"] == "b-new" for c in cards[2:]
+    )
 
 
 def test_the_empty_state_has_no_chat_and_no_favorite():
@@ -432,9 +570,13 @@ def test_the_set_sitter_is_the_owners_one_favorite_and_a_second_reset_does_not_d
     db = world()
 
     for _ in range(2):
-        demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new")
+        demo_reset.reset(
+            db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new"
+        )
 
-    assert db.tables["owner_favorite_sitters"] == [{"id": db.tables["owner_favorite_sitters"][0]["id"], "owner_id": OWNER, "sitter_id": SITTER}]
+    assert db.tables["owner_favorite_sitters"] == [
+        {"id": db.tables["owner_favorite_sitters"][0]["id"], "owner_id": OWNER, "sitter_id": SITTER}
+    ]
 
 
 def test_the_sitter_gets_her_onboarding_answers_once_and_is_marked_done():
@@ -444,18 +586,24 @@ def test_the_sitter_gets_her_onboarding_answers_once_and_is_marked_done():
     demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
 
     answers = [a for a in db.tables["sitter_profile_answers"] if a["sitter_id"] == SITTER]
-    assert [a["question_key"] for a in answers] == [k for k, _a, _c in demo_accounts.DEMO_SITTER_ANSWERS]  # once, not doubled
+    assert [a["question_key"] for a in answers] == [
+        k for k, _a, _c in demo_accounts.DEMO_SITTER_ANSWERS
+    ]  # once, not doubled
     assert all(a["answer"] or a["choice"] for a in answers)
     assert db.tables["sitter_profiles"][0]["onboarded_at"] is not None
 
 
 def test_answers_a_teammate_filled_in_are_kept():
     db = world()
-    db.tables["sitter_profile_answers"] = [{"sitter_id": SITTER, "question_key": "cats", "answer": "No cats", "choice": "no"}]
+    db.tables["sitter_profile_answers"] = [
+        {"sitter_id": SITTER, "question_key": "cats", "answer": "No cats", "choice": "no"}
+    ]
 
     demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
 
-    assert [(a["question_key"], a["choice"]) for a in db.tables["sitter_profile_answers"]] == [("cats", "no")]
+    assert [(a["question_key"], a["choice"]) for a in db.tables["sitter_profile_answers"]] == [
+        ("cats", "no")
+    ]
     assert db.tables["sitter_profiles"][0]["onboarded_at"] is not None
 
 
@@ -484,12 +632,23 @@ def test_answers_an_owner_gave_are_kept_and_a_missing_coat_is_filled_in():
 
     demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
 
-    assert db.tables["pets"][0]["profile"] == {"v": 1, "answers": {"d1": 1}, "safety": {}, "coat": "white"}
+    assert db.tables["pets"][0]["profile"] == {
+        "v": 1,
+        "answers": {"d1": 1},
+        "safety": {},
+        "coat": "white",
+    }
 
 
 def test_a_coat_or_photo_colors_the_owner_picked_are_kept():
     db = world()
-    picked = {"v": 1, "answers": {}, "safety": {}, "coat": "black", "pixel_colors": {"v": 1, "base": "#111111"}}
+    picked = {
+        "v": 1,
+        "answers": {},
+        "safety": {},
+        "coat": "black",
+        "pixel_colors": {"v": 1, "base": "#111111"},
+    }
     db.tables["pets"][0]["profile"] = dict(picked)
 
     demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)

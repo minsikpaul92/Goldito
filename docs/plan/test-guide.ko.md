@@ -766,6 +766,11 @@
 | DSET-1 | 로그인 화면(데모 도구가 켜진 빌드) → **Whose demo** 드롭다운 → Paul → **Demo owner** 또는 **Demo sitter** | 드롭다운에 Chloe · Paul · Allen · Daniel. 고른 세트의 오너(Peter) 또는 시터(Paul)로 로그인되고 폰 위(또는 화면 위)에 "Peter · Owner" 또는 "Paul · Sitter". 아무것도 안 고르면 Chloe 세트(Robert · Chloe) | 🤖 `demo-sets` | 사람 확인 대기 |
 | DSET-2 | Peter(Paul 세트의 오너)로 Profile → **Demo tools (Peter)** → 상태 고르고 **Reset demo…**. 이어서 Paul(시터)로도 같은 것 | 확인 시트에 "Peter goes back to ... with Paul". 오너 초기화는 시터의 일정과 말투를 안 건드리고, 시터 초기화는 오너의 펫과 돌봄 계획을 안 건드림(시터에는 Empty 상태가 없고 Clean이 있음). Chloe 세트(슬기님)는 그대로. 세트에 없는 계정은 도구가 안 보이고 서버도 403 | 🤖 `demo-sets` · `test_demo_reset_api.py` · `test_reset_demo.py` | 사람 확인 대기(호스팅 DB에 Paul · Allen · Daniel 계정을 시드한 뒤) |
 
+| SEEDH-1 | Profile → Demo tools로 **Past stays**(`past`) 또는 그 이후 상태로 리셋(Cloudinary 사진은 `python -m scripts.seed_photos --apply`를 한 번 돌린 뒤). 오너 Bookings → Past | 8월 12~15일 · 9월 16~19일 돌봄 2건(Max + Mochi, 완료)과 취소된 요청 1건(3주 뒤). 시터 Bookings → Past에도 같은 2건 + 취소 1건 | 🤖 `test_demo_history.py` | 사람 확인 대기(`seed_photos` 실행 뒤) |
+| SEEDH-2 | 같은 리셋 → 오너 Moments → Photos · Diary | 시터가 돌본 날마다 펫마다 공유 사진 1장 + 보낸 Diary 1장(2건 x 4일 x 2마리 = 16), 오너 비공개 사진 3장과 8월 · 9월 · 10월 비공개 Diary 3장(시터에게는 안 보임) | 🤖 `test_demo_history.py` | 사람 확인 대기 |
+| SEEDH-3 | `in_care`로 리셋 → 오너 · 시터 Moments | 오늘 시터가 올린 공유 사진 4장(펫마다 2장)은 둘 다 보이고, 시터 비공개 사진 1장은 시터에게만 보임. 알림 벨은 조용함(취소된 요청 알림 없음) | 🤖 `test_demo_history.py` | 사람 확인 대기 |
+| SEEDH-4 | 같은 세트를 다시 리셋 | 사진 · 예약이 두 배로 늘지 않고 같은 수 | 🤖 `test_demo_history.py` | 사람 확인 대기 |
+
 ### 3.30 Expressive 룩 (EXP) · *사전: 없음. `?skin=default`로 예전 룩*
 
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |

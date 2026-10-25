@@ -6,7 +6,7 @@ import { findDemoAccount } from "./demo";
  * a known state. Shown only while `EXPO_PUBLIC_DEMO_TOOLS=1`; remove with the backend route before
  * judging (fixed demo accounts, see the GitHub issues).
  */
-export type DemoState = "empty" | "pets" | "confirmed" | "ready" | "in_care";
+export type DemoState = "empty" | "pets" | "past" | "confirmed" | "ready" | "in_care";
 
 /**
  * The states to reset to. Each account resets on its own: an owner resets the owner side, a sitter the sitter side.
@@ -16,6 +16,7 @@ export function demoStates(role: "owner" | "sitter", sitterName: string, pets: [
   const states: { value: DemoState; label: string; hint: string }[] = [
     { value: "empty", label: "Empty", hint: "No pets yet." },
     { value: "pets", label: role === "owner" ? "Pets only" : "Clean", hint: role === "owner" ? `${pets[0]} and ${pets[1]}, no booking.` : "No bookings, schedule open." },
+    { value: "past", label: "Past stays", hint: role === "owner" ? `${pets[0]} and ${pets[1]} stayed with ${sitterName} before. No booking now.` : "Two finished stays, a cancelled request. Schedule open." },
     { value: "confirmed", label: "Booking accepted", hint: `${sitterName} accepted a stay. Next: Finish booking.` },
     { value: "ready", label: "Ready for drop-off", hint: `Paid, drop-off in an hour. ${sitterName} can tap Received.` },
     { value: "in_care", label: "In care", hint: `${pets[0]} and ${pets[1]} are with ${sitterName}.` },
