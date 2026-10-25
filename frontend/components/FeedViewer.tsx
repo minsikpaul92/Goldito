@@ -582,7 +582,7 @@ const makeStyles = (theme: Theme) =>
       gap: theme.spacing.sm,
     },
     back: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-    backLabel: { color: theme.color.onMedia, fontSize: 34, lineHeight: 36, fontWeight: theme.fontWeight.semibold },
+    backLabel: { color: theme.color.onMedia, fontSize: 34, lineHeight: 36, fontWeight: theme.fontWeight.semibold }, // tokens-ok: the back chevron is drawn as a large glyph
     title: { flex: 1, color: theme.color.onMedia, fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold },
     sticker: {
       minHeight: 52,
