@@ -44,19 +44,13 @@ export function PetTile({ pet, index, onPress }: { pet: Pet; index: number; onPr
 
   return (
     <>
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${pet.name}, ${describePet(pet)}`}
-      onPress={onPress}
-      style={({ pressed }) => [styles.tile, { backgroundColor: PET_GROUNDS[index % PET_GROUNDS.length] }, pressed && styles.pressed]}
-      testID={`pet-card-${pet.name}`}
-    >
-      {/* The face opens the pet's photos big; without a photo it is just the tile (Figma slot: see HomeArt). */}
+    {/* Two sibling buttons in a plain View: a button inside a button is invalid HTML on the web. */}
+    <View style={[styles.tile, { backgroundColor: PET_GROUNDS[index % PET_GROUNDS.length] }]}>
+      {/* The face opens the pet's photos big; without a photo it opens the pet like the rest of the tile (Figma slot: see HomeArt). */}
       <Pressable
-        accessibilityRole={photos.length > 0 ? "button" : undefined}
-        accessibilityLabel={`${pet.name}'s photos`}
-        disabled={photos.length === 0}
-        onPress={() => setViewing(true)}
+        accessibilityRole="button"
+        accessibilityLabel={photos.length > 0 ? `${pet.name}'s photos` : pet.name}
+        onPress={photos.length > 0 ? () => setViewing(true) : onPress}
         style={styles.face}
         testID={`pet-card-face-${pet.name}`}
       >
@@ -66,7 +60,13 @@ export function PetTile({ pet, index, onPress }: { pet: Pet; index: number; onPr
           <HomeArt name="paw" art={pet.species === "cat" ? "owner/pet-cat" : "owner/pet-dog"} size={52} color={theme.color.text} />
         )}
       </Pressable>
-      <View style={styles.body}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${pet.name}, ${describePet(pet)}`}
+        onPress={onPress}
+        style={({ pressed }) => [styles.body, pressed && styles.pressed]}
+        testID={`pet-card-${pet.name}`}
+      >
         <Text style={styles.name} numberOfLines={1}>
           {pet.name}
         </Text>
@@ -79,8 +79,8 @@ export function PetTile({ pet, index, onPress }: { pet: Pet; index: number; onPr
             <Text style={styles.allergyText} numberOfLines={1}>{`No ${pet.pet_allergies[0].allergen}`}</Text>
           </View>
         ) : null}
-      </View>
-    </Pressable>
+      </Pressable>
+    </View>
     {/* Outside the tile: a tap inside the sheet must not reach the tile's own press. */}
     <PhotoViewerSheet visible={viewing} title={pet.name} photos={photos} onClose={() => setViewing(false)} testID={`pet-photos-${pet.name}`} />
     </>

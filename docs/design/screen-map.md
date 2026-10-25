@@ -1341,8 +1341,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 47 |
-| Pressable | ``${pet.name}'s photos`` | ``pet-card-face-${pet.name}`` | 55 |
+| Pressable | photos.length > 0 ? `${pet.name}'s photos` : pet.name | ``pet-card-face-${pet.name}`` | 50 |
+| Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 63 |
 
 ### SitterToday — [components/home/SitterToday.tsx](../../frontend/components/home/SitterToday.tsx)
 
