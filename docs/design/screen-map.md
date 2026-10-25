@@ -284,11 +284,11 @@ Shows: `PhotoViewer` · `SitterActions` · `StarRating`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Sitter not found | — | 107 |
-| EmptyState | Couldn't load this sitter | — | 115 |
-| Pressable | ``See ${sitter.displayName}'s photos`` | `sitter-photo` | 134 |
-| Pressable | favorite ? "Remove from favorites" : "Add to favorites" | `sitter-favorite` | 152 |
-| Button | See schedule | `sitter-see-schedule` | 198 |
+| EmptyState | Sitter not found | — | 115 |
+| EmptyState | Couldn't load this sitter | — | 123 |
+| Pressable | ``See ${sitter.displayName}'s photos`` | `sitter-photo` | 142 |
+| Pressable | favorite ? "Remove from favorites" : "Add to favorites" | `sitter-favorite` | 160 |
+| Button | See schedule | `sitter-see-schedule` | 207 |
 
 ### `/owner/sitters/[sitterId]/calendar` — [app/owner/sitters/[sitterId]/calendar.tsx](../../frontend/app/owner/sitters/[sitterId]/calendar.tsx)
 
@@ -347,20 +347,20 @@ Shows: `DemoTools` · `AddressInput` · `SitterBadges` · `ProfilePhotoGallery` 
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 282 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 429 |
-| Button | locating ? "Locating…" : "📍 Use my current location" | `profile-use-location` | 460 |
-| Pressable | Remove item | ``profile-packing-remove-${i + 1}`` | 507 |
-| TextButton | + Add item | `profile-packing-add` | 520 |
-| Pressable | — | `profile-home-access` | 563 |
-| Pressable | ``Remove spot ${i + 1}`` | ``profile-spot-remove-${i + 1}`` | 596 |
-| TextButton | + Add another spot | `profile-add-spot` | 612 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 619 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 629 |
-| SegmentedControl | — | `profile-ai-mode` | 640 |
-| Button | Edit your answers | `profile-answers-edit` | 672 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 680 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 682 |
+| EmptyState | Couldn't load your profile | — | 295 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 448 |
+| Button | locating ? "Locating…" : "📍 Use my current location" | `profile-use-location` | 479 |
+| Pressable | Remove item | ``profile-packing-remove-${i + 1}`` | 526 |
+| TextButton | + Add item | `profile-packing-add` | 539 |
+| Pressable | — | `profile-home-access` | 582 |
+| Pressable | ``Remove spot ${i + 1}`` | ``profile-spot-remove-${i + 1}`` | 615 |
+| TextButton | + Add another spot | `profile-add-spot` | 631 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 638 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 648 |
+| SegmentedControl | — | `profile-ai-mode` | 659 |
+| Button | Edit your answers | `profile-answers-edit` | 691 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 699 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 701 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
@@ -518,6 +518,14 @@ Shows: `DiaryTimeline`
 Sitter notification center (phase-05 5.5).
 
 Shows: `NotificationsCenter`
+
+### `/sitter/owners/[ownerId]` — [app/sitter/owners/[ownerId].tsx](../../frontend/app/sitter/owners/[ownerId].tsx)
+
+The owner as the sitter sees them from a chat: name, photo, the area of the home (first three characters of the postal code) and the phone once it may be shared. The street address and the entry info stay behind payment (D31).
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| EmptyState | Owner not available | — | 40 |
 
 ### `/sitter/schedule` — [app/sitter/schedule.tsx](../../frontend/app/sitter/schedule.tsx)
 

@@ -529,7 +529,7 @@ export default function Chat() {
               cover={photos[0] ?? null}
               stay={headerStay}
               onAvatar={photos.length > 0 ? () => setViewing(true) : undefined}
-              onName={owner ? () => router.push(`/owner/sitters/${header.otherId}`) : undefined}
+              onName={() => router.push(owner ? `/owner/sitters/${header.otherId}` : `/sitter/owners/${header.otherId}?thread=${header.threadId}`)}
             />
           ),
         }}

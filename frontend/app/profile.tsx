@@ -27,6 +27,7 @@ import {
   saveProfile,
   setAiReplyMode,
 } from "../features/profile/profileApi";
+import { PHONE_RULE, loadMyPhone, saveMyPhone } from "../features/contact/contactApi";
 import { isDemoAccount, isDemoToolsEnabled } from "../lib/demoReset";
 import { LatLng, LocationError, getCurrentPosition } from "../lib/location";
 import { AddressSuggestion, PinPlace, reverseGeocode } from "../lib/transit";
@@ -42,6 +43,12 @@ type FieldSpec = { key: string; label: string; placeholder?: string; multiline?:
 /** `label` null: always shown. Otherwise a card that opens and closes; it starts closed and shows its value. */
 type FieldGroup = { id: string; label: string | null; fields: FieldSpec[] };
 
+const PHONE_GROUP: FieldGroup = {
+  id: "phone",
+  label: "Phone",
+  fields: [{ key: "phone", label: "Phone", placeholder: "e.g. 416 555 0123" }],
+};
+
 const HOME_GROUP: FieldGroup = {
   id: "home",
   label: "Home address",
@@ -53,6 +60,7 @@ const HOME_GROUP: FieldGroup = {
 };
 
 const OWNER_GROUPS: FieldGroup[] = [
+  PHONE_GROUP,
   HOME_GROUP,
   {
     id: "emergency",
@@ -79,6 +87,7 @@ const SITTER_GROUPS: FieldGroup[] = [
     label: null,
     fields: [{ key: "bio", label: "About you", placeholder: "A few lines for owners", multiline: true }],
   },
+  PHONE_GROUP,
   HOME_GROUP,
   {
     id: "home_notes",
@@ -200,17 +209,21 @@ export default function ProfileScreen() {
   const [homePlace, setHomePlace] = useState<PinPlace | null | undefined>(undefined);
   // The address text that is placed on the map (it matches the pin). Anything else typed has to be checked first.
   const [placedAddress, setPlacedAddress] = useState<string | null>(null);
+  // The phone as saved: it is written only when it changed.
+  const [savedPhone, setSavedPhone] = useState("");
 
   const profile = session.status === "signedIn" ? session.profile : null;
 
   useEffect(() => {
     if (!profile) return;
     setDisplayName(profile.displayName);
-    loadRoleProfile(profile.id, profile.role)
-      .then((result) => {
+    Promise.all([loadRoleProfile(profile.id, profile.role), loadMyPhone()])
+      .then(([result, phone]) => {
         setLoaded(result);
         // An address saved with its postal code inside it is split: the street here, the code in its own field.
         const nextDraft = toDraft(result);
+        nextDraft.phone = phone ?? "";
+        setSavedPhone(phone ?? "");
         const split = splitPostal(nextDraft.home_address ?? "");
         if (split.postal) {
           nextDraft.home_address = split.street;
@@ -310,6 +323,8 @@ export default function ProfileScreen() {
     if (loaded.role === "sitter" && experience && !/^\d{1,2}$/.test(experience)) {
       found.experience_years = "Enter whole years, e.g. 3.";
     }
+    const phone = (draft.phone ?? "").trim();
+    if (phone && !PHONE_RULE.test(phone)) found.phone = "Enter a valid phone number, e.g. 416 555 0123.";
     if (loaded.role === "sitter" && services.length === 0) found.services = "Pick at least one service.";
     const meetSpots = cleanSpots(spots);
 
@@ -374,6 +389,10 @@ export default function ProfileScreen() {
     setSaveError(null);
     try {
       await saveProfile(profile.id, name, next);
+      if (phone !== savedPhone) {
+        await saveMyPhone(profile.id, phone || null);
+        setSavedPhone(phone);
+      }
       if (next.role === "sitter" && loaded.role === "sitter" && (next.fields.policies ?? null) !== (loaded.fields.policies ?? null)) {
         void reindexSitterPolicies();
       }
