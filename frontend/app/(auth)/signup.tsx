@@ -140,12 +140,6 @@ export default function SignupScreen() {
         />
       </View>
 
-      <View style={styles.divider}>
-        <View style={styles.rule} />
-        <View style={styles.rule} />
-        <Text style={styles.dividerLabel}>or with email</Text>
-      </View>
-
       <View style={styles.form}>
         <View style={styles.nameRow}>
           <View style={styles.nameField}>

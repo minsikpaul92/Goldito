@@ -382,8 +382,8 @@ Shows: `BrandLogo` · `RoleCard`
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | BackLink | — | `signup-back` | 113 |
-| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 228 |
-| TextButton | Already have an account? Sign in | `go-login` | 240 |
+| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 222 |
+| TextButton | Already have an account? Sign in | `go-login` | 234 |
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 
