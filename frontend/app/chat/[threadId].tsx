@@ -72,7 +72,7 @@ const INPUT_MIN = 44;
 const INPUT_MAX = 150;
 const INPUT_PAD = 11;
 /** Footer steps that get a Decline next to them (#230): the owner's yes, the sitter's yes, the owner's final quote. */
-const DECLINABLE: Primary["kind"][] = ["agree", "accept", "confirm_quote"];
+const DECLINABLE: Primary["kind"][] = ["agree", "accept"];
 
 /** "Oct 20 9:00 AM" for one handoff. */
 function short(iso: string): string {
@@ -355,6 +355,8 @@ export default function Chat() {
     if (a.id === "meet_skip") return meetCard.current?.skip();
     return step.primary ? doPrimary(step.primary) : undefined;
   };
+  // The footer's one action, minus a final quote's Confirm: the quote card has it, with Decline (#289).
+  const footerPrimary = step.primary?.kind === "confirm_quote" ? null : step.primary;
   const typing = text.trim() !== "";
   const typedBusy = typing && (typedChips === "busy" || drafting);
   const typingChips = typing && (typedBusy || Array.isArray(typedChips));
@@ -476,7 +478,7 @@ export default function Chat() {
     const live = booking && booking.id === c.bookingId ? stageCaption(booking, header.myRole) : null;
     return (
       <View key={m.id} style={[styles.cardRow, mine ? styles.cardMine : styles.cardTheirs]}>
-      <Card style={styles.request} testID="chat-request-card">
+      <Card style={StyleSheet.flatten([styles.request, mine ? styles.mine : styles.theirs])} testID="chat-request-card">
         <Text style={styles.requestTitle}>{mine ? "You sent a booking request" : "Booking request"}</Text>
         <Text style={styles.requestLine}>{`${SERVICE_LABEL[c.serviceType].replace(/^\S+\s/, "")} · ${c.pets.map((p) => p.name).join(", ")}`}</Text>
         <Text style={styles.requestLine}>{`Drop-off ${short(c.dropOffAt)} · ${placeText(c.dropOffPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
@@ -550,7 +552,7 @@ export default function Chat() {
         {messages.map((m) =>
           m.kind === "card" && m.card?.type === "stay" ? (
             <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
-              <Card style={styles.stay} testID="chat-stay-card">
+              <Card style={StyleSheet.flatten([styles.stay, m.senderId === me ? styles.mine : styles.theirs])} testID="chat-stay-card">
                 <Text style={styles.requestLine} testID="chat-stay-line">
                   {stayLine(m.card)}
                 </Text>
@@ -568,6 +570,7 @@ export default function Chat() {
                 card={m.card as QuoteCard}
                 role={header.myRole}
                 final={isFinal(m.id)}
+                side={m.senderId === me ? "me" : "them"}
                 busy={quoteBusy}
                 onConfirm={() => void quoteAction(() => confirmQuote(m.id))}
                 onDecline={isFinal(m.id) && booking ? () => setDeclining({ quote: true }) : undefined}
@@ -588,14 +591,15 @@ export default function Chat() {
         {stayBooking ? <ChatStayCard booking={stayBooking} viewer={header.myRole} onChanged={() => void load()} receiveSignal={signals.receive} returnSignal={signals.returned} /> : null}
         {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} startSignal={signals.trip} /> : null}
       </Screen>
-      {step.primary || step.quote || step.wait ? (
+      {/* A final quote carries Confirm and Decline on its card: the footer does not repeat them (#289). */}
+      {footerPrimary || step.quote || step.wait ? (
         <View style={styles.next}>
-          {step.primary ? (
+          {footerPrimary ? (
             <Button
-              label={step.primary.label}
-              disabled={stepBusy || (step.primary.kind === "confirm_quote" && step.primary.disabled)}
-              onPress={() => void doPrimary(step.primary as Primary)}
-              testID={step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`}
+              label={footerPrimary.label}
+              disabled={stepBusy}
+              onPress={() => void doPrimary(footerPrimary as Primary)}
+              testID={footerPrimary.kind === "request" ? "chat-request-booking" : `chat-next-${footerPrimary.kind}`}
             />
           ) : step.quote ? (
             <Button label="Send quote" onPress={() => setQuoting("first")} testID="chat-send-quote" />
@@ -783,6 +787,9 @@ const makeStyles = (theme: Theme) =>
     cardTheirs: { alignItems: "flex-start" },
     stay: { gap: 2, maxWidth: "88%" },
     request: { gap: 2, maxWidth: "88%" },
+    // Cards take the sides of the text bubbles (#289): mine tinted with the tail corner right, theirs white left.
+    mine: { backgroundColor: theme.color.accent, borderColor: theme.color.primary, borderBottomRightRadius: 4 },
+    theirs: { borderBottomLeftRadius: 4 },
     requestTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     requestLine: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     requestNote: { fontSize: theme.fontSize.small, color: theme.color.text, fontStyle: "italic", marginTop: 2 },

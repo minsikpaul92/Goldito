@@ -15,6 +15,8 @@ type Props = {
   role: "owner" | "sitter";
   /** Sent after the booking's payment card: the price the owner pays (3D.8, #235). */
   final?: boolean;
+  /** Who sent it: mine is tinted like my bubbles, theirs is white like theirs (#289). */
+  side?: "me" | "them";
   busy?: boolean;
   onConfirm: () => void;
   /** The owner's no to a final quote (#230); shown under Confirm only when given. */
@@ -35,7 +37,7 @@ function short(iso: string): string {
  * fee lines: an accepted one is part of its total and shows as a plain line; an unanswered one can't be answered any
  * more, so the card says a new quote replaces it.
  */
-export function ChatQuoteCard({ card, role, final, busy, onConfirm, onDecline }: Props) {
+export function ChatQuoteCard({ card, role, final, side, busy, onConfirm, onDecline }: Props) {
   const styles = useThemedStyles(makeStyles);
   const q = card.quote;
   const open = card.status === "sent";
@@ -46,7 +48,10 @@ export function ChatQuoteCard({ card, role, final, busy, onConfirm, onDecline }:
       : `${q.days} day${q.days === 1 ? "" : "s"} × ${money(q.unit_price)}`;
 
   return (
-    <Card style={card.status === "replaced" ? styles.cardFaded : styles.card} testID="chat-quote-card">
+    <Card
+      style={StyleSheet.flatten([card.status === "replaced" ? styles.cardFaded : styles.card, side === "me" ? styles.mine : side === "them" ? styles.theirs : null])}
+      testID="chat-quote-card"
+    >
       <View style={styles.row}>
         <Text style={styles.title} testID="quote-title">{final ? "Final quote" : "Quote"}</Text>
         {card.status === "confirmed" ? <Text style={styles.ok} testID="quote-status">Confirmed</Text> : null}
@@ -105,6 +110,9 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%" },
     cardFaded: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%", opacity: 0.5 },
+    // The same sides as the text bubbles: mine tinted with the tail corner on the right, theirs white on the left (#289).
+    mine: { backgroundColor: theme.color.accent, borderColor: theme.color.primary, borderBottomRightRadius: 4 },
+    theirs: { borderBottomLeftRadius: 4 },
     row: { flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.md },
     left: { alignSelf: "flex-start", paddingHorizontal: 0 },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
