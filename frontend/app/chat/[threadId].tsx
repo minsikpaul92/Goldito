@@ -500,7 +500,7 @@ export default function Chat() {
     const final = finalQuote(messages, b.id);
     const total = b.paidAt ? (b.priceSnapshot?.total ?? null) : final?.card.status === "confirmed" ? final.card.total : null;
     return (
-      <View key={m.id} style={styles.cardWide}>
+      <View key={m.id} style={c.type === "payment" ? [styles.cardRow, owner ? styles.cardMine : styles.cardTheirs] : styles.cardWide}>
         {c.type === "meet_greet" ? (
           <MeetGreetCard ref={current ? meetCard : undefined} booking={b} viewer={header.myRole} onChanged={load} hidePrimary />
         ) : c.type === "agreement" ? (

@@ -59,19 +59,21 @@ export function ChatPaymentCard({ booking, viewer, total, canPay, onPay }: Payme
   const ended = endedLine(booking);
   const paid = !!booking.paidAt;
   const amount = paid ? (booking.priceSnapshot?.total ?? total) : total;
+  // The owner pays, so it is the owner's own card (green); the sitter receives it (white). An ended booking is a system line.
+  const mine = !ended && viewer === "owner";
 
   const body = (
-    <Card tone="blush" style={styles.card} testID="chat-payment-card">
-      <Text style={styles.title}>{ended ?? (paid ? "Paid" : "Payment")}</Text>
+    <Card tone={ended ? "blush" : undefined} style={StyleSheet.flatten([styles.card, mine ? styles.mine : null])} testID="chat-payment-card">
+      <Text style={[styles.title, mine && styles.onGreen]}>{ended ?? (paid ? "Paid" : "Payment")}</Text>
       {ended && booking.refundedAt && viewer === "owner" ? (
-        <Text style={styles.line} testID="payment-refunded">
+        <Text style={[styles.line, mine && styles.onGreen]} testID="payment-refunded">
           {`Refunded in full${booking.priceSnapshot?.total != null ? ` · ${money(booking.priceSnapshot.total)}` : ""}`}
         </Text>
       ) : null}
       {ended ? null : (
         <>
-          {amount != null ? <Text style={styles.total} testID="payment-total">{money(amount)}</Text> : null}
-          <Text style={styles.line}>
+          {amount != null ? <Text style={[styles.total, mine && styles.onGreen]} testID="payment-total">{money(amount)}</Text> : null}
+          <Text style={[styles.line, mine && styles.onGreen]}>
             {paid
               ? "Held until the stay ends"
               : viewer === "owner"
@@ -95,6 +97,8 @@ export function ChatPaymentCard({ booking, viewer, total, canPay, onPay }: Payme
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: 2, maxWidth: "92%", width: "92%" },
+    mine: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },
+    onGreen: { color: theme.color.primaryText },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     line: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     total: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
