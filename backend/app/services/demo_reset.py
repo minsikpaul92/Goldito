@@ -1,10 +1,11 @@
 """Put one demo account (or a whole set) into a known test state (review FB-10 + the temporary demo reset).
 
-Five states, each a point to start a manual test from:
+Six states, each a point to start a manual test from:
 
 - `empty`      the owner has no pets; the sitter has her schedule, services and prices
-- `pets`       the set's two pets (Max + Mochi for the default set) and their past (`demo_history`: two finished stays, a
-               cancelled request, private pages and photos), no chat, no favorite, no current booking
+- `pets`       the set's two pets (Max + Mochi for the default set), nothing else (no chat, no favorite, no booking, never met)
+- `past`       `pets` + their past (`demo_history`: two finished stays, a cancelled request, private pages and photos); the pair
+               has met, there is no current booking
 - `confirmed`  `pets` + one booking the sitter accepted, before checkout (Finish booking)
 - `ready`      the same, paid; drop-off is in an hour, so the sitter's Received is open (it opens 2 h before)
 - `in_care`    paid and received a moment ago: the pets are with the sitter (check-ins, photos, reports)
@@ -45,8 +46,10 @@ from app.services.demo_accounts import (
 )
 
 Scope = Literal["owner", "sitter", "both"]
-State = Literal["empty", "pets", "confirmed", "ready", "in_care"]
-STATES: tuple[State, ...] = ("empty", "pets", "confirmed", "ready", "in_care")
+State = Literal["empty", "pets", "past", "confirmed", "ready", "in_care"]
+STATES: tuple[State, ...] = ("empty", "pets", "past", "confirmed", "ready", "in_care")
+# The states that come with a past (finished stays, a cancelled request, pages and photos): the pair has met.
+WITH_HISTORY: tuple[State, ...] = ("past", "confirmed", "ready", "in_care")
 
 OPEN_DAYS = 60
 # Knowledge chunks that come from stays; the sitter's own policy text (`sitter_policy`) stays.
@@ -638,7 +641,7 @@ def reset(
             if not keep_schedule:
                 open_schedule(client, sitter_id, today)
         sync_display_names(client, owner_id, sitter_id, demo_set, scope)
-        has_pets = state != "empty" and bool(owner_pet_ids(client, owner_id))
+        has_pets = state in WITH_HISTORY and bool(owner_pet_ids(client, owner_id))
         cancelled = (
             (cancel or cancelled_request)(client, owner_id, sitter_id, today, demo_set)
             if has_pets

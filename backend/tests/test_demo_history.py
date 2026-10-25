@@ -27,7 +27,7 @@ def world() -> FakeDB:
     )
 
 
-def run(db: FakeDB, state: str = "pets") -> None:
+def run(db: FakeDB, state: str = "past") -> None:
     demo_history.seed_history(db, OWNER, SITTER, TODAY, state, set_for_key("chloe"), "b-cancelled")
 
 
@@ -89,7 +89,7 @@ def test_a_dog_gets_dog_photos_and_a_cat_cat_photos():
 
 def test_in_care_adds_todays_shared_photos_and_one_private_one_of_the_sitter():
     past, today = world(), world()
-    run(past, "pets")
+    run(past, "past")
     run(today, "in_care")
 
     extra = [p for p in today.tables["feed_posts"]][len(past.tables["feed_posts"]) :]
@@ -142,8 +142,8 @@ def test_reset_builds_the_history_after_the_booking_and_skips_it_without_pets(mo
     monkeypatch.setattr(demo_reset, "sync_display_names", lambda *a, **k: None)
 
     db = world()
-    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
-    demo_reset.reset(db, OWNER, SITTER, TODAY, state="empty", apply=True)
+    for state in ("pets", "past", "empty"):  # empty last: it removes the pets
+        demo_reset.reset(db, OWNER, SITTER, TODAY, state=state, apply=True)
 
-    assert [c[4] for c in calls] == ["pets"]
+    assert [c[4] for c in calls] == ["past"]  # `pets` (never met) and `empty` have no past
     assert calls[0][6] == "b-cancelled"

@@ -48,12 +48,13 @@ cd backend
 .venv/bin/python -m scripts.reset_demo --state ready --apply      # reset 입력 (--yes면 생략)
 ```
 
-`--state`는 `empty` · `pets` · `confirmed` · `ready` · `in_care`. 위 스크립트는 `backend/.env`(서비스 키)가 있는 개발자 PC에서만 — 보통은 앱의 Demo tools를 쓰면 됩니다. `in_care`는 드롭오프를 "지금 + 3분"으로 잡지만 Received까지 끝난 상태라 바로 기록할 수 있습니다(CW-1) — 단 호스팅 DB에 `011i`가 적용되기 전에는 3분 동안 체크인이 막힙니다.
+`--state`는 `empty` · `pets` · `past` · `confirmed` · `ready` · `in_care`. 위 스크립트는 `backend/.env`(서비스 키)가 있는 개발자 PC에서만 — 보통은 앱의 Demo tools를 쓰면 됩니다. `in_care`는 드롭오프를 "지금 + 3분"으로 잡지만 Received까지 끝난 상태라 바로 기록할 수 있습니다(CW-1) — 단 호스팅 DB에 `011i`가 적용되기 전에는 3분 동안 체크인이 막힙니다.
 
 | 상태 | 만들어지는 것 |
 | :--- | :--- |
 | `empty` | 오너 펫 없음, 시터는 스케줄 · 요금 준비됨 |
-| `pets` | Max + Mochi, 현재 예약 없음. 지난 기록은 들어 있음(8월 · 9월에 끝난 돌봄 2건, 취소된 요청 1건, 사진과 Diary, 오너 비공개 글 3개) |
+| `pets` | Max + Mochi, 예약 없음, 만난 적 없음 (UI 이름 **Pets only**) |
+| `past` | `pets` + 지난 기록: 8월 · 9월에 끝난 돌봄 2건, 취소된 요청 1건, 사진과 Diary, 오너 비공개 글 3개. 이미 만난 사이, 현재 예약 없음 (UI 이름 **Past stays**) |
 | `confirmed` | 시터가 수락한 예약, **체크아웃 전** (드롭오프 모레 9:30 AM) |
 | `ready` | 결제까지 끝, **드롭오프 1시간 뒤** → 시터 Received가 바로 열림 |
 | `in_care` | 결제 + **Received까지 끝**, 드롭오프 3분 뒤 → 돌보는 중 (체크인 · 사진 · 알림장 가능) |
@@ -69,7 +70,7 @@ cd backend
 | D | 시터 | 돌보는 동안 쌓기: **체크인** 몇 개(식사 · 배변 · 산책 · 메모, 사진 포함 1개), **할 일 완료**(사진 1~2장 포함), Feed **+ Photo** 2~3장(밥 · 산책 · 낮잠을 섞어서 = CAP), **Diary**에서 알림장 보내기(= REPORT) | Home 숫자가 올라감 |
 | E | 시터 | 예약 상세 → **Returned** | = DONE-1 |
 
-> **직접 요청부터 해 볼 때(`pets` 상태):** 리셋하면 지난 돌봄 2건 때문에 Robert와 Chloe는 **이미 만난 사이**라서 Meet & Greet 없이 시터 버튼이 **Accept**입니다. 처음 만나는 사이의 흐름(아래)은 지난 기록이 생기기 전 설명이고, 지금 그대로 해 보려면 지난 기록을 지운 뒤에 합니다. 이전 설명: 리셋하면 Robert와 Chloe는 "처음 만나는 사이"라서 시터 버튼이 **Accept**가 아니라 **Yes, let\'s meet**입니다. 시터가 Yes → (오너가 일정을 잡거나 **Skip Meet & Greet**를 요청하고 시터가 Continue) → 시터 **Confirm booking** → 오너 결제 순서이고, 단계 막대가 양쪽에 보입니다 (test-guide BOOK-8 ~ 13). 빠르게 가려면 `confirmed` / `ready` / `in_care` 상태를 쓰세요. 같은 날짜에 오너 둘을 받는 시나리오는 Chloe의 Profile에서 **Take pets from more than one owner at a time**을 켠 뒤에 합니다.
+> **직접 요청부터 해 볼 때(`pets` 상태):** 리셋하면 Robert와 Chloe는 "처음 만나는 사이"라서 시터 버튼이 **Accept**가 아니라 **Yes, let\'s meet**입니다. 시터가 Yes → (오너가 일정을 잡거나 **Skip Meet & Greet**를 요청하고 시터가 Continue) → 시터 **Confirm booking** → 오너 결제 순서이고, 단계 막대가 양쪽에 보입니다 (test-guide BOOK-8 ~ 13). 빠르게 가려면 `confirmed` / `ready` / `in_care` 상태를 쓰세요. 같은 날짜에 오너 둘을 받는 시나리오는 Chloe의 Profile에서 **Take pets from more than one owner at a time**을 켠 뒤에 합니다.
 
 > 한 번의 흐름으로 **REPORT · CAP · DONE**을 모두 볼 수 있습니다. D에서 일부러 **하지 않는 것**을 하나 정해 두면(예: 산책 기록을 안 남김) DONE-8의 "지어내지 않음"을 확인하기 좋습니다. **돌보는 중(`in_care`)에서 바로 시작**하려면 C를 건너뛰고 B → D로 가면 됩니다.
 

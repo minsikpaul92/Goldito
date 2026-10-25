@@ -8,12 +8,12 @@ A hosted-database write that cannot be undone, so it is a dry run unless you say
     .venv/bin/python -m scripts.reset_demo --state confirmed     # dry run for another state
     .venv/bin/python -m scripts.reset_demo --apply               # asks you to type reset, then does it
 
-States: `empty` (owner has no pets) · `pets` (Max + Mochi, before any booking, the default) ·
+States: `empty` (owner has no pets) · `pets` (Max + Mochi, never met, the default) · `past` (+ finished stays, no booking) ·
 `confirmed` (a booking the sitter accepted, before checkout) · `ready` (paid, drop-off in an hour: Received is open) ·
 `in_care` (paid and received: the pets are with the sitter). What is deleted and kept:
 app/services/demo_reset.py. The same thing is behind the temporary Demo tools button
 (`POST /api/demo/reset`, only while DEMO_RESET_ENABLED=1).
-Every state but `empty` also gets the past (app/services/demo_history.py): two finished stays, a cancelled request, pages and
+`past`, `confirmed`, `ready` and `in_care` also get the past (app/services/demo_history.py): two finished stays, a cancelled request, pages and
 photos. Upload the photos once first: `python -m scripts.seed_photos --apply`.
 
 Reads SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (and DEMO_PASSWORD for `confirmed`) from
