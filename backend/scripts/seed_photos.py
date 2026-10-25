@@ -18,9 +18,11 @@ import cloudinary.api
 import cloudinary.exceptions
 import cloudinary.uploader
 from app.services import demo_history
-from app.services.cloudinary import INCOMING_IMAGE, configure_cloudinary
+from app.services.cloudinary import configure_cloudinary
 from app.services.demo_accounts import DEFAULT_SET, DEMO_SETS, set_for_key
 
+# The same incoming transformation as a browser upload (`INCOMING_IMAGE`), as the SDK wants it.
+INCOMING = [{"crop": "limit", "width": 2000}, {"quality": "auto"}]
 ASSETS = Path(__file__).resolve().parents[2] / "frontend" / "assets" / "demo"
 
 
@@ -60,7 +62,7 @@ def main() -> int:
                 public_id=public_id,
                 resource_type="image",
                 overwrite=False,
-                transformation=INCOMING_IMAGE,
+                transformation=INCOMING,
             )
     if not args.apply and todo:
         print("Dry run only — add --apply to upload.")
