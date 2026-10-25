@@ -47,11 +47,10 @@ async function newOwner(page: import("@playwright/test").Page) {
   return db;
 }
 
-/** Foods has no Skip: tap None, tick the check, go on. */
+/** Foods has no Skip: tap None, go on (Next is the owner's look at the list, #366). */
 async function passFoods(page: import("@playwright/test").Page) {
   const screen = app(page);
   await screen.getByTestId("own-food-none").click();
-  await screen.getByTestId("own-foods-checked").click();
   await screen.getByTestId("own-next").click();
 }
 
@@ -164,9 +163,8 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-food-else").click();
     await screen.getByTestId("own-food-other-input").fill("Grapes");
     await screen.getByTestId("own-food-other-add").click();
-    // The list counts only after the owner says they checked it.
-    await expect(screen.getByTestId("own-next")).toBeDisabled();
-    await screen.getByTestId("own-foods-checked").click();
+    // No extra checkbox (#366): a chip or None is enough, and Next is the owner's look at the list.
+    await expect(screen.getByTestId("own-foods-checked")).toHaveCount(0);
     await expect(screen.getByTestId("own-next")).toBeEnabled();
     await screen.getByTestId("own-next").click();
 
@@ -535,16 +533,11 @@ test.describe("owner onboarding", () => {
     // The allergy the owner kept on the voice form is already a chosen chip.
     await expect(screen.getByTestId("own-step-foods")).toBeVisible();
     await expect(screen.getByTestId("own-food-chicken")).toHaveAttribute("aria-pressed", "true");
-    // Allergies always get one more look: Next waits for the check, and a change takes the check back.
-    await expect(screen.getByTestId("own-foods-checked")).toHaveAttribute("aria-checked", "false");
-    await expect(screen.getByTestId("own-next")).toBeDisabled();
-    await screen.getByTestId("own-foods-checked").click();
+    // Allergies still get one more look: the voice-heard food is shown on this screen, and only Next here saves it (#366).
+    await expect(screen.getByTestId("own-foods-checked")).toHaveCount(0);
+    await screen.getByTestId("own-food-dairy").click();
+    await screen.getByTestId("own-food-dairy").click();
     await expect(screen.getByTestId("own-next")).toBeEnabled();
-    await screen.getByTestId("own-food-dairy").click();
-    await expect(screen.getByTestId("own-foods-checked")).toHaveAttribute("aria-checked", "false");
-    await expect(screen.getByTestId("own-next")).toBeDisabled();
-    await screen.getByTestId("own-food-dairy").click();
-    await screen.getByTestId("own-foods-checked").click();
     await screen.getByTestId("own-next").click();
     for (const id of ["ownerIntro", "location"]) {
       await expect(screen.getByTestId(`own-step-${id}`)).toBeVisible();
@@ -894,6 +887,38 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-skip-questions")).toBeVisible();
     await screen.getByTestId("own-skip-questions").click();
     await expect(screen.getByTestId("own-step-s:s5")).toBeVisible();
+  });
+
+  test("Skip all on a later question stops at the home address, never past it (#366)", async ({ page }) => {
+    await newOwner(page);
+    await signIn(page, OWNER);
+    const screen = app(page);
+    await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-name").fill("Pip");
+    await screen.getByTestId("own-next").click();
+    for (const step of ["photos", "voice", "breed", "coat", "age", "weight", "petIntro"]) await screen.getByTestId("own-skip").click();
+    await screen.getByTestId("own-skip-questions").click(); // to the health question
+    await expect(screen.getByTestId("own-step-s:s5")).toBeVisible();
+    await screen.getByTestId("own-skip-all").click();
+    await expect(screen.getByTestId("own-step-location")).toBeVisible();
+    // From the address itself Skip all goes on to the summary: the step was shown.
+    await screen.getByTestId("own-skip-all").click();
+    await expect(screen.getByTestId("own-step-summary")).toBeVisible();
+  });
+
+  test("the first question has a Back that asks before signing out; the answers are kept (#366)", async ({ page }) => {
+    await newOwner(page);
+    await signIn(page, OWNER);
+    const screen = app(page);
+    await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-back").click();
+    await expect(screen.getByTestId("own-leave-sheet")).toContainText("Leave sign-up?");
+    await screen.getByTestId("own-leave-sheet-close").click(); // staying does nothing
+    await expect(screen.getByTestId("own-step-species")).toBeVisible();
+    await screen.getByTestId("own-back").click();
+    await screen.getByTestId("own-leave-confirm").click();
+    await expect(page).toHaveURL(/\/welcome/);
   });
 
   test("skip all button in the header corner skips the personality questions to the health question", async ({ page }) => {
