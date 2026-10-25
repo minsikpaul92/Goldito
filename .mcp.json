@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "discord": {
+      "command": "bash",
+      "args": ["tools/discord-mcp/run.sh"]
+    }
+  }
+}

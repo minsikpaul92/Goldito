@@ -52,6 +52,7 @@ Every feature must pass:
 - Phase goals & DoD: `docs/plan/phases/` (see `README.ko.md` index)
 - AI prompt snippets: `docs/plan/P0-ai-prompt-playbook.ko.md`
 - Hackathon rules: `docs/hackathon/README.md`
+- Discord MCP (`.mcp.json`, token in `backend/.env`): QA channel `qa` = `1560683683072180224`
 
 ---
 
