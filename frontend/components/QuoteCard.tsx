@@ -84,8 +84,9 @@ export function QuoteCard({ quote, compact, testID }: Props) {
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    card: { gap: theme.spacing.sm },
-    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    // Same look as the chat quote bubble (Figma): 14 padding, 16 corners, a little letter spacing.
+    card: { gap: theme.spacing.sm, padding: 14, borderRadius: theme.radius.lg },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, letterSpacing: 0.3, color: theme.color.text },
     row: { flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.md },
     totalRow: {
       marginTop: theme.spacing.xs,
@@ -93,7 +94,7 @@ const makeStyles = (theme: Theme) =>
       borderTopWidth: 1,
       borderTopColor: theme.color.border,
     },
-    body: { fontSize: theme.fontSize.body, color: theme.color.text, flexShrink: 1 },
-    total: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    body: { fontSize: theme.fontSize.body, letterSpacing: 0.3, color: theme.color.text, flexShrink: 1 },
+    total: { fontSize: theme.fontSize.body + 2, letterSpacing: 0.3, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    muted: { fontSize: theme.fontSize.small, letterSpacing: 0.3, color: theme.color.textMuted },
   });
