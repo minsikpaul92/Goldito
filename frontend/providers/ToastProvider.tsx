@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useFocusEffect } from "expo-router";
 import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useReduceMotion } from "../components/ui/useReduceMotion";
 import { useTheme, useThemedStyles } from "./ThemeProvider";
@@ -23,15 +24,18 @@ type ToastValue = {
   show: (message: string, options?: ToastOptions) => void;
   /** A pinned footer reports its height so the toast sits above it, not on it. Pass 0 to clear. */
   setBottomInset: (height: number) => void;
+  /** The tab bar reports its real height while a tab screen is in view (0 on other screens, #371). */
+  setTabBarInset: (height: number) => void;
 };
 
-const ToastContext = createContext<ToastValue>({ show: () => {}, setBottomInset: () => {} });
+const ToastContext = createContext<ToastValue>({ show: () => {}, setBottomInset: () => {}, setTabBarInset: () => {} });
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const reduce = useReduceMotion();
   const [bottomInset, setBottomInset] = useState(0);
+  const [tabBarInset, setTabBarInset] = useState(0);
   const [toast, setToast] = useState<{ id: number; message: string; options: ToastOptions } | null>(null);
 
   useEffect(() => {
@@ -41,7 +45,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   const show = useCallback((message: string, options: ToastOptions = {}) => setToast({ id: Date.now(), message, options }), []);
-  const value = useMemo(() => ({ show, setBottomInset }), [show]);
+  const value = useMemo(() => ({ show, setBottomInset, setTabBarInset }), [show]);
+  // Just above what is really at the bottom (#371): the tab bar on a tab screen, plus a pinned footer when one reports
+  // itself. A screen that reports neither keeps the old height, which clears a bar of buttons it draws itself.
+  const below = tabBarInset > 0 || bottomInset > 0 ? tabBarInset + bottomInset : theme.layout.tabBarHeight;
   // Web: the toast rises a little and fades in (CSS, so nothing moves under a pointer); Reduce motion shows it in place.
   const enter =
     Platform.OS === "web" && !reduce
@@ -68,7 +75,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               styles.toast,
               tone === "warning" && styles.toastWarning,
               tone === "error" && styles.toastError,
-              { bottom: theme.layout.tabBarHeight + theme.spacing.md + bottomInset },
+              { bottom: below + theme.spacing.md },
               enter,
             ]}
             testID="toast"
@@ -100,6 +107,23 @@ export function useToast(): ToastValue {
   return useContext(ToastContext);
 }
 
+/**
+ * For a bar of buttons pinned to the bottom that is not a `Screen` footer: put the returned handler on its `onLayout` and
+ * the toast sits above it while the screen is in view (#371).
+ */
+export function useToastAbove(): (event: LayoutChangeEvent) => void {
+  const { setBottomInset } = useToast();
+  const [height, setHeight] = useState(0);
+  useFocusEffect(
+    useCallback(() => {
+      if (height <= 0) return;
+      setBottomInset(height);
+      return () => setBottomInset(0);
+    }, [height, setBottomInset]),
+  );
+  return useCallback((event: LayoutChangeEvent) => setHeight(Math.round(event.nativeEvent.layout.height)), []);
+}
+
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: {
@@ -109,7 +133,7 @@ const makeStyles = (theme: Theme) =>
       position: "absolute",
       left: theme.spacing.md,
       right: theme.spacing.md,
-      // Above the tab bar and any pinned footer (bottom is set at render).
+      // Above the tab bar or a pinned footer (bottom is set at render).
       flexDirection: "row",
       alignItems: "center",
       gap: theme.spacing.sm,

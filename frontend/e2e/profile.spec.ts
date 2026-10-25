@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { app, signIn } from "./helpers";
+import { app, box, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // Role profiles (phase-03 3.8).
@@ -26,6 +26,11 @@ test.describe("profile", () => {
     await screen.getByTestId("profile-save").click();
 
     await expect(screen.getByTestId("toast")).toContainText("Profile saved");
+    // #371: just above the pinned Save, not a tab bar's height higher over the list.
+    const toast = await box(screen.getByTestId("toast"));
+    const save = await box(screen.getByTestId("profile-save"));
+    expect(toast.y + toast.height).toBeLessThanOrEqual(save.y);
+    expect(save.y - (toast.y + toast.height)).toBeLessThan(48);
     await expect(page).toHaveURL(/\/profile$/);
     const row = db.owner_profiles.find((r) => r.id === OWNER.id);
     expect(row?.emergency_contact_name).toBe("Min");
