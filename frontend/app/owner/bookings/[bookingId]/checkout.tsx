@@ -32,7 +32,7 @@ import {
 } from "../../../../lib/bookings";
 import { useSession } from "../../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../../providers/ThemeProvider";
-import { useToast } from "../../../../providers/ToastProvider";
+import { useToast, useToastAbove } from "../../../../providers/ToastProvider";
 import { Theme } from "../../../../theme/themes";
 import { sectionTitleStyle } from "../../../../components/ui/SectionTitle";
 
@@ -55,6 +55,7 @@ type Ready = {
 export default function CheckoutScreen() {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
+  const toastAbove = useToastAbove();
   const session = useSession();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const [ready, setReady] = useState<Ready | null>(null);
@@ -242,7 +243,7 @@ export default function CheckoutScreen() {
         ) : null}
       </Screen>
 
-      <View style={styles.footerBar}>
+      <View style={styles.footerBar} onLayout={toastAbove}>
         {payBlocked ? (
           <Text style={styles.blocked} testID="checkout-pay-why">
             {payBlocked}

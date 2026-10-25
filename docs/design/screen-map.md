@@ -137,9 +137,9 @@ Shows: `ConsentCard` · `QuoteCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Can't open checkout | — | 170 |
-| Button | Add entry info | `checkout-entry-add` | 198 |
-| Button | `totalLabel` | `checkout-pay` | 254 |
+| EmptyState | Can't open checkout | — | 171 |
+| Button | Add entry info | `checkout-entry-add` | 199 |
+| Button | `totalLabel` | `checkout-pay` | 255 |
 
 ### `/owner/bookings/[bookingId]/review` — [app/owner/bookings/[bookingId]/review.tsx](../../frontend/app/owner/bookings/[bookingId]/review.tsx)
 
@@ -1208,7 +1208,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | aria["aria-label"] | `testID` | 61 |
+| Pressable | aria["aria-label"] | `testID` | 62 |
 
 ### ScheduleSheet — [components/ScheduleSheet.tsx](../../frontend/components/ScheduleSheet.tsx)
 

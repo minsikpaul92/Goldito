@@ -1,5 +1,5 @@
-import { Redirect, Stack, Tabs } from "expo-router";
-import { ComponentProps, ReactNode } from "react";
+import { Redirect, Stack, Tabs, useFocusEffect } from "expo-router";
+import { ComponentProps, ReactNode, useCallback } from "react";
 import { ColorValue, Platform, Pressable, StyleProp, Text, View, ViewStyle } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,6 +9,7 @@ import { HeaderActions } from "./HeaderActions";
 import { LoadingView } from "./ui/LoadingView";
 import { Role, homeFor, useSession } from "../providers/SessionProvider";
 import { useTheme } from "../providers/ThemeProvider";
+import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
 
 /** Tab bar icon from the interim outline set (Figma picks the final set). */
@@ -160,6 +161,16 @@ export function RoleTabs({ children }: { children: ReactNode }) {
   const theme = useTheme();
   const pill = theme.ui.tabs === "pill";
   const insets = useSafeAreaInsets();
+  // The toast sits just above the tab bar while a tab is in view, and drops to the screen's own bottom when a screen is
+  // pushed over the tabs (#371).
+  const tabBarHeight = pill ? 70 + Math.max(insets.bottom, 12) : theme.layout.tabBarHeight;
+  const { setTabBarInset } = useToast();
+  useFocusEffect(
+    useCallback(() => {
+      setTabBarInset(tabBarHeight);
+      return () => setTabBarInset(0);
+    }, [tabBarHeight, setTabBarInset]),
+  );
 
   return (
     <Tabs
@@ -173,7 +184,7 @@ export function RoleTabs({ children }: { children: ReactNode }) {
         tabBarStyle: pill
           ? {
               // 10 top + 30 pill + 4 + 16 label + 10, then the safe area (22 on a frameless phone, as in Figma).
-              height: 70 + Math.max(insets.bottom, 12),
+              height: tabBarHeight,
               paddingTop: 10,
               paddingBottom: Math.max(insets.bottom, 12),
               paddingHorizontal: 8,
