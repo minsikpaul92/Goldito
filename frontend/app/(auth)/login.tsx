@@ -88,8 +88,8 @@ export default function LoginScreen() {
       <BackLink onPress={() => router.push("/welcome")} testID="login-back" />
 
       <View style={styles.body}>
+        <BrandLogo height={32} />
         <View style={styles.header}>
-          <BrandLogo height={32} />
           <Text style={styles.title}>Welcome back</Text>
           <Text style={styles.subtitle}>
             Sign in to see today's care updates.

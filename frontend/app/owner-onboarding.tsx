@@ -12,10 +12,10 @@ import { StepFrame } from "../components/ownerOnboarding/StepFrame";
 import { AddressInput } from "../components/AddressInput";
 import { Banner } from "../components/ui/Banner";
 import { Button } from "../components/ui/Button";
-import { CheckRow } from "../components/ui/CheckRow";
 import { LoadingView } from "../components/ui/LoadingView";
 import { LinkButton } from "../components/ui/LinkButton";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
+import { Sheet } from "../components/ui/Sheet";
 import { Stepper } from "../components/ui/Stepper";
 import { TextButton } from "../components/ui/TextButton";
 import {
@@ -83,6 +83,8 @@ export default function OwnerOnboarding() {
   const [locationNote, setLocationNote] = useState<string | null>(null);
   const [otherFood, setOtherFood] = useState("");
   const [showOtherFood, setShowOtherFood] = useState(false);
+  /** Back on the very first question: nothing is before it, so it asks before signing out (#366). */
+  const [leaving, setLeaving] = useState(false);
   // On the summary the card also shows what the typed breed needs (it fills in a moment after).
   const needs = useBreedNeeds(draft?.species ?? null, draft && draft.step === "summary" ? draft.breed : null);
   const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -190,18 +192,46 @@ export default function OwnerOnboarding() {
     step === "ownerIntro" ||
     step === "location";
 
-  // Skipping the personality questions stops at the health question; later steps jump to the summary.
+  // Skipping the personality questions stops at the health question. Later steps never skip the home address (#366):
+  // without a home pin the sitter search has no distance, so Skip all stops at it until it has been shown.
   const skipAll = () => {
     setFromSummary(false);
-    goTo(step === "about" || step.startsWith("q:") ? "s:s5" : "summary");
+    if (step === "about" || step.startsWith("q:")) return goTo("s:s5");
+    const home = ids.indexOf("location");
+    goTo(home > index ? "location" : "summary");
   };
+  // The first question of sign-up: Back asks to sign out (the answers so far are kept for the next sign-in).
+  const firstStep = index === 0 && !draft.ownerDone && !fromSummary;
+
+  // Back on the very first question asks this first (#366).
+  const leaveSheet = firstStep ? (
+    <Sheet
+      visible={leaving}
+      title="Leave sign-up?"
+      onClose={() => setLeaving(false)}
+      testID="own-leave-sheet"
+      footer={
+        <Button
+          label="Sign out"
+          variant="secondary"
+          onPress={() => {
+            setLeaving(false);
+            void session.signOut().then(() => router.replace("/welcome"));
+          }}
+          testID="own-leave-confirm"
+        />
+      }
+    >
+      <Text style={styles.note}>Your answers stay on this device. Sign in to finish.</Text>
+    </Sheet>
+  ) : null;
 
   const frame = (title: string, body: React.ReactNode, footer?: React.ReactNode, hint?: string, skippable = false, rowNext?: React.ReactNode) => (
     <StepFrame
       progress={progress(ids, step)}
       title={title}
       hint={hint}
-      onBack={index > 0 || fromSummary ? back : undefined}
+      onBack={index > 0 || fromSummary ? back : firstStep ? () => setLeaving(true) : undefined}
       onSkip={skippable ? next : undefined}
       rowNext={rowNext}
       onSkipAll={canSkipAll ? skipAll : undefined}
@@ -209,6 +239,7 @@ export default function OwnerOnboarding() {
       testID={`own-step-${step}`}
     >
       {body}
+      {leaveSheet}
     </StepFrame>
   );
 
@@ -246,6 +277,7 @@ export default function OwnerOnboarding() {
       <StepFrame
         progress={0}
         title="What kind of pet do you have?"
+        onBack={firstStep ? () => setLeaving(true) : undefined}
         footer={
           <>
             <Button label="Next" onPress={() => goTo("name")} disabled={total === 0} testID="own-next" />
@@ -262,6 +294,7 @@ export default function OwnerOnboarding() {
         {kindRow("dog", "Dog", "dogs")}
         {kindRow("cat", "Cat", "cats")}
         {error ? <Banner tone="error" body={error} /> : null}
+        {leaveSheet}
       </StepFrame>
     );
   }
@@ -599,12 +632,6 @@ export default function OwnerOnboarding() {
           <BigOption label="Something else" onPress={() => setShowOtherFood(true)} style={styles.half} testID="own-food-else" />
         </View>
         {heardFoods.length > 0 ? heard(heardFoods[0], true, "foods", "We heard") : null}
-        <CheckRow
-          label="I checked this list"
-          checked={draft.foodsChecked}
-          onChange={(foodsChecked) => update({ foodsChecked })}
-          testID="own-foods-checked"
-        />
         {showOtherFood ? (
           <View style={styles.row}>
             <View style={styles.rowInput}>
@@ -624,7 +651,16 @@ export default function OwnerOnboarding() {
       undefined,
       "If there are none, tap None.",
       false,
-      nextButton(!draft.foodsChecked || (foods.length === 0 && draft.safety.s6 !== "none")),
+      // No extra checkbox (#366): Next on this screen is the owner's look at the list, voice-heard foods included.
+      <Button
+        label="Next"
+        onPress={() => {
+          update({ foodsChecked: true });
+          next();
+        }}
+        disabled={foods.length === 0 && draft.safety.s6 !== "none"}
+        testID="own-next"
+      />,
     );
   }
 

@@ -114,6 +114,7 @@ export default function SettingsScreen() {
       </List>
 
       <List>
+        <ListRow title="Terms of Service" onPress={() => router.push("/terms")} testID="settings-terms" />
         <ListRow title="Privacy" onPress={() => router.push("/privacy")} testID="settings-privacy" />
         <ListRow title="Sign out" tone="danger" onPress={() => setConfirmLogOut(true)} testID="settings-log-out" />
       </List>
