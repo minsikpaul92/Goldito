@@ -306,11 +306,11 @@ def test_each_booked_state_starts_where_its_test_needs_it():
 
     confirmed_drop, confirmed_pick = demo_reset.stay_times("confirmed", now, TODAY)
     assert (confirmed_drop.date().isoformat(), confirmed_drop.hour, confirmed_drop.minute) == (
-        "2026-10-11",
+        "2026-10-10",
         9,
         30,
     )
-    assert confirmed_pick.date().isoformat() == "2026-10-14"
+    assert confirmed_pick.date().isoformat() == "2026-10-13"
 
     # `ready`: an hour away, inside the 2 h before which the sitter cannot tap Received.
     ready_drop, ready_pick = demo_reset.stay_times("ready", now, TODAY)

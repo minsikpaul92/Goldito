@@ -371,7 +371,7 @@ def stay_times(state: State, now: datetime, today: date) -> tuple[datetime, date
             minutes=3
         )  # a request cannot start in the past, so a little ahead
     else:
-        drop_off = datetime.combine(today + timedelta(days=2), time(9, 30), now.tzinfo)
+        drop_off = datetime.combine(today + timedelta(days=1), time(9, 30), now.tzinfo)
     pick_up = datetime.combine(drop_off.date() + timedelta(days=3), time(17, 0), now.tzinfo)
     return drop_off, pick_up
 
