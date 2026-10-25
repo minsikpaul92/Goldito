@@ -727,7 +727,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | ``${name}'s photos`` | `chat-header-avatar` | 44 |
 | Pressable | ``${name}'s profile`` | `chat-header-name` | 48 |
-| Sheet | open?.name ?? "" | `chat-pet-sheet` | 55 |
+| Sheet | open?.name ?? "" | `chat-pet-sheet` | 59 |
 
 ### ChatList — [components/ChatList.tsx](../../frontend/components/ChatList.tsx)
 

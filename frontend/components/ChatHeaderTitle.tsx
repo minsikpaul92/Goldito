@@ -50,8 +50,12 @@ export function ChatHeaderTitle({ threadId, showPets, name, cover, stay, onAvata
             {name}
           </Text>
         </Pressable>
-        {showPets && faces.length > 0 ? <ChatPetRow pets={faces} onPressPet={setOpen} /> : null}
       </View>
+      {showPets && faces.length > 0 ? (
+        <View style={styles.pets}>
+          <ChatPetRow pets={faces} onPressPet={setOpen} />
+        </View>
+      ) : null}
       <Sheet visible={open !== null} title={open?.name ?? ""} onClose={() => setOpen(null)} testID="chat-pet-sheet">
         {open ? <PetGlance petId={open.id} bare emptyText={[open.species === "cat" ? "Cat" : "Dog", open.breed].filter(Boolean).join(" · ")} testID={`chat-pet-glance-${open.name}`} /> : null}
       </Sheet>
@@ -61,7 +65,8 @@ export function ChatHeaderTitle({ threadId, showPets, name, cover, stay, onAvata
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    root: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, maxWidth: 300 },
+    root: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, flex: 1, maxWidth: 340 },
+    pets: { flexShrink: 1, marginLeft: "auto" },
     text: { flexShrink: 1 },
     name: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
   });
