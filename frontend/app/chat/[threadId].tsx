@@ -546,6 +546,7 @@ export default function Chat() {
                 role={header.myRole}
                 final={isFinal(m.id)}
                 side={m.senderId === me ? "me" : "them"}
+                from={m.senderId === me ? undefined : `${header.otherName} · ${formatStamp(m.at)}`}
                 busy={quoteBusy}
                 onConfirm={() => void quoteAction(() => confirmQuote(m.id))}
                 onDecline={isFinal(m.id) && booking ? () => setDeclining({ quote: true }) : undefined}

@@ -26,16 +26,16 @@ Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreement
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load this chat | — | 239 |
 | EmptyState | Chat not found | — | 247 |
-| Pressable | — | `chat-stage` | 584 |
-| Button | `footerPrimary.label` | `footerPrimary.kind === "request" ? "chat-request-booking" : `chat-next-${footerPrimary.kind}`` | 606 |
-| Button | Send quote | `chat-send-quote` | 613 |
-| TextButton | Send quote | `chat-send-quote` | 616 |
-| TextButton | Decline | `chat-decline` | 619 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 646 |
-| Pressable | — | `chat-action-chip` | 667 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 678 |
-| Pressable | Send a card | `chat-plus` | 694 |
-| Pressable | Send | `chat-send` | 727 |
+| Pressable | — | `chat-stage` | 585 |
+| Button | `footerPrimary.label` | `footerPrimary.kind === "request" ? "chat-request-booking" : `chat-next-${footerPrimary.kind}`` | 607 |
+| Button | Send quote | `chat-send-quote` | 614 |
+| TextButton | Send quote | `chat-send-quote` | 617 |
+| TextButton | Decline | `chat-decline` | 620 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 647 |
+| Pressable | — | `chat-action-chip` | 668 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 679 |
+| Pressable | Send a card | `chat-plus` | 695 |
+| Pressable | Send | `chat-send` | 728 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -760,8 +760,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Confirm quote | `quote-confirm` | 100 |
-| TextButton | Decline | `quote-decline` | 103 |
+| Button | Confirm quote | `quote-confirm` | 103 |
+| TextButton | Decline | `quote-decline` | 106 |
 
 ### ChatQuoteSheets — [components/ChatQuoteSheets.tsx](../../frontend/components/ChatQuoteSheets.tsx)
 
