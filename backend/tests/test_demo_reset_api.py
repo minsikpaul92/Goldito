@@ -90,6 +90,44 @@ def test_a_demo_account_resets_to_the_chosen_state(client: TestClient, monkeypat
     assert seen == {"owner": "o1", "sitter": "s1", "state": "confirmed", "apply": True}
 
 
+def test_a_dropped_connection_gets_one_more_go(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    import httpx
+
+    enable(monkeypatch)
+    sign_in_as(DEMO_OWNER)
+    calls = []
+
+    def flaky_reset(*_a, **_k):
+        calls.append(1)
+        if len(calls) == 1:
+            raise httpx.RemoteProtocolError("Server disconnected")
+        return [("bookings", 2)]
+
+    monkeypatch.setattr(demo.demo_reset, "reset", flaky_reset)
+
+    response = client.post("/api/demo/reset", json={"state": "past"})
+
+    assert response.status_code == 200
+    assert len(calls) == 2
+
+
+def test_a_connection_that_keeps_dropping_is_reported(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    import httpx
+
+    enable(monkeypatch)
+    sign_in_as(DEMO_OWNER)
+
+    def always_down(*_a, **_k):
+        raise httpx.RemoteProtocolError("Server disconnected")
+
+    monkeypatch.setattr(demo.demo_reset, "reset", always_down)
+
+    response = client.post("/api/demo/reset", json={"state": "past"})
+
+    assert response.status_code == 500
+    assert "Server disconnected" in response.json()["detail"]
+
+
 def test_rpc_json_accepts_the_empty_answer_of_a_void_function(monkeypatch: pytest.MonkeyPatch):
     import httpx
     from app.services import authz

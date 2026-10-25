@@ -13,6 +13,7 @@ from datetime import datetime
 from typing import Literal
 from zoneinfo import ZoneInfo
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
@@ -60,7 +61,13 @@ def reset_demo(body: ResetRequest, user: CurrentUser = Depends(get_current_user)
     if not lock.acquire(blocking=False):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A reset is already running. Wait for it to finish.")
     try:
-        report = demo_reset.reset(client, owner_id, sitter_id, today, state=body.state, apply=True, demo_set=demo_set, scope=scope)
+        try:
+            report = demo_reset.reset(client, owner_id, sitter_id, today, state=body.state, apply=True, demo_set=demo_set, scope=scope)
+        except httpx.TransportError:
+            # A long reset can find its Supabase connection closed by the server ("Server disconnected"). The dead
+            # connection is dropped, and the reset starts with deleting, so a second go from the top is safe.
+            logger.warning("demo reset: connection dropped, trying once more")
+            report = demo_reset.reset(client, owner_id, sitter_id, today, state=body.state, apply=True, demo_set=demo_set, scope=scope)
     except Exception as exc:
         # An HTTPException keeps the CORS headers; a bare 500 does not, and the browser then only says "Failed to fetch".
         logger.exception("demo reset failed")
