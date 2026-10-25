@@ -124,7 +124,7 @@ test.describe("meet & greet", () => {
     await screen.getByTestId("meet-done").click();
     await screen.getByTestId("meet-done-early-confirm").click();
     await expect(screen.getByTestId("toast")).toContainText("Meet & Greet done");
-    await expect(screen.getByTestId("meet-greet")).toContainText("Met ✓");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Met");
     await expect(screen.getByTestId("accept-booking")).toBeEnabled();
     await screen.getByTestId("accept-booking").click();
     // 014o: the sitter's yes is half of the agreement; the owner still has to say "I'd like to book".

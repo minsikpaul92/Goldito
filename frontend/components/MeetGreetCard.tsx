@@ -133,7 +133,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
       <Card style={styles.card} tone="blush" testID="meet-greet">
         <Text style={styles.muted}>
           {status === "done"
-            ? `Met ✓${summary ? ` · ${summary}` : ""}`
+            ? `Met${summary ? ` · ${summary}` : ""}`
             : status === "skipped"
               ? "Meet & Greet skipped, you both agreed"
               : `Meet & Greet: ${summary ?? "not scheduled"}`}
@@ -392,12 +392,10 @@ const makeStyles = (theme: Theme) =>
     },
     title: {
       fontSize: theme.fontSize.body,
-      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     label: {
-      fontSize: theme.fontSize.small,
-      fontWeight: theme.fontWeight.semibold,
+      fontSize: theme.fontSize.body,
       color: theme.color.textMuted,
     },
     body: {
@@ -405,7 +403,7 @@ const makeStyles = (theme: Theme) =>
       color: theme.color.text,
     },
     muted: {
-      fontSize: theme.fontSize.small,
+      fontSize: theme.fontSize.body,
       color: theme.color.textMuted,
     },
     error: {

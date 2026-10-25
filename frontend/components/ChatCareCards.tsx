@@ -113,8 +113,8 @@ const makeStyles = (theme: Theme) =>
     wrap: { width: "100%", alignItems: "center", gap: theme.spacing.sm },
     row: { width: "100%", alignItems: "center" },
     card: { gap: theme.spacing.sm, maxWidth: "92%", width: "92%" },
-    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    caption: { fontSize: theme.fontSize.small, color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
+    muted: { fontSize: theme.fontSize.body, color: theme.color.textMuted, textAlign: "center" },
+    caption: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
     photo: { width: "100%", aspectRatio: 1, borderRadius: theme.ui.radius.card, backgroundColor: theme.color.border },
   });

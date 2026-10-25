@@ -877,7 +877,7 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("chat-next-meet")).toHaveText("Done, we met");
     await screen.getByTestId("chat-next-meet").click();
     await screen.getByTestId("meet-done-early-confirm").click();
-    await expect(screen.getByTestId("meet-greet")).toContainText("Met ✓");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Met");
     expect((await circles(screen)).label).toBe("Step 3 of 5");
 
     // Both say yes: the owner after reading the summary, the sitter with one tap, in either order.
@@ -886,7 +886,7 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("agree-sheet")).toContainText("Max");
     await expect(screen.getByTestId("agree-price")).toHaveText("$268.13");
     await screen.getByTestId("agree-submit").click();
-    await expect(screen.getByTestId("agreement-owner")).toContainText("✓ Robert would like to book");
+    await expect(screen.getByTestId("agreement-owner")).toContainText("Robert would like to book");
     await expect(screen.getByTestId("chat-waiting")).toHaveText("Waiting for Chloe");
     await expect(screen.getByTestId("chat-next-pay")).toHaveCount(0); // nobody pays before both said yes
     expect(db.bookings[0].status).toBe("requested");
@@ -945,7 +945,7 @@ test.describe("chat hub", () => {
     const screen = app(page);
     await screen.getByTestId("chat-next-accept").click();
     await expect(screen.getByTestId("agreement-owner")).toContainText("Robert: not yet");
-    await expect(screen.getByTestId("agreement-sitter")).toContainText("✓ Chloe accepts");
+    await expect(screen.getByTestId("agreement-sitter")).toContainText("Chloe accepts");
 
     // Robert taps I'd like to book on his phone; the sitter's chat follows.
     db.bookings[0].owner_agreed_at = new Date().toISOString();
@@ -968,7 +968,7 @@ test.describe("chat hub", () => {
     expect(db.bookings[0].status).toBe("requested"); // one yes is not a booking
 
     screen = await openChatAs(page, OWNER);
-    await expect(screen.getByTestId("agreement-sitter")).toContainText("✓ Chloe accepts");
+    await expect(screen.getByTestId("agreement-sitter")).toContainText("Chloe accepts");
     await screen.getByTestId("chat-next-agree").click();
     await screen.getByTestId("agree-submit").click();
     await expect(screen.getByTestId("chat-agreement-card")).toContainText("Booked, you both agreed");

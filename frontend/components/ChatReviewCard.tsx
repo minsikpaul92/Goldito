@@ -72,6 +72,6 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     wrap: { width: "92%", alignSelf: "center", gap: theme.spacing.sm },
     card: { gap: theme.spacing.sm },
-    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    body: { fontSize: theme.fontSize.body, color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
+    body: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
   });

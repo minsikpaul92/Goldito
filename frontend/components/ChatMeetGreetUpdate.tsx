@@ -62,7 +62,7 @@ const makeStyles = (theme: Theme) =>
       borderRadius: theme.radius.lg,
       backgroundColor: theme.color.blockBlush,
     },
-    title: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text, textAlign: "center" },
-    line: { fontSize: theme.fontSize.small, color: theme.color.text, textAlign: "center" },
+    title: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
+    line: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
     stamp: { fontSize: theme.fontSize.caption, color: theme.color.textMuted },
   });

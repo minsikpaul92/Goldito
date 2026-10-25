@@ -500,7 +500,7 @@ export default function Chat() {
     const final = finalQuote(messages, b.id);
     const total = b.paidAt ? (b.priceSnapshot?.total ?? null) : final?.card.status === "confirmed" ? final.card.total : null;
     return (
-      <View key={m.id} style={c.type === "payment" ? [styles.cardRow, owner ? styles.cardMine : styles.cardTheirs] : styles.cardWide}>
+      <View key={m.id} style={c.type === "payment" && !(b.status === "cancelled" || b.status === "declined") ? [styles.cardRow, owner ? styles.cardMine : styles.cardTheirs] : styles.cardWide}>
         {c.type === "meet_greet" ? (
           <MeetGreetCard ref={current ? meetCard : undefined} booking={b} viewer={header.myRole} onChanged={load} hidePrimary />
         ) : c.type === "agreement" ? (
@@ -801,10 +801,10 @@ const makeStyles = (theme: Theme) =>
     mine: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },
     theirs: {},
     onGreen: { color: theme.color.primaryText },
-    requestTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    requestLine: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    requestNote: { fontSize: theme.fontSize.small, color: theme.color.text, fontStyle: "italic", marginTop: 2 },
-    requestLive: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary, marginTop: 2 },
+    requestTitle: { fontSize: theme.fontSize.body, color: theme.color.text },
+    requestLine: { fontSize: theme.fontSize.body, color: theme.color.textMuted },
+    requestNote: { fontSize: theme.fontSize.body, color: theme.color.text, fontStyle: "italic", marginTop: 2 },
+    requestLive: { fontSize: theme.fontSize.body, color: theme.color.primary, marginTop: 2 },
     next: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
     chipsScroll: { flexGrow: 0, maxWidth: 480, width: "100%", alignSelf: "center" },
     chips: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.md },

@@ -327,7 +327,7 @@ test.describe("the pets changing hands in the chat", () => {
     db.trips.push(runningTrip({ status: "completed", ended_at: new Date(Date.now() - 60_000).toISOString(), last_lat: null, last_lng: null, last_at: null, eta_at: null, distance_m: null }));
 
     let screen = await openChatAs(page, SITTER);
-    await expect(screen.getByTestId("chat-trip-arrived")).toContainText("Robert arrived ✓");
+    await expect(screen.getByTestId("chat-trip-arrived")).toContainText("Robert arrived");
     await screen.getByTestId("chat-received").click();
     await expect(screen.getByTestId("chat-stay-incare")).toContainText("Max is with you");
     expect(db.booking_handoffs.find((h) => h.kind === "drop_off")?.completed_at).toBeTruthy();
@@ -420,7 +420,7 @@ test.describe("the pets changing hands in the chat", () => {
     await screen.getByTestId("chat-trip-arrive").click();
     await expect.poll(() => db.trips[0].status).toBe("completed");
     // The owner's card says they are there, with no Start trip again and the hello to send.
-    await expect(screen.getByTestId("chat-trip-arrived")).toContainText("You've arrived ✓");
+    await expect(screen.getByTestId("chat-trip-arrived")).toContainText("You've arrived");
     await expect(screen.getByTestId("chat-trip-start")).toHaveCount(0);
     await expect(screen.getByTestId("trip-greet")).toHaveText("Please take care of them");
     // …and the + menu has no Start trip for it either (no second trip to the same handoff).
@@ -429,7 +429,7 @@ test.describe("the pets changing hands in the chat", () => {
     await screen.getByTestId("chat-plus-menu-close").click();
 
     screen = await openChatAs(page, SITTER);
-    await expect(screen.getByTestId("chat-trip-arrived")).toContainText("Robert arrived ✓");
+    await expect(screen.getByTestId("chat-trip-arrived")).toContainText("Robert arrived");
     // Now the + menu's Received is on too.
     await screen.getByTestId("chat-plus").click();
     await expect(screen.getByTestId("chat-plus-received")).toBeEnabled();
