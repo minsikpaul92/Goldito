@@ -206,7 +206,7 @@ export function ChatTripCard({ booking, viewer, threadId, messages, onSent, star
       ) : null}
       {there ? null : next && canStart && Date.now() < opens ? (
         <Card tone="blush" style={styles.card} testID="chat-trip-waiting">
-          <Text style={styles.muted}>{`You can start the trip from ${formatTime(isoToZoned(new Date(opens).toISOString()).time)}.`}</Text>
+          <Text style={styles.oneLine}>{`You can start the trip from ${formatTime(isoToZoned(new Date(opens).toISOString()).time)}.`}</Text>
         </Card>
       ) : next && canStart ? (
         <Card tone="blush" style={styles.card} testID="chat-trip-start">
@@ -232,6 +232,8 @@ const makeStyles = (theme: Theme) =>
     card: { gap: theme.spacing.sm, maxWidth: "92%", width: "92%" },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text, textAlign: "center" },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center" },
+    // The one-line system message: same size and color as "Booked, you both agreed".
+    oneLine: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
     // A quick reply, not a main button (#250): Track and Received stay the actions.
     chip: {
       alignSelf: "flex-start",
