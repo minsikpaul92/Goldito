@@ -365,7 +365,7 @@ test.describe("meet & greet", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, { meet_greet_status: "agreed", meet_greet_mode: "video", meet_greet_at: "2030-10-04T23:00:00.000Z", meet_greet_proposed_by: SITTER.id });
     let screen = await openDetail(page, OWNER);
-    await expect(screen.getByTestId("stage-step-1")).toHaveText("M&G");
+    await expect(screen.getByTestId("stage-step-1")).toHaveText("Meet");
     await expect(screen.getByTestId("stage-step-1")).toHaveAttribute("aria-label", "Meet & Greet");
     await expect(screen.getByTestId("stage-note-1")).toHaveText("Scheduled");
 
@@ -374,7 +374,7 @@ test.describe("meet & greet", () => {
     screen = app(page);
     await expect(screen.getByTestId("stage-note-1")).toHaveText("Skipped");
     // The step is passed without a check: "–" in its circle (Request keeps its ✓).
-    await expect(screen.getByTestId("stage-bar")).toContainText("✓Request–M&G");
+    await expect(screen.getByTestId("stage-bar")).toContainText("✓Request–Meet");
   });
 
   test("declining a skip asks first and ends the request", async ({ page }) => {

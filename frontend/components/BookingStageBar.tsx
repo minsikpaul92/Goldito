@@ -9,7 +9,7 @@ import { Theme } from "../theme/themes";
 
 const FIRST_TIME = ["Request", "Meet & Greet", "Confirm", "Pay", "Care"];
 /** "Meet & Greet" does not fit a fifth of a 360 px phone (#237); screen readers still hear the full name. */
-const short = (label: string) => (label === "Meet & Greet" ? "M&G" : label);
+const short = (label: string) => (label === "Meet & Greet" ? "Meet" : label);
 const REPEAT = ["Request", "Confirm", "Pay", "Care"];
 
 /** Which step is current (D60); `steps.length` = everything done. Ended bookings have no bar. */
