@@ -1,6 +1,5 @@
-import { router } from "expo-router";
 import { ReactNode, useEffect, useMemo, useState } from "react";
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { FeedDeleteSheet } from "./FeedDeleteSheet";
 import { FeedEditSheet } from "./FeedEditSheet";
@@ -14,6 +13,7 @@ import { LoadingView } from "./ui/LoadingView";
 import { sectionTitleStyle } from "./ui/SectionTitle";
 import { TextButton } from "./ui/TextButton";
 import { appToday, isoToZoned } from "../features/schedule/dates";
+import { NO_PET_FOUND, stickerFromPhoto } from "../features/snap/photoSticker";
 import { useSession } from "../providers/SessionProvider";
 import { deliveryUrl, thumbUrl, videoPosterUrl } from "../lib/cloudinary";
 import {
@@ -57,6 +57,8 @@ type Props = {
   onRemoved: (postId: string) => void;
   /** A photo changed: hidden or brought back, or edited by its author. */
   onPostChange: (postId: string, change: Partial<FeedTimelinePost>) => void;
+  /** Fetch the feed again (a sticker was added). */
+  onRefresh?: () => void;
   /** The pet dropdown, left of the chips. */
   /** Pets by id, when the Feed shows several together: each photo then carries its pet's face. */
   faces?: Record<string, PetFaceInfo>;
@@ -91,6 +93,7 @@ export function FeedBrowser({
   currentUserId,
   onRemoved,
   onPostChange,
+  onRefresh,
   faces,
   emptyMessage,
   error,
@@ -123,13 +126,28 @@ export function FeedBrowser({
 
   const cell = width > 0 ? (width - 2 * SIDE - 2 * GAP) / 3 : 0;
 
-  // A photo (not a clip or a sticker) can become a sticker: the sticker maker opens with it already cut out.
-  const canSticker = (post: FeedTimelinePost) => post.media.resourceType === "image" && post.media.purpose !== "sticker";
-  const makeSticker = (id: string) => {
+  // A photo (not a clip or a sticker) can become a sticker right here: a spinner over the photo while it is cut out.
+  const [making, setMaking] = useState(false);
+  const canSticker = (post: FeedTimelinePost) =>
+    Platform.OS === "web" && post.media.resourceType === "image" && post.media.purpose !== "sticker";
+  const petNames = faces ? Object.fromEntries(Object.entries(faces).flatMap(([id, f]) => (f.name ? [[id, f.name]] : []))) : undefined;
+  const makeSticker = async (id: string) => {
     const post = posts.find((p) => p.id === id);
-    if (!post || !profile || !canSticker(post)) return;
-    setViewerId(null);
-    router.push({ pathname: `/${profile.role}/snap/sticker`, params: { pet: post.petId, photo: post.media.publicId } });
+    if (!post || !profile || making || !canSticker(post)) return;
+    setMaking(true);
+    try {
+      await stickerFromPhoto({ publicId: post.media.publicId, petId: post.petId, me: profile.id });
+      setViewerId(null);
+      const name = petNames?.[post.petId];
+      toast.show(name ? `Paw-fect! Saved to ${name}'s stickers` : "Paw-fect! Sticker saved");
+      onRefresh?.();
+    } catch (err) {
+      setViewerId(null);
+      const message = err instanceof Error ? err.message : "";
+      toast.show(message === NO_PET_FOUND ? message : "Couldn't make a sticker. Try again.");
+    } finally {
+      setMaking(false);
+    }
   };
 
   const hide = async (id: string, hidden: boolean) => {
@@ -222,7 +240,7 @@ export function FeedBrowser({
           ) : null
         }
         renderItem={({ item, index }) => (
-          <MosaicRowView row={item} first={index === 0} cell={cell} onOpen={setViewerId} onSticker={makeSticker} canSticker={canSticker} faces={faces} />
+          <MosaicRowView row={item} first={index === 0} cell={cell} onOpen={setViewerId} faces={faces} />
         )}
         testID={testID ?? "feed-list"}
       />
@@ -230,7 +248,7 @@ export function FeedBrowser({
       <FeedViewer
         visible={viewerId != null && pendingId == null && editId == null}
         posts={shown}
-        petNames={faces ? Object.fromEntries(Object.entries(faces).flatMap(([id, f]) => (f.name ? [[id, f.name]] : []))) : undefined}
+        petNames={petNames}
         initialPostId={viewerId}
         onClose={() => setViewerId(null)}
         onNearEnd={onLoadMore}
@@ -241,7 +259,8 @@ export function FeedBrowser({
           setEditId(id);
         }}
         canSticker={canSticker}
-        onMakeSticker={makeSticker}
+        onMakeSticker={(id) => void makeSticker(id)}
+        busy={making}
         onHide={(id) => void hide(id, true)}
         onUnhide={(id) => void hide(id, false)}
         onRequestDelete={(id) => {
@@ -269,16 +288,12 @@ function MosaicRowView({
   first,
   cell,
   onOpen,
-  onSticker,
-  canSticker,
   faces,
 }: {
   row: MosaicRow;
   first: boolean;
   cell: number;
   onOpen: (postId: string) => void;
-  onSticker: (postId: string) => void;
-  canSticker: (post: FeedTimelinePost) => boolean;
   faces?: Record<string, PetFaceInfo>;
 }) {
   const styles = useThemedStyles(makeStyles);
@@ -296,10 +311,10 @@ function MosaicRowView({
     const big = 2 * cell + GAP;
     return (
       <View style={[styles.row, { height: big }]} testID="feed-hero-row">
-        <FeedCell post={row.hero} w={big} h={big} onOpen={onOpen} onSticker={canSticker(row.hero) ? onSticker : undefined} faces={faces} />
+        <FeedCell post={row.hero} w={big} h={big} onOpen={onOpen} faces={faces} />
         <View style={styles.side}>
           {row.side.map((post) => (
-            <FeedCell key={post.id} post={post} w={cell} h={cell} onOpen={onOpen} onSticker={canSticker(post) ? onSticker : undefined} faces={faces} />
+            <FeedCell key={post.id} post={post} w={cell} h={cell} onOpen={onOpen} faces={faces} />
           ))}
         </View>
       </View>
@@ -308,7 +323,7 @@ function MosaicRowView({
   return (
     <View style={styles.row}>
       {row.posts.map((post) => (
-        <FeedCell key={post.id} post={post} w={cell} h={cell} onOpen={onOpen} onSticker={canSticker(post) ? onSticker : undefined} faces={faces} />
+        <FeedCell key={post.id} post={post} w={cell} h={cell} onOpen={onOpen} faces={faces} />
       ))}
     </View>
   );
@@ -319,15 +334,12 @@ function FeedCell({
   w,
   h,
   onOpen,
-  onSticker,
   faces,
 }: {
   post: FeedTimelinePost;
   w: number;
   h: number;
   onOpen: (postId: string) => void;
-  /** A long press turns the photo into a sticker (photos only). */
-  onSticker?: (postId: string) => void;
   faces?: Record<string, PetFaceInfo>;
 }) {
   const styles = useThemedStyles(makeStyles);
@@ -348,8 +360,6 @@ function FeedCell({
       accessibilityRole="button"
       accessibilityLabel={`${tagLabel ?? "Photo"} at ${time}`}
       onPress={() => onOpen(post.id)}
-      onLongPress={onSticker ? () => onSticker(post.id) : undefined}
-      delayLongPress={600}
       style={[styles.cell, { width: w, height: h }, isSticker && styles.stickerGround, post.hidden && styles.dim]}
       testID={`feed-card-${post.id}`}
     >

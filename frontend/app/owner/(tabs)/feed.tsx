@@ -224,6 +224,7 @@ function OwnerFeed() {
           )
         }
         faces={facePets}
+        onRefresh={() => void loadPage(0, false, true)}
         emptyMessage="Your sitter will share photos here."
         error={feed.status === "error" && posts.length === 0 ? { message: feed.message, onRetry: () => void loadPage(0, false) } : null}
         testID="owner-feed-list"

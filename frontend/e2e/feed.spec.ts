@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-import { caring } from "./careFixtures";
+import { caring, mockUpload } from "./careFixtures";
 import { HOUR } from "./careFixtures";
 import { NOON_TORONTO, app, box, drag, signIn } from "./helpers";
 import { OWNER, SITTER, mockFeedApi, mockSupabase } from "./supabaseMock";
@@ -658,7 +658,35 @@ test.describe("Feed pet dropdown and switch", () => {
     await expect(app(page).getByTestId("feed-viewer-close")).toBeVisible();
   });
 
-  test("Make a sticker in the detail, or a long press on a photo, opens the sticker maker with that photo; a clip has neither", async ({ page }) => {
+  test("Make a sticker, or press and hold the photo, cuts the pet out right there and saves it; a clip has neither", async ({ page }) => {
+    // MediaPipe is replaced by test hooks: a fixed box and an elliptic mask; the sticker itself is drawn by the app.
+    await page.addInitScript(() => {
+      (window as unknown as { __goldiVision: unknown }).__goldiVision = {
+        loadFrames: () => {
+          const frame = document.createElement("canvas");
+          frame.width = 200;
+          frame.height = 150;
+          const ctx = frame.getContext("2d")!;
+          ctx.fillStyle = "#888";
+          ctx.fillRect(0, 0, 200, 150);
+          return [frame];
+        },
+        detectPets: () => [{ x: 0.2, y: 0.2, w: 0.5, h: 0.6, label: "dog", score: 0.9 }],
+        segmentAt: (_frame: HTMLCanvasElement, point: { x: number; y: number }) => {
+          const width = 200;
+          const height = 150;
+          const data = new Float32Array(width * height);
+          for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+              const dx = (x / width - point.x) / 0.15;
+              const dy = (y / height - point.y) / 0.2;
+              data[y * width + x] = dx * dx + dy * dy <= 1 ? 1 : 0;
+            }
+          }
+          return { width, height, data };
+        },
+      };
+    });
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
     photo(db, "max-1", PET_ID);
@@ -667,6 +695,7 @@ test.describe("Feed pet dropdown and switch", () => {
       id: "clip", pet_id: PET_ID, sitter_id: SITTER.id, posted_by: SITTER.id, visibility: "shared", media_id: "m-clip",
       caption: "clip", caption_source: "fallback", task_log_id: null, created_at: new Date(Date.now() - 60 * 60_000).toISOString(),
     });
+    await mockUpload(page, db, PET_ID);
     await signIn(page, OWNER);
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/owner/feed");
@@ -675,20 +704,23 @@ test.describe("Feed pet dropdown and switch", () => {
     await expect(app(page).getByTestId("feed-viewer-sticker")).toHaveCount(0);
     await app(page).getByTestId("feed-viewer-close").click();
 
+    // The button: it works in place (no new screen), the viewer closes and a toast says it is saved.
     await app(page).getByTestId("feed-card-max-1").click();
     await app(page).getByTestId("feed-viewer-sticker").click();
-    await expect(page).toHaveURL(new RegExp(`/owner/snap/sticker\\?pet=${PET_ID}&photo=`));
+    await expect(app(page).getByTestId("toast")).toContainText("Paw-fect!");
+    await expect(app(page).getByTestId("feed-viewer")).toHaveCount(0);
+    expect(db.pet_stickers).toHaveLength(1);
+    expect(db.pet_stickers[0]).toMatchObject({ pet_id: PET_ID, created_by: OWNER.id });
+    await expect(page).toHaveURL(/\/owner\/feed$/);
 
-    // The pet finder is not there in this test, so the maker says so; close that and come back.
-    await app(page).getByRole("button", { name: "Close" }).click();
-    await page.goBack();
-    await app(page).getByTestId("feed-filters").waitFor();
-    const card = await box(app(page).getByTestId("feed-card-max-1"));
-    await page.mouse.move(card.x + card.width / 2, card.y + card.height / 2);
+    // Press and hold on the photo does the same.
+    await app(page).getByTestId("feed-card-max-1").click();
+    const media = await box(app(page).getByTestId("feed-viewer-media"));
+    await page.mouse.move(media.x + media.width / 2, media.y + media.height / 2);
     await page.mouse.down();
     await page.waitForTimeout(800);
     await page.mouse.up();
-    await expect(page).toHaveURL(new RegExp(`/owner/snap/sticker\\?pet=${PET_ID}&photo=`));
+    await expect.poll(() => db.pet_stickers.length).toBe(2);
   });
 
   test("a sitter opens on All pets in care; the dropdown lists All pets, the pets in care, a line, then the past stays", async ({ page }) => {

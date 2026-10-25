@@ -246,6 +246,7 @@ function SitterPetFeed({
             prev.status === "loading" ? prev : { ...prev, posts: prev.posts.map((p) => (p.id === id ? { ...p, ...change } : p)) },
           )
         }
+        onRefresh={() => void loadPage(0, false, true)}
         faces={several ? Object.fromEntries(pets.map((p) => [p.id, { species: p.species, photo: faces[p.id], name: p.name }])) : undefined}
         emptyMessage={pet.caring ? `Tap + to share ${pet.name}'s day.` : "Photos you save for yourself show up here."}
         error={feed.status === "error" && feed.posts.length === 0 ? { message: feed.message, onRetry: () => void loadPage(0, false) } : null}

@@ -194,7 +194,7 @@ Shows: `AddPhotoSheet` · `FeedBrowser` · `FeedPetPicker` · `FeedBarRight` · 
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load your pets | — | 183 |
 | EmptyState | No pets yet | — | 196 |
-| Pressable | Add photo | `feed-add-photo` | 233 |
+| Pressable | Add photo | `feed-add-photo` | 234 |
 
 ### `/owner/history` — [app/owner/history.tsx](../../frontend/app/owner/history.tsx)
 
@@ -627,8 +627,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | More photos | `feed-add-more` | 166 |
 | Pressable | — | ``feed-add-pet-${p.id}`` | 182 |
 | Pressable | — | ``feed-add-tag-${t.key}`` | 202 |
-| Pressable | — | `feed-add-share` | 217 |
-| Pressable | noteOpen ? "Hide note" : "Add a note" | `feed-add-note-toggle` | 248 |
+| Pressable | noteOpen ? "Hide note" : "Add a note" | `feed-add-note-toggle` | 218 |
+| Pressable | — | `feed-add-share` | 242 |
 
 ### AddressInput — [components/AddressInput.tsx](../../frontend/components/AddressInput.tsx)
 
@@ -848,12 +848,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load the feed | — | 187 |
-| EmptyState | Nothing hidden | — | 189 |
-| EmptyState | No photos yet | — | 191 |
-| EmptyState | EMPTY_TITLE[filter as FeedFilterKey] | — | 193 |
-| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 216 |
-| Pressable | ``${tagLabel ?? "Photo"} at ${time}`` | ``feed-card-${post.id}`` | 347 |
+| EmptyState | Couldn't load the feed | — | 205 |
+| EmptyState | Nothing hidden | — | 207 |
+| EmptyState | No photos yet | — | 209 |
+| EmptyState | EMPTY_TITLE[filter as FeedFilterKey] | — | 211 |
+| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 234 |
+| Pressable | ``${tagLabel ?? "Photo"} at ${time}`` | ``feed-card-${post.id}`` | 359 |
 
 ### FeedDeleteSheet — [components/FeedDeleteSheet.tsx](../../frontend/components/FeedDeleteSheet.tsx)
 
@@ -894,14 +894,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `feed-viewer-sticker` | 193 |
-| Pressable | — | `feed-viewer-hide` | 204 |
-| Pressable | Edit | `feed-viewer-edit` | 214 |
-| Pressable | — | `feed-viewer-delete` | 225 |
-| Pressable | Previous | `feed-viewer-prev` | 241 |
-| Pressable | Next | `feed-viewer-next` | 250 |
-| Pressable | Close | `feed-viewer-close` | 261 |
-| Pressable | isVideo ? (paused ? "Play" : "Pause") : bare ? "Show details" : "Hide details" | `feed-viewer-media` | 443 |
+| Pressable | — | `feed-viewer-sticker` | 198 |
+| Pressable | — | `feed-viewer-hide` | 212 |
+| Pressable | Edit | `feed-viewer-edit` | 222 |
+| Pressable | — | `feed-viewer-delete` | 233 |
+| Pressable | Previous | `feed-viewer-prev` | 249 |
+| Pressable | Next | `feed-viewer-next` | 258 |
+| Pressable | Close | `feed-viewer-close` | 269 |
+| Pressable | isVideo ? (paused ? "Play" : "Pause") : bare ? "Show details" : "Hide details" | `feed-viewer-media` | 460 |
 
 ### FinishedStay — [components/FinishedStay.tsx](../../frontend/components/FinishedStay.tsx)
 
@@ -1515,7 +1515,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load pets | — | 75 |
 | EmptyState | Share a moment | — | 80 |
-| Pressable | Add photo | `feed-add-photo` | 256 |
+| Pressable | Add photo | `feed-add-photo` | 257 |
 
 ### NotificationsCenter — [features/notifications/NotificationsCenter.tsx](../../frontend/features/notifications/NotificationsCenter.tsx)
 
@@ -1600,17 +1600,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Sticker | — | 57 |
-| EmptyState | No pet in your care right now | — | 233 |
-| EmptyState | Add a pet first | — | 235 |
-| Pressable | Tap your pet to cut it out | `sticker-photo` | 266 |
-| Button | Save sticker | `sticker-save` | 316 |
-| TextButton | ⬇ Download sticker | `sticker-download` | 317 |
-| TextButton | Pick another photo | `sticker-pick-again` | 318 |
-| Button | photo ? "Pick another photo" : "Pick a photo" | `sticker-pick` | 321 |
-| Pressable | Download sticker | `sticker-tile-download` | 345 |
-| Pressable | Delete sticker | `sticker-delete` | 356 |
-| Sheet | Delete sticker | `sticker-delete-sheet` | 372 |
-| Button | Delete sticker | `sticker-delete-confirm` | 373 |
+| EmptyState | No pet in your care right now | — | 214 |
+| EmptyState | Add a pet first | — | 216 |
+| Pressable | Tap your pet to cut it out | `sticker-photo` | 247 |
+| Button | Save sticker | `sticker-save` | 297 |
+| TextButton | ⬇ Download sticker | `sticker-download` | 298 |
+| TextButton | Pick another photo | `sticker-pick-again` | 299 |
+| Button | photo ? "Pick another photo" : "Pick a photo" | `sticker-pick` | 302 |
+| Pressable | Download sticker | `sticker-tile-download` | 326 |
+| Pressable | Delete sticker | `sticker-delete` | 337 |
+| Sheet | Delete sticker | `sticker-delete-sheet` | 353 |
+| Button | Delete sticker | `sticker-delete-confirm` | 354 |
 
 ### TreatCheckScreen — [features/snap/TreatCheckScreen.tsx](../../frontend/features/snap/TreatCheckScreen.tsx)
 

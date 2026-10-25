@@ -1,5 +1,5 @@
 import { createElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Image, Modal, PanResponder, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, Modal, PanResponder, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FeedTagIcon } from "./FeedTagIcon";
@@ -28,6 +28,8 @@ type Props = {
   /** Turn a photo into a sticker: the parent says for which photos, and opens the sticker maker. */
   canSticker?: (post: FeedTimelinePost) => boolean;
   onMakeSticker?: (postId: string) => void;
+  /** A sticker is being made: a spinner covers the photo. */
+  busy?: boolean;
 };
 
 const SWIPE_DISTANCE = 50;
@@ -57,8 +59,10 @@ export function FeedViewer({
   onUnhide,
   canSticker,
   onMakeSticker,
+  busy,
 }: Props) {
   const styles = useThemedStyles(makeStyles);
+  const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [activeId, setActiveId] = useState<string | null>(initialPostId);
   const nearEndSent = useRef(false);
@@ -187,6 +191,7 @@ export function FeedViewer({
           onZoom={(scale) => setZoomed(scale > ZOOM_REST)}
           bare={bare}
           onToggleBare={() => setBare((on) => !on)}
+          onHold={onMakeSticker && canSticker?.(activePost) ? () => onMakeSticker(activePost.id) : undefined}
           actions={
             <>
               {onMakeSticker && canSticker?.(activePost) ? (
@@ -198,6 +203,9 @@ export function FeedViewer({
                 >
                   <Text style={styles.stickerLabel}>Make a sticker</Text>
                 </Pressable>
+              ) : null}
+              {onMakeSticker && canSticker?.(activePost) ? (
+                <Text style={styles.hold}>Or press and hold the photo</Text>
               ) : null}
               <View style={styles.actions}>
                 {onHide && onUnhide ? (
@@ -272,6 +280,12 @@ export function FeedViewer({
           </Text>
         </View>
         )}
+        {busy ? (
+          <View style={styles.busy} testID="feed-viewer-busy">
+            <ActivityIndicator size="large" color={theme.color.onMedia} />
+            <Text style={styles.busyText}>Making a sticker…</Text>
+          </View>
+        ) : null}
       </View>
     </Modal>
   );
@@ -288,7 +302,10 @@ function ViewerPage({
   actions,
   bare,
   onToggleBare,
+  onHold,
 }: {
+  /** Press and hold on the photo makes a sticker of it (photos only). */
+  onHold?: () => void;
   post: FeedTimelinePost;
   /** Only the photo is shown: no details, no buttons. A tap on the photo turns this on and off. */
   bare: boolean;
@@ -443,6 +460,8 @@ function ViewerPage({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={isVideo ? (paused ? "Play" : "Pause") : bare ? "Show details" : "Hide details"}
+        onLongPress={onHold}
+        delayLongPress={600}
         onPress={() => {
           if (isVideo) setPaused((p) => !p);
           else if (zoom.current.scale <= ZOOM_REST) onToggleBare();
@@ -584,6 +603,20 @@ const makeStyles = (theme: Theme) =>
     back: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
     backLabel: { color: theme.color.onMedia, fontSize: 34, lineHeight: 36, fontWeight: theme.fontWeight.semibold }, // tokens-ok: the back chevron is drawn as a large glyph
     title: { flex: 1, color: theme.color.onMedia, fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold },
+    hold: { textAlign: "center", fontSize: theme.fontSize.small, color: "rgba(255,255,255,0.75)" },
+    busy: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 6,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: theme.spacing.sm,
+      backgroundColor: "rgba(0,0,0,0.55)",
+    },
+    busyText: { color: theme.color.onMedia, fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold },
     sticker: {
       minHeight: 52,
       marginTop: theme.spacing.sm,

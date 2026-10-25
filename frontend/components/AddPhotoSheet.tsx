@@ -214,6 +214,31 @@ export function AddPhotoSheet({
           </View>
         </View>
 
+        <View style={styles.noteRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={noteOpen ? "Hide note" : "Add a note"}
+            aria-expanded={noteOpen}
+            onPress={() => setNoteOpen((open) => !open)}
+            style={[styles.noteBtn, (noteOpen || note.trim().length > 0) && styles.noteBtnOn]}
+            testID="feed-add-note-toggle"
+          >
+            <Text style={styles.noteBtnLabel}>✏️ Note</Text>
+          </Pressable>
+          {noteOpen ? (
+            <View style={styles.noteField}>
+              <TextField
+                label=""
+                accessibilityLabel="Note"
+                value={note}
+                onChangeText={setNote}
+                maxLength={FEED_NOTE_MAX}
+                multiline
+                testID="feed-add-note"
+              />
+            </View>
+          ) : null}
+        </View>
         <Pressable
           accessibilityRole="switch"
           aria-checked={sharing}
@@ -244,31 +269,6 @@ export function AddPhotoSheet({
           </View>
         </Pressable>
 
-        <View style={styles.noteRow}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={noteOpen ? "Hide note" : "Add a note"}
-            aria-expanded={noteOpen}
-            onPress={() => setNoteOpen((open) => !open)}
-            style={[styles.noteBtn, (noteOpen || note.trim().length > 0) && styles.noteBtnOn]}
-            testID="feed-add-note-toggle"
-          >
-            <Text style={styles.noteBtnLabel}>✏️ Note</Text>
-          </Pressable>
-          {noteOpen ? (
-            <View style={styles.noteField}>
-              <TextField
-                label=""
-                accessibilityLabel="Note"
-                value={note}
-                onChangeText={setNote}
-                maxLength={FEED_NOTE_MAX}
-                multiline
-                testID="feed-add-note"
-              />
-            </View>
-          ) : null}
-        </View>
       </View>
     </Sheet>
   );
