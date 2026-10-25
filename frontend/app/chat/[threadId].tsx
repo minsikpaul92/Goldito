@@ -518,38 +518,13 @@ export default function Chat() {
     );
   };
 
-  return (
-    <View style={styles.root} testID="chat">
-      <Stack.Screen
-        options={{
-          title: header.otherName,
-          headerTitle: () => (
-            <ChatHeaderTitle
-              threadId={header.threadId}
-              showPets={!owner}
-              name={header.otherName}
-              cover={photos[0] ?? null}
-              stay={headerStay}
-              onAvatar={photos.length > 0 ? () => setViewing(true) : undefined}
-              onName={() => router.push(owner ? `/owner/sitters/${header.otherId}` : `/sitter/owners/${header.otherId}?thread=${header.threadId}`)}
-            />
-          ),
-        }}
-      />
-      <View style={styles.stage}>
-        {bookingPath ? (
-          <Pressable accessibilityRole="button" onPress={() => router.push(bookingPath as never)} testID="chat-stage">
-            <BookingStageBar booking={booking?.stage === "completed" ? null : booking} viewer={header.myRole} chat trips={pairTrips} />
-          </Pressable>
-        ) : (
-          <BookingStageBar booking={null} viewer={header.myRole} chat />
-        )}
-      </View>
-      <Screen ref={scroller} contentStyle={styles.content} testID="chat-scroll">
-        {messages.length === 0 ? (
-          <Text style={styles.hint} testID="chat-empty">{`Say hi to ${header.otherName}.`}</Text>
-        ) : null}
-        {messages.map((m) =>
+  const stayCardEl = stayBooking ? (
+    <ChatStayCard booking={stayBooking} viewer={header.myRole} onChanged={() => void load()} receiveSignal={signals.receive} returnSignal={signals.returned} />
+  ) : null;
+  // Once the pets are back, the stay (and its review) sits where it happened: newer messages go below it.
+  const returnedAt = Date.parse(stayBooking?.pickUp?.completedAt ?? "");
+  const stayAfter = Number.isNaN(returnedAt) ? messages.length : messages.filter((m) => Date.parse(m.at) <= returnedAt).length;
+  const renderMessage = (m: (typeof messages)[number]) =>
           m.kind === "card" && m.card?.type === "stay" ? (
             <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
               <Card style={StyleSheet.flatten([styles.stay, m.senderId === me ? styles.mine : styles.theirs])} testID="chat-stay-card">
@@ -584,11 +559,44 @@ export default function Chat() {
               meta={formatStamp(m.at)}
               testID={m.senderId === me ? "chat-bubble-me" : "chat-bubble-them"}
             />
-          ) : null,
+          ) : null;
+
+  return (
+    <View style={styles.root} testID="chat">
+      <Stack.Screen
+        options={{
+          title: header.otherName,
+          headerTitle: () => (
+            <ChatHeaderTitle
+              threadId={header.threadId}
+              showPets={!owner}
+              name={header.otherName}
+              cover={photos[0] ?? null}
+              stay={headerStay}
+              onAvatar={photos.length > 0 ? () => setViewing(true) : undefined}
+              onName={() => router.push(owner ? `/owner/sitters/${header.otherId}` : `/sitter/owners/${header.otherId}?thread=${header.threadId}`)}
+            />
+          ),
+        }}
+      />
+      <View style={styles.stage}>
+        {bookingPath ? (
+          <Pressable accessibilityRole="button" onPress={() => router.push(bookingPath as never)} testID="chat-stage">
+            <BookingStageBar booking={booking?.stage === "completed" ? null : booking} viewer={header.myRole} chat trips={pairTrips} />
+          </Pressable>
+        ) : (
+          <BookingStageBar booking={null} viewer={header.myRole} chat />
         )}
+      </View>
+      <Screen ref={scroller} contentStyle={styles.content} testID="chat-scroll">
+        {messages.length === 0 ? (
+          <Text style={styles.hint} testID="chat-empty">{`Say hi to ${header.otherName}.`}</Text>
+        ) : null}
+        {messages.slice(0, stayAfter).map(renderMessage)}
+        {stayCardEl}
+        {messages.slice(stayAfter).map(renderMessage)}
         {booking ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
         {booking ? <ChatCareCards booking={booking} viewer={header.myRole} askSignal={signals.photo} /> : null}
-        {stayBooking ? <ChatStayCard booking={stayBooking} viewer={header.myRole} onChanged={() => void load()} receiveSignal={signals.receive} returnSignal={signals.returned} /> : null}
         {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} startSignal={signals.trip} /> : null}
       </Screen>
       {/* A final quote carries Confirm and Decline on its card: the footer does not repeat them (#289). */}
