@@ -4,11 +4,13 @@ import { StyleSheet, Text, View } from "react-native";
 import { Viewer, placeLabel } from "./BookingCard";
 import { Button } from "./ui/Button";
 import { CheckRow } from "./ui/CheckRow";
+import { DayPickerSheet } from "./ui/DayPickerSheet";
 import { SegmentedControl } from "./ui/SegmentedControl";
 import { Sheet } from "./ui/Sheet";
 import { Stepper } from "./ui/Stepper";
 import { TextField } from "./ui/TextField";
-import { addDays, formatDay, formatTime, isoToZoned, shiftTime, zonedToIso } from "../features/schedule/dates";
+import { TimePickerSheet } from "./ui/TimePickerSheet";
+import { addDays, appToday, formatDay, formatTime, isoToZoned, shiftTime, zonedToIso } from "../features/schedule/dates";
 import { BookingSummary, HandoffKind, LocationType } from "../lib/bookings";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
@@ -89,6 +91,7 @@ export function HandoffChangeSheet({
   const [sent, setSent] = useState<HandoffKind[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [picker, setPicker] = useState<"day" | "time" | null>(null);
   const draft = drafts[kind];
   const set = (change: Partial<Draft>) => {
     setError(null);
@@ -209,17 +212,21 @@ export function HandoffChangeSheet({
       />
       <View style={styles.row}>
         <Stepper
+          style={styles.stepper}
           label="Day"
           value={draft.day ? formatDay(draft.day) : "-"}
           onDecrease={() => set({ day: addDays(draft.day, -1) })}
           onIncrease={() => set({ day: addDays(draft.day, 1) })}
+          onPressValue={() => setPicker("day")}
           testID="change-day"
         />
         <Stepper
+          style={styles.stepper}
           label="Time"
           value={formatTime(draft.time)}
           onDecrease={() => set({ time: shiftTime(draft.time, -TIME_STEP) })}
           onIncrease={() => set({ time: shiftTime(draft.time, TIME_STEP) })}
+          onPressValue={() => setPicker("time")}
           testID="change-time"
         />
       </View>
@@ -257,6 +264,30 @@ export function HandoffChangeSheet({
           {error}
         </Text>
       ) : null}
+
+      <DayPickerSheet
+        visible={picker === "day"}
+        title={kind === "drop_off" ? "Drop-off day" : "Pick-up day"}
+        value={draft.day || appToday()}
+        minDay={kind === "pick_up" && drafts.drop_off.day ? drafts.drop_off.day : appToday()}
+        onPick={(day) => {
+          set({ day });
+          setPicker(null);
+        }}
+        onClose={() => setPicker(null)}
+        testID="change-calendar"
+      />
+      <TimePickerSheet
+        visible={picker === "time"}
+        title={kind === "drop_off" ? "Drop-off time" : "Pick-up time"}
+        value={draft.time}
+        onPick={(time) => {
+          set({ time });
+          setPicker(null);
+        }}
+        onClose={() => setPicker(null)}
+        testID="change-clock"
+      />
     </Sheet>
   );
 }
@@ -265,8 +296,13 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     row: {
       flexDirection: "row",
-      flexWrap: "wrap",
-      gap: theme.spacing.md,
+      alignItems: "center",
+      gap: theme.spacing.sm,
+    },
+    stepper: {
+      flex: 1,
+      minWidth: 0,
+      justifyContent: "space-between",
     },
     hint: {
       fontSize: theme.fontSize.small,
