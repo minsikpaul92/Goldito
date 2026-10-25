@@ -64,7 +64,7 @@ export function ChatPaymentCard({ booking, viewer, total, canPay, onPay }: Payme
 
   const body = (
     <Card tone={ended ? "blush" : undefined} style={StyleSheet.flatten([styles.card, mine ? styles.mine : null])} testID="chat-payment-card">
-      <Text style={[styles.title, !ended && styles.start, mine && styles.onGreen]}>{ended ?? (paid ? "Paid" : "Payment")}</Text>
+      <Text style={[styles.title, !ended && styles.strong, !ended && styles.start, mine && styles.onGreen]}>{ended ?? (paid ? "Paid" : "Payment")}</Text>
       {ended && booking.refundedAt && viewer === "owner" ? (
         <Text style={[styles.line, mine && styles.onGreen]} testID="payment-refunded">
           {`Refunded in full${booking.priceSnapshot?.total != null ? ` · ${money(booking.priceSnapshot.total)}` : ""}`}
@@ -98,9 +98,10 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: 2, maxWidth: "92%", width: "92%" },
     start: { textAlign: "left" },
+    strong: { fontWeight: theme.fontWeight.bold },
     mine: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },
     onGreen: { color: theme.color.primaryText },
     title: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
-    line: { fontSize: theme.fontSize.body, color: theme.color.textMuted, textAlign: "center" },
-    total: { fontSize: theme.fontSize.body, color: theme.color.text },
+    line: { fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center" },
+    total: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
   });

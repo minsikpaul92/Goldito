@@ -230,8 +230,8 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     wrap: { width: "100%", alignItems: "center", gap: theme.spacing.sm },
     card: { gap: theme.spacing.sm, maxWidth: "92%", width: "92%" },
-    title: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
-    muted: { fontSize: theme.fontSize.body, color: theme.color.textMuted, textAlign: "center" },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text, textAlign: "center" },
+    muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center" },
     // A quick reply, not a main button (#250): Track and Received stay the actions.
     chip: {
       alignSelf: "flex-start",

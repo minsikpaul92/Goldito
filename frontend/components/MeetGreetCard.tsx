@@ -392,10 +392,12 @@ const makeStyles = (theme: Theme) =>
     },
     title: {
       fontSize: theme.fontSize.body,
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     label: {
-      fontSize: theme.fontSize.body,
+      fontSize: theme.fontSize.small,
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.textMuted,
     },
     body: {
@@ -403,7 +405,7 @@ const makeStyles = (theme: Theme) =>
       color: theme.color.text,
     },
     muted: {
-      fontSize: theme.fontSize.body,
+      fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
     },
     error: {
