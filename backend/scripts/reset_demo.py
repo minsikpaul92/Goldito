@@ -13,6 +13,8 @@ States: `empty` (owner has no pets) · `pets` (Max + Mochi, before any booking, 
 `in_care` (paid and received: the pets are with the sitter). What is deleted and kept:
 app/services/demo_reset.py. The same thing is behind the temporary Demo tools button
 (`POST /api/demo/reset`, only while DEMO_RESET_ENABLED=1).
+Every state but `empty` also gets the past (app/services/demo_history.py): two finished stays, a cancelled request, pages and
+photos. Upload the photos once first: `python -m scripts.seed_photos --apply`.
 
 Reads SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (and DEMO_PASSWORD for `confirmed`) from
 backend/.env. Never run it against a project that holds real data: it is for the demo project only.

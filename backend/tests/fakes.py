@@ -48,6 +48,14 @@ class _Query:
         self.filters.append(lambda r: r.get(col) is None)
         return self
 
+    def like(self, col, pattern):
+        prefix = pattern.rstrip("%")
+        self.filters.append(lambda r: str(r.get(col, "")).startswith(prefix))
+        return self
+
+    def order(self, *_a, **_k):
+        return self
+
     def gte(self, col, val):
         self.filters.append(lambda r: _when(r.get(col)) >= _when(val))
         return self

@@ -3,7 +3,8 @@
 Five states, each a point to start a manual test from:
 
 - `empty`      the owner has no pets; the sitter has her schedule, services and prices
-- `pets`       the set's two pets (Max + Mochi for the default set), nothing else (no chat, no favorite, no booking)
+- `pets`       the set's two pets (Max + Mochi for the default set) and their past (`demo_history`: two finished stays, a
+               cancelled request, private pages and photos), no chat, no favorite, no current booking
 - `confirmed`  `pets` + one booking the sitter accepted, before checkout (Finish booking)
 - `ready`      the same, paid; drop-off is in an hour, so the sitter's Received is open (it opens 2 h before)
 - `in_care`    paid and received a moment ago: the pets are with the sitter (check-ins, photos, reports)
@@ -29,7 +30,7 @@ import httpx
 from supabase import Client
 
 from app.config import get_settings
-from app.services import authz
+from app.services import authz, demo_history
 from app.services.demo_accounts import (
     DEFAULT_SET,
     DEMO_COATS,
@@ -103,20 +104,48 @@ def plan(
     sitter_side = scope in ("sitter", "both")
     pair = {"owner_id": [owner_id], "sitter_id": [sitter_id]}
     steps = [
-        Step("learned tone samples", "tone_samples", {"sitter_id": [sitter_id], "source": LEARNED_SAMPLES, "source_message_id": pair_message_ids or []}),
+        Step(
+            "learned tone samples",
+            "tone_samples",
+            {
+                "sitter_id": [sitter_id],
+                "source": LEARNED_SAMPLES,
+                "source_message_id": pair_message_ids or [],
+            },
+        ),
         Step("bookings", "bookings", pair),
         Step("inquiries", "inquiries", pair),
         # Their chat (its messages and cards go with it); the reset builds a fresh one for the state.
         Step("chat", "chat_threads", pair),
         Step("favorite sitter", "owner_favorite_sitters", pair, count_column="owner_id"),
         # Notices about a booking went with it; one about another account's booking stays.
-        Step("notifications", "notifications", {"user_id": ([owner_id] if owner_side else []) + ([sitter_id] if sitter_side else [])}, nulls=("booking_id",)),
+        Step(
+            "notifications",
+            "notifications",
+            {"user_id": ([owner_id] if owner_side else []) + ([sitter_id] if sitter_side else [])},
+            nulls=("booking_id",),
+        ),
     ]
     for label, table in STAY_PET_TABLES + (OWNER_PET_TABLES if owner_side else ()):
         steps.append(Step(label, table, {"pet_id": pet_ids}))
-    steps.append(Step("knowledge chunks (pets)", "knowledge_chunks", {"source_type": STAY_CHUNKS if owner_side else ["life_record", "inquiry"], "pet_id": pet_ids}))
+    steps.append(
+        Step(
+            "knowledge chunks (pets)",
+            "knowledge_chunks",
+            {
+                "source_type": STAY_CHUNKS if owner_side else ["life_record", "inquiry"],
+                "pet_id": pet_ids,
+            },
+        )
+    )
     if owner_side:
-        steps.append(Step("knowledge chunks (owner)", "knowledge_chunks", {"source_type": STAY_CHUNKS, "owner_id": [owner_id]}))
+        steps.append(
+            Step(
+                "knowledge chunks (owner)",
+                "knowledge_chunks",
+                {"source_type": STAY_CHUNKS, "owner_id": [owner_id]},
+            )
+        )
     if sitter_side and not keep_schedule:
         steps.append(Step("schedule rows", "sitter_availability", {"sitter_id": [sitter_id]}))
     if owner_side and state == "empty":
@@ -125,7 +154,11 @@ def plan(
 
 
 def _query(client: Client, step: Step, op: str):
-    query = client.table(step.table).select(step.count_column) if op == "count" else client.table(step.table).delete()
+    query = (
+        client.table(step.table).select(step.count_column)
+        if op == "count"
+        else client.table(step.table).delete()
+    )
     for column, values in step.where.items():
         query = query.in_(column, values)
     for column in step.nulls:
@@ -154,17 +187,39 @@ def demo_ids(client: Client, demo_set: DemoSet = DEFAULT_SET) -> tuple[str, str]
 
 def pair_message_ids(client: Client, owner_id: str, sitter_id: str) -> list[str]:
     """The messages of the inquiries between the two demo accounts."""
-    inquiries = client.table("inquiries").select("id").eq("owner_id", owner_id).eq("sitter_id", sitter_id).execute().data
+    inquiries = (
+        client.table("inquiries")
+        .select("id")
+        .eq("owner_id", owner_id)
+        .eq("sitter_id", sitter_id)
+        .execute()
+        .data
+    )
     if not inquiries:
         return []
-    rows = client.table("inquiry_messages").select("id").in_("inquiry_id", [i["id"] for i in inquiries]).execute().data
+    rows = (
+        client.table("inquiry_messages")
+        .select("id")
+        .in_("inquiry_id", [i["id"] for i in inquiries])
+        .execute()
+        .data
+    )
     return [row["id"] for row in rows]
 
 
 def sitter_has_other_bookings(client: Client, owner_id: str, sitter_id: str) -> bool:
     """A confirmed booking of the sitter with someone else: her schedule must stay (the availability guard
     refuses to remove the slots it holds)."""
-    rows = client.table("bookings").select("id").eq("sitter_id", sitter_id).neq("owner_id", owner_id).eq("status", "confirmed").limit(1).execute().data
+    rows = (
+        client.table("bookings")
+        .select("id")
+        .eq("sitter_id", sitter_id)
+        .neq("owner_id", owner_id)
+        .eq("status", "confirmed")
+        .limit(1)
+        .execute()
+        .data
+    )
     return bool(rows)
 
 
@@ -176,7 +231,12 @@ def owner_pet_ids(client: Client, owner_id: str) -> list[str]:
 def ensure_pets(client: Client, owner_id: str, today: date, pets=PETS) -> list[str]:
     """Create the set's two pets when missing (never duplicates one that is there). Returns what was added."""
     existing = {
-        row["name"]: row for row in client.table("pets").select("id, name, profile").eq("owner_id", owner_id).execute().data
+        row["name"]: row
+        for row in client.table("pets")
+        .select("id, name, profile")
+        .eq("owner_id", owner_id)
+        .execute()
+        .data
     }
     added = []
     for name, species, breed, years, kg, allergens in pets:
@@ -185,9 +245,13 @@ def ensure_pets(client: Client, owner_id: str, today: date, pets=PETS) -> list[s
             # gets its coat when it has none (the pixel pet's color, 11.12).
             profile = existing[name].get("profile") or {}
             if not profile and (start := demo_pet_profile(name)):
-                client.table("pets").update({"profile": start}).eq("id", existing[name]["id"]).execute()
+                client.table("pets").update({"profile": start}).eq(
+                    "id", existing[name]["id"]
+                ).execute()
             elif not profile.get("coat") and name in DEMO_COATS:
-                client.table("pets").update({"profile": {**profile, "coat": DEMO_COATS[name]}}).eq("id", existing[name]["id"]).execute()
+                client.table("pets").update({"profile": {**profile, "coat": DEMO_COATS[name]}}).eq(
+                    "id", existing[name]["id"]
+                ).execute()
             continue
         birthdate = today.replace(year=today.year - years, day=min(today.day, 28))
         pet = (
@@ -207,7 +271,9 @@ def ensure_pets(client: Client, owner_id: str, today: date, pets=PETS) -> list[s
             .data[0]
         )
         for allergen in allergens:
-            client.table("pet_allergies").insert({"pet_id": pet["id"], "allergen": allergen}).execute()
+            client.table("pet_allergies").insert(
+                {"pet_id": pet["id"], "allergen": allergen}
+            ).execute()
         added.append(name)
     return added
 
@@ -241,23 +307,42 @@ def open_schedule(client: Client, sitter_id: str, today: date) -> int:
     return len(rows)
 
 
-def sync_display_names(client: Client, owner_id: str, sitter_id: str, demo_set: DemoSet = DEFAULT_SET, scope: Scope = "both") -> None:
+def sync_display_names(
+    client: Client,
+    owner_id: str,
+    sitter_id: str,
+    demo_set: DemoSet = DEFAULT_SET,
+    scope: Scope = "both",
+) -> None:
     """profiles.display_name is only written by the signup trigger, so a renamed demo user keeps the old one (M-24)."""
     mine = [(owner_id, demo_set.owner)] if scope in ("owner", "both") else []
     mine += [(sitter_id, demo_set.sitter)] if scope in ("sitter", "both") else []
     for user_id, demo in mine:
-        client.table("profiles").update({"display_name": demo.display_name}).eq("id", user_id).execute()
+        client.table("profiles").update({"display_name": demo.display_name}).eq(
+            "id", user_id
+        ).execute()
 
 
 def tone_history_count(client: Client, sitter_id: str) -> int:
-    rows = client.table("tone_samples").select("id").eq("sitter_id", sitter_id).eq("source", "history").execute().data
+    rows = (
+        client.table("tone_samples")
+        .select("id")
+        .eq("sitter_id", sitter_id)
+        .eq("source", "history")
+        .execute()
+        .data
+    )
     return len(rows)
 
 
 def sign_in(email: str) -> str:
     """The access token of a demo user (password grant), to call the booking RPCs as that user."""
     settings = get_settings()
-    if not settings.demo_password or not settings.supabase_url or not settings.supabase_service_role_key:
+    if (
+        not settings.demo_password
+        or not settings.supabase_url
+        or not settings.supabase_service_role_key
+    ):
         raise RuntimeError("DEMO_PASSWORD, SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set")
     response = httpx.post(
         f"{settings.supabase_url.rstrip('/')}/auth/v1/token",
@@ -267,7 +352,9 @@ def sign_in(email: str) -> str:
         timeout=10.0,
     )
     if response.status_code >= 400:
-        raise RuntimeError(f"Could not sign in {email} ({response.status_code}) — run `python -m scripts.seed_demo`.")
+        raise RuntimeError(
+            f"Could not sign in {email} ({response.status_code}) — run `python -m scripts.seed_demo`."
+        )
     return response.json()["access_token"]
 
 
@@ -277,7 +364,9 @@ def stay_times(state: State, now: datetime, today: date) -> tuple[datetime, date
     if state == "ready":
         drop_off = now + timedelta(hours=1)
     elif state == "in_care":
-        drop_off = now + timedelta(minutes=3)  # a request cannot start in the past, so a little ahead
+        drop_off = now + timedelta(
+            minutes=3
+        )  # a request cannot start in the past, so a little ahead
     else:
         drop_off = datetime.combine(today + timedelta(days=2), time(9, 30), now.tzinfo)
     pick_up = datetime.combine(drop_off.date() + timedelta(days=3), time(17, 0), now.tzinfo)
@@ -299,7 +388,9 @@ def _insert_as(token: str, table: str, row: dict) -> None:
         timeout=10.0,
     )
     if response.status_code >= 400:
-        raise RuntimeError(f"Could not insert into {table} ({response.status_code}): {response.text[:200]}")
+        raise RuntimeError(
+            f"Could not insert into {table} ({response.status_code}): {response.text[:200]}"
+        )
 
 
 def _sign_and_pay(owner_token: str, owner_id: str, owner_name: str, booking: str) -> None:
@@ -327,9 +418,19 @@ def _sign_and_pay(owner_token: str, owner_id: str, owner_name: str, booking: str
 
 # A booking creator takes (client, owner_id, sitter_id, today, state, demo_set) and returns the booking id; tests pass a fake.
 Booker = Callable[[Client, str, str, date, State, DemoSet], str]
+# The history creators (tests pass fakes): the cancelled request returns its booking id; the rest takes it.
+Canceller = Callable[[Client, str, str, date, DemoSet], str]
+History = Callable[..., None]
 
 
-def book_for_state(client: Client, owner_id: str, sitter_id: str, today: date, state: State, demo_set: DemoSet = DEFAULT_SET) -> str:
+def book_for_state(
+    client: Client,
+    owner_id: str,
+    sitter_id: str,
+    today: date,
+    state: State,
+    demo_set: DemoSet = DEFAULT_SET,
+) -> str:
     """The owner requests a boarding stay (both pets, the sitter's place), the Meet & Greet is skipped by
     agreement (after the sitter's first yes), then the owner says "I'd like to book" and the sitter accepts: the booking is
     confirmed and waits for payment. `ready` and `in_care` go on with the checkout (consents + demo payment); `in_care` also
@@ -363,18 +464,57 @@ def book_for_state(client: Client, owner_id: str, sitter_id: str, today: date, s
         if "interest_not_needed" not in str(exc):
             raise
     authz.rpc_json(owner_token, "request_skip_meet_greet", {"p_booking": booking})
-    authz.rpc_json(sitter_token, "respond_skip_meet_greet", {"p_booking": booking, "p_accept": True})
+    authz.rpc_json(
+        sitter_token, "respond_skip_meet_greet", {"p_booking": booking, "p_accept": True}
+    )
     # Both say yes (014o): the booking is confirmed only when the owner and the sitter both did.
     authz.rpc_json(owner_token, "agree_to_book", {"p_booking": booking})
     authz.rpc_json(sitter_token, "respond_booking", {"p_booking": booking, "p_accept": True})
     if state in ("ready", "in_care"):
         _sign_and_pay(owner_token, owner_id, owner_demo.display_name, booking)
     if state == "in_care":
-        authz.rpc_json(sitter_token, "complete_handoff", {"p_booking": booking, "p_kind": "drop_off"})
+        authz.rpc_json(
+            sitter_token, "complete_handoff", {"p_booking": booking, "p_kind": "drop_off"}
+        )
     return booking
 
 
-def seed_chat(client: Client, owner_id: str, sitter_id: str, today: date, state: State, booking: str | None) -> None:
+CANCEL_REASON = "Plans changed"
+
+
+def cancelled_request(
+    client: Client, owner_id: str, sitter_id: str, today: date, demo_set: DemoSet = DEFAULT_SET
+) -> str:
+    """A request three weeks ahead that the owner cancelled, made with the real RPCs. It comes before the chat exists,
+    so it posts no cards there."""
+    token = sign_in(demo_set.owner.email)
+    tz = ZoneInfo(get_settings().app_timezone)
+    drop_off = datetime.combine(today + timedelta(days=21), time(9, 30), tz)
+    pick_up = datetime.combine(today + timedelta(days=24), time(17, 0), tz)
+    booking = authz.rpc_json(
+        token,
+        "request_booking",
+        {
+            "p_sitter": sitter_id,
+            "p_pets": owner_pet_ids(client, owner_id),
+            "p_drop_off_at": drop_off.isoformat(),
+            "p_drop_off_location_type": "sitter_home",
+            "p_drop_off_note": None,
+            "p_pick_up_at": pick_up.isoformat(),
+            "p_pick_up_location_type": "sitter_home",
+            "p_pick_up_note": None,
+            "p_note": None,
+            "p_service_type": "boarding",
+        },
+        timeout=20.0,
+    )
+    authz.rpc_json(token, "cancel_booking", {"p_booking": booking, "p_reason": CANCEL_REASON})
+    return booking
+
+
+def seed_chat(
+    client: Client, owner_id: str, sitter_id: str, today: date, state: State, booking: str | None
+) -> None:
     """One chat for the pair, as the app would have it at this point of the story: the owner's stay card and a short
     talk, and once there is a booking, its request card and the sitter's answer. Written with the service role, so the
     chat functions' rules are not involved; the reset has just deleted the pair's earlier chat."""
@@ -385,14 +525,34 @@ def seed_chat(client: Client, owner_id: str, sitter_id: str, today: date, state:
     tz = ZoneInfo(get_settings().app_timezone)
     drop_off, pick_up = stay_times(state, datetime.now(tz), today)
     pet_cards = [{"id": p["id"], "name": p["name"]} for p in sorted(pets, key=lambda p: p["name"])]
-    thread = client.table("chat_threads").insert({"owner_id": owner_id, "sitter_id": sitter_id}).execute().data[0]
+    thread = (
+        client.table("chat_threads")
+        .insert({"owner_id": owner_id, "sitter_id": sitter_id})
+        .execute()
+        .data[0]
+    )
 
     def say(sender: str, kind: str, *, body: str | None = None, card: dict | None = None) -> None:
         client.table("chat_messages").insert(
-            {"thread_id": thread["id"], "sender_id": sender, "kind": kind, "body": body, "card": card}
+            {
+                "thread_id": thread["id"],
+                "sender_id": sender,
+                "kind": kind,
+                "body": body,
+                "card": card,
+            }
         ).execute()
 
-    say(owner_id, "card", card={"type": "stay", "drop_off_at": drop_off.isoformat(), "pick_up_at": pick_up.isoformat(), "pets": pet_cards})
+    say(
+        owner_id,
+        "card",
+        card={
+            "type": "stay",
+            "drop_off_at": drop_off.isoformat(),
+            "pick_up_at": pick_up.isoformat(),
+            "pets": pet_cards,
+        },
+    )
     say(owner_id, "text", body=f"Hi! Could you take {names} for these days?")
     say(sitter_id, "text", body="Yes, I have room. I'll send a quote.")
     if booking is None:
@@ -419,7 +579,9 @@ def seed_chat(client: Client, owner_id: str, sitter_id: str, today: date, state:
     say(
         sitter_id,
         "text",
-        body="I accepted. I'll send the final quote." if state == "confirmed" else "All set, see you soon!",
+        body="I accepted. I'll send the final quote."
+        if state == "confirmed"
+        else "All set, see you soon!",
     )
 
 
@@ -434,6 +596,8 @@ def reset(
     demo_set: DemoSet = DEFAULT_SET,
     scope: Scope = "both",
     book: Booker = book_for_state,
+    cancel: Canceller | None = None,
+    history: History | None = None,
 ) -> list[tuple[str, int]]:
     """Dry run counts each step; apply deletes, then builds the state. Returns (label, rows). `scope` is whose
     account is reset: the owner's, the sitter's, or both (the terminal script)."""
@@ -444,8 +608,13 @@ def reset(
     owner_side = scope in ("owner", "both")
     sitter_side = scope in ("sitter", "both")
     steps = plan(
-        owner_id, sitter_id, owner_pet_ids(client, owner_id), state, scope=scope,
-        pair_message_ids=pair_message_ids(client, owner_id, sitter_id), keep_schedule=keep_schedule,
+        owner_id,
+        sitter_id,
+        owner_pet_ids(client, owner_id),
+        state,
+        scope=scope,
+        pair_message_ids=pair_message_ids(client, owner_id, sitter_id),
+        keep_schedule=keep_schedule,
     )
     for step in steps:
         report.append((step.label, count_rows(client, step)))
@@ -469,10 +638,22 @@ def reset(
             if not keep_schedule:
                 open_schedule(client, sitter_id, today)
         sync_display_names(client, owner_id, sitter_id, demo_set, scope)
+        has_pets = state != "empty" and bool(owner_pet_ids(client, owner_id))
+        cancelled = (
+            (cancel or cancelled_request)(client, owner_id, sitter_id, today, demo_set)
+            if has_pets
+            else None
+        )
         booking = book(client, owner_id, sitter_id, today, state, demo_set) if building else None
         if building:
             # Once there is a booking, the owner's one favorite is the set's sitter and the chat is the pair's talk.
             # `empty` and `pets` start before the two have met, so they have neither.
-            client.table("owner_favorite_sitters").insert({"owner_id": owner_id, "sitter_id": sitter_id}).execute()
+            client.table("owner_favorite_sitters").insert(
+                {"owner_id": owner_id, "sitter_id": sitter_id}
+            ).execute()
             seed_chat(client, owner_id, sitter_id, today, state, booking)
+        if has_pets:
+            (history or demo_history.seed_history)(
+                client, owner_id, sitter_id, today, state, demo_set, cancelled
+            )
     return report
