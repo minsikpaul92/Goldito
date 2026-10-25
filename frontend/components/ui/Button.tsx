@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
 
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
@@ -16,12 +17,14 @@ type Props = {
   loading?: boolean;
   /** Looks disabled but still takes the tap, so a screen can show what is missing (Checkout Pay, #282). */
   dimmed?: boolean;
+  /** Optional icon (or logo) placed before the label. */
+  icon?: ReactNode;
   style?: ViewStyle;
   testID?: string;
 };
 
 /** Figma: Goldito-Design → Components → Button (Style × State). */
-export function Button({ label, onPress, disabled, variant = "primary", size = "default", loading, dimmed, style, testID }: Props) {
+export function Button({ label, onPress, disabled, variant = "primary", size = "default", loading, dimmed, icon, style, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const secondary = variant === "secondary";
@@ -50,6 +53,11 @@ export function Button({ label, onPress, disabled, variant = "primary", size = "
       {loading ? (
         <View style={styles.row}>
           <ActivityIndicator size="small" color={secondary ? theme.color.primary : theme.color.primaryText} />
+          <Text style={labelStyle}>{label}</Text>
+        </View>
+      ) : icon ? (
+        <View style={styles.row}>
+          {icon}
           <Text style={labelStyle}>{label}</Text>
         </View>
       ) : (

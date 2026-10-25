@@ -43,11 +43,13 @@ Shows: `BrandLogo`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `login-back` | 69 |
-| Button | submitting ? "Signing in…" : "Sign in" | `sign-in` | 112 |
-| TextButton | New here? Create an account | `go-signup` | 115 |
-| Button | Demo owner | `demo-owner` | 134 |
-| Button | Demo sitter | `demo-sitter` | 142 |
+| BackLink | — | `login-back` | 88 |
+| Button | submitting ? "Signing in…" : "Sign in" | `sign-in` | 137 |
+| Button | Continue with Apple | `login-apple` | 145 |
+| Button | Continue with Google | `login-google` | 152 |
+| TextButton | New here? Create an account | `go-signup` | 162 |
+| Button | Demo owner | `demo-owner` | 188 |
+| Button | Demo sitter | `demo-sitter` | 196 |
 
 ### `/owner` — [app/owner/(tabs)/index.tsx](../../frontend/app/owner/(tabs)/index.tsx)
 
@@ -379,11 +381,9 @@ Shows: `BrandLogo` · `RoleCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `signup-back` | 111 |
-| Button | Continue with Apple | `signup-apple` | 142 |
-| Button | Continue with Google | `signup-google` | 148 |
-| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 239 |
-| TextButton | Already have an account? Sign in | `go-login` | 251 |
+| BackLink | — | `signup-back` | 113 |
+| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 222 |
+| TextButton | Already have an account? Sign in | `go-login` | 234 |
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 

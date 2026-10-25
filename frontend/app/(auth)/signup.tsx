@@ -17,9 +17,10 @@ import {
   isSupabaseConfigured,
 } from "../../lib/supabase";
 import { Role } from "../../providers/SessionProvider";
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
+import { AppleLogo, GoogleLogo } from "../../components/ui/SocialIcons";
 
 const MIN_PASSWORD_LENGTH = 6;
 // Shape only (name@domain.tld) — whether the inbox exists is Supabase "Confirm email".
@@ -44,6 +45,7 @@ function goBack() {
 }
 
 export default function SignupScreen() {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const [role, setRole] = useState<Role | null>(null);
@@ -138,27 +140,6 @@ export default function SignupScreen() {
         />
       </View>
 
-      <View style={styles.social}>
-        <Button
-          label="Continue with Apple"
-          variant="secondary"
-          onPress={() => toast.show("Coming soon")}
-          testID="signup-apple"
-        />
-        <Button
-          label="Continue with Google"
-          variant="secondary"
-          onPress={() => toast.show("Coming soon")}
-          testID="signup-google"
-        />
-      </View>
-
-      <View style={styles.divider}>
-        <View style={styles.rule} />
-        <View style={styles.rule} />
-        <Text style={styles.dividerLabel}>or with email</Text>
-      </View>
-
       <View style={styles.form}>
         <View style={styles.nameRow}>
           <View style={styles.nameField}>
@@ -212,7 +193,9 @@ export default function SignupScreen() {
                 />
               ))}
             </View>
-            <Text style={styles.strengthLabel}>{STRENGTH_LABELS[strength]}</Text>
+            <Text style={styles.strengthLabel}>
+              {STRENGTH_LABELS[strength]}
+            </Text>
           </View>
         ) : null}
         <TextField
