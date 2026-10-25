@@ -23,13 +23,13 @@ export function ChatAgreementCard({ booking }: { booking: BookingSummary }) {
 
   if (ended || both) {
     return (
-      <Card style={styles.card} testID="chat-agreement-card">
+      <Card tone="blush" style={styles.card} testID="chat-agreement-card">
         <Text style={styles.title}>{ended ?? "Booked, you both agreed ✓"}</Text>
       </Card>
     );
   }
   return (
-    <Card style={styles.card} testID="chat-agreement-card">
+    <Card tone="blush" style={styles.card} testID="chat-agreement-card">
       <Text style={styles.title}>Book {booking.sitterName}</Text>
       <Text style={styles.line} testID="agreement-owner">
         {booking.ownerAgreedAt ? `✓ ${booking.ownerName} would like to book` : `${booking.ownerName}: not yet`}
@@ -61,7 +61,7 @@ export function ChatPaymentCard({ booking, viewer, total, canPay, onPay }: Payme
   const amount = paid ? (booking.priceSnapshot?.total ?? total) : total;
 
   const body = (
-    <Card style={styles.card} testID="chat-payment-card">
+    <Card tone="blush" style={styles.card} testID="chat-payment-card">
       <Text style={styles.title}>{ended ?? (paid ? "Paid" : "Payment")}</Text>
       {ended && booking.refundedAt && viewer === "owner" ? (
         <Text style={styles.line} testID="payment-refunded">

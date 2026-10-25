@@ -114,7 +114,7 @@ export function ChatHandoffCard({ booking, viewer, onChanged, openSignal = 0 }: 
   return (
     <View style={styles.wrap}>
       {showCard ? (
-      <Card style={styles.card} testID="chat-handoff-card">
+      <Card tone="blush" style={styles.card} testID="chat-handoff-card">
         <Text style={styles.title}>
           {differs
             ? "Handoff differs from your default"

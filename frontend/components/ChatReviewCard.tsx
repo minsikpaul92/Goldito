@@ -49,7 +49,7 @@ export function ChatReviewCard({ booking, viewer }: { booking: BookingSummary; v
   if (review === undefined) return null;
   return (
     <View style={styles.wrap}>
-      <Card style={styles.card} testID="chat-review">
+      <Card tone="blush" style={styles.card} testID="chat-review">
         {review ? (
           <>
             <Text style={styles.title}>Your review</Text>

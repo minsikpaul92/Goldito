@@ -479,12 +479,12 @@ export default function Chat() {
     return (
       <View key={m.id} style={[styles.cardRow, mine ? styles.cardMine : styles.cardTheirs]}>
       <Card style={StyleSheet.flatten([styles.request, mine ? styles.mine : styles.theirs])} testID="chat-request-card">
-        <Text style={styles.requestTitle}>{mine ? "You sent a booking request" : "Booking request"}</Text>
-        <Text style={styles.requestLine}>{`${SERVICE_LABEL[c.serviceType].replace(/^\S+\s/, "")} · ${c.pets.map((p) => p.name).join(", ")}`}</Text>
-        <Text style={styles.requestLine}>{`Drop-off ${short(c.dropOffAt)} · ${placeText(c.dropOffPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
-        <Text style={styles.requestLine}>{`Pick-up ${short(c.pickUpAt)} · ${placeText(c.pickUpPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
-        {c.note ? <Text style={styles.requestNote} testID="chat-request-note">{`“${c.note}”`}</Text> : null}
-        {live ? <Text style={styles.requestLive}>{live}</Text> : null}
+        <Text style={[styles.requestTitle, mine && styles.onGreen]}>{mine ? "You sent a booking request" : "Booking request"}</Text>
+        <Text style={[styles.requestLine, mine && styles.onGreen]}>{`${SERVICE_LABEL[c.serviceType].replace(/^\S+\s/, "")} · ${c.pets.map((p) => p.name).join(", ")}`}</Text>
+        <Text style={[styles.requestLine, mine && styles.onGreen]}>{`Drop-off ${short(c.dropOffAt)} · ${placeText(c.dropOffPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
+        <Text style={[styles.requestLine, mine && styles.onGreen]}>{`Pick-up ${short(c.pickUpAt)} · ${placeText(c.pickUpPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
+        {c.note ? <Text style={[styles.requestNote, mine && styles.onGreen]} testID="chat-request-note">{`“${c.note}”`}</Text> : null}
+        {live ? <Text style={[styles.requestLive, mine && styles.onGreen]}>{live}</Text> : null}
       </Card>
       </View>
     );
@@ -528,7 +528,7 @@ export default function Chat() {
           m.kind === "card" && m.card?.type === "stay" ? (
             <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
               <Card style={StyleSheet.flatten([styles.stay, m.senderId === me ? styles.mine : styles.theirs])} testID="chat-stay-card">
-                <Text style={styles.requestLine} testID="chat-stay-line">
+                <Text style={[styles.requestLine, m.senderId === me && styles.onGreen]} testID="chat-stay-line">
                   {stayLine(m.card)}
                 </Text>
               </Card>
@@ -545,6 +545,7 @@ export default function Chat() {
                 card={m.card as QuoteCard}
                 role={header.myRole}
                 final={isFinal(m.id)}
+                side={m.senderId === me ? "me" : "them"}
                 from={m.senderId === me ? undefined : `${header.otherName} · ${formatStamp(m.at)}`}
                 busy={quoteBusy}
                 onConfirm={() => void quoteAction(() => confirmQuote(m.id))}
@@ -796,8 +797,10 @@ const makeStyles = (theme: Theme) =>
     stay: { gap: 2, maxWidth: "88%" },
     request: { gap: 2, maxWidth: "88%" },
     // Cards take the sides of the text bubbles (#289): mine tinted with the tail corner right, theirs white left.
-    mine: { backgroundColor: theme.color.accent, borderColor: theme.color.primary, borderBottomRightRadius: 4 },
-    theirs: { borderBottomLeftRadius: 4 },
+    // Cards follow the bubbles: mine green, theirs white, all corners round.
+    mine: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },
+    theirs: {},
+    onGreen: { color: theme.color.primaryText },
     requestTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     requestLine: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     requestNote: { fontSize: theme.fontSize.small, color: theme.color.text, fontStyle: "italic", marginTop: 2 },

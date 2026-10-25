@@ -56,7 +56,7 @@ export function ChatCareCards({ booking, viewer, askSignal = 0 }: Props) {
   const photo = (i: Extract<CareItem, { kind: "photo" }>) => {
     if (i.status === "open") {
       return (
-        <Card style={styles.card} testID="chat-photo-open">
+        <Card tone="blush" style={styles.card} testID="chat-photo-open">
           <Text style={styles.title}>{owner ? `You asked for a photo of ${i.petName}` : `${other} asked for a photo of ${i.petName} 📷`}</Text>
           {owner ? (
             <Text style={styles.muted}>{`Waiting for ${other}`}</Text>
@@ -68,7 +68,7 @@ export function ChatCareCards({ booking, viewer, askSignal = 0 }: Props) {
     }
     const url = i.media ? (i.media.resourceType === "video" ? videoPosterUrl(i.media.publicId, 600) : thumbUrl(i.media.publicId, 600)) : "";
     return (
-      <Card style={styles.card} testID="chat-photo-done">
+      <Card tone="blush" style={styles.card} testID="chat-photo-done">
         <Text style={styles.title}>{owner ? `${other} sent a photo of ${i.petName}` : `You sent a photo of ${i.petName}`}</Text>
         {url ? <Image source={{ uri: url }} style={styles.photo} accessibilityLabel={`Photo of ${i.petName}`} /> : null}
         {i.caption ? (
@@ -81,7 +81,7 @@ export function ChatCareCards({ booking, viewer, askSignal = 0 }: Props) {
   };
 
   const diary = (i: Extract<CareItem, { kind: "diary" }>) => (
-    <Card style={styles.card} testID="chat-diary-card">
+    <Card tone="blush" style={styles.card} testID="chat-diary-card">
       <Text style={styles.title}>{owner ? "Diary written 📖" : "You wrote the diary 📖"}</Text>
       <Text style={styles.muted}>{`${i.petName} · ${formatDay(isoToZoned(i.at).day)}`}</Text>
       <Button

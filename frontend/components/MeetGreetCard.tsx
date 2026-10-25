@@ -130,7 +130,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
 
   if (status === "done" || status === "skipped" || !open) {
     return (
-      <Card style={styles.card} tone={theme.ui.blocks ? "peach" : undefined} testID="meet-greet">
+      <Card style={styles.card} tone="blush" testID="meet-greet">
         <Text style={styles.muted}>
           {status === "done"
             ? `Met ✓${summary ? ` · ${summary}` : ""}`
@@ -295,7 +295,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
   }
 
   return (
-    <Card style={styles.card} tone={theme.ui.blocks ? "peach" : undefined} testID="meet-greet">
+    <Card style={styles.card} tone="blush" testID="meet-greet">
       {body}
       {error ? (
         <Text accessibilityRole="alert" style={styles.error} testID="meet-error">

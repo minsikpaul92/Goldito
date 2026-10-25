@@ -14,6 +14,8 @@ type Props = {
   role: "owner" | "sitter";
   /** Sent after the booking's payment card: the price the owner pays (3D.8, #235). */
   final?: boolean;
+  /** Who sent it: mine is green like my bubbles, theirs is white (#289). */
+  side?: "me" | "them";
   /** Who sent it and when, shown small above the quote ("Chloe · Oct 25 4:05 PM"). */
   from?: string;
   busy?: boolean;
@@ -37,10 +39,11 @@ function short(iso: string): string {
  * fee lines: an accepted one is part of its total and shows as a plain line; an unanswered one can't be answered any
  * more, so the card says a new quote replaces it.
  */
-export function ChatQuoteCard({ card, role, final, from, busy, onConfirm, onDecline }: Props) {
+export function ChatQuoteCard({ card, role, final, side, from, busy, onConfirm, onDecline }: Props) {
   const styles = useThemedStyles(makeStyles);
   const q = card.quote;
   const open = card.status === "sent";
+  const mine = side === "me";
   const pending = card.extras.some((e) => e.status === "offered");
   const unit =
     q.service !== "daycare" && q.nights > 0
@@ -49,32 +52,32 @@ export function ChatQuoteCard({ card, role, final, from, busy, onConfirm, onDecl
 
   return (
     <Card
-      style={card.status === "replaced" ? styles.cardFaded : styles.card}
+      style={StyleSheet.flatten([card.status === "replaced" ? styles.cardFaded : styles.card, mine ? styles.mine : null])}
       testID="chat-quote-card"
     >
-      {from ? <Text style={styles.from}>{from}</Text> : null}
+      {from ? <Text style={[styles.from, mine && styles.onGreenMuted]}>{from}</Text> : null}
       <View style={styles.row}>
-        <Text style={styles.title} testID="quote-title">{final ? "Final quote" : "Quote"}</Text>
+        <Text style={[styles.title, mine && styles.onGreen]} testID="quote-title">{final ? "Final quote" : "Quote"}</Text>
         {card.status === "confirmed" ? <Text style={styles.ok} testID="quote-status">Confirmed</Text> : null}
         {card.status === "replaced" ? <Text style={styles.muted} testID="quote-status">Replaced</Text> : null}
       </View>
-      <Text style={styles.muted}>{`${SERVICE[card.serviceType] ?? card.serviceType} · ${card.pets.map((p) => p.name).join(", ")}`}</Text>
-      <Text style={styles.muted}>{`${short(card.dropOffAt)} to ${short(card.pickUpAt)}`}</Text>
+      <Text style={[styles.muted, mine && styles.onGreenMuted]}>{`${SERVICE[card.serviceType] ?? card.serviceType} · ${card.pets.map((p) => p.name).join(", ")}`}</Text>
+      <Text style={[styles.muted, mine && styles.onGreenMuted]}>{`${short(card.dropOffAt)} to ${short(card.pickUpAt)}`}</Text>
 
       <View style={styles.row}>
-        <Text style={styles.body}>{unit}</Text>
-        <Text style={styles.body}>{money(q.base)}</Text>
+        <Text style={[styles.body, mine && styles.onGreen]}>{unit}</Text>
+        <Text style={[styles.body, mine && styles.onGreen]}>{money(q.base)}</Text>
       </View>
       {q.extra_pets > 0 ? (
         <View style={styles.row}>
-          <Text style={styles.body}>Extra pet</Text>
-          <Text style={styles.body}>{money(q.extra_pets)}</Text>
+          <Text style={[styles.body, mine && styles.onGreen]}>Extra pet</Text>
+          <Text style={[styles.body, mine && styles.onGreen]}>{money(q.extra_pets)}</Text>
         </View>
       ) : null}
       {q.holiday_surcharge > 0 ? (
         <View style={styles.row}>
-          <Text style={styles.body}>Holiday</Text>
-          <Text style={styles.body}>{money(q.holiday_surcharge)}</Text>
+          <Text style={[styles.body, mine && styles.onGreen]}>Holiday</Text>
+          <Text style={[styles.body, mine && styles.onGreen]}>{money(q.holiday_surcharge)}</Text>
         </View>
       ) : null}
 
@@ -82,14 +85,14 @@ export function ChatQuoteCard({ card, role, final, from, busy, onConfirm, onDecl
         .filter((e) => e.status === "accepted")
         .map((e) => (
           <View key={e.id} style={styles.row} testID="quote-extra-accepted">
-            <Text style={styles.body}>{e.label}</Text>
-            <Text style={styles.body}>{money(e.amount)}</Text>
+            <Text style={[styles.body, mine && styles.onGreen]}>{e.label}</Text>
+            <Text style={[styles.body, mine && styles.onGreen]}>{money(e.amount)}</Text>
           </View>
         ))}
 
-      <View style={[styles.row, styles.totalRow]}>
-        <Text style={styles.total}>Total</Text>
-        <Text style={styles.total} testID="quote-total">{`${money(card.total)} ${q.currency}`}</Text>
+      <View style={[styles.row, styles.totalRow, mine && styles.totalRowGreen]}>
+        <Text style={[styles.total, mine && styles.onGreen]}>Total</Text>
+        <Text style={[styles.total, mine && styles.onGreen]} testID="quote-total">{`${money(card.total)} ${q.currency}`}</Text>
       </View>
 
       {open && pending ? (
@@ -110,15 +113,19 @@ export function ChatQuoteCard({ card, role, final, from, busy, onConfirm, onDecl
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     // Figma owner quote bubble: 14 padding, 16 corners, same for both roles, the sender's name small on top.
-    card: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%", padding: 14, borderRadius: theme.radius.lg, backgroundColor: theme.color.cardGround, borderColor: theme.color.cardLine },
-    cardFaded: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%", padding: 14, borderRadius: theme.radius.lg, backgroundColor: theme.color.cardGround, borderColor: theme.color.cardLine, opacity: 0.5 },
+    card: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%", padding: 14, borderRadius: theme.radius.lg },
+    cardFaded: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%", padding: 14, borderRadius: theme.radius.lg, opacity: 0.5 },
+    mine: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },
+    onGreen: { color: theme.color.primaryText },
+    onGreenMuted: { color: theme.color.primaryText, opacity: 0.85 },
+    totalRowGreen: { borderTopColor: theme.color.primaryText },
     row: { flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.md },
     actions: { gap: theme.spacing.sm, marginTop: theme.spacing.md },
-    from: { fontSize: 11, fontWeight: theme.fontWeight.bold, letterSpacing: 0.33, textTransform: "uppercase", color: theme.color.cardTextMuted },
-    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, letterSpacing: 0.3, color: theme.color.cardText },
-    body: { fontSize: theme.fontSize.body, letterSpacing: 0.3, color: theme.color.cardText, flexShrink: 1 },
-    muted: { fontSize: theme.fontSize.small, letterSpacing: 0.3, color: theme.color.cardTextMuted },
+    from: { fontSize: 11, fontWeight: theme.fontWeight.bold, letterSpacing: 0.33, textTransform: "uppercase", color: theme.color.textMuted },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, letterSpacing: 0.3, color: theme.color.text },
+    body: { fontSize: theme.fontSize.body, letterSpacing: 0.3, color: theme.color.text, flexShrink: 1 },
+    muted: { fontSize: theme.fontSize.small, letterSpacing: 0.3, color: theme.color.textMuted },
     ok: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
-    totalRow: { marginTop: theme.spacing.xs, paddingTop: theme.spacing.sm, borderTopWidth: 1, borderTopColor: theme.color.cardLine },
-    total: { fontSize: theme.fontSize.body + 2, letterSpacing: 0.3, fontWeight: theme.fontWeight.bold, color: theme.color.cardText },
+    totalRow: { marginTop: theme.spacing.xs, paddingTop: theme.spacing.sm, borderTopWidth: 1, borderTopColor: theme.color.border },
+    total: { fontSize: theme.fontSize.body + 2, letterSpacing: 0.3, fontWeight: theme.fontWeight.bold, color: theme.color.text },
   });

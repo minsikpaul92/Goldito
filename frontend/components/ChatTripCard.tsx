@@ -166,7 +166,7 @@ export function ChatTripCard({ booking, viewer, threadId, messages, onSent, star
             : `${traveler} is on the way 🚗${eta}`;
     return (
       <View style={styles.wrap}>
-        <Card style={styles.card} testID="chat-trip-live">
+        <Card tone="blush" style={styles.card} testID="chat-trip-live">
           <Text style={styles.title}>{line}</Text>
           <Button
             label={mine ? "Open trip" : `Track ${traveler}`}
@@ -194,7 +194,7 @@ export function ChatTripCard({ booking, viewer, threadId, messages, onSent, star
   return (
     <View style={styles.wrap}>
       {hello || receivable || there ? (
-        <Card style={styles.card} testID="chat-trip-arrived">
+        <Card tone="blush" style={styles.card} testID="chat-trip-arrived">
           <Text style={styles.title}>
             {arrivedTrip?.traveler_id === profile?.id
               ? `You've arrived ✓${arrivedClock}`
@@ -205,11 +205,11 @@ export function ChatTripCard({ booking, viewer, threadId, messages, onSent, star
         </Card>
       ) : null}
       {there ? null : next && canStart && Date.now() < opens ? (
-        <Card style={styles.card} testID="chat-trip-waiting">
+        <Card tone="blush" style={styles.card} testID="chat-trip-waiting">
           <Text style={styles.muted}>{`You can start the trip from ${formatTime(isoToZoned(new Date(opens).toISOString()).time)}.`}</Text>
         </Card>
       ) : next && canStart ? (
-        <Card style={styles.card} testID="chat-trip-start">
+        <Card tone="blush" style={styles.card} testID="chat-trip-start">
           <Text style={styles.title}>{next.kind === "drop_off" ? "Heading to the drop-off?" : "Heading to the pick-up?"}</Text>
           <Button
             label="Start trip"
