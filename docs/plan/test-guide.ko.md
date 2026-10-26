@@ -178,6 +178,7 @@
 | 다음 시터 요청 카드의 **From Max's Life Record** (접힘) · 문의 AI 근거 칩 · 케어 체크리스트 초안에 지난 Heads-up 자동 제안 | ✅ 🤖 `sitter-bookings.spec.ts` + pytest | 07C / 7C.6 |
 | **Snap 탭** (D61): Treat check(간식 성분표 → 알러지 · 독성 · Tavily 출처, DANGER 빨간 모달) · Mood(펫별 박스 + 감정 %) · Sticker(펫만 오리기 → 다이어리 꾸미기, 견주 + 시터) | 🟡 12.0 탭 · 카드 3개 ✅(🤖 `snap.spec.ts` · `auth.spec.ts`) · 12.1a Treat check **API만** ✅(🤖 pytest `test_ai_safety_check` · `test_safety_rules` · `test_tavily` + SQL `rls_smoke` 013 — `013` 호스팅 DB 적용 · smoke 통과 2026-10-14, 모델 직접 호출 확인 2026-10-14) · 12.1c Treat check **화면** ✅(🤖 `treat-check.spec.ts` — API는 목업, 사람 확인 · 실제 호출은 대기) · 12.2a Mood **API만** ✅(🤖 pytest `test_mood_rules` · `test_ai_pet_mood`; 비전 태그는 우리 사진 8장으로 직접 호출 확인 2026-10-14) · 12.2b Mood **화면** ✅(🤖 `mood.spec.ts` — MediaPipe는 테스트 훅, API 목업; 실제 브라우저 · 모델 확인은 대기) · 12.3a Sticker **만들기** ✅(🤖 `sticker.spec.ts` + SQL `rls_smoke` 013b — `013b` 호스팅 DB 적용 · smoke 통과 2026-10-14, 실제 Magic Touch는 머지 뒤) · 12.3b 다이어리 **꾸미기** ✅(🤖 `decor.spec.ts` — 견주 다이어리 상세 · 시터 보낸 알림장, 마우스 드래그 · 크기 · 회전; `013b` 적용 2026-10-14) · 12.4 **그림일기 · 글 위/아래 스티커 · 다운로드 · 기본 스티커 9장** ✅(🤖 `decor.spec.ts` · `sticker.spec.ts`; 기본 스티커는 임시 그림) · 12.5 **Snap 탭 Recent checks 3개 · README** ✅(🤖 `snap.spec.ts`) · 11.8 **Save image**(꾸민 그림일기 한 장 → PNG) 🟡(🤖 `decor.spec.ts` · 사람 확인 대기) | 12 (08 설계 포함) |
 | **공개 데모 보호** (감사 2026-10-21): 데모 계정(`@goldito.test`)의 비밀번호 · 이메일은 시드만 바꿈(`014z`) · AI 호출(`/api/ai/*` · `/api/rag/*` · `/api/tone/*`)과 업로드 서명(`/api/media/sign` · 펫 · 프로필 사진)은 한 사람당 하루 100번(공유 데모 계정 1000번), 넘으면 429 | 🟡 🤖 SQL `rls_smoke`(014z) · pytest `test_seed_demo` · `test_limits` · 호스팅 DB 적용은 머지 때 (SEC-4 to SEC-6) | 10 |
+| **심사위원 좌석** (#411): Judge 1 to 4 세트(오너 + 시터, 펫 둘), 한 세트는 한 브라우저만. 좌석 잡기는 서버에서 원자적, 1분마다 heartbeat, 로그아웃하면 바로 풀리고 10분 동안 heartbeat가 없어도 풀림 | 🟡 DB(`015t`) 🤖 SQL `rls_smoke`(015t: 잡기 · 두 번 잡기 · heartbeat · 풀기 · 만료) · 호스팅 DB 적용과 시드는 머지 때 (JUDGE-1 to JUDGE-6) | #411 |
 | 로그인 · 회원가입 (Apple · Google 버튼은 "Coming soon" 토스트만, 이메일 가입 위 "or with email" 구분선) · 역할별 화면 · Welcome 투어 | ✅ 🤖 (소셜 버튼 · 구분선은 사람 확인 대기) | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
 | **Profile의 Save 고정** (스크롤해도 화면 맨 아래에 Save와 저장 에러가 보임, 오너 · 시터 같음 · 시터는 Your photos가 Badges 위) | 🟡 기존 `profile` e2e가 `profile-save`로 저장 확인 · 고정 위치 · 순서는 사람 확인 대기 | #292 |
@@ -1263,6 +1264,13 @@
 | PASTTIME-3 | 그 시트(또는 Book care · Change time)에서 오늘 날짜의 시간 고르기 | 지금보다 앞선 시간은 흐리게 줄이 그어져 눌리지 않음(오후면 AM 전체, 지난 시 · 분). 바퀴를 굴려 지난 시간에 멈추면 **Set**이 꺼짐. 내일 이후 날짜는 모든 시간이 열림 | 🤖 `chat-handoff` | ➖ |
 | PASTTIME-4 | 시터가 이미 수락했고 맡기는 시간이 지난 요청 → 예약 화면(또는 채팅)에서 **Accept** | 시트의 Times 아래 빨간 줄 **Drop-off time has passed.**(픽업만 지났으면 Pick-up), 버튼은 Accept 대신 **Pick new times**. 누르면 "Pick new times" 시트(시간만, 드롭오프 먼저) → **Send to Chloe** → 토스트 "Sent to Chloe", 예약 화면에 그대로 머묾. 새 시간이 반영되면 빨간 줄이 사라지고 Accept가 돌아옴 | 🤖 `chat` | 사람 확인 대기 |
 | PASTTIME-5 | 앱에서는 아직 안 지났지만 서버가 `proposal_expired` · `request_expired`로 거절(누르는 사이에 시간이 지남) | "Not saved" 창과 Try again이 뜨지 않고 시트에 **That time has passed.** + **Pick new times** | 🤖 `chat`(서버 응답을 흉내) | ➖ |
+
+### 3.62 심사위원 좌석 (JUDGE) · #411 · *사전: 호스팅 DB에 `015t` 적용, `seed_demo`로 judge1 to judge4 계정 시드(머지 때 Minsik)*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| JUDGE-1 | (DB) 같은 좌석을 두 브라우저가 잡기 · 같은 브라우저가 다시 잡기 | 하나만 잡힘. 처음 잡은 브라우저는 `fresh`(세트 초기화), 같은 브라우저가 다시 잡으면 초기화 없음. 앱(anon · 로그인)은 직접 못 잡고 holder id도 못 읽음 | 🤖 SQL `rls_smoke`(015t) | ➖ |
+| JUDGE-2 | (DB) 로그아웃(release) · 10분 넘게 heartbeat 없음 | 풀기는 잡은 브라우저만, 풀면 바로 빈 좌석. 풀린 좌석은 heartbeat로 되살아나지 않음. 만료된 좌석은 다른 브라우저가 `fresh`로 잡고, 예전 브라우저의 heartbeat는 실패 | 🤖 SQL `rls_smoke`(015t) | ➖ |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 

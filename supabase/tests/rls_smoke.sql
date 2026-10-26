@@ -7528,4 +7528,76 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 015t (#411): Judge seats, one browser per set: claim, double claim, heartbeat, release, expiry
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  a constant uuid := '00000000-0000-4000-8000-0000000000ea';
+  b constant uuid := '00000000-0000-4000-8000-0000000000eb';
+  v_ok boolean;
+  v_fresh boolean;
+  v_err text;
+begin
+  perform _t_as(null);
+  update public.judge_seats set holder = null, heartbeat_at = '-infinity', claimed_at = null;
+
+  perform set_config('role', 'service_role', true);
+  select ok, fresh into v_ok, v_fresh from claim_judge_seat('judge1', a);
+  perform _t_ok(v_ok and v_fresh, '015t: a free seat is taken, and fresh (the set gets reset)');
+  select ok, fresh into v_ok, v_fresh from claim_judge_seat('judge1', b);
+  perform _t_ok(not v_ok and not v_fresh, '015t: a second browser cannot take a held seat');
+  select ok, fresh into v_ok, v_fresh from claim_judge_seat('judge1', a);
+  perform _t_ok(v_ok and not v_fresh, '015t: the holder taking its own seat again is not fresh (no reset)');
+  perform _t_ok(judge_seat_held('judge1', a) and not judge_seat_held('judge1', b), '015t: only the holder holds the seat');
+  begin
+    perform claim_judge_seat('chloe', a);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'unknown_seat', '015t: only judge sets have seats');
+
+  perform _t_as(null, 'anon');
+  perform _t_ok((select in_use and not mine from judge_seat_status(b) where set_key = 'judge1'), '015t: another browser sees the seat in use');
+  perform _t_ok((select in_use and mine from judge_seat_status(a) where set_key = 'judge1'), '015t: the holder sees its own seat');
+  perform _t_ok((select not in_use from judge_seat_status(b) where set_key = 'judge2'), '015t: a free seat is not in use');
+  perform _t_ok(judge_seat_heartbeat('judge1', a), '015t: the holder keeps the seat with a heartbeat');
+  perform _t_ok(not judge_seat_heartbeat('judge1', b), '015t: a heartbeat from another browser does nothing');
+  begin
+    perform claim_judge_seat('judge2', b);
+    v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '42501', '015t: the app cannot take a seat without the backend');
+  begin
+    perform count(*) from public.judge_seats;
+    v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '42501', '015t: the app cannot read holder ids');
+
+  -- Release: another browser cannot free it; the holder can, and then it is free at once.
+  perform release_judge_seat('judge1', b);
+  perform _t_ok((select in_use from judge_seat_status(b) where set_key = 'judge1'), '015t: another browser cannot release a seat');
+  perform release_judge_seat('judge1', a);
+  perform _t_ok((select not in_use from judge_seat_status(b) where set_key = 'judge1'), '015t: sign-out frees the seat at once');
+  perform _t_ok(not judge_seat_heartbeat('judge1', a), '015t: a released seat is not taken back by a heartbeat');
+
+  perform set_config('role', 'service_role', true);
+  select ok, fresh into v_ok, v_fresh from claim_judge_seat('judge1', a);
+  perform _t_ok(v_ok and not v_fresh, '015t: the same browser coming back keeps its stay');
+  select ok, fresh into v_ok, v_fresh from claim_judge_seat('judge2', b);
+  perform _t_ok(v_ok and v_fresh, '015t: a second browser takes another seat');
+
+  -- Expiry: no heartbeat for 10 minutes frees the seat, and the next browser gets a fresh set.
+  perform _t_as(null);
+  update public.judge_seats set heartbeat_at = now() - interval '11 minutes' where set_key = 'judge1';
+  perform set_config('role', 'service_role', true);
+  perform _t_ok(not judge_seat_held('judge1', a), '015t: a seat without a heartbeat for 10 minutes is no longer held');
+  select ok, fresh into v_ok, v_fresh from claim_judge_seat('judge1', b);
+  perform _t_ok(v_ok and v_fresh, '015t: an expired seat is taken by another browser, fresh');
+  perform _t_as(null, 'anon');
+  perform _t_ok(not judge_seat_heartbeat('judge1', a), '015t: the old holder lost the seat');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;
