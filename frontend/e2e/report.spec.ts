@@ -79,6 +79,7 @@ test.describe("daily report", () => {
     await expect(chip("rec-meal")).toHaveAttribute("aria-pressed", "true");
     await chip("rec-walk").click();
     await expect(chip("rec-walk")).toHaveAttribute("aria-pressed", "false");
+    await screen.getByTestId(`report-custom-open-${MAX.id}`).click();
     for (const line of ["She got so excited", "Napped on my lap"]) {
       await screen.getByTestId(`report-custom-input-${MAX.id}`).fill(line);
       await screen.getByTestId(`report-custom-add-${MAX.id}`).click();
@@ -207,6 +208,7 @@ test.describe("daily report", () => {
   test("changing your mind: clearing the line adds nothing, and × removes a line you added (FB-16, FB-17)", async ({ page }) => {
     const { reportRequests } = await openSitterDiary(page);
     const screen = app(page);
+    await screen.getByTestId(`report-custom-open-${MAX.id}`).click();
     const input = screen.getByTestId(`report-custom-input-${MAX.id}`);
     await input.fill("Typo here");
     await input.fill("");
@@ -227,12 +229,16 @@ test.describe("daily report", () => {
   test("two pets in care: pick the pet first, write for that one; each keeps its own lines (FB-19)", async ({ page }) => {
     const { reportRequests } = await openSitterDiary(page, [], [MAX, MOCHI]);
     const screen = app(page);
-    await expect(screen.getByTestId(`diary-pet-${MAX.id}`)).toHaveAttribute("aria-pressed", "true");
+    // The pet chip sits in the Photos / Diary row (#398): it opens a menu of the pets in care.
+    await expect(screen.getByTestId("diary-pet")).toContainText("Max");
     await expect(screen.getByTestId(`report-${MAX.id}`)).toBeVisible();
     await expect(screen.getByTestId(`report-${MOCHI.id}`)).toBeHidden();
 
+    await screen.getByTestId(`report-custom-open-${MAX.id}`).click();
     await screen.getByTestId(`report-custom-input-${MAX.id}`).fill("Max line");
     await screen.getByTestId(`report-custom-add-${MAX.id}`).click();
+    await screen.getByTestId("diary-pet").click();
+    await expect(screen.getByTestId(`diary-pet-${MAX.id}`)).toHaveAttribute("aria-checked", "true");
     await screen.getByTestId(`diary-pet-${MOCHI.id}`).click();
     await expect(screen.getByTestId(`report-${MOCHI.id}`)).toBeVisible();
     await expect(screen.getByTestId(`report-${MAX.id}`)).toBeHidden();
@@ -240,15 +246,15 @@ test.describe("daily report", () => {
     await screen.getByTestId(`report-body-${MOCHI.id}`).waitFor();
     expect(reportRequests[0]).toMatchObject({ pet_id: MOCHI.id });
     expect(reportRequests[0].chips).not.toContain("Max line");
+    await screen.getByTestId("diary-pet").click();
     await expect(screen.getByTestId(`diary-pet-${MOCHI.id}`)).toContainText("Draft");
-
     await screen.getByTestId(`diary-pet-${MAX.id}`).click();
     await expect(screen.getByRole("button", { name: "Max line: on" })).toBeVisible(); // still there
   });
 
   test("one pet in care: no picker", async ({ page }) => {
     await openSitterDiary(page);
-    await expect(app(page).getByTestId(`diary-pet-${MAX.id}`)).toHaveCount(0);
+    await expect(app(page).getByTestId("diary-pet")).toHaveCount(0);
   });
 
   test("after sending, another report can be written the same day (FB-22)", async ({ page }) => {
@@ -261,6 +267,7 @@ test.describe("daily report", () => {
     const asked = chipRequests.length;
     await screen.getByTestId(`report-another-${MAX.id}`).click();
     await expect.poll(() => chipRequests.length).toBeGreaterThan(asked); // fresh chips: what happened since
+    await screen.getByTestId(`report-custom-open-${MAX.id}`).click();
     await screen.getByTestId(`report-custom-input-${MAX.id}`).fill("Evening walk was calm");
     await screen.getByTestId(`report-custom-add-${MAX.id}`).click();
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
@@ -344,6 +351,8 @@ test.describe("daily report", () => {
   test("a line in \"Anything to add?\" becomes the sitter's own chip; it goes to the report and can be turned off", async ({ page }) => {
     const { reportRequests } = await openSitterDiary(page);
     const screen = app(page);
+    await expect(screen.getByTestId(`report-custom-input-${MAX.id}`)).toHaveCount(0); // hidden until wanted
+    await screen.getByTestId(`report-custom-open-${MAX.id}`).click();
     await expect(screen.getByTestId(`report-custom-add-${MAX.id}`)).toBeDisabled();
     await screen.getByTestId(`report-custom-input-${MAX.id}`).fill("Learned a new trick");
     await screen.getByTestId(`report-custom-add-${MAX.id}`).click();
@@ -444,4 +453,39 @@ test.describe("daily report", () => {
     await expect(chip).toHaveAttribute("aria-pressed", "false");
   });
 
+  test("Send stays pinned while the page and chips scroll; the write button comes before the chips (#398)", async ({ page }) => {
+    const notes = Array.from({ length: 12 }, (_, i) => ({ id: `note-s${i}`, kind: "episode", label: `A moment worth a chip number ${i}`, source: "checkin", check: null, media_id: null }));
+    await openSitterDiary(page, notes);
+    const screen = app(page);
+    const send = screen.getByTestId(`report-send-${MAX.id}`);
+    await expect(send).toBeDisabled(); // nothing on the page yet
+    const write = await screen.getByTestId(`report-generate-${MAX.id}`).boundingBox();
+    const firstChip = await screen.getByTestId(`report-chip-${MAX.id}-rec-meal`).boundingBox();
+    expect(write!.y).toBeLessThan(firstChip!.y);
+
+    await screen.getByTestId(`report-body-${MAX.id}`).fill("A calm day.");
+    const before = await send.boundingBox();
+    await screen.getByTestId(`report-chip-${MAX.id}-note-s11`).scrollIntoViewIfNeeded();
+    await expect(send).toBeInViewport();
+    const after = await send.boundingBox();
+    expect(Math.round(after!.y)).toBe(Math.round(before!.y));
+    await send.click();
+    await expect(screen.getByTestId(`report-sent-${MAX.id}`)).toContainText("Sent to Robert");
+    await expect(send).toHaveCount(0); // nothing left to send
+  });
+
+  test("the picture box adds the photo; a tap on it offers Replace and Remove (#398)", async ({ page }) => {
+    const { db } = await openSitterDiary(page);
+    await mockUpload(page, db, MAX.id);
+    const screen = app(page);
+    await screen.getByTestId(`report-add-photo-${MAX.id}`).click();
+    await screen.getByTestId("sample-walk").click();
+    await screen.getByTestId("media-confirm-use").click();
+    await screen.getByTestId(`report-chip-${MAX.id}-${PHOTO_CHIP.id}`).waitFor();
+    await screen.getByTestId(`report-photo-change-${MAX.id}`).click();
+    await expect(screen.getByTestId(`report-photo-replace-${MAX.id}`)).toBeVisible();
+    await screen.getByTestId(`report-photo-remove-${MAX.id}`).click();
+    await expect(screen.getByTestId(`report-chip-${MAX.id}-${PHOTO_CHIP.id}`)).toHaveCount(0);
+    await expect(screen.getByTestId(`report-add-photo-${MAX.id}`)).toBeVisible();
+  });
 });
