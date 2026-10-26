@@ -3279,7 +3279,7 @@ $$;
 
 
 -- ---------------------------------------------------------------------------
--- O (011g, FB-25 · FB-29): the sitter's private note about an owner
+-- O (011g, FB-25 · FB-29, 015s): the sitter's review of an owner, read by that owner and by every sitter
 -- ---------------------------------------------------------------------------
 
 do $$
@@ -3292,6 +3292,7 @@ declare
   v_b uuid;
   v_err text;
   v_notes int;
+  v_sum jsonb;
 begin
   perform _t_as(null);
   insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Notey') returning id into pet;
@@ -3311,7 +3312,7 @@ begin
   perform _t_as(chloe);
   perform save_owner_note(v_b, 4, '  Clear care notes  ');
   perform _t_ok((select rating = 4 and comment = 'Clear care notes' from public.sitter_owner_notes where booking_id = v_b),
-    'O: the sitter saves a private note about the owner (trimmed)');
+    'O: the sitter saves a review of the owner (trimmed)');
   perform save_owner_note(v_b, 5, 'Happy to host again');
   perform _t_ok((select count(*) = 1 and max(rating) = 5 from public.sitter_owner_notes where booking_id = v_b),
     'O: saving again edits the same note');
@@ -3320,7 +3321,11 @@ begin
     'O: the owner is not told');
 
   perform _t_as(robert);
-  perform _t_ok((select count(*) from public.sitter_owner_notes where booking_id = v_b) = 0, 'O: the owner cannot read it');
+  perform _t_ok((select count(*) from public.sitter_owner_notes where booking_id = v_b) = 1, 'O: the owner reads the review about them (015s)');
+  v_sum := owner_rating_summary(robert);
+  perform _t_ok((v_sum ->> 'count')::int = 1 and v_sum -> 'reviews' -> 0 ->> 'reviewer' = 'Chloe'
+      and (v_sum -> 'reviews' -> 0 ->> 'mine')::boolean = false,
+    'O: …and in their summary, with the sitter''s first name');
   begin
     perform save_owner_note(v_b, 1, 'From the owner');
     v_err := null;
@@ -3328,7 +3333,14 @@ begin
   end;
   perform _t_ok(v_err = 'forbidden', 'O: …or write one');
   perform _t_as(paul);
-  perform _t_ok((select count(*) from public.sitter_owner_notes where booking_id = v_b) = 0, 'O: another sitter cannot read it');
+  perform _t_ok((select count(*) from public.sitter_owner_notes where booking_id = v_b) = 0, 'O: another sitter cannot read the row');
+  v_sum := owner_rating_summary(robert);
+  perform _t_ok((v_sum ->> 'count')::int = 1 and v_sum -> 'reviews' -> 0 ->> 'comment' = 'Happy to host again'
+      and v_sum ->> 'avg' = '5.0',
+    'O: …but sees the owner''s average and every review in owner_rating_summary (015s)');
+  perform _t_as(joy);
+  perform _t_ok(owner_rating_summary(robert) is null, 'O: another owner does not see it');
+  perform _t_as(paul);
   begin
     insert into public.sitter_owner_notes (booking_id, sitter_id, owner_id, rating) values (v_b, paul, robert, 1);
     v_err := null;
@@ -7429,6 +7441,89 @@ begin
   perform _t_as(null, 'anon');
   begin perform public.update_feed_post(p_a, now(), null, '{}'); v_err := null; exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err like 'permission denied%', '015l: anon cannot edit');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 015r (#397): one check-in with a pick per group, one notice to the owner
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  pip uuid;
+  m uuid;
+  n int;
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Pip15q') returning id into pip;
+  perform _t_booking(robert, chloe, array[pip], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/015r/a', 'image', 'task_proof') returning id into m;
+
+  perform _t_as(chloe);
+  select count(*) into n from public.log_care_checkins(pip,
+    '[{"kind": "meal", "value": "all"}, {"kind": "potty", "value": "normal"}, {"kind": "walk", "value": "20"}, {"kind": "mood", "value": "happy"}]',
+    '  Loved the park  ', m);
+  perform _t_as(null);
+  perform _t_ok(n = 4 and (select count(*) from public.care_checkins where pet_id = pip) = 4,
+    '015r: four picks are four check-ins');
+  perform _t_ok((select count(*) from public.notifications where pet_id = pip and type = 'care_checkin') = 1,
+    '015r: the owner gets one notice for the whole check-in');
+  perform _t_ok((select n2.title = 'Pip15q ate everything 🍽️ · Potty update for Pip15q: normal 💩 · Pip15q had a 20-minute walk 🦮 · Pip15q seems happy 😊'
+        and n2.body = 'Loved the park' and n2.user_id = robert
+        and n2.ref_id = (select id from public.care_checkins where pet_id = pip and kind = 'meal')
+      from public.notifications n2 where n2.pet_id = pip and n2.type = 'care_checkin'),
+    '015r: the notice lists every pick, carries the memo and points at the first pick');
+  perform _t_ok((select count(*) from public.care_checkins where pet_id = pip and (note_text is not null or media_id is not null)) = 1
+    and (select note_text = 'Loved the park' and media_id = m from public.care_checkins where pet_id = pip and kind = 'meal'),
+    '015r: the memo and the photo ride on the first pick only');
+  perform _t_ok((select count(*) from public.feed_posts where media_id = m and category = 'meal' and note = 'Loved the park') = 1,
+    '015r: the photo makes one feed post');
+
+  perform _t_as(chloe);
+  begin
+    perform public.log_care_checkins(pip, '[{"kind": "meal", "value": "all"}, {"kind": "meal", "value": "most"}]');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'one_pick_per_group', '015r: one pick per group');
+  begin
+    perform public.log_care_checkins(pip, '[{"kind": "note", "value": null}]');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_pick', '015r: only meal, potty, walk and mood are picks');
+  begin
+    perform public.log_care_checkins(pip, '[]');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'no_picks', '015r: nothing picked is refused');
+  begin
+    perform public.log_care_checkins(pip, '[{"kind": "meal", "value": "all"}, {"kind": "mood", "value": "giddy"}]');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514' and (select count(*) from public.care_checkins where pet_id = pip) = 4,
+    '015r: one bad pick sends nothing');
+
+  perform _t_as(robert);
+  begin
+    perform public.log_care_checkins(pip, '[{"kind": "meal", "value": "all"}]');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_in_care_window', '015r: the owner cannot log a check-in');
+  begin
+    perform public.care_checkin_write(pip, 'meal', 'all', null, null);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '015r: care_checkin_write is not callable by clients');
   perform _t_as(null);
 end;
 $$;

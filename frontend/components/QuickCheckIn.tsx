@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { SentCheckin, listTodayCheckins, logCareCheckin } from "../features/care/careApi";
+import { SentCheckin, listTodayCheckins, logCareCheckin, logCareCheckins } from "../features/care/careApi";
 import { MEMO_MAX, groupsFor } from "../features/care/checkinOptions";
 import { checkinLabel } from "../features/diary/diaryApi";
 import { formatTime, isoToZoned } from "../features/schedule/dates";
@@ -15,6 +15,7 @@ import type { CareCheckinKind, Species } from "../types/db";
 import { Art } from "./art/Art";
 import { Button } from "./ui/Button";
 import { Icon } from "./ui/Icon";
+import { Sheet } from "./ui/Sheet";
 import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
 
@@ -28,10 +29,11 @@ type Props = {
 const GROUP_ART = { meal: "sitter/ate", potty: "sitter/potty", walk: "sitter/walk", mood: "sitter/mood", nap: "feed/chip-naps", wake: "feed/chip-naps" } as const;
 
 /**
- * The 5-second check (phase-06 6.10): tap what happened, then **Send**. With the memo empty the owner
- * gets a preset line ("Max ate everything"); a memo typed for something special replaces it. A photo
- * can ride along. A memo alone (nothing picked) is sent as a note. Layout: the Oct 25 design (design site,
- * Expressive prototype `sitter-checkin`): one card of big equal options, the memo beside Add photo, the day's sends.
+ * The 5-second check (phase-06 6.10): tap what happened, one answer per group (#397), then **Send**. The owner gets
+ * one notice listing every pick ("Max ate everything · Max seems happy"); a memo typed for something special rides
+ * along. A photo can ride along too, shown as a thumbnail until it is sent. A memo alone (nothing picked) is sent as a
+ * note. Layout: the Oct 25 design (design site, Expressive prototype `sitter-checkin`): one card of big equal options,
+ * the memo beside Add photo, the day's sends.
  */
 export function QuickCheckIn({ pet, onPhotos }: Props) {
   const theme = useTheme();
@@ -39,10 +41,11 @@ export function QuickCheckIn({ pet, onPhotos }: Props) {
   const toast = useToast();
   const errorDialog = useErrorDialog();
   const [sent, setSent] = useState<SentCheckin[]>([]);
-  /** The option picked but not sent yet (`meal:all`); tapping it again unpicks it. */
-  const [picked, setPicked] = useState<{ kind: CareCheckinKind; value: string } | null>(null);
+  /** One pick per group, not sent yet (`{ meal: "all", mood: "happy" }`); tapping a pick again unpicks it. */
+  const [picks, setPicks] = useState<Partial<Record<CareCheckinKind, string>>>({});
   const [memo, setMemo] = useState("");
   const [photo, setPhoto] = useState<PickedMedia | null>(null);
+  const [photoOpen, setPhotoOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,10 +61,18 @@ export function QuickCheckIn({ pet, onPhotos }: Props) {
     void loadSent();
   }, [loadSent]);
 
-  const send = async (kind: CareCheckinKind, value: string | null) => {
+  // The chosen photo shows as a thumbnail (and bigger on a tap) before it is sent.
+  const preview = useMemo(() => (photo && typeof URL !== "undefined" ? URL.createObjectURL(photo.file) : null), [photo]);
+  useEffect(() => () => (preview ? URL.revokeObjectURL(preview) : undefined), [preview]);
+
+  const groups = groupsFor(pet.species);
+  /** The picks in group order (Meal, Potty, Walk, Mood): the owner's notice lists them that way. */
+  const pickList = groups.flatMap((g) => (picks[g.kind] ? [{ kind: g.kind, value: picks[g.kind] as string }] : []));
+
+  const send = async () => {
     if (sending) return;
     const note = memo.trim() || null;
-    if (kind === "note" && !note) {
+    if (pickList.length === 0 && !note) {
       setError("Type a note first.");
       return;
     }
@@ -78,26 +89,22 @@ export function QuickCheckIn({ pet, onPhotos }: Props) {
         });
         mediaId = uploaded.mediaId;
       }
-      await logCareCheckin({ petId: pet.id, kind, value, note, mediaId });
+      if (pickList.length > 0) await logCareCheckins({ petId: pet.id, picks: pickList, note, mediaId });
+      else await logCareCheckin({ petId: pet.id, kind: "note", value: null, note, mediaId });
       toast.show(`Sent. ${pet.ownerName} was told`);
       setMemo("");
       setPhoto(null);
-      setPicked(null);
+      setPicks({});
       void loadSent();
     } catch (e) {
       errorDialog.show({
         title: "Not sent",
         message: e instanceof UploadError || e instanceof Error ? e.message : "Try again.",
-        onRetry: () => void send(kind, value),
+        onRetry: () => void send(),
       });
     } finally {
       setSending(false);
     }
-  };
-
-  const sendPicked = () => {
-    if (picked) void send(picked.kind, picked.value);
-    else void send("note", null);
   };
 
   const attachPhoto = async () => {
@@ -109,7 +116,7 @@ export function QuickCheckIn({ pet, onPhotos }: Props) {
   return (
     <View style={styles.wrap} testID={`checkin-${pet.id}`}>
       <View style={styles.card}>
-        {groupsFor(pet.species).map((group) => {
+        {groups.map((group) => {
           const walk = group.kind === "walk";
           return (
             <View key={group.kind} style={styles.group}>
@@ -119,7 +126,7 @@ export function QuickCheckIn({ pet, onPhotos }: Props) {
               </View>
               <View style={[styles.options, walk && styles.optionsWalk]}>
                 {group.options.map((option) => {
-                  const on = picked?.kind === group.kind && picked.value === option.value;
+                  const on = picks[group.kind] === option.value;
                   return (
                     <Pressable
                       key={option.value}
@@ -127,7 +134,14 @@ export function QuickCheckIn({ pet, onPhotos }: Props) {
                       accessibilityLabel={`${group.label}: ${option.label}`}
                       aria-pressed={on}
                       disabled={sending}
-                      onPress={() => setPicked(on ? null : { kind: group.kind, value: option.value })}
+                      onPress={() =>
+                        setPicks((prev) => {
+                          const next = { ...prev };
+                          if (on) delete next[group.kind];
+                          else next[group.kind] = option.value;
+                          return next;
+                        })
+                      }
                       style={({ pressed }) => [styles.option, walk && styles.optionWalk, on && styles.optionOn, pressed && styles.pressed]}
                       testID={`checkin-${pet.id}-${group.kind}-${option.value}`}
                     >
@@ -165,17 +179,36 @@ export function QuickCheckIn({ pet, onPhotos }: Props) {
             testID={`checkin-memo-${pet.id}`}
           />
         </View>
-        <Button
-          label={photo ? "Photo ready ✓" : "Add photo"}
-          variant="secondary"
-          icon={<Icon name="camera" size={20} color={theme.color.primary} />}
-          disabled={sending}
-          onPress={() => void attachPhoto()}
-          style={styles.photoButton}
-          testID={`checkin-photo-${pet.id}`}
-        />
+        {photo && preview ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="See the photo"
+            onPress={() => setPhotoOpen(true)}
+            style={({ pressed }) => [styles.thumb, pressed && styles.pressed]}
+            testID={`checkin-photo-preview-${pet.id}`}
+          >
+            <Image source={{ uri: preview }} style={styles.fill} resizeMode="cover" accessibilityIgnoresInvertColors />
+          </Pressable>
+        ) : (
+          <Button
+            label="Add photo"
+            variant="secondary"
+            icon={<Icon name="camera" size={20} color={theme.color.primary} />}
+            disabled={sending}
+            onPress={() => void attachPhoto()}
+            style={styles.photoButton}
+            testID={`checkin-photo-${pet.id}`}
+          />
+        )}
       </View>
-      {photo ? <TextButton label="Remove photo" onPress={() => setPhoto(null)} style={styles.left} testID={`checkin-photo-remove-${pet.id}`} /> : null}
+      {photo ? (
+        <TextButton label="Remove photo" onPress={() => setPhoto(null)} disabled={sending} style={styles.right} testID={`checkin-photo-remove-${pet.id}`} />
+      ) : null}
+      <Sheet visible={photoOpen && !!preview} title="Photo" onClose={() => setPhotoOpen(false)} testID={`checkin-photo-view-${pet.id}`}>
+        <View style={styles.big}>
+          {preview ? <Image source={{ uri: preview }} style={styles.fill} resizeMode="contain" accessibilityIgnoresInvertColors /> : null}
+        </View>
+      </Sheet>
 
       {sent.length > 0 ? (
         <View style={styles.sentBox} testID={`checkin-sent-${pet.id}`}>
@@ -202,16 +235,16 @@ export function QuickCheckIn({ pet, onPhotos }: Props) {
       ) : null}
 
       <Text style={styles.ready} testID={`checkin-picked-${pet.id}`}>
-        {picked
-          ? `Ready to send: ${checkinLabel(picked.kind, picked.value).label}`
+        {pickList.length > 0
+          ? `Ready to send: ${pickList.map((p) => checkinLabel(p.kind, p.value).label).join(", ")}`
           : memo.trim()
             ? "Ready to send as a note"
             : "Pick what happened, add a memo or photo if you like, then Send."}
       </Text>
       <Button
         label={sending ? "Sending…" : "Send"}
-        disabled={sending || (!picked && !memo.trim())}
-        onPress={sendPicked}
+        disabled={sending || (pickList.length === 0 && !memo.trim())}
+        onPress={() => void send()}
         testID={`checkin-send-${pet.id}`}
       />
     </View>
@@ -254,7 +287,11 @@ const makeStyles = (theme: Theme) => {
     memoRow: { flexDirection: "row", alignItems: "flex-end", gap: theme.spacing.sm },
     memo: { flex: 1, minWidth: 0 },
     photoButton: { flexShrink: 0 },
+    thumb: { width: 56, height: 56, flexShrink: 0, overflow: "hidden", borderRadius: theme.radius.md, backgroundColor: theme.color.accent },
+    fill: { width: "100%", height: "100%" },
+    big: { width: "100%", aspectRatio: 1, overflow: "hidden", borderRadius: theme.radius.md, backgroundColor: theme.color.text },
     left: { alignSelf: "flex-start" },
+    right: { alignSelf: "flex-end" },
     sentBox: { gap: theme.spacing.sm, padding: theme.spacing.md, borderRadius: theme.radius.xl, backgroundColor: theme.color.accent },
     sentHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: theme.spacing.sm },
     sentTitle: { flex: 1, fontSize: theme.fontSize.caption, fontWeight: theme.fontWeight.bold, letterSpacing: 0.6, textTransform: "uppercase", color: theme.color.text },

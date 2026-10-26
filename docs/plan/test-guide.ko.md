@@ -100,6 +100,7 @@
 | 시터 스케줄 열기 / 막기 | ✅ 🤖 | 03B.1 |
 | 내 시터 목록 · 시터 프로필 | ✅ 🤖 | 03B.2 |
 | 예약 요청 (펫 · 시간 · 장소 · 서비스) | ✅ 🤖 | 03B.3 · 03B.10 |
+| **지난 시간 안내 (#364)**: 지난 드롭오프와 순서가 틀린 픽업은 다른 메시지, 지난 채팅 스테이는 다음 정각으로, 오늘 지난 시간은 못 고름, 시간이 지난 요청은 Accept 대신 **Pick new times** | ✅ 🤖 `booking` · `chat-handoff` · `chat` · 사람 확인 대기 | #364 |
 | **예약 단계 (D60)**: 시터의 첫 동의 "Next" → 날짜 홀드 · 진행 막대 · 2일 알림 / 3일 뒤 자동 취소 · 한 번에 한 오너 설정 · 오너 "Not this sitter" | ✅ 🤖 (사람 확인 대기, 호스팅 DB에 `011l` + 백엔드 `CRON_SECRET` 필요) · 단계 조회(`get_booking_stages`)가 실패해도 앱이 같은 규칙으로 단계를 계산해 결제된 예약이 "Request"로 보이지 않음 (CR-8, 🤖 `negotiation.spec.ts`) | 03B Booking steps |
 | 시터 요청 함 (수락 · 시간 제안 · 거절 — 거절 시트에 사유 칩 · 짧은 메모 · Suggest another time instead, 오너 알림 · 예약 상세에 사유 표시) | ✅ 🤖 (FB-35 부분은 사람 확인 대기) | 03B.4 · FB-35 |
 | 협상 · 확정 후 변경 | ✅ 🤖 | 03B.5 |
@@ -137,7 +138,7 @@
 | 오너 **케어 체크리스트 / 요청** (칩 → 줄 → 표, 돌보는 중엔 시터 승인 · 거절) | ✅ 🤖 (실제 AI · 두 계정은 👤) | 06 / 6.12–6.13 · 6.20 |
 | 오너 **돌봄 할 일** 등록 · **시간 탭 선택** · 탭해서 **수정**(종류 고정) · 일시중지 · 삭제 | ✅ 🤖 | 06 / 6.1 + 후속 |
 | 시터 **오늘 할 일** — Done → 팝업(메모 + 사진) → Done, 끝낸 건 목록에서 사라짐 | ✅ 🤖 | 06 / 6.2–6.4 · 6.3 + 후속 |
-| 시터 **빠른 체크인** (식사 · 배변 · 산책 · 기분 · 메모 · 사진), 보냄 표시 · 연타 잠금 · 오늘 보낸 것 목록 | ✅ 🤖 | 06 / 6.8–6.10 + 후속 |
+| 시터 **빠른 체크인** (식사 · 배변 · 산책 · 기분 · 메모 · 사진), 보냄 표시 · 연타 잠금 · 오늘 보낸 것 목록 · **그룹마다 하나씩 골라 한 번에 보내기, 오너 알림은 하나 · 사진 썸네일 미리보기 (#397)** | ✅ 🤖 · #397: 🤖 `quick-checkin` · SQL smoke `015r`(CI) · **DB `015r` 호스팅 미적용**(PR 머지 때 적용) | 06 / 6.8–6.10 + 후속 · #397 |
 | 시터 **Home 대시보드** (한 화면) · 할 일 / 체크인 / 내 기록 화면 | ✅ 🤖 | 06 후속 |
 | 오너 **Home 실시간 업데이트 카드** (밀어서 지우기) | ✅ 🤖 | 06 후속 |
 | 오너 **Home Today 면 Figma 정렬** (돌보는 중이면 초록 히어로 "Max is with Chloe" · Day N of M · 오늘 케어 진행바 · 통계 타일(care done · photos today · of walks) · Latest from 시터 · See today's updates → History, 아닐 때는 Your pets만, 펫 타일 2열 · + Add pet). 숫자는 시터가 기록한 값만, 없으면 숨김 · 아이콘은 Lucide 임시(SVG 오면 `components/home/HomeArt.tsx`) | 🟡 타입체크 · 토큰 체크 ✅ · e2e 기대값 수정(`pets` · `live-updates`)은 아직 안 돌림 · 사람 확인 대기 | 오너 Home Figma |
@@ -149,7 +150,7 @@
 | 오너 **History** (오늘 + 최근 7일 기록, 알림을 지워도 남음) | ✅ 🤖 | 06 / 6.11 |
 | 오너 **Diary 탭** = 시터가 보낸 알림장 목록(첫 문장) → 항목 화면(본문 · 그날 사진 · 할 일), 초안은 안 보임, 알림 탭하면 해당 항목 | ✅ 🤖 `report.spec.ts` (실제 두 계정은 👤) | 07 / 7.3 |
 | 시터 **리마인더 배너** (할 일 시간이 되면 Home 맨 위 배너 + 토스트) | ✅ 🤖 | 06 / 6.6 |
-| 시터 **Diary** (펫이 둘 이상이면 먼저 펫 선택 · 오늘 요약 한 줄 · 칩 켜기/끄기 · 기록 값 고치기 · "Anything to add?" 짧은 줄 = 내 칩(× 지우기) · 사진 ≤ 2 → 초안 미리보기 수정 → Send, 새로고침 후 초안 유지, 탭으로 돌아오면 새 기록 칩) | ✅ 🤖 `report.spec.ts` (AI는 mock · 실제 모델 연결은 👤) | 07 / 7.3 |
+| 시터 **Diary** (펫이 둘 이상이면 먼저 펫 선택 · 오늘 요약 한 줄 · 칩 켜기/끄기 · 기록 값 고치기 · "+ Add a line" 짧은 줄 = 내 칩(× 지우기) · 그림 칸을 눌러 사진 → 초안 미리보기 수정 → Send, 새로고침 후 초안 유지, 탭으로 돌아오면 새 기록 칩) · **#398: 컨트롤은 Photos / Diary 한 줄(펫 칩 · Book), Send는 화면 아래 고정, 쓰기 버튼이 칩보다 위** | ✅ 🤖 `report.spec.ts` (AI는 mock · 실제 모델 연결은 👤) · #398 사람 확인 대기 | 07 / 7.3 · #398 |
 | AI 알림장 **초안 API** (`POST /api/ai/daily-report`: 하루 기록 → 시터 1인칭 초안, 같은 날 덮어쓰기, 보낸 뒤엔 409, 기록이 없으면 고정 문장) | ✅ 🤖 pytest (실제 모델로 환각 점검 3회) · 화면은 시터 Diary(7.3) | 07 / 7.2 |
 | **알림장 보내기** (`send_daily_report`: 시터가 고친 **최종 본문**만 게시, 오너는 보낸 것만 보임, 한 번만, 오너 알림) | ✅ SQL `rls_smoke` · 🤖 `report.spec.ts` (Send) | 07 / 7.5 |
 | AI 알림장 **칩 제안 API** (`POST /api/ai/report-chips`: 하루 기록 → 칩(모델 없음), 사진 ≤ 2 → 한 줄 묘사 + 에피소드 칩, 느리거나 실패한 사진은 빼고 기록 칩은 유지, 남의 사진 403) | ✅ 🤖 pytest · 실제 비전 모델로 데모 사진 3장 확인(2026-10-07) · 화면은 시터 Diary(7.3) | 07 / 7.7 |
@@ -274,11 +275,12 @@
 | REM-5 | **실제 시계로**: 오너가 2~3분 뒤 시각의 할 일을 만들고, 시터는 Home을 연 채 기다림 | 30초 안에 Today 목록에 나타나고, 그 시각 정각에 토스트 + 팝업 | **👤만** | ➖ |
 | HOME-5 | (돌보는 중이 아닐 때) 시터 Home | 요청 배너 · 오늘 인계 · 다가오는 예약이 짧게 | 🤖 `today` | ➖ |
 | CHK-1 | 체크인 화면 → Max의 Meal **All** 누르기 (메모 비움) | 버튼이 **"✓ All"** 로 선택만 됨(**아직 전송 안 됨**), "Ready to send: …" 안내, 다시 누르면 선택 해제. **Send**를 눌러야 전송 → 토스트 "Sent ✅", 오너 알림 "Max ate everything 🍽️" | 🤖 `quick-checkin` | ➖ |
+| CHK-8 | (#397, Sitter-011) Meal **All** · Potty **Normal** · Walk **20** · Mood **Calm** 을 차례로 누르고, Mood를 **Happy**로 바꾼 뒤 메모 "Loved the park" → **Send** | 네 그룹이 **동시에** 선택됨(같은 그룹에서 다른 답을 누르면 그 그룹만 바뀜). "Ready to send: Fed · All, Potty · Normal, Walk · 20 min, Mood · Happy". 보내면 체크인 4개가 저장되고 오너 알림은 **하나**("Max ate everything 🍽️ · Potty update for Max: normal 💩 · Max had a 20-minute walk 🦮 · Max seems happy 😊", 본문 = 메모). 메모 · 사진은 첫 선택(Meal)에만 붙음. 오너 History에는 4줄 | 🤖 `quick-checkin` · SQL smoke `015r` · 오너 화면은 👤 | 사람 확인 대기 |
 | CHK-2 | 카드 아래 **"Sent to Robert today"** 목록 | 방금 보낸 것이 시각과 함께 쌓임 (메모는 따옴표로) | 🤖 `quick-checkin` | ➖ |
 | CHK-3 | 메모 칸에 글을 쓰고 Meal **A little** | 오너 알림: **보낸 것(제목) + 메모(본문)**. 전송 후 메모 칸 비워짐 | 🤖 `quick-checkin` | ➖ |
 | CHK-4 | 아무것도 고르지 않고 메모만 쓰기 | 메모가 없으면 **Send 비활성**. 메모를 쓰면 "Ready to send as a note" → Send로 노트 전송 | 🤖 `quick-checkin` | ➖ |
 | CHK-5 | Max에는 Walk 10–60분 있음, Mochi에는 **없음** | 펫마다 체크인 화면이 따로, 고양이는 산책 없음 | 🤖 `quick-checkin` | ➖ |
-| CHK-6 | **📷 Add photo** → 선택 → 미리보기 → Use → Mood **Happy** | "Photo ready ✓", 전송 시 업로드. 오너 Feed에 사진 글 + 체크인 알림 하나 | 🤖 `quick-checkin` · **실제 업로드 👤** | ➖ |
+| CHK-6 | **📷 Add photo** → 선택 → 미리보기 → Use → Mood **Happy** | (#397, Sitter-012) Add photo 자리에 **사진 썸네일**, 누르면 크게 보임(Close로 닫음), 아래 **Remove photo**로 빼기. 전송 시 업로드. 오너 Feed에 사진 글 + 체크인 알림 하나 | 🤖 `quick-checkin` · **실제 업로드 👤** | 사람 확인 대기 |
 | CHK-7 | 전송이 **실패**하면 | 빨간 팝업이 남고 Try again으로 다시 보냄 | 🤖 `quick-checkin` | ➖ |
 
 ### 3.4 Feed · 공개 범위 (FEED / VIS)
@@ -381,10 +383,10 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| REPORT-1 | 시터 → **Diary** 탭 | 펫이 둘 이상이면 맨 위 **펫 선택**(이름 + "Draft" / "Sent ✓") — 고른 펫 카드 하나만 보이고, 바꿔도 각 펫의 칩 · 줄이 남음 (FB-19). 카드 맨 위 **"Today: n tasks done · m missed · k check-ins"**, 그날 기록에서 만든 칩(식사 · 배변 · 산책 · 기분 · 약)이 모두 켜진 상태 | 🤖 `report` · pytest | ➖ |
+| REPORT-1 | 시터 → **Diary** 탭 | (#398) 맨 위는 **한 줄**: Photos · Diary 탭 오른쪽에 펫 칩(펫이 둘 이상일 때, 누르면 메뉴에 이름 + "Draft" / "Sent ✓")과 **Book** 버튼. 고른 펫 카드 하나만 보이고, 바꿔도 각 펫의 칩 · 줄이 남음 (FB-19). 카드 맨 위 **"Today: n tasks done · m missed · k check-ins"**, 그날 기록에서 만든 칩(식사 · 배변 · 산책 · 기분 · 약)이 모두 켜진 상태 | 🤖 `report` · pytest | ➖ |
 | REPORT-2 | 칩을 눌러 **끄기** → **Write the report** | 미리보기에 **끈 칩의 내용이 없음**. 끈 칩은 서버로 `skip`으로 감 | 🤖 `report` · pytest | ➖ |
 | REPORT-3 | **✎ Fix a recorded value** → 식사를 Most로, 산책 30 min으로 | 칩 문구가 "Meal: Most" · "Walk: 30 min"으로 바뀌고 알림장에도 그 값이 쓰임. 그 칩을 끄면 고친 값도 안 감 | 🤖 `report` · pytest | ➖ |
-| REPORT-4 | **Anything to add?** 칸에 짧은 줄("Learned a new trick") → Add(또는 Enter), 몇 줄 더 | 줄마다 내 칩이 생기고 칸은 비워짐. 켜 두면 알림장에 **맨 앞**으로 반영, 끄면 빠짐. 내 칩만 **×**로 지울 수 있음(제안 칩은 끄기만). 칸을 비우면 아무것도 안 생김 (FB-16 · 17 · 18) | 🤖 `report` | ➖ |
+| REPORT-4 | **+ Add a line**(#398, 누르기 전엔 칸이 숨어 있음) → 짧은 줄("Learned a new trick") → Add(또는 Enter), 몇 줄 더 | 줄마다 내 칩이 생기고 칸은 비워짐. 켜 두면 알림장에 **맨 앞**으로 반영, 끄면 빠짐. 내 칩만 **×**로 지울 수 있음(제안 칩은 끄기만). 칸을 비우면 아무것도 안 생김 (FB-16 · 17 · 18) | 🤖 `report` | ➖ |
 | REPORT-5 | **📷 Add photo** (최대 2장) → 사진 추가 | 사진 묘사 한 줄 + 에피소드 칩 1–2개가 생김(📷 표시). 사진을 지우면 그 칩도 사라짐. 사진 칩을 전부 끄면 그 사진 내용은 알림장에 안 들어감 | 🤖 `report` (AI는 mock) · **실제 모델 👤** | ➖ |
 | REPORT-6 | Write the report → 미리보기 **직접 고치기** → **Send to {owner}** | "Sent ✅ … was told". 오너가 받는 글은 **시터가 고친 최종본**. 같은 날 다시 Write하면 덮어쓴 초안(보낸 뒤엔 불가) | 🤖 `report` · SQL | ➖ |
 | REPORT-7 | 초안을 만든 뒤 앱 새로고침 | 초안이 그대로 다시 보임 (오너에게는 보내기 전까지 안 보임) | 🤖 `report` | ➖ |
@@ -394,9 +396,12 @@
 | REPORT-11 | Diary를 연 채로 Home에서 체크인(메모 포함) → Diary로 돌아옴 | 그 메모가 칩으로 바로 보임(새로고침 불필요). 꺼 둔 칩은 꺼진 채 (FB-15 · M-12) | 🤖 `report` | ➖ |
 | REPORT-12 | 알림장 Send 뒤 **✏️ Write another report** → 줄 추가 → Write → Send | 새 칩은 **첫 알림장을 보낸 뒤의 기록**만. 두 번째 알림장이 따로 저장 · 전송되고 오너 Diary에 같은 날 두 장(나중 것이 위) (FB-22) | 🤖 `report` · pytest · SQL 011f | ➖ |
 | REPORT-13 | `in_care`로 리셋하자마자(3분 안) Feed에 사진 1장 + 체크인 1개 → Diary | 체크인이 바로 저장되고, 그 사진 캡션 · 체크인이 칩으로 나옴 — 일찍 Received한 뒤의 기록도 그날 알림장에 들어감 (CW-1) | pytest · SQL 011i (호스팅 DB에 `011i` 적용 뒤) | ➖ |
-| REPORT-14 | (Diary book DB.2) 시터 → Diary — 아무것도 안 했을 때 | **그림일기 표지가 바로** 보임(📅 날짜 · "Max's day 🐾" · 그림 칸 · 줄 공책), 줄 위에 손글씨로 직접 씀("Dear diary, today…"). 쓰기 시작하면 "Draft — only you can see it", **Send to {견주}**가 켜짐. 직접 쓴 글만 Send → AI 호출 없이 오늘 초안이 만들어져(`save_report_draft`, 014b) 바로 보내짐, 견주에게 알림 1개 | 🤖 `report.spec.ts` · SQL `rls_smoke` 014b · 호스팅 DB는 `014b` 적용 뒤 👤 | 사람 확인 대기 |
-| REPORT-15 | (DB.2) 페이지에 몇 줄 쓴 뒤 아래 **Let Goldito write it** → **✨ Rewrite the page from the chips** | "This replaces what's on the page — nothing is sent." 안내, 만든 글이 **종이 위에** 초안으로 들어감(견주에게 안 감). 종이에서 고친 뒤 Send → 그 초안이 보내짐(새 행 없음). 칩 · 사진 · 내 줄은 같은 화면에 그대로 있어 끄고 다시 쓸 수 있음(이전의 Back to chips 없음) | 🤖 `report.spec.ts` | 사람 확인 대기 |
+| REPORT-14 | (Diary book DB.2) 시터 → Diary — 아무것도 안 했을 때 | **그림일기 표지가 바로** 보임(📅 날짜 · "Max's day 🐾" · 그림 칸 · 줄 공책), 줄 위에 손글씨로 직접 씀("Dear diary, today…"). 쓰기 시작하면 "Draft. Only you can see it…", 화면 아래에 고정된 **Send to {견주}**(#398)가 켜짐. 직접 쓴 글만 Send → AI 호출 없이 오늘 초안이 만들어져(`save_report_draft`, 014b) 바로 보내짐, 견주에게 알림 1개 | 🤖 `report.spec.ts` · SQL `rls_smoke` 014b · 호스팅 DB는 `014b` 적용 뒤 👤 | 사람 확인 대기 |
+| REPORT-15 | (DB.2) 페이지에 몇 줄 쓴 뒤 페이지 바로 아래(#398, 칩보다 위) **Rewrite the page from the chips** | "This replaces what's on the page. Nothing is sent." 안내, 만든 글이 **종이 위에** 초안으로 들어감(견주에게 안 감). 종이에서 고친 뒤 Send → 그 초안이 보내짐(새 행 없음). 칩 · 사진 · 내 줄은 같은 화면에 그대로 있어 끄고 다시 쓸 수 있음(이전의 Back to chips 없음) | 🤖 `report.spec.ts` | 사람 확인 대기 |
 | REPORT-16 | (#186) 시터가 40자보다 긴 메모로 체크인(예: "Watched the birds from the window for an hour") → Diary의 칩 | 칩이 **낱말 단위로 잘리고 "…"로 끝남**("Watched the birds from the window for…"), 40자 안. 글 초안에는 원문이 그대로 들어감. 사진 설명 칩 · 피드 캡션 칩도 같음 | 🤖 pytest `test_ai_report_chips`(`_chip`). 2026-10-20 **어시스턴트(사람 아님)**가 Paul 데모 세트로 화면 확인 | 사람 확인 대기 (어시스턴트 실행만, 사람 확인 아님) |
+| REPORT-17 | (#398, Sitter-013) 시터 Diary에 긴 칩(예: "Max looks SO HAPPY on our walk today! …", 200자까지) | 칩이 카드 폭을 넘지 않고 **안에서 여러 줄로 줄바꿈**, 눌러서 끄고 켤 수 있음. 칩 글씨는 작게(small), 높이는 터치 크기(44) 유지. Goldito 칩 · 내가 쓴 줄 모두 같음 | 🤖 `report.spec.ts`(카드 안 위치 · 끄기) | 사람 확인 대기 |
+| REPORT-18 | (#398, Sitter-014) 칩이 많은 날 시터 Diary를 아래로 스크롤 | **Send to {견주}** 버튼이 화면 아래에 고정되어 늘 보임(페이지 · 칩이 뒤로 지나감). 글이 비면 꺼져 있고, 보낸 뒤에는 사라짐(Write another page로 새 페이지) | 🤖 `report.spec.ts` | 사람 확인 대기 |
+| REPORT-19 | (#398) 페이지의 **그림 칸**을 눌러 사진 고르기 → 사진을 다시 누르기 | 사진이 그림 칸에 들어가고 사진 칩이 생김(따로 Add photo 버튼 없음, 사진은 한 장). 다시 누르면 **Replace · Remove**. Remove하면 사진과 그 칩이 빠짐. Send하면 그 사진이 견주가 읽는 페이지에 | 🤖 `report.spec.ts` · 실제 업로드 👤 | 사람 확인 대기 |
 
 ### 3.11 문의 AI (INQ) — Phase 07B · *사전: 백엔드 + `NEBIUS_API_KEY`, Chloe의 일정 · 요금이 있고 Robert에게 Max(+Mochi)가 있음*
 
@@ -416,7 +421,7 @@
 | INQ-10 | 질문에 "Are you an AI?" | 사람이라고 답하지 않음 · 시터에게 "reply yourself" 별도 알림 · 자동 발송 안 됨 | pytest i | ➖ |
 | INQ-11 | 오너 **Request booking** | `/owner/bookings/new`에 서비스 · 반려동물 · 시간 · 장소 · 시터가 **채워진 채** 열림. 요청을 보내면 그 문의가 booked | 🤖 `inquiry` | ➖ |
 | INQ-12 | 시터 `/profile` → **House rules** 카드에 쓰고 저장 | 저장되고 백그라운드에서 재색인. 이후 초안이 그 규칙을 근거("From Chloe's policies")로 씀 | 🤖 `inquiry` · pytest · **실제 DB 👤** | ➖ |
-| INQ-13 | 시터 `/profile` → **AI replies → Auto-send** | 책임 동의 모달("Replies go out in your name…") 확인 후에만 켜짐. 껐다 켜면 모달 없음 | 🤖 `inquiry` · SQL | ➖ |
+| INQ-13 | 시터 `/profile` | **AI replies** 카드(Manual approval · Auto-send)가 없음: 채팅 초안은 시터가 늘 직접 보냄. Privacy의 AI 문단에도 auto-send 말이 없음 (#403. DB의 `ai_reply_mode`와 옛 문의 엔드포인트는 그대로 남음) | 👤 | 사람 확인 대기 |
 | INQ-14 | **자동 모드 시터에게** 오너가 문의 | 대기 없이 초안 생성 → 오너 화면 "Chloe will reply soon" → **약 4초 뒤 "Chloe is typing…"** → **약 15–40초(보통 ≈ 30초) 뒤 답 말풍선** + 그 시각에 알림. 시터가 스레드를 열기 **전엔 "Read" 표시가 없음**. 시터 화면에는 "Sent automatically" | 🤖 `inquiry` · pytest | ➖ |
 | INQ-15 | 자동 모드인데 초안이 확인이 필요한 경우(정책 충돌 · AI 질문 · 모델 실패) | **자동 발송 안 됨** — 수동 초안으로 시터에게 | pytest | ➖ |
 | INQ-16 | 시터 말투 비교: Chloe(경쾌) vs Paul(차분) 같은 질문 | 초안 말투가 뚜렷이 다름 (금액 · 날짜는 둘 다 서버 값). 약 50건 블라인드 평가는 슬기 | 실제 모델 확인 · **평가 👤** | ➖ |
@@ -521,9 +526,13 @@
 | FLOW-18 | Returned 뒤 오너 Home | ⭐ "How was …'s stay?" 카드가 **리뷰를 남길 때까지** 고정(열어 봐도 남음), 리뷰 후 사라짐 (FB-24) | 🤖 `live-updates` | ➖ |
 | FLOW-19 | 오너가 리뷰를 남긴 뒤 시터 → 그 예약 상세 | "Robert's review" 카드에 별점 · 코멘트. 리뷰 전이면 "hasn't left a review yet" (FB-29) | 🤖 `handoff` | ➖ |
 | FLOW-20 | 오너 리뷰 화면에서 별 5 → 프리셋 칩 / 별 2로 바꿈 | 별점마다 다른 프리셋 3개, 별을 바꾸면 이전 선택이 빠짐. 고른 문구 + 직접 쓴 글이 코멘트로 저장 (FB-27) | 🤖 `completion` | ➖ |
-| FLOW-21 | 시터 Returned 뒤 그 예약(또는 Past) → **⭐ Rate Robert** → 별 · 프리셋 · 한마디 → Save | "Your note about Robert" 읽기 전용 + Edit. "🔒 Only you can see this — Robert is never told." 오너에게 알림 **없음**, 오너는 읽을 수 없음 (FB-25) | 🤖 `handoff` · SQL O | ➖ |
-| FLOW-22 | 같은 오너가 다시 예약 요청 → 시터가 그 요청 열기 | 맨 위에 "Your notes from earlier stays with Robert"(별 · 메모 · 날짜, 본인만 보임) (FB-29) | 🤖 `handoff` | ➖ |
+| FLOW-21 | 시터 Returned 뒤 그 예약(또는 Past) → **⭐ Rate Robert** → 별 · 프리셋 · 한마디 → **Save review** | "Your review of Robert" 읽기 전용 + Edit. "Robert and other sitters can see this." 오너에게 알림 **없음**. 오너는 Profile에서, 다른 시터는 Robert의 요청에서 읽음 (FB-25, #415) | 🤖 `handoff` · `chat-trip` · SQL O | ➖ |
+| FLOW-22 | 같은 오너가 다시 예약 요청 → 시터가 그 요청 열기 (또는 채팅 헤더 → 오너 화면) | "Reviews of Robert" 카드: "★ 평균 · N reviews"와 모든 시터의 리뷰(별 · 문구 · 시터 이름 첫 단어 · 날짜, 내가 쓴 건 "You"). 지금 예약의 리뷰는 이 카드에서 빠짐. 리뷰가 없으면 카드 없음 (FB-29, #415) | 🤖 `handoff` (오너 화면은 👤) | 사람 확인 대기 |
 | FLOW-23 | 오너 리뷰 Send → 같은 화면의 **♡ Add Chloe to favorites** 한 번 누르기 → **Back to the booking** (#251) | 질문 시트 없음, 별 없음. 하트가 채워지고 "Chloe is a favorite" 토스트(시터에게는 알림 없음). 채팅 · 시터 프로필과 같은 하트. Book care 검색에서 즐겨찾기 시터가 먼저. 이미 즐겨찾기면 묻지 않고 채워진 하트 "Favorite"만 보임. 이미 리뷰한 예약의 리뷰 화면에도 같은 하트 (FB-28) | 🤖 `completion` · SQL P | ➖ |
+| FLOW-24 | 시터: Returned 뒤 같은 예약 상세를 끝까지 스크롤 (#382, Sitter-009) | 아래에 고정된 영역이 없고 한 페이지로 스크롤됨. 펫 카드들 아래에 "Stay complete 🐾" · 펫마다 메달 · 오너 리뷰 · 오너 메모가 이어짐. 고정 버튼은 Received · Returned일 때만 | 🤖 `handoff` | 사람 확인 대기 |
+| FLOW-25 | 시터: 그 예약에서 오너 메모 Save → **Done** (#382, Sitter-010) | 메모를 저장하기 전에는 Done이 없고, 저장하면 메모 카드에 Done 하나가 생김. 누르면 시터 Home. 채팅의 리뷰 카드에는 Done이 없음. 펫별 리뷰는 만들지 않음(메달로 대신, #407에서 결정) | 🤖 `handoff` | 사람 확인 대기 |
+| FLOW-26 | DB: 시터의 오너 리뷰 공개 (#415, `015s`) | 그 오너는 행을 읽고, 다른 시터는 `owner_rating_summary`로 평균 · 개수 · 전체 리뷰(시터 이름 첫 단어)를 봄. 다른 오너에게는 null. `sitter_rating_summary`는 최근 3개가 아니라 코멘트 전부 | SQL smoke O | 호스팅 DB에 `015s` 적용 뒤 한 번 |
+| FLOW-27 | 오너 Profile / 시터 Profile (#415) | 오너: "Reviews from sitters"(평균 · 개수 · 시터들이 쓴 리뷰 전부). 시터: Badges 아래 "Reviews from owners"(평균 · 개수 · 코멘트가 있는 오너 리뷰 전부, 오너 이름 첫 단어). 오너가 보는 시터 프로필도 최근 3개가 아니라 코멘트 전부. Privacy "Who can see it"에 리뷰 공개 문장 | 🤖 `handoff` | 사람 확인 대기 |
 
 ---
 
@@ -921,7 +930,8 @@
 | CHAT-34 | 오너의 "I'd like to book" (#235): 시터의 채팅이 열려 있는 동안 오너가 동의하면 새로고침 없이(폴링 5초 안, Realtime) 동의 카드가 "Booked, you both agreed"로 바뀜. 오너 쪽도 같은 카드에 "✓ Robert would like to book" | 🤖 `chat` | 사람 확인 대기 (두 폰) |
 | CHAT-35 | 입력에 맞는 칩 (#235): 메시지창에 글을 쓰다 **1.5초** 멈추면 평소 칩이 사라진 자리에 스피너("Finding replies…") → 쓰는 글에 맞는 칩 2–3개(예: "can you take them early" → 조기 픽업 · 목줄 같은 질문). 쓰는 도중에는 아무것도 묻지 않음. 칩을 누르면 **쓴 글을 살린 초안**이 상자에 들어가고(보내는 건 사람), 초안을 넣은 뒤에는 다시 묻지 않음. 상자를 비우면 평소 칩이 돌아옴. 실패하면 칩 없음(추측 안 함), 비우면 평소 칩. 서버: `/api/ai/chat-chips`에 `typed`(≤300자)를 주면 이메일 · 4자리 이상 숫자(전화 · 출입 코드)를 지운 뒤에만 프롬프트로 가고, 행동(action)은 없음, 로그에는 글 내용 없이 길이만 + 이름이 가려진 칩. 가격 · 날짜는 계속 서버가 넣음 | 🤖 `chat` e2e · pytest `test_ai_chat` | 사람 확인 대기 (실제 모델로 칩 품질 👤) |
 | CHAT-36 | 펫 인계도 채팅에서 (3D.8, #145): 결제한 확정 부킹에서 **드롭오프 트립이 도착했거나 I've arrived로 끝난 뒤에만** 시터 채팅에 Received(#250: 2시간 창이 열린 것만으로는 안 나옴, 오너에겐 없음, 트립 없이 맡기면 예약 화면의 Received). 카드는 하나로 합쳐져 **"Robert has arrived 🚗 · 7:16 PM"**(도착 시각) 아래에 **Track Robert** · **Received**(· 인사 버튼)가 같이 보임. 누르면 "Max & Mochi are with you 🐾 · Received …" + **Returned**로 바뀌고 오너 채팅에는 "… are with Chloe 🐾"(누를 것 없음). **Returned**는 예약 화면과 같은 Return 시트(남은 오늘 할 일 · 오늘 알림장 안 보냄 경고, 픽업 30분 전보다 이르면 빨간 Return과 "really?"), 확인하면 "Home safe 🏠"(시터 "… went home with Robert", 오너 "… are back with you")이고 오너에게 알림, Life Record는 뒤에서 생성. 트립 카드의 도착 인사 → Received → 케어 카드 → Returned → Home safe가 한 채팅에서 이어짐. 종료 · 리뷰는 #146 | 🤖 `chat-trip` · `completion` | 사람 확인 대기 (두 계정) |
-| CHAT-37 | 종료와 리뷰도 채팅에서 (3D.9, #146): Returned 뒤 두 채팅에 "Home safe 🏠" 아래로 리뷰 카드. **오너**: "How was Biscuit and Luna's stay with Paul?" + 별점 · 별마다 한 번에 고르는 문구 · 한마디(선택) · **Send review**(한 스테이에 한 번, 시터에게 알림). 보내면 같은 자리가 **"Your review"**(별 · 코멘트)로 바뀌고 그 아래 **하트**(♡ "Add Paul to favorites" / ♥ "Favorite", 누르면 바로 저장 · 다시 누르면 해제, 시터는 모름). 다시 열어도 폼이 아니라 리뷰가 보임. **시터**: "Peter's review"(오너가 쓰기 전엔 "hasn't left a review yet", 쓰면 10초 안에 새로고침 없이 별 · 코멘트가 보임)와 **"How was it working with Peter?" 🔒 Only you can see this** 비공개 노트(별 · 문구 · 한마디, 오너는 절대 못 봄, 하트는 없음). 끝난 스테이의 채팅 맨 아래에는 **Send quote · Request booking 버튼이 없음**(새 Stay 카드가 생기면 다시 나옴). 예약 화면의 리뷰 화면은 같은 폼을 쓰고 그대로 동작 | 🤖 `chat-trip` · `completion` · `handoff` | 사람 확인 대기 (두 계정, 데모 계정으로 한 번 눌러 봄 2026-10-20) |
+| CHAT-37 | 종료와 리뷰도 채팅에서 (3D.9, #146): Returned 뒤 두 채팅에 "Home safe 🏠" 아래로 리뷰 카드. **오너**: "How was Biscuit and Luna's stay with Paul?" + 별점 · 별마다 한 번에 고르는 문구 · 한마디(선택) · **Send review**(한 스테이에 한 번, 시터에게 알림). 보내면 같은 자리가 **"Your review"**(별 · 코멘트)로 바뀌고 그 아래 **하트**(♡ "Add Paul to favorites" / ♥ "Favorite", 누르면 바로 저장 · 다시 누르면 해제, 시터는 모름). 다시 열어도 폼이 아니라 리뷰가 보임. **시터**: "Peter's review"(오너가 쓰기 전엔 "hasn't left a review yet", 쓰면 10초 안에 새로고침 없이 별 · 코멘트가 보임)와 **"How was it working with Peter?"** 오너 리뷰(별 · 문구 · 한마디, "Peter and other sitters can see this", 하트는 없음, #415). 끝난 스테이의 채팅 맨 아래에는 **Send quote · Request booking 버튼이 없음**(새 Stay 카드가 생기면 다시 나옴). 예약 화면의 리뷰 화면은 같은 폼을 쓰고 그대로 동작 | 🤖 `chat-trip` · `completion` · `handoff` | 사람 확인 대기 (두 계정, 데모 계정으로 한 번 눌러 봄 2026-10-20) |
+| CHAT-49 | Returned 뒤 채팅을 위에서 아래로 (#382 후속) | 그 예약의 Meet & Greet · 핸드오프 · 다이어리 · 트립 카드가 **"Home safe"와 리뷰 카드보다 위**에 있고, 리뷰 뒤에 보낸 메시지는 리뷰 아래로 이어짐(예전에는 그 카드들이 리뷰 밑에 붙어 있었음) | 🤖 `chat-trip` | 사람 확인 대기 |
 
 ### 3.37 제안 카드에 Decline 없음 (PROP) · #169
 
@@ -1127,7 +1137,7 @@
 | PFOLD-1 | (DB) `rls_smoke.sql`의 015g 블록 | 시터의 `home_address_2` · `home_postal_code`가 있으면 오너가 보는 주소가 "Unit 5, 100 Example St M5A 3C4"로 합쳐져 나옴. 거리 주소 끝에 이미 같은 우편번호가 있으면 반복하지 않고, 아무것도 없으면 null. 클라이언트는 `full_address`를 직접 못 부름 | SQL `rls_smoke` (015g) | CI 결과 대기 |
 | PFOLD-2 | (DB) `rls_smoke.sql`의 015h 블록 | 오너의 `packing_list`는 `get_handoff_details`의 **drop_off 행에만** 실리고 pick_up 행은 null. 시터와 오너 둘 다 그 행에서 읽음. 시터 테이블의 옛 `packing_list`는 더 이상 쓰이지 않음 | SQL `rls_smoke` (3C.4 · 015h) | CI 결과 대기 |
 | PFOLD-3 | Profile 열기(오너 · 시터) | 선택 입력 카드는 전부 **닫힘(▸)**이고 제목 아래에 값이 있으면 한 줄로 보임. 항상 보이는 것은 사진 · 이름(시터는 About you도). 헤더를 누르면 ▾로 열리고 다시 누르면 닫힘, 닫아도 쓴 내용은 Save에 그대로 들어감. Save에서 닫힌 카드 안의 에러(예: 주소 없음)가 나면 그 카드가 열림 | 🤖 `profile.spec.ts` | 사람 확인 대기 |
-| PFOLD-4 | 카드 순서 | 시터: About you, Home address, About your home, Experience, Visitor parking, Lobby notes, House rules, 그 아래 Meeting spots · Services · AI replies · Your answers, 위에 접힌 Badges. 오너: Home address, Emergency contact, Vet, Packing list, Entry info(`›`, 다른 화면으로 감), Meeting spots. 시터에는 Packing list · Service area 칸이 없음 | 🤖 `profile.spec.ts` · `sitter-badges.spec.ts` | 사람 확인 대기 |
+| PFOLD-4 | 카드 순서 | 시터: About you, Home address, About your home, Experience, Visitor parking, Lobby notes, House rules, 그 아래 Meeting spots · Services · Your answers, 위에 접힌 Badges. 오너: Home address, Emergency contact, Vet, Packing list, Entry info(`›`, 다른 화면으로 감), Meeting spots. 시터에는 Packing list · Service area 칸이 없음 | 🤖 `profile.spec.ts` · `sitter-badges.spec.ts` | 사람 확인 대기 |
 | PFOLD-5 | Home address 카드 | 주소(Check address) → 📍 버튼 → **Address details**(예: Unit 1204, buzz 55) → **Postal code**. Check address로 고른 주소 "100 Queen St W, Toronto, ON M5H 2N2"는 거리 주소 "100 Queen St W, Toronto, ON"과 우편번호 "M5H 2N2"로 나뉘어 들어감. 우편번호가 주소 안에 같이 저장돼 있던 옛 주소는 열 때 나뉘어 보이고 저장도 나뉘어서 됨. 예약 확정 뒤 시터 · 오너가 받는 주소는 세 칸이 합쳐진 한 줄 | 🤖 `profile.spec.ts` · `home-location.spec.ts` · SQL(015g) | 사람 확인 대기 |
 | PFOLD-6 | 오너 Profile → **Packing list**(▸) | ☐ 항목을 **+ Add item**으로 늘리고(최대 20) ✕로 지우고 Save. 닫힌 카드는 "3 items"처럼 개수를 보여 줌 | 🤖 `profile.spec.ts` | 사람 확인 대기 |
 | PFOLD-7 | 결제한 예약에서 시터 → 예약 화면 / 오너 → 예약 화면 | 시터에게 **"{펫}'s things"** 카드에 오너가 적은 리스트가 나오고 항목을 눌러 체크(이 기기에 저장, 새로고침해도 유지). 오너에게는 **"Pack for {펫}"** 카드에 본인 리스트(같은 방식으로 체크). 리스트가 비면 카드 없음 | 🤖 `checkout.spec.ts` | 두 기기 사이 동기화는 없음(체크는 기기별) · 사람 확인 대기 |
@@ -1144,7 +1154,7 @@
 | CONTACT-1 | 오너와 시터 각자 Profile → **Phone** 카드에 번호 저장 (#358) | 7~20자(숫자 · 공백 · + ( ) -)만 저장, 이상하면 "Enter a valid phone number…", 비우면 삭제. 번호는 본인만 읽는 `profile_phones` 테이블에 있음 | 🟡 타입체크 ✅ · 기존 profile e2e 통과, 새 입력은 e2e 없음 · `015p` 호스팅 DB 적용 2026-10-25 (RLS · 권한 확인) | 사람 확인 대기 |
 | CONTACT-2 | 시터 채팅 → 헤더의 오너 이름을 누름 (#358) | 오너 화면: 사진 · 이름 · Area(우편번호 앞 3자, 예 M5A) · Phone. Meet & Greet이 합의(agreed) · 완료(done)되거나 예약이 confirmed가 되기 전에는 Phone이 "After the Meet & Greet is set". 집 주소와 출입 정보는 안 나옴(D31 그대로) | 🟡 e2e 없음 · `get_chat_contact` · `015p` 호스팅 DB 적용 2026-10-25 (RLS · 권한 확인) | 사람 확인 대기 |
 | CONTACT-3 | 오너 → 시터 페이지 (#358) | Meet & Greet이 정해진 시터만 카드 아래 Phone 줄이 보임, 아니면 줄 자체가 없음 | 🟡 e2e 없음 · `get_contact_phone` | 사람 확인 대기 |
-| NAV-4 | Feed 탭 | 맨 위 **Photos · Diary** 전환. Photos는 예전 Feed, Diary는 예전 Diary 탭(오너: 다이어리 책, 시터: Today · Diary book). 주소는 `?view=diary` | 🤖 `report` · `diary-book` | 사람 확인 대기 |
+| NAV-4 | Feed 탭 | 맨 위 **Photos · Diary** 전환. Photos는 예전 Feed, Diary는 예전 Diary 탭(오너: 다이어리 책, 시터: 오늘 페이지, 같은 줄 오른쪽의 **Book** 버튼으로 다이어리 책, #398). 주소는 `?view=diary` | 🤖 `report` · `diary-book` | 사람 확인 대기 |
 | NAV-5 | 옛 주소 `/owner/diary` · `/sitter/diary?page=…`, 펫 방 · 반납 시트의 Diary 링크, 리포트 알림 | Feed의 Diary가 열림(시터는 그 페이지로) | 🤖 `pet-room` · `diary-book` | ➖ |
 | NAV-6 | 시터 Home의 **💬 Chats (n)** | Chat 탭으로 감 | **👤** | ➖ |
 
@@ -1171,7 +1181,7 @@
 | FEEDX-17 | Feed에서 Request photo | 버튼 없음(채팅에 있음) | 🤖 `feed` | 사람 확인 대기 |
 | FEEDX-18 | 시터 → Moments 탭(돌보는 펫이 둘 + 끝난 펫 하나) | **돌보는 펫 전부(All pets)**의 사진이 한꺼번에 열리고 사진마다 펫 얼굴이 붙음(끝난 펫은 안 섞임). **Photos / Diary 줄 오른쪽 끝**의 **펫 칩**(겹친 얼굴 + All pets + ⌄)을 누르면 **버튼 바로 밑에** 작은 목록: All pets, In care 펫들, **줄**(All pets 밑이 아니라 그룹 사이에만, 고를 수 없음), Past stay 펫들. 고르면 그 펫만. 돌보는 펫이 하나면 그 펫이 열리고 All pets는 없음. 바깥을 누르면 닫힘 | 🤖 `feed` | 사람 확인 대기 |
 | FEEDX-19 | 오너 → Moments 탭 | 펫이 둘 이상이면 **All pets**로 열려 모든 펫의 사진이 같이 보이고 사진마다 펫 얼굴이 붙음. **Photos / Diary 줄 오른쪽 끝**의 같은 **펫 칩**(Diary 탭에서는 안 보임) 목록에는 **내 펫만**(줄 없음). 한 마리를 고르면 얼굴이 사라짐. 펫이 하나면 펫 칩도 얼굴도 없음. **+ Photo**는 보고 있는 펫의 사진이고, All pets일 때는 시트에서 어느 펫인지 고름 | 🤖 `feed` | 사람 확인 대기 |
-| FEEDX-20 | Photos / Diary | 둘 다 **밑줄 탭**(고른 쪽에 밑줄, 안 고른 쪽은 연하게). 시터 Moments에도 있어서 Diary(Today · Diary book)에 들어갈 수 있음 | 🤖 `feed` | 사람 확인 대기 |
+| FEEDX-20 | Photos / Diary | 둘 다 **밑줄 탭**(고른 쪽에 밑줄, 안 고른 쪽은 연하게). 시터 Moments에도 있어서 Diary(오늘 페이지, 같은 줄의 Book 버튼, #398)에 들어갈 수 있음 | 🤖 `feed` | 사람 확인 대기 |
 | FEEDX-21 | 사진 → **✏️ Edit**(내가 올린 사진만; 오너가 본 시터 사진 · 스티커에는 없음) | 시트에서 **태그를 여러 개**(예: Walks + Potty), **날짜 · 시간**(선택 시트), **메모**를 고쳐 Save → "Photo updated", 사진이 다시 열려 바뀐 내용이 보임. 두 칩에 모두 걸리고, 날짜를 바꾸면 그 날 묶음으로 이동. **보낸 시각은 그대로**(30분 삭제 규칙이 늘어나지 않음). 아직 안 온 시각은 "Pick a time that has already passed." | 🤖 `feed` · SQL `rls_smoke` 015l | 사람 확인 대기 |
 | FEEDX-22 | 전체화면에서 사진 넘기기 | **좌우로 스와이프**(손가락 · 마우스 드래그)하면 다음 · 이전 사진. 화면 **왼쪽 끝 · 오른쪽 끝**을 누르면 넘어감(버튼은 보이지 않음). 키보드 ← → 도 | 🤖 `feed`(마우스) · `feed-phone`(손가락, 실제 터치 이벤트) | 사람 확인 대기 |
 | FEEDX-23 | 전체화면에서 **핀치 줌** | 두 손가락으로 벌리면 확대(최대 4배), 줄이면 원래대로. 확대 중에는 한 손가락으로 사진을 옮기고 스와이프 · 가장자리 누르기로 페이지가 넘어가지 않음. 다음 사진으로 가면 원래 크기. 데스크톱은 트랙패드 핀치(ctrl + 휠), 확대 중 마우스 드래그로 옮김 | 🤖 `feed-phone`(핀치 · 실제 터치 이벤트) · `feed`(ctrl + 휠) | 사람 확인 대기 |
@@ -1243,6 +1253,16 @@
 | DIARYTAP-3 | ✨ Decorate → 스티커 고르기 → 오른쪽 아래 **동그란 손잡이**를 마우스로 끌기 | 가운데에서 멀어지면 커지고 가까워지면 작아짐, 돌리면 같이 돎. 크기는 0.4~2.5에서 멈춤. − + ↺ ↻ · Remove 버튼은 없고, 지우기는 스티커 **왼쪽 위 ×**. ⬇ Behind text 버튼도 없음. Save stickers 뒤 다시 열어도 그대로 | 🤖 `decor` | 사람 확인 대기 |
 | DIARYTAP-4 | 폰에서 스티커 위에 **두 손가락**으로 벌리기 · 오므리기 | 크기와 각도가 바뀌고, 자리는 그대로 | 🤖 `decor`(Chromium 터치) | **👤** 실제 폰 |
 | DIARYTAP-5 | 시터 Diary에서 리포트 쓰기 · 보낸 쪽 꾸미기 | 그림 칸은 누를 수 없는 그대로(시터 사진은 📷 Add photo), 손잡이와 두 손가락은 똑같이 됨 | 🤖 `decor` · `report` | ➖ |
+
+### 3.61 예약 시간이 지났을 때 (PASTTIME) · #364
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| PASTTIME-1 | Book care(`/owner/bookings/new`)에서 드롭오프를 지난 시간으로 · 픽업을 드롭오프보다 앞으로 | 메시지가 둘로 나뉨: **Drop-off time has passed.** / **Pick-up must be after drop-off.** | 🤖 `booking`(trip times) | ➖ |
+| PASTTIME-2 | 채팅 첫 카드의 맡기는 시간이 오늘 이미 지난 상태(예: 오늘 9 AM, 지금 2:44 PM)에서 오너가 **Request** | 바로 보내지지 않고 Request booking 시트가 열림. 맡기는 시간이 **다음 정각(3:00 PM)** 으로 옮겨져 있고 날짜 칸이 펼쳐진 채 "The chat's drop-off had passed, so it moved." 한 줄. 데려가는 시간이 새 맡기는 시간보다 앞이면 머무는 길이를 그대로 두고 함께 옮겨짐 | 🤖 `chat-handoff` · `booking`(trip times) | 사람 확인 대기 |
+| PASTTIME-3 | 그 시트(또는 Book care · Change time)에서 오늘 날짜의 시간 고르기 | 지금보다 앞선 시간은 흐리게 줄이 그어져 눌리지 않음(오후면 AM 전체, 지난 시 · 분). 바퀴를 굴려 지난 시간에 멈추면 **Set**이 꺼짐. 내일 이후 날짜는 모든 시간이 열림 | 🤖 `chat-handoff` | ➖ |
+| PASTTIME-4 | 시터가 이미 수락했고 맡기는 시간이 지난 요청 → 예약 화면(또는 채팅)에서 **Accept** | 시트의 Times 아래 빨간 줄 **Drop-off time has passed.**(픽업만 지났으면 Pick-up), 버튼은 Accept 대신 **Pick new times**. 누르면 "Pick new times" 시트(시간만, 드롭오프 먼저) → **Send to Chloe** → 토스트 "Sent to Chloe", 예약 화면에 그대로 머묾. 새 시간이 반영되면 빨간 줄이 사라지고 Accept가 돌아옴 | 🤖 `chat` | 사람 확인 대기 |
+| PASTTIME-5 | 앱에서는 아직 안 지났지만 서버가 `proposal_expired` · `request_expired`로 거절(누르는 사이에 시간이 지남) | "Not saved" 창과 Try again이 뜨지 않고 시트에 **That time has passed.** + **Pick new times** | 🤖 `chat`(서버 응답을 흉내) | ➖ |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 

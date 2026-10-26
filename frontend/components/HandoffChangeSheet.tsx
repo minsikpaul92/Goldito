@@ -12,6 +12,7 @@ import { TextField } from "./ui/TextField";
 import { TimePickerSheet } from "./ui/TimePickerSheet";
 import { addDays, appToday, formatDay, formatTime, isoToZoned, shiftTime, zonedToIso } from "../features/schedule/dates";
 import { BookingSummary, HandoffKind, LocationType } from "../lib/bookings";
+import { earliestTime } from "../lib/trip";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
@@ -283,6 +284,7 @@ export function HandoffChangeSheet({
         visible={picker === "time"}
         title={kind === "drop_off" ? "Drop-off time" : "Pick-up time"}
         value={draft.time}
+        minTime={draft.day ? earliestTime(draft.day) : null}
         onPick={(time) => {
           set({ time });
           setPicker(null);

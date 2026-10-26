@@ -8,6 +8,7 @@ import { TextField } from "./ui/TextField";
 import { TimePickerSheet } from "./ui/TimePickerSheet";
 import { addDays, formatDay, formatTime, shiftTime } from "../features/schedule/dates";
 import { LocationType } from "../lib/bookings";
+import { earliestTime } from "../lib/trip";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
@@ -94,6 +95,7 @@ export function HandoffPicker({ kind, value, onChange, minDay, sitterName, fixed
         visible={clock}
         title={`${title} time`}
         value={value.time}
+        minTime={earliestTime(value.day)}
         onPick={(time) => {
           set({ time });
           setClock(false);

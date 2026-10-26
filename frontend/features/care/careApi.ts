@@ -106,6 +106,7 @@ const RPC_MESSAGES: Record<string, string> = {
   task_log_not_found: "That task is no longer there. Pull to refresh.",
   note_required: "Type a note first.",
   checkin_not_allowed_for_species: "That check-in doesn't fit this pet.",
+  one_pick_per_group: "Pick one answer in each group.",
 };
 
 function rpcMessage(error: { message: string }, fallback: string): string {
@@ -152,6 +153,22 @@ export async function logCareCheckin(input: CheckinInput): Promise<void> {
     p_pet: input.petId,
     p_kind: input.kind,
     p_value: input.value,
+    p_note_text: input.note,
+    p_media_id: input.mediaId,
+  });
+  if (error) throw new Error(rpcMessage(error, "Couldn't send this. Check your connection and try again."));
+}
+
+export type CheckinPick = { kind: CareCheckinKind; value: string };
+
+/**
+ * One check-in with a pick per group (#397): one row per pick, one notice to the owner listing them all. The memo and
+ * the photo ride on the first pick.
+ */
+export async function logCareCheckins(input: { petId: string; picks: CheckinPick[]; note: string | null; mediaId: string | null }): Promise<void> {
+  const { error } = await getSupabase().rpc("log_care_checkins", {
+    p_pet: input.petId,
+    p_picks: input.picks,
     p_note_text: input.note,
     p_media_id: input.mediaId,
   });

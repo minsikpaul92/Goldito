@@ -387,7 +387,7 @@ export default function OwnerBookingDetail() {
         </View>
       ) : null}
 
-      <AgreeSheet visible={agreeing} booking={booking} onClose={() => setAgreeing(false)} onAgreed={() => void load()} />
+      <AgreeSheet visible={agreeing} booking={booking} onClose={() => setAgreeing(false)} onAgreed={() => void load()} onChanged={() => void load()} />
 
       <Sheet
         dirty={passNote.trim() !== ""}

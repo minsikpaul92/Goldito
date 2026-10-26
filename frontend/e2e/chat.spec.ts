@@ -822,6 +822,57 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("chat-next-pay")).toHaveCount(0);
   });
 
+  // #364 (Owner-019): a request whose drop-off passed while it waited can't be agreed; Try again never works.
+  test("a request whose drop-off has passed says so and offers new times instead of Accept, on the booking (#364)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedBooking(db, false);
+    db.bookings[0].sitter_accepted_at = "2026-10-02T19:00:00Z";
+    const drop = db.booking_handoffs.find((h) => h.kind === "drop_off");
+    if (drop) drop.scheduled_at = new Date(Date.now() - 3_600_000).toISOString();
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}`);
+    const screen = app(page);
+
+    await screen.getByTestId("agree-booking").click();
+    await expect(screen.getByTestId("agree-expired")).toHaveText("Drop-off time has passed.");
+    await expect(screen.getByTestId("agree-submit")).toHaveCount(0);
+    await screen.getByTestId("agree-new-times").click();
+    await expect(screen.getByTestId("change-sheet")).toBeVisible();
+    await expect(screen.getByTestId("change-kind-drop_off")).toHaveAttribute("aria-checked", "true");
+    await screen.getByTestId("change-day-plus").click(); // tomorrow, same time
+    await screen.getByTestId("change-send").click();
+    await expect(screen.getByTestId("toast")).toContainText("Sent to Chloe");
+    expect(db.proposals.at(-1)).toMatchObject({ p_booking: BOOKING, p_kind: "drop_off" });
+
+    // Still on the booking, now with a time ahead: Accept is back and goes through.
+    await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}$`));
+    await expect(screen.getByTestId("agree-expired")).toHaveCount(0);
+    await screen.getByTestId("agree-submit").click();
+    await expect.poll(() => db.bookings[0].owner_agreed_at).toBeTruthy();
+  });
+
+  test("when the server says the time has passed, the chat's agree sheet offers new times, not Try again (#364)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedBooking(db, false);
+    db.bookings[0].sitter_accepted_at = "2026-10-02T19:00:00Z";
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/chat/${THREAD}`);
+    const screen = app(page);
+    // The drop-off passed between opening the chat and the tap (the 009c guard).
+    await page.route("**/rpc/agree_to_book", (route) =>
+      route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({ code: "P0001", message: "proposal_expired", details: null }) }),
+    );
+
+    await screen.getByTestId("chat-next-agree").click();
+    await screen.getByTestId("agree-submit").click();
+    await expect(screen.getByTestId("agree-expired")).toHaveText("That time has passed.");
+    await expect(screen.getByTestId("error-dialog")).toHaveCount(0);
+    await screen.getByTestId("agree-new-times").click();
+    await expect(screen.getByTestId("change-sheet")).toBeVisible();
+  });
+
   test("the owner can say no at the agreement step: Decline next to I'd like to book ends the request with a reason (#230)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedBooking(db, false);
