@@ -11,7 +11,7 @@ Rules:
 - Every fact needs a "quote": the owner's own words that show it, copied exactly from the transcript (a short piece, 3 to 12 words). If you cannot quote it, leave the fact out.
 - "breed": the breed or mix as the owner said it, in plain words.
 - "age_years": a whole number of years. Under one year is 0.
-- "weight_kg": a number in kilograms with one decimal. Convert pounds (1 lb = 0.4536 kg).
+- "weight": the number exactly as said, with "unit" "kg" or "lbs" as said ("20 pounds" is 20 and "lbs", "9 kilos" is 9 and "kg"). Never convert.
 - "foods": foods or ingredients the pet must avoid or is allergic to, one short word or phrase each. Give one entry per food: "allergic to chicken and beef" is two entries, "chicken" and "beef", each with the quote that names it.
 - "notes": the owner's own words for the free-text items, each with only a "quote" copied exactly from the transcript (a sentence or two, up to about 40 words, never reworded): "personality" (item 4), "loves" (item 5), "scares" (item 6), "routine" (item 7), "health" (item 9: health problems and medicine, not the allergies), "careful" (item 10), "more" (item 11). Leave out an item the owner did not speak to, or said there is nothing for ("nothing special", "none", "no").
 - "answers": for each question in the list that the owner clearly answered, pick the option whose meaning matches and give its "value" exactly as listed. Skip a question when the owner did not speak to it or it is a stretch. A pet being "friendly" in general does not answer a specific question.
@@ -20,7 +20,7 @@ Rules:
 Reply with JSON only, in this shape:
 {"breed": {"value": "...", "quote": "..."} | null,
  "age_years": {"value": 4, "quote": "..."} | null,
- "weight_kg": {"value": 6.5, "quote": "..."} | null,
+ "weight": {"value": 13, "unit": "lbs", "quote": "..."} | null,
  "foods": [{"value": "chicken", "quote": "allergic to chicken and beef"}, {"value": "beef", "quote": "allergic to chicken and beef"}],
  "answers": {"<question key>": {"value": "<option value>", "quote": "..."}},
  "notes": {"personality" | "loves" | "scares" | "routine" | "health" | "careful" | "more": {"quote": "..."}}}

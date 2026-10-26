@@ -3,7 +3,7 @@
 from types import SimpleNamespace
 
 import pytest
-from app.ai.pet_voice import RawFact, RawFacts, numbers_in, quote_in, validate_facts
+from app.ai.pet_voice import RawFact, RawFacts, RawWeight, numbers_in, quote_in, validate_facts
 from app.services import nebius
 
 from tests import test_media_sign as base
@@ -21,6 +21,10 @@ OPTIONS = {"d4": {"1", "2", "3", "4"}, "s1": {"never", "once", "more", "unsure"}
 
 def fact(value, quote) -> RawFact:
     return RawFact(value=value, quote=quote)
+
+
+def weight(value, unit, quote) -> RawWeight:
+    return RawWeight(value=value, unit=unit, quote=quote)
 
 
 # --- the pure checks ---------------------------------------------------------------------------
@@ -44,14 +48,14 @@ def test_all_the_good_facts_pass():
     raw = RawFacts(
         breed=fact("Maltese", "four year old Maltese"),
         age_years=fact(4, "four year old"),
-        weight_kg=fact(5.9, "thirteen pounds"),
+        weight=weight(13, "lbs", "thirteen pounds"),
         foods=[fact("Chicken", "allergic to chicken")],
         answers={"d4": fact("3", "gets nervous when there is thunder"), "s1": fact("once", "once snapped at a groomer")},
     )
     facts = validate_facts(raw, TEXT, OPTIONS)
     assert facts.breed.value == "Maltese"
     assert facts.age_years.value == 4
-    assert facts.weight_kg.value == 5.9
+    assert (facts.weight.value, facts.weight.unit) == (13, "lbs")
     assert [f.value for f in facts.foods] == ["chicken"]
     assert {k: f.value for k, f in facts.answers.items()} == {"d4": "3", "s1": "once"}
 
@@ -60,13 +64,13 @@ def test_a_value_that_is_not_in_the_text_is_dropped_not_saved():
     raw = RawFacts(
         breed=fact("Poodle", "four year old Maltese"),  # the quote is real, the value is not what it says
         age_years=fact(7, "four year old"),
-        weight_kg=fact(20, "thirteen pounds"),
+        weight=weight(5.9, "kg", "thirteen pounds"),  # converted, or the wrong unit, is not what was said
         foods=[fact("beef", "allergic to chicken")],
         answers={"d4": fact("3", "she loves thunder")},  # a quote that was never said
     )
     facts = validate_facts(raw, TEXT, OPTIONS)
     assert facts.model_dump() == {
-        "breed": None, "age_years": None, "weight_kg": None, "foods": [], "answers": {}, "notes": {},
+        "breed": None, "age_years": None, "weight": None, "foods": [], "answers": {}, "notes": {},
     }
 
 
@@ -163,10 +167,18 @@ def test_ages_under_a_year_and_nonsense_ages():
     assert validate_facts(RawFacts(age_years=fact("four", "eight months old")), text, {}).age_years is None
 
 
-def test_a_weight_in_kilograms_or_pounds():
-    assert validate_facts(RawFacts(weight_kg=fact(6.5, "weighs 6.5 kilos")), "He weighs 6.5 kilos.", {}).weight_kg.value == 6.5
-    assert validate_facts(RawFacts(weight_kg=fact(5.9, "thirteen pounds")), TEXT, {}).weight_kg.value == 5.9
-    assert validate_facts(RawFacts(weight_kg=fact(13, "thirteen pounds")), TEXT, {}).weight_kg is None  # still pounds
+def test_a_weight_keeps_the_number_and_the_unit_said():
+    kilos = validate_facts(RawFacts(weight=weight(9, "kg", "about 9 kilos")), "She is about 9 kilos.", {}).weight
+    assert (kilos.value, kilos.unit) == (9, "kg")
+    pounds = validate_facts(RawFacts(weight=weight(20, "lbs", "20 pounds")), "Coco is 20 pounds.", {}).weight
+    assert (pounds.value, pounds.unit, pounds.quote) == (20, "lbs", "20 pounds")
+    assert validate_facts(RawFacts(weight=weight(13, "lbs", "thirteen pounds")), TEXT, {}).weight.value == 13
+    # A number with no unit word keeps the unit the model read; a unit word that disagrees drops the fact.
+    assert validate_facts(RawFacts(weight=weight(6, "kg", "she weighs 6")), "Yes she weighs 6.", {}).weight.unit == "kg"
+    assert validate_facts(RawFacts(weight=weight(13, "kg", "thirteen pounds")), TEXT, {}).weight is None
+    assert validate_facts(RawFacts(weight=weight(5.9, "kg", "thirteen pounds")), TEXT, {}).weight is None  # converted
+    assert validate_facts(RawFacts(weight=weight(13, "stone", "thirteen pounds")), TEXT, {}).weight is None
+    assert validate_facts(RawFacts(weight=weight(13, None, "thirteen pounds")), TEXT, {}).weight is None
 
 
 def test_foods_are_unique_short_and_only_what_was_said():
@@ -229,6 +241,13 @@ def test_the_facts_come_back_with_their_quotes(client, model) -> None:
     assert out["answers"] == {"s1": {"value": "once", "quote": "once snapped at a groomer"}}  # d4 had a made-up quote
     assert out["model"] == "nano" and out["latency_ms"] == 321
     assert model["sent"]["role"] == "fast"
+
+
+def test_twenty_pounds_comes_back_as_twenty_lbs_with_the_quote(client, model) -> None:
+    model["answer"] = RawFacts(weight=weight(20, "lbs", "20 pounds"))
+    response = client.post("/api/ai/pet-voice", json=body(transcript="Coco is 20 pounds."), headers=headers(owner_token()))
+    assert response.status_code == 200
+    assert response.json()["weight"] == {"value": 20, "unit": "lbs", "quote": "20 pounds"}
 
 
 def test_the_text_goes_to_the_model_as_data_between_tags(client, model) -> None:
