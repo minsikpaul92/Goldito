@@ -1,87 +1,87 @@
-# Phase 10 — 데모 시드 · 배포 · 제출 README
+# Phase 10: Demo seed · deploy · submission README
 
-> 공통 전제: [architecture.md](architecture.md) — D18 배포, D19 시드
+> Shared context: [architecture.md](architecture.md): D18 deploy, D19 seed
 
 ## Goal
 
-심사위원·팀이 **15분 안에** "A Stay with Goldito" — [full-process.md](../full-process.md)의 **5단계(Inquiry → Meet & Greet → Booking → Care & Transit → Completion)** — 전체를 재현할 수 있게 **시드 데이터**, **공개 데모 URL**, **테스트 계정**, **루트 README 실행 가이드**를 완성하고, **12/15 심사 종료까지 데모가 살아 있게** 운영 준비를 끝낸다. 로그인 UX·Welcome·Try demo는 **[onboarding.md](../onboarding.md)** (OB.3·OB.5와 연동).
+So that judges and the team can reproduce all of "A Stay with Goldito" (the **5 stages (Inquiry → Meet & Greet → Booking → Care & Transit → Completion)** of [full-process.md](../full-process.md)) **within 15 minutes**, finish the **seed data**, the **public demo URL**, the **test accounts**, and the **root README run guide**, and finish the operations prep so **the demo stays up until judging ends on 12/15**. Login UX·Welcome·Try demo are in **[onboarding.md](../onboarding.md)** (linked with OB.3·OB.5).
 
-### Goal 달성 기준
+### Goal met when
 
-- [ ] `backend/scripts/seed_demo.py` — owner, sitter, 강아지 Max(chicken allergy, med 08:00, walk 10:30) + 고양이 Mochi(feeding 09:00, litter 12:00) + Chloe 요금표·정책·Visitor parking + Robert 가상 출입 정보·집 좌표 + **지난 돌봄(Paul) Life Record·리뷰** (+ `--relative` 옵션 — 5단계 장면을 지금 시각 기준으로)
+- [ ] `backend/scripts/seed_demo.py`: owner, sitter, dog Max (chicken allergy, med 08:00, walk 10:30) + cat Mochi (feeding 09:00, litter 12:00) + Chloe's rate table·policy·Visitor parking + Robert's fictional access info·home coordinates + **a past stay (Paul) Life Record·review** (+ a `--relative` option: the 5 stage scenes relative to the current time)
 - [ ] README Getting Started: clone → env → migrate → seed → run → login
-- [ ] Public frontend URL (Vercel https://goldito-petcare.vercel.app) + backend URL (**Render** https://goldito-backend.onrender.com — Nebius AI Cloud는 안 씀, D18), production CORS, **keep-alive 핑이 10분마다 도는 것 확인**
-- [ ] 테스트 계정 문서 (Devpost 붙여넣기용)
-- [ ] 12/15까지 유지 계획 실행 (keep-alive, 한도 모니터링)
-- [ ] 데스크톱 브라우저: 폰 프레임 + 옆 안내 패널, **마우스만으로** 심사 경로 완주 (D25) · 폰 브라우저: 프레임 없이 전체 화면
+- [ ] Public frontend URL (Vercel https://goldito-petcare.vercel.app) + backend URL (**Render** https://goldito-backend.onrender.com; Nebius AI Cloud is not used, D18), production CORS, **confirm the keep-alive ping runs every 10 minutes**
+- [ ] Test account doc (for pasting into Devpost)
+- [ ] Run the plan to keep it up until 12/15 (keep-alive, limit monitoring)
+- [ ] Desktop browser: phone frame + side guide panel, finish the judge path **with the mouse only** (D25) · phone browser: full screen with no frame
 
 ---
 
-## 선행 조건
+## Prerequisites
 
-- 시나리오 코어 완료: Phase 03B · 03C · 04 · 05 · 06 · 06B · 07 · 07B · 09 · 07C (08은 stretch — 있으면 데모 (+) 장면). 백엔드 배포 10.3은 **U0로 앞당김 (2026-10-09)** — Vercel(main)에서 업로드 · AI까지 손 테스트하려고, R1b보다 먼저 ([work-split-2026-10-09.ko.md](../work-split-2026-10-09.ko.md) §2)
-- Phase 00 모든 키 production env에 설정
+- Scenario core done: Phase 03B · 03C · 04 · 05 · 06 · 06B · 07 · 07B · 09 · 07C (08 is a stretch; if it exists, a (+) demo scene). Backend deploy 10.3 was **moved up to U0 (2026-10-09)** so upload · AI can be hand-tested on Vercel (main), before R1b (the 2026-10-09 work split §2, removed; in git history)
+- All Phase 00 keys set in the production env
 
 ---
 
-## 범위
+## Scope
 
-| 포함 | 제외 |
+| In | Out |
 | :--- | :--- |
-| Vercel (Expo web export) + **Render** Web Service (Docker, 무료) + keep-alive 핑 | App Store / Play 빌드 · Nebius AI Cloud 배포 (D18, 2026-10-09) |
-| Supabase keep-alive, 모니터링 | Multi-region HA |
-| 3분 영상 스크립트 outline | 영상 편집 (묵) |
-| Nebius/NVIDIA feedback 초안 | Devpost 최종 클릭 (민식) |
-| 데스크톱 옆 안내 패널 (10.9) · Split view (10.10, stretch) | 시터 데스크톱 레이아웃 (해커톤 후, D25) |
+| Vercel (Expo web export) + **Render** Web Service (Docker, free) + keep-alive ping | App Store / Play builds · Nebius AI Cloud deploy (D18, 2026-10-09) |
+| Supabase keep-alive, monitoring | Multi-region HA |
+| 3-minute video script outline | Video editing (Muk) |
+| Nebius/NVIDIA feedback draft | Final Devpost click (Minsik) |
+| Desktop side guide panel (10.9) · Split view (10.10, stretch) | Sitter desktop layout (after the hackathon, D25) |
 
 ---
 
-## "A Stay with Goldito" 데모 스크립트 (Goal 시나리오 — [full-process.md §6](../full-process.md#6-데모-경로-a-stay-with-goldito))
+## "A Stay with Goldito" demo script (Goal scenario: [full-process.md §6](../full-process.md#6-demo-path-a-stay-with-goldito))
 
-| # | Stage | 액션 | 검증 (상대방 화면) | Phase |
+| # | Stage | Action | Check (the other side's screen) | Phase |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | Inquiry | Owner: Chloe 프로필 → **Ask before booking** (Boarding · 2마리 · 연휴 포함 · 맡기기 Sitter drives · 찾기 Owner drives) → 답장 후 **Request booking** | Chloe(자동 발송 모드) "typing" → 약 30초 뒤 시터 말투 답장 + 견적 카드(공휴일·다두) + Life Record 출처 칩 / Sitter 알림 "your draft reply is ready" → 요청 카드 | 07B · 03C · 03B |
-| 2 | Meet & Greet | Owner: **Care request** → AI 체크리스트 → Save · 처음 만나는 사이라 Meet & Greet: **Video** Oct 6 7 PM 제안 → Sitter Accept → **Join Google Meet** 링크 생성 → Done (대면이면 선호 장소 칩에서 고름) | Sitter 요청 카드: "Meet first" · 🚙/🚗 · Heads-up · From Max's Life Record · 수락 뒤 양쪽 카드에 Join Google Meet · M&G 전에는 Sitter Accept 비활성 | 06 · 03B (3B.9 · 3B.11) |
-| 3 | Booking | Sitter **Accept** → Owner **Checkout**: 견적 → 동의서 → **Pay (demo)** | Owner: Chloe's place · Visitor parking · 짐 체크리스트 / Sitter: "Robert signed and paid" · 출입 정보 🔒 "Unlocks …" | 03C |
-| 4a | Transit | (시드 시각 = 픽업 2시간 안) Sitter **Show code** → **Start trip → Simulate the drive** | Owner `access_unlocked` · 지도·ETA · "Chloe has arrived" → Sitter 차량 샘플 사진 → Vision ✅ → **Received** → Owner "Pick-up complete — care has started · photo verified" | 06B |
-| 4b | Care | Sitter: Today 체크인(Walk 20 min) · 사진 **+ Photo** · Report: 사진 2장 → **칩 제안**(틀린 칩 1개 끄기) + 짧은 메모 → **Generate → 승인(Send)** | Owner 토스트·Activity · 피드 AI 캡션 · **Album** 분류 · Reports 알림장 | 06 · 05 · 09 · 07 |
-| 5 | Completion | Owner **Start trip**(Owner drives) → Simulate → Sitter 귀가 사진 → **Returned** | Sitter "Robert has arrived" / Owner Visitor parking 카드 → "home safe 🏠" → ★ 리뷰 → "Life Record updated" | 06B · 07C |
-| (+) | Stretch | Sitter Home **Scan a treat** → `chicken_jerky` 샘플 | 빨간 DANGER 모달 / Owner "Blocked a risky treat" | 08 |
+| 1 | Inquiry | Owner: Chloe's profile → **Ask before booking** (Boarding · 2 pets · includes a holiday · drop-off: Sitter drives · return: Owner drives) → after the reply, **Request booking** | Chloe (auto-send mode) "typing" → about 30 seconds later a reply in the sitter's tone + quote card (holiday·multi-pet) + Life Record source chip / Sitter notification "your draft reply is ready" → request card | 07B · 03C · 03B |
+| 2 | Meet & Greet | Owner: **Care request** → AI checklist → Save · they have never met, so Meet & Greet: propose **Video** Oct 6 7 PM → Sitter Accept → **Join Google Meet** link created → Done (if in person, pick from the preferred spot chips) | Sitter request card: "Meet first" · 🚙/🚗 · Heads-up · From Max's Life Record · after accepting, Join Google Meet on both cards · Sitter Accept disabled before the M&G | 06 · 03B (3B.9 · 3B.11) |
+| 3 | Booking | Sitter **Accept** → Owner **Checkout**: quote → consent form → **Pay (demo)** | Owner: Chloe's place · Visitor parking · packing checklist / Sitter: "Robert signed and paid" · access info 🔒 "Unlocks …" | 03C |
+| 4a | Transit | (seed time = within 2 hours of the pick-up) Sitter **Show code** → **Start trip → Simulate the drive** | Owner `access_unlocked` · map·ETA · "Chloe has arrived" → sitter's in-car sample photo → Vision ✅ → **Received** → Owner "Pick-up complete, care has started · photo verified" | 06B |
+| 4b | Care | Sitter: Today check-in (Walk 20 min) · photo **+ Photo** · Report: 2 photos → **chip suggestions** (turn off 1 wrong chip) + a short note → **Generate → approve (Send)** | Owner toast·Activity · feed AI caption · **Album** sorting · Reports daily report | 06 · 05 · 09 · 07 |
+| 5 | Completion | Owner **Start trip** (Owner drives) → Simulate → sitter's return photo → **Returned** | Sitter "Robert has arrived" / Owner Visitor parking card → "home safe 🏠" → ★ review → "Life Record updated" | 06B · 07C |
+| (+) | Stretch | Sitter Home **Scan a treat** → `chicken_jerky` sample | Red DANGER modal / Owner "Blocked a risky treat" | 08 |
 
-녹화·심사는 아무 시간에나 가능해야 함 → `seed_demo.py --relative`: 확정·결제된 예약의 픽업(맡기기) = **now + 90분**(출입 정보가 이미 열린 상태), 찾기 = now + 3일, med = now+2분, walk = now+6분. 장면 1–3을 새로 보여 줄 때는 `--fresh-inquiry`로 Robert ↔ Chloe를 **처음 만나는 사이**로 되돌린다 (둘 사이 예약을 지워 장면 ②의 Meet & Greet가 뜨게 — D44). 라이브 심사 경로(OB.5)는 장면 ①·④ 중심이고, Meet & Greet는 영상으로 보여 준다. 영상은 3분 미만이므로 장면 ①의 약 30초 사람 속도 구간은 편집에서 빨리 감고 "~30 s later" 자막으로 표시한다 (앱 동작은 그대로).
+Recording and judging must work at any time → `seed_demo.py --relative`: the pick-up (drop-off) of the confirmed and paid booking = **now + 90 minutes** (access info already unlocked), the return = now + 3 days, med = now+2 minutes, walk = now+6 minutes. To show scenes 1-3 fresh, `--fresh-inquiry` turns Robert ↔ Chloe back into **people who have never met** (deletes the bookings between them so the Meet & Greet of scene ② appears, D44). The live judge path (OB.5) centers on scenes ① and ④, and Meet & Greet is shown in the video. The video is under 3 minutes, so the roughly 30-second human-paced part of scene ① is fast-forwarded in editing and marked with a "~30 s later" caption (the app behaves the same).
 
 ---
 
-## 작업 상세
+## Task details
 
-| ID | 작업 | 상세 / DoD |
+| ID | Task | Details / DoD |
 | :--- | :--- | :--- |
-| 10.1 | Seed script | **계정 부분 완료 (2026-10-01):** `seed_demo.py`가 demo-owner/demo-sitter 생성·갱신 + `--check` 읽기 전용 확인 (backend/README "Demo accounts"). **2026-10-09:** 테스트용 `scripts/reset_demo.py --state empty · pets · confirmed · ready · in_care`(+ 앱 Profile → Demo tools, `POST /api/demo/reset`)가 생김 (#60). **심사 전에 바뀌는 것:** 리셋 기능을 없애고(심사위원이 데이터를 지울 수 없게) 같은 `demo_reset` 코드로 **시작 지점별 고정 데모 계정**(빈 계정 · 펫만 · 수락된 예약 → 돌보는 중 · 끝난 돌봄)을 만들어 Try demo가 그중에서 고름 — 한 계정을 두 심사위원이 동시에 쓰는 문제는 결정 필요 (TODO "Demo accounts for judging"). R60-3~R60-5(리셋 견고성)는 여기서 흡수. 남은 것: 아래 pet·예약·task·Paul·샘플 피드. `backend/scripts/seed_demo.py` (service role, D19): `auth.admin.create_user` × 2 (`demo-owner@goldito.test`, `demo-sitter@goldito.test`, `email_confirm=True`, 비밀번호는 env `DEMO_PASSWORD`), pet Max(dog, Maltese, 4y, allergy chicken, care_tasks medication+walk), pet Mochi(cat, Domestic Shorthair, 3y, care_tasks feeding+litter), **시나리오 데이터 (D27):** Chloe `sitter_rates`(Boarding 55 · House sitting 70 · Daycare 35 · +50% · +25%)·`services`·`policies`(가상 정책 문단 3개)·`visitor_parking`·`lobby_notes`·`home_lat/lng`(가상 좌표 — 공원 근처, 실제 주소 아님), Robert `owner_home_access`(가짜 lockbox `0000`·buzzer `#000` — 명백히 가짜 값)·`home_lat/lng`, `pet_cautions` 2개, `care_requests` 1개, Chloe **말투 데이터**(가상 시터 스타일 카드 + `tone_samples` 시드 — 익명화 원본이 아닌 공개용 샘플, 7B.8) · `ai_reply_mode='auto'` + `ai_consent_at`(장면 ① — 대기 없이 바로 사람 속도, D36) · Robert·Chloe·Paul `meet_spots` 각 2개(가상 공원 입구·카페 — 실제 주소 아님, D44) · **승인 대기 초안 1건**(시드 전용 견주 Joy → Chloe 문의, `status='draft'` — 시터 데모에서 Send / Edit / Regenerate 화면을 보여 주기 위함, D36), 결제·동의 완료 예약(`paid_at`, `booking_consents` 5종 — 서비스 role insert), 지난 9월 Paul 예약(완료) + `pet_life_records`(Max·Mochi) + `reviews`(★5) + RAG 인덱싱(`rag.index_source`), 데모 집 좌표(06B에서 `demo_accounts.ensure_home_point`로 시드됨 — 가상 운전은 두 집 좌표에서 계산하므로 경로 JSON은 필요 없음), 공휴일 시드(03C),  sitter_availability open = 오늘-7일 ~ 오늘+60일, 모든 칸, 정원 3, 칸 시간 = Chloe 기본(Morning 08–12 · Afternoon 12–18 · Overnight 18–08), **확정 booking 1건 = 어제 09:30 맡김(Received 완료) ~ 오늘+6일 17:00 찾음, 장소 Chloe's place (Max + Mochi)** — 과거 시각이라 RPC가 아니라 service role로 `bookings` + `booking_pets`(care_range) + `booking_slots` + agreed `booking_handoffs`를 함께 insert (smoke test `_t_booking`과 같은 형태) → Try demo 즉시 "Now caring" + 과거 예약 1건(단골 표시용). 가짜 `home_address`, 추가로 시터2(Paul) 계정 + open 구간 (재예약 검색 데모용), owner_profiles 가짜 긴급 연락처, 샘플 feed 2개(선택, Cloudinary `goldito/demo/` 공용 이미지). **멱등** (`--reset`이면 demo 계정 데이터 삭제 후 재생성). 실제 PII 0 |
-| 10.2 | README | 루트 README는 이미 5단계 흐름 구조 (2026-10-01) + **The Goldito Agent** 표(트리거 → 행동 → 사람 승인, D46 — 영상 내레이션도 같은 표현) — 배포 직전 **실제로 만든 기능과 대조**해 안 된 것은 지우거나 "What's Next"로 이동 (특히 08 stretch). Getting Started (복붙 명령, Windows/mac 둘 다), "How we use Nemotron" 표를 실제 model·latency(07.1·07B 지표)로 갱신, architecture 그림, **단계별 스크린샷 5장**. backend/frontend README 최신화 |
-| 10.3 | Deploy backend | **U0로 앞당겨 완료 (2026-10-09) — Render 무료 플랜**, https://goldito-backend.onrender.com. Render Web Service가 GitHub `main`을 보고 `backend/Dockerfile`로 빌드 · 배포(Root Directory `backend`, Health Check `/health`), env는 Render → Environment ([env-setup.md](../env-setup.md) § 배포된 백엔드). CI(`ci.yml`)가 PR마다 같은 이미지를 빌드해 `/health`를 확인. **Nebius AI Cloud는 쓰지 않음** (D18 — 카드 등록 + $25 선결제, 행사 크레딧 없음, 상시 켜 두면 12/15까지 약 $128; 시도한 기록은 [notes/nebius-ai-cloud-feedback.md](notes/nebius-ai-cloud-feedback.md)). AI 추론은 그대로 Token Factory |
-| 10.4 | Deploy frontend | **Vercel 연결은 2026-10-02에 앞당김** — Production **https://goldito-petcare.vercel.app** (main 머지마다 자동 배포, 2026-10-09부터 수동 테스트도 여기서), `frontend/vercel.json` + [env-setup.md § Vercel](../env-setup.md). `EXPO_PUBLIC_API_URL`은 U0에서 채움. 10.4에서 남은 것: 심사 전 `EXPO_PUBLIC_DEMO_TOOLS` 비우기 · 최종 production env 확인. `npx expo export -p web` → `dist/` → Vercel (SPA rewrite `/(.*) → /index.html`), env `EXPO_PUBLIC_*` production 값. backend `CORS_ORIGINS`에 Vercel 도메인 추가. **CD:** Vercel GitHub 연동 — Root Directory `frontend`, Build `npx expo export -p web`, Output `dist`. PR마다 Preview URL, main 머지 시 production. Preview 도메인(`*.vercel.app`)은 CORS에 정규식으로 허용하거나 Preview는 staging backend 없이 UI 확인용으로만 사용. **폰 프레임이 같은 도메인 iframe이므로** 보안 헤더를 넣을 때 `X-Frame-Options: DENY` 금지, CSP는 `frame-ancestors 'self'` (D25) |
-| 10.5 | 데모 계정 문서 | `docs/DEMO_ACCOUNTS.md`: URL, 이메일 2개, 비밀번호는 repo에 적지 않고 **Devpost 제출란**과 배포 env(`DEMO_PASSWORD` 시드용, `EXPO_PUBLIC_DEMO_PASSWORD` Try demo용 — 데모 계정 전용 값, [onboarding.md](../onboarding.md))에만 (repo엔 "see submission"), 데모 순서 5줄 |
-| 10.6 | Feedback log | README 피드백 표: Token Factory, AI Cloud(써 보려다 그만둔 이유 — [notes/nebius-ai-cloud-feedback.md](notes/nebius-ai-cloud-feedback.md)), 각 Nemotron 모델별 (용도 / 잘된 점 / 개선점 / 온보딩 / 재사용 의향) — 개발 중 `notes/`에 쌓인 메모 정리 |
-| 10.7 | 유지 계획 (~12/15) | ⓪ **Render 잠듦 방지 (2026-10-09):** Render 무료는 15분 무요청 시 잠들어 첫 요청이 30~50초 → `.github/workflows/keepalive.yml`이 **10분마다** `/health` + **cron-job.org `Goldito Keepalive`** 10분마다 (2026-10-09 등록). **배포 · 테스트 · 영상 녹화 전에 핑이 살아 있는지 확인** (Actions 실행 간격 ≤ 15분, 응답 1초 안) · ① Supabase 무료 일시정지 방지: 같은 cron에 하루 한 번 → backend `GET /health/deep`(Supabase `select 1` 수행; `/health`는 가볍게 유지) ② Cloudinary·Nebius 크레딧 잔량 주 1회 확인 (캡처 1장 ≈ 비용 계산표) ③ 데모 계정 데이터 오염 시 `seed_demo.py --reset` |
-| 10.8 | 내부 마감 10/28 체크리스트 | 아래 DoD 전부 + 영상 업로드(YouTube public, < 3분, 영어 음성) + Devpost 초안 |
-| 10.9 | 데스크톱 옆 안내 패널 (D25) | `components/shell/SidePanel.web.tsx` — framed 모드에서 폰 프레임 옆: 로고 + 한 줄 소개, 힌트 "Click = tap · Drag or scroll = swipe", **Try demo as Sitter / Owner** (iframe을 `/login?demo=sitter`·`?demo=owner`로 이동 → OB.3 자동 로그인 재사용), **Open on your phone** QR (배포 URL, 정적 이미지), 영상·GitHub 링크, (10.10 후) **Show both phones**. 창 폭 < 1100이면 패널을 프레임 아래로. DoD: Chrome·Edge·Safari·Firefox × 1366×768·1440×900·1920×1080 + Windows 125%·150% 배율에서 프레임·패널 안 잘림, 패널 버튼 전부 클릭 동작 |
-| 10.10 | ✅ 2026-10-15 (방식 A — 기본은 폰 하나, 심사 링크 `?view=split`; SPLIT-1 – 5 사람 확인) · Split view — Owner·Sitter 폰 나란히 | `?view=split` (또는 패널 **Show both phones**) → 프레임 2개, 각 iframe `name="pane-owner"` / `"pane-sitter"`. 안쪽 앱은 `window.name`으로 pane을 알고 Supabase `auth.storageKey`를 pane별로 (`getAuthStorageKey()`, 3.1) → 두 데모 계정 동시 로그인 (pane마다 Try demo 자동). 창 폭 < 900이면 일반 framed로. DoD: 1440×900 한 화면에서 sitter **Complete with photo** → owner 폰에 토스트 ≤ 3초, 시크릿 창 없이 데모 스크립트 5단계 · 영상 녹화에도 사용 |
+| 10.1 | Seed script | **Accounts part done (2026-10-01):** `seed_demo.py` creates·updates demo-owner/demo-sitter + a `--check` read-only check (backend/README "Demo accounts"). **2026-10-09:** for testing, `scripts/reset_demo.py --state empty · pets · confirmed · ready · in_care` (+ app Profile → Demo tools, `POST /api/demo/reset`) was added (#60). **What changes before judging:** remove the reset feature (so judges cannot wipe data) and use the same `demo_reset` code to make **fixed demo accounts per starting point** (empty account · pets only · accepted booking → in care · finished stay) that Try demo picks from; two judges using one account at the same time needs a decision (TODO "Demo accounts for judging"). R60-3 to R60-5 (reset robustness) are absorbed here. Remaining: the pet·booking·task·Paul·sample feed below. `backend/scripts/seed_demo.py` (service role, D19): `auth.admin.create_user` × 2 (`demo-owner@goldito.test`, `demo-sitter@goldito.test`, `email_confirm=True`, password from env `DEMO_PASSWORD`), pet Max (dog, Maltese, 4y, allergy chicken, care_tasks medication+walk), pet Mochi (cat, Domestic Shorthair, 3y, care_tasks feeding+litter), **scenario data (D27):** Chloe `sitter_rates` (Boarding 55 · House sitting 70 · Daycare 35 · +50% · +25%)·`services`·`policies` (3 fictional policy paragraphs)·`visitor_parking`·`lobby_notes`·`home_lat/lng` (fictional coordinates near a park, not a real address), Robert `owner_home_access` (fake lockbox `0000`·buzzer `#000`, obviously fake values)·`home_lat/lng`, 2 `pet_cautions`, 1 `care_requests`, Chloe **tone data** (a fictional sitter style card + `tone_samples` seed: public samples, not the anonymized originals, 7B.8) · `ai_reply_mode='auto'` + `ai_consent_at` (scene ①: human pace right away with no waiting, D36) · 2 `meet_spots` each for Robert·Chloe·Paul (fictional park entrances·cafes, not real addresses, D44) · **1 draft awaiting approval** (an inquiry from the seed-only owner Joy → Chloe, `status='draft'`, to show the Send / Edit / Regenerate screen in the sitter demo, D36), a paid and consented booking (`paid_at`, 5 kinds of `booking_consents`, service role insert), last September's Paul booking (completed) + `pet_life_records` (Max·Mochi) + `reviews` (★5) + RAG indexing (`rag.index_source`), demo home coordinates (seeded in 06B by `demo_accounts.ensure_home_point`; the simulated drive is computed from the two home coordinates, so no route JSON is needed), holiday seed (03C),  sitter_availability open = today-7 days to today+60 days, every slot, capacity 3, slot times = Chloe's default (Morning 08-12 · Afternoon 12-18 · Overnight 18-08), **1 confirmed booking = drop-off yesterday 09:30 (Received done) to return today+6 days 17:00, place Chloe's place (Max + Mochi)**: the times are in the past, so insert `bookings` + `booking_pets` (care_range) + `booking_slots` + agreed `booking_handoffs` together with the service role instead of the RPC (same shape as the smoke test `_t_booking`) → Try demo shows "Now caring" right away + 1 past booking (to show a regular). A fake `home_address`, plus a sitter 2 (Paul) account + open range (for the rebooking search demo), fake emergency contacts in owner_profiles, 2 sample feed posts (optional, shared images in Cloudinary `goldito/demo/`). **Idempotent** (`--reset` deletes the demo account data and recreates it). Zero real PII |
+| 10.2 | README | The root README already has the 5-stage flow structure (2026-10-01) + **The Goldito Agent** table (trigger → action → human approval, D46; the video narration uses the same wording). Right before deploy, **compare it with the features actually built** and delete what does not work or move it to "What's Next" (especially the 08 stretch). Getting Started (copy-paste commands, both Windows and mac), update the "How we use Nemotron" table with the real model·latency (07.1·07B metrics), architecture diagram, **5 screenshots, one per stage**. Update the backend/frontend READMEs |
+| 10.3 | Deploy backend | **Moved up to U0 and done (2026-10-09), Render free plan**, https://goldito-backend.onrender.com. The Render Web Service watches GitHub `main` and builds·deploys with `backend/Dockerfile` (Root Directory `backend`, Health Check `/health`), env in Render → Environment ([env-setup.md](../env-setup.md) § deployed backend). CI (`ci.yml`) builds the same image on every PR and checks `/health`. **Nebius AI Cloud is not used** (D18: card registration + $25 prepayment, no event credits, about $128 to keep it always on until 12/15; the record of the attempt is in [notes/nebius-ai-cloud-feedback.md](notes/nebius-ai-cloud-feedback.md)). AI inference stays on Token Factory |
+| 10.4 | Deploy frontend | **The Vercel connection was moved up to 2026-10-02**: Production **https://goldito-petcare.vercel.app** (auto deploy on every main merge; manual testing also happens here since 2026-10-09), `frontend/vercel.json` + [env-setup.md § Vercel](../env-setup.md). `EXPO_PUBLIC_API_URL` was filled in at U0. Left in 10.4: empty `EXPO_PUBLIC_DEMO_TOOLS` before judging · check the final production env. `npx expo export -p web` → `dist/` → Vercel (SPA rewrite `/(.*) → /index.html`), env `EXPO_PUBLIC_*` production values. Add the Vercel domain to backend `CORS_ORIGINS`. **CD:** Vercel GitHub integration: Root Directory `frontend`, Build `npx expo export -p web`, Output `dist`. A Preview URL for every PR, production on main merge. Allow Preview domains (`*.vercel.app`) in CORS with a regex, or use Preview only to check the UI without a staging backend. **The phone frame is a same-domain iframe**, so when adding security headers do not use `X-Frame-Options: DENY`; CSP is `frame-ancestors 'self'` (D25) |
+| 10.5 | Demo account doc | `docs/DEMO_ACCOUNTS.md`: URL, 2 emails; the password is not written in the repo, only in the **Devpost submission field** and the deploy env (`DEMO_PASSWORD` for the seed, `EXPO_PUBLIC_DEMO_PASSWORD` for Try demo: values only for the demo accounts, [onboarding.md](../onboarding.md)) (the repo says "see submission"), 5 lines of demo order |
+| 10.6 | Feedback log | README feedback table: Token Factory, AI Cloud (why we tried it and stopped: [notes/nebius-ai-cloud-feedback.md](notes/nebius-ai-cloud-feedback.md)), per Nemotron model (use / what worked / what to improve / onboarding / would use again): organize the notes collected in `notes/` during development |
+| 10.7 | Keep-up plan (to 12/15) | ⓪ **Keep Render from sleeping (2026-10-09):** Render free sleeps after 15 minutes with no requests and the first request then takes 30-50 seconds → `.github/workflows/keepalive.yml` hits `/health` **every 10 minutes** + **cron-job.org `Goldito Keepalive`** every 10 minutes (registered 2026-10-09). **Before deploying · testing · recording video, check that the ping is alive** (Actions run interval ≤ 15 minutes, response within 1 second) · ① Keep Supabase free from pausing: once a day on the same cron → backend `GET /health/deep` (runs Supabase `select 1`; keep `/health` light) ② Check the Cloudinary·Nebius credit balance once a week (one screenshot ≈ a cost sheet) ③ If demo account data gets dirty, `seed_demo.py --reset` |
+| 10.8 | Internal deadline 10/28 checklist | All of the DoD below + video upload (YouTube public, < 3 minutes, English voice) + Devpost draft |
+| 10.9 | Desktop side guide panel (D25) | `components/shell/SidePanel.web.tsx`: next to the phone frame in framed mode: logo + one-line intro, hint "Click = tap · Drag or scroll = swipe", **Try demo as Sitter / Owner** (moves the iframe to `/login?demo=sitter`·`?demo=owner` → reuses the OB.3 auto login), **Open on your phone** QR (deploy URL, static image), video·GitHub links, (after 10.10) **Show both phones**. If the window is < 1100 wide, the panel goes below the frame. DoD: Chrome·Edge·Safari·Firefox × 1366×768·1440×900·1920×1080 + Windows 125%·150% scaling, frame·panel not cut off, every panel button works on click |
+| 10.10 | ✅ 2026-10-15 (approach A: one phone by default, judge link `?view=split`; SPLIT-1 to 5 checked by a person) · Split view: Owner·Sitter phones side by side | `?view=split` (or the panel's **Show both phones**) → 2 frames, each iframe `name="pane-owner"` / `"pane-sitter"`. The inner app knows its pane from `window.name` and uses a Supabase `auth.storageKey` per pane (`getAuthStorageKey()`, 3.1) → two demo accounts logged in at the same time (Try demo runs automatically per pane). If the window is < 900 wide, normal framed. DoD: on one 1440×900 screen, sitter **Complete with photo** → toast on the owner's phone ≤ 3 seconds, the 5-stage demo script with no incognito window · also used for video recording |
 
 ---
 
 ## Definition of Done (DoD)
 
-1. **Cold start:** 팀원이 README만 보고 새 PC에서 로컬 실행 성공
-2. **Judge path:** 데스크톱 브라우저에서 demo URL → 폰 프레임 + test owner/sitter 로그인 → 데모 스크립트 1–5를 **마우스만으로** 성공 (10.10 있으면 Split view 한 화면, 없으면 시크릿 창 2개). 사진은 샘플 트레이(4.7), 이동은 **Simulate the drive**(D32) — (08 완료 시) 스캔은 `chicken_jerky` 샘플로 DANGER. 같은 경로를 Playwright e2e로 운영 URL에 1회 실행 ([DESIGN.md §7.7](../../../DESIGN.md#77-works-with-a-mouse))
-3. MIT license가 GitHub About에 표시
-4. 제출 자료 **영어** (description, video audio, README)
-5. 배포 URL에서 `/health` 200, cold start 포함 첫 응답 < 10초
-6. backend 코드 1줄 변경 PR 머지 → 수동 개입 없이 운영 반영 (CD 확인), Vercel Preview URL이 PR에 표시
-7. 폰(iPhone·Android)에서 demo URL → 프레임 없이 전체 화면, 터치로 같은 경로 동작
+1. **Cold start:** a teammate runs it locally on a new PC from the README alone
+2. **Judge path:** in a desktop browser, demo URL → phone frame + test owner/sitter login → demo script 1-5 succeeds **with the mouse only** (one screen in Split view if 10.10 exists, otherwise 2 incognito windows). Photos from the sample tray (4.7), travel with **Simulate the drive** (D32); (if 08 is done) the scan gives DANGER with the `chicken_jerky` sample. Run the same path once as a Playwright e2e against the production URL ([DESIGN.md §7.7](../../../DESIGN.md#77-works-with-a-mouse))
+3. MIT license shown in GitHub About
+4. Submission materials in **English** (description, video audio, README)
+5. `/health` 200 at the deploy URL, first response < 10 seconds including cold start
+6. Merge a PR with a 1-line backend change → reaches production with no manual step (CD check), Vercel Preview URL shown on the PR
+7. On a phone (iPhone·Android), demo URL → full screen with no frame, the same path works with touch
 
 ---
 
-## 산출물
+## Deliverables
 
 - `backend/scripts/seed_demo.py`, `backend/Dockerfile`, `.github/workflows/keepalive.yml`
 - `docs/DEMO_ACCOUNTS.md`
@@ -90,61 +90,61 @@
 
 ---
 
-## AI 프롬프트
+## AI prompts
 
-Playbook §12 — seed(10.1) / deploy backend(10.3) / deploy frontend(10.4) 각각 별도
+Playbook §12: seed (10.1) / deploy backend (10.3) / deploy frontend (10.4), each separate
 
 ---
 
-## README 재작성 방침 (2026-10-11 결정 — 쓰는 시점은 제출 직전, 10.2)
+## README rewrite plan (decided 2026-10-11; written right before submission, 10.2)
 
-> 심사위원이 README를 열자마자 **"기존 앱이 있는데 왜?"와 "왜 AI?"**가 보여야 한다. 아래는 브레인스토밍에서 정한 방침과 맨 위 블록 초안이다(확정 전).
+> As soon as a judge opens the README they must see **"Why this when apps already exist?" and "Why AI?"**. Below is the plan from brainstorming and a draft of the top block (not final).
 
-**정한 것**
+**Decided**
 
-1. **제품 먼저, 이야기는 맨 위 두 줄.** 이야기 두 줄(왜 만들었나 · 왜 AI인가)을 README **가장 위**에 두고, 바로 아래에 제목 · 한 줄 소개 · 데모 링크를 둔다. 길게 늘어놓지 않는다.
-2. **경쟁 서비스 이름은 쓰지 않는다.** 차이는 *기능이 있냐*가 아니라 **"그 일을 누가 하냐"**로 쓴다 — 시중 앱은 연결하고 예약마다 수수료를 가져가지만, 머무는 동안의 답장 · 규칙 · 일일 노트는 사람이 직접 친다. **우리가 수수료를 얼마 받는다/덜 받는다는 말은 쓰지 않는다**(만들어 둔 것이 없다 — 데모 결제뿐). 수수료 이야기를 더 하고 싶으면 What's Next에 비전으로만.
-3. **근거는 경험으로:** "수십 번의 케어, 같은 반려동물을 여러 번 맡았다." 숫자는 쓰지 않는다. 시니어 이야기는 통계가 아니라 **관찰**("in our experience")로 쓴다.
-4. **앱에 머물 이유(시팅 밖의 기능)** 한 줄을 5단계 띠 아래에 넣는다 — **지금 만들어진 것만 단정하고**, 계획은 "coming"으로 표시한다(아래).
-5. **한국어 판(`README.md`)도 같이** 바꾼다.
-6. 첫 화면 이미지/GIF(문의 → AI 초안 → 승인)는 **나중에**(영상과 함께).
-7. 모든 문장은 쓰기 직전에 [test-guide 현황표](../test-guide.md)와 대조해 **안 만든 것은 지우거나 "coming"** 으로 (10.2의 기존 규칙).
+1. **Product first, the story in the top two lines.** Put the two story lines (why we built it · why AI) at the **very top** of the README, and right below them the title · one-line intro · demo link. No long telling.
+2. **Do not name competitors.** Write the difference not as *whether a feature exists* but as **"who does the work"**: apps on the market connect people and take a fee on every booking, but during the stay the replies · rules · daily notes are typed by people. **Do not say how much fee we take or that we take less** (we have not built any; demo payment only). If we want to say more about fees, only as a vision in What's Next.
+3. **Evidence from experience:** "dozens of stays, the same pets many times." No numbers. Write the senior story as an **observation** ("in our experience"), not a statistic.
+4. Put one line on **reasons to stay in the app (features beyond sitting)** under the 5-stage strip: **state only what is built now as fact**, and mark plans as "coming" (below).
+5. **Change the Korean version (`README.md`) too.**
+6. The first-screen image/GIF (inquiry → AI draft → approval) **later** (with the video).
+7. Right before writing, check every sentence against the [test-guide status table](../test-guide.md) and **delete what is not built or mark it "coming"** (the existing 10.2 rule).
 
-**맨 위 블록 초안 v0 (EN)**
+**Top block draft v0 (EN)**
 
 ```md
-> **Why we built this.** After dozens of stays as pet sitters — many with the same dogs and cats — we kept seeing the same thing: apps connect owners and sitters, and take a cut of every booking, but the stay itself (replies, house rules, daily notes) is still typed by hand, and a lot of it happens outside the app.
-> **Why AI.** In our experience, owners who find typing hard — often seniors — leave their pet's profile half empty, and sitters spend their time writing instead of caring. Goldito's AI does the typing; people approve.
+> **Why we built this.** After dozens of stays as pet sitters, many with the same dogs and cats, we kept seeing the same thing: apps connect owners and sitters, and take a cut of every booking, but the stay itself (replies, house rules, daily notes) is still typed by hand, and a lot of it happens outside the app.
+> **Why AI.** In our experience, owners who find typing hard (often seniors) leave their pet's profile half empty, and sitters spend their time writing instead of caring. Goldito's AI does the typing; people approve.
 
 # 🐾 Goldito
-**Leave your pet, keep your peace of mind.** The whole stay — inquiry to the ride home — in one app, for dogs and cats.
-[Live demo](https://goldito-petcare.vercel.app) · Demo video · Test accounts · *Nebius x NVIDIA Global AI Hackathon — Best Apps and Agents*
+**Leave your pet, keep your peace of mind.** The whole stay, inquiry to the ride home, in one app, for dogs and cats.
+[Live demo](https://goldito-petcare.vercel.app) · Demo video · Test accounts · *Nebius x NVIDIA Global AI Hackathon: Best Apps and Agents*
 ```
 
-그 아래: ① "Why it matters" 두 칸 — **Owner:** your pet's status arrives on its own, without asking · **Sitter:** replies, notes and checklists are drafted for you, details aren't missed, more time to care → ② 5단계 띠(각 단계에 AI가 하는 일 한 문장) → ③ **More than sitting**(아래) → ④ 기존 상세(How It Works, Agent 표, Nemotron 사용, 아키텍처, Getting Started).
+Below it: ① "Why it matters" in two columns: **Owner:** your pet's status arrives on its own, without asking · **Sitter:** replies, notes and checklists are drafted for you, details aren't missed, more time to care → ② the 5-stage strip (one sentence per stage on what the AI does) → ③ **More than sitting** (below) → ④ the existing details (How It Works, Agent table, Nemotron use, architecture, Getting Started).
 
-**More than sitting — 앱에 머물 이유 (README에 쓸 때의 기준)**
+**More than sitting: reasons to stay in the app (the rule when writing the README)**
 
-| 지금 만들어짐 (단정해도 됨, 제출 전 재확인) | 계획 (README에는 "coming"으로만) |
+| Built now (fine to state as fact, recheck before submitting) | Planned (only as "coming" in the README) |
 | :--- | :--- |
-| Feed 앨범(날짜 · 분류) · Diary(시터의 일기 + 알림장) · **Pet Life Record**(다음 시터에게도 이어짐) · 즐겨찾기 시터 · 리뷰(양방향, 시터의 비공개 노트) · 알림 | Mood meter(재미용) · 8-bit Pet room · 스티커 · 카드 알림장 · 사진 요청 · 펫 스킨 · 가입 직후 "Max at a glance" 온보딩(11.15 — 마지막에 구현, 잘릴 수 있음) |
+| Feed album (date · category) · Diary (the sitter's diary + daily report) · **Pet Life Record** (carries over to the next sitter) · favorite sitters · reviews (both ways, the sitter's private note) · notifications | Mood meter (for fun) · 8-bit Pet room · stickers · card daily report · photo request · pet skin · "Max at a glance" onboarding right after sign-up (11.15: built last, may be cut) |
 
-예문(EN): *"Between stays, Goldito keeps the pet's story: a photo album, a diary, and a Life Record that follows the pet to any sitter. Coming next: a mood meter and an 8-bit pet room."*
+Example (EN): *"Between stays, Goldito keeps the pet's story: a photo album, a diary, and a Life Record that follows the pet to any sitter. Coming next: a mood meter and an 8-bit pet room."*
 
 ---
 
-## Open items (남은 후속 작업 — 명세는 여기, 순서는 [GitHub issues](https://github.com/minsikpaul92/Goldito/issues))
+## Open items (remaining follow-up work: the spec is here, the order is in [GitHub issues](https://github.com/minsikpaul92/Goldito/issues))
 
-| ID | 내용 | 담당 |
+| ID | What | Owner |
 | :--- | :--- | :--- |
-| **10.1 고정 데모 계정** | Profile → Demo tools · `POST /api/demo/reset`을 제거하고(`EXPO_PUBLIC_DEMO_TOOLS` · `DEMO_RESET_ENABLED` 끄기, `DemoTools.tsx` · `demoReset.ts` · `demo-tools.spec.ts` · `routers/demo.py` · CI env 줄 삭제) 시작 지점별 고정 계정(빈 · 펫만 · 수락됨→돌보는 중 · 끝남)으로 대체. 결정 필요: 한 계정을 두 심사위원이 동시에 쓰는 문제. **R60-3 – R60-5 흡수:** 리셋이 원자적이지 않음(삭제 뒤 실패하면 반쯤 리셋 — 로컬에서 실제로 겪음) · 오너의 여분 펫이 정원을 넘겨 리셋 실패 · `in_care`가 토론토 00:00–00:57에 실패 | 민식 |
-| **10.1 시드 보강 (11.15 S1 이후)** | 데모 펫 Max · Mochi의 `pets.profile`(성격 답 · 안전 답)을 시드로 채워 시터 카드의 "at a glance"가 가입 흐름 없이 보이게 한다. S1이 잘리면 하지 않는다 | 민식 |
-| **10.7 보강** | ① ~~`GET /health/deep`과 하루 한 번 핑~~ — 만듦(`health.py` · `keepalive.yml`, 머지 후 Render 배포가 끝나면 동작; Supabase 무료는 7일 쉬면 멈추고 심사는 12/1–12/15) ② 대시보드에서 **Leaked password protection** 켜기 ③ **KA-1**: 배포 · 테스트 · 녹화 전에 `keepalive` 간격 ≤ 15분과 cron-job.org `200 OK` 확인, 12/15까지 유지 | 민식 |
-| **10.11 `/privacy` 페이지** (만듦 — `frontend/app/privacy.tsx`, Welcome · Profile에서 링크; 남은 것: OAuth 동의 화면 Branding에 URL 넣기) | ~~라우트가 아직 없음.~~ 저장하는 것 · AI 사용 · 데모 데이터를 적은 짧은 개인정보 페이지, Google OAuth 동의 화면과 Profile에서 링크 (OAuth "In production" — Testing 토큰은 7일 만료 — 에 필요, 도메인 `goldito-petcare.vercel.app`) | 민식 |
-| **10.12 제출 체크리스트** | [해커톤 규칙 §4](../../hackathon/README.md) 기준: 데모 영상(< 3분, YouTube 공개, Token Factory + NVIDIA 모델 사용을 설명하는 음성, 저작권 음악 없음 — 민식 녹화 · 묵 편집 제안, 확인 필요, 10/27 녹화) · Devpost 설명 + 트랙 + Token Factory · 쓴 모델별 피드백(10.6) · README Getting Started + "How we use Nemotron"(10.2) · `docs/DEMO_ACCOUNTS.md`(10.5) · 레포 공개 + MIT가 About에 표시 + 실제 PII 없음 · 전부 영어 · **내부 초안 10/28** | 민식 · 묵 |
+| **10.1 Fixed demo accounts** | Remove Profile → Demo tools · `POST /api/demo/reset` (turn off `EXPO_PUBLIC_DEMO_TOOLS` · `DEMO_RESET_ENABLED`, delete `DemoTools.tsx` · `demoReset.ts` · `demo-tools.spec.ts` · `routers/demo.py` · the CI env lines) and replace them with fixed accounts per starting point (empty · pets only · accepted→in care · finished). Needs a decision: two judges using one account at the same time. **Absorbs R60-3 to R60-5:** the reset is not atomic (if it fails after deleting, it is half reset; we actually hit this locally) · the owner's extra pets go over capacity and the reset fails · `in_care` fails in Toronto 00:00-00:57 | Minsik |
+| **10.1 Seed fill-in (after 11.15 S1)** | Fill `pets.profile` (personality answers · safety answers) of the demo pets Max · Mochi in the seed, so the "at a glance" on the sitter card shows without the sign-up flow. Skip if S1 is cut | Minsik |
+| **10.7 Fill-in** | ① ~~`GET /health/deep` and a once-a-day ping~~: built (`health.py` · `keepalive.yml`, works once Render deploys after the merge; Supabase free pauses after 7 idle days and judging is 12/1-12/15) ② Turn on **Leaked password protection** in the dashboard ③ **KA-1**: before deploying · testing · recording, check the `keepalive` interval ≤ 15 minutes and cron-job.org `200 OK`, keep it until 12/15 | Minsik |
+| **10.11 `/privacy` page** (built: `frontend/app/privacy.tsx`, linked from Welcome · Profile; remaining: put the URL in the OAuth consent screen Branding) | ~~The route does not exist yet.~~ A short privacy page on what we store · AI use · demo data, linked from the Google OAuth consent screen and Profile (needed for OAuth "In production"; Testing tokens expire in 7 days; domain `goldito-petcare.vercel.app`) | Minsik |
+| **10.12 Submission checklist** | Based on [hackathon rules §4](../../hackathon/README.md): demo video (< 3 minutes, public on YouTube, voice explaining Token Factory + NVIDIA model use, no copyrighted music; Minsik records · Muk edits proposed, needs confirming, record 10/27) · Devpost description + track + Token Factory · feedback per model used (10.6) · README Getting Started + "How we use Nemotron" (10.2) · `docs/DEMO_ACCOUNTS.md` (10.5) · public repo + MIT shown in About + no real PII · all in English · **internal draft 10/28** | Minsik · Muk |
 
 ---
 
-## 다음
+## Next
 
-→ [Phase 11 — P1 기능](phase-11-p1.md) (P0 데모가 배포 URL에서 동작한 뒤에만)
+→ [Phase 11: P1 features](phase-11-p1.md) (only after the P0 demo works at the deploy URL)

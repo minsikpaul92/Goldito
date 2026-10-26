@@ -1,142 +1,142 @@
-# Goldito P0 — 공통 설계 청사진 (모든 Phase가 따름)
+# Goldito P0: shared design blueprint (every phase follows it)
 
-> 각 phase 문서는 **이 문서의 결정·구조·규칙을 전제**로 작성되어 있습니다.
-> 이 문서와 [README.md §9 데이터 모델 요약](../README.md#9-데이터-모델-요약) 또는 [Playbook](../P0-ai-prompt-playbook.md)이 다르면 **이 문서 + phase 문서가 우선**입니다.
-> 결정을 바꾸면 이 문서의 §1 결정 로그부터 고치고, 영향받는 phase 문서를 함께 수정합니다.
-> **제품 흐름(5단계: Inquiry → Meet & Greet → Booking → Care & Transit → Completion)의 정본은 [full-process.md](../full-process.md)** (D27–D47). 이 문서는 그 흐름을 구현하는 구조·규칙을 정합니다.
+> Every phase doc is written **on top of the decisions, structure, and rules in this doc**.
+> If this doc disagrees with [README.md §9 Data Model (summary)](../README.md#9-data-model-summary) or the [Playbook](../P0-ai-prompt-playbook.md), **this doc + the phase doc win**.
+> To change a decision, fix the §1 decision log in this doc first, then update the affected phase docs with it.
+> **The source of truth for the product flow (5 stages: Inquiry → Meet & Greet → Booking → Care & Transit → Completion) is [full-process.md](../full-process.md)** (D27 to D47). This doc sets the structure and rules that build that flow.
 
 ---
 
-## 1. 결정 로그 (확정)
+## 1. Decision log (final)
 
-| # | 주제 | 결정 | 이유 |
+| # | Topic | Decision | Reason |
 | :--- | :--- | :--- | :--- |
-| D1 | 데모·UI·AI 출력 언어 | **영어만 (EN)**. UI 문자열, AI 캡션·알림장·경고문 모두 영어 | 심사위원·영상이 영어. 실무 few-shot 원본도 **영어** — 슬기는 **익명화(PII 제거)** 후 `few_shot.json`에만 커밋 |
-| D2 | 프론트 라우팅 | **expo-router** (파일 기반, TypeScript) | 웹 URL = 화면. 역할별 route group 분리 용이 |
-| D3 | 패키지 관리 | Frontend **npm**, Backend **requirements.txt + venv** | 해커톤 속도 |
-| D4 | Python 버전 | **3.12** (로컬·Docker 동일). 3.14는 휠 미지원 패키지 위험 | 재현성 |
-| D5 | 데이터 접근 패턴 | **A안:** 프론트 = Supabase JS + RLS (조회·단순 쓰기), FastAPI = Cloudinary 서명, AI, service-role이 필요한 작업 | CLAUDE.md §2 |
-| D6 | 권한이 섞이는 쓰기 | **DB 함수(RPC, `security definer`) 또는 트리거**로 처리. 클라이언트에 넓은 update 정책을 주지 않음 | RLS 단순화, 타인 알림 insert 금지 |
-| D7 | 알림 생성 | **DB 트리거**가 `notifications` insert (앱 레이어 insert 금지) | sitter가 owner 알림을 직접 insert할 수 없게 |
-| D8 | 시간대 | 앱 전체 기준 `APP_TIMEZONE=America/Toronto`. "오늘" = 이 시간대 00:00–24:00 | task_logs 생성·알림장 집계 일관성 |
-| D9 | missed 상태 | **저장하지 않고 파생**: `status='pending' AND now() > due_at + 60분` | 스케줄러 없이 P0 충족 |
-| D10 | 피드 게시물 : 미디어 | **1 post = 1 media** (`feed_posts.media_id`). 다중 사진은 P1 | 단순화 |
-| D11 | 캡션 위치 | `feed_posts.caption`만 사용 (`media.caption` 없음) | 중복 제거 |
-| D12 | AI 이미지 입력 | 백엔드가 Cloudinary에서 `w_1024,f_jpg` 변환본을 받아 **base64 data URL**로 모델에 전달. 영상은 `so_0` 썸네일 jpg | 모델 서버의 외부 URL fetch 가능 여부에 의존하지 않음 |
-| D13 | 세이프티 입력 | 성분표도 **일반 업로드 파이프(Phase 04)** 로 올린 뒤 `POST /api/ai/safety-check {pet_id, media_id}` (multipart 아님) | 업로드 코드 재사용, 증거 이미지 보관 |
-| D14 | JWT 검증 | Supabase **JWKS**(`{SUPABASE_URL}/auth/v1/.well-known/jwks.json`, ES256/RS256) 우선, 레거시 프로젝트면 `SUPABASE_JWT_SECRET`(HS256) fallback | 신규 프로젝트는 asymmetric key 기본 |
-| D15 | 프로필 생성 | `auth.users` insert 트리거가 `raw_user_meta_data.role/display_name`으로 `profiles` 생성. **이메일 확인(Confirm email) OFF** | 가입 직후 세션 없음 문제 회피 |
-| D16 | sitter 배정 | ~~sitter 이메일로 고정 배정~~ → **D24 기간 예약으로 대체** (2026-09-29) | 실제 펫시팅은 여행 기간 단위 |
-| D17 | 리마인더 (P0) | **클라이언트 인앱 리마인더**: sitter 앱이 열려 있으면 30초마다 due 체크 → 배너+토스트. 서버 푸시는 stretch (6.7 — Nebius AI Cloud는 안 씀, D18) | 스케줄러 없이 데모 08:00 구간 재현 |
-| D18 | 배포 | **Backend API:** **Render** Web Service (Docker + FastAPI, 무료 플랜, GitHub `main` 자동 배포, `backend/Dockerfile`). **Frontend:** `expo export -p web` → **Vercel**. **Nebius AI Cloud(Serverless Endpoint · Jobs)는 쓰지 않음** — 2026-10-09 결정 (처음 2026-09-29에는 AI Cloud가 정식, Render는 fallback이었음) | AI 추론은 전부 **Token Factory**(해커톤 "Runs on Nebius" 충족 — 런타임 호출 또는 AI Cloud 배포 중 하나면 됨). AI Cloud는 카드 등록 + $25 선결제를 요구했고 행사 크레딧이 계정에 없었으며, 엔드포인트는 계속 켜져 12/15까지 약 $128 → Render 무료로 0원. 무료 플랜은 15분 무요청 시 잠들므로 **10분마다 핑**(D20 keep-alive). 경험은 [notes/nebius-ai-cloud-feedback.md](notes/nebius-ai-cloud-feedback.md) |
-| D19 | 시드 계정 생성 | Python + Supabase Admin API (`auth.admin.create_user`) — SQL로 auth.users 직접 insert 금지 | 비밀번호 해시·트리거 정상 동작 |
-| D20 | CI/CD | **CI:** GitHub Actions `ci.yml` (PR·main push) — backend ruff+pytest, frontend tsc+web export+Playwright 마우스 테스트(1.7). **CD:** frontend = Vercel Git 연동(PR Preview, main 자동 배포), backend = **Render Git 연동**(main 머지 시 `backend/Dockerfile`로 빌드 · 배포, Health Check `/health`). **Keep-alive:** `keepalive.yml`이 10분마다 `/health` (Render 무료 잠듦 방지). **DB migration은 수동** (SQL Editor, 순서대로) | 해커톤 중 운영 DB 자동 변경 위험 회피, 워크플로 최소화 **Playwright는 앱 코드(app · components · features · lib · e2e · 패키지 설정 등) 변경 때만** PR에서 돈다(문서 · 스크립트만 바꾸면 tsc · What's New · screen map 검사만). main push는 항상 전부 + Firefox · WebKit. |
-| D21 | 프로필 구조 | 공통 `profiles`(id, role, display_name) + 역할별 1:1 `owner_profiles`(긴급 연락처·동물병원) / `sitter_profiles`(소개·활동 지역·경력). 가입 트리거가 role에 맞는 행을 함께 생성. 시터는 강아지·고양이 모두 돌봄 (종 제한 없음) | RLS·폼이 역할별로 깔끔. nullable 컬럼 혼재 방지 |
-| D22 | 종 지원 | **강아지·고양이** — `pets.species in ('dog','cat')`, 생성 후 변경 불가. 모든 FK·API 필드는 `pet_id` | 제품이 dogs & cats 대상. 추후 종 확장은 check만 넓힘 |
-| D23 | 종별 케어 | `care_tasks.type in ('medication','walk','feeding','litter','play','sleep')`. `walk`=강아지만, `litter`=고양이만 (트리거 `guard_care_task_species`). 세이프티 독성 목록도 종별 (phase-08) | 고양이 산책 같은 잘못된 데이터 차단, 고양이 전용 독성(백합 등) 반영 |
-| D24 | 파트타임 보딩 시터 · 칸 · 인수인계 | 시터는 **파트타임**이고 반려동물을 **시터 집에서** 돌봄. 칸은 **이름만 고정**(Morning·Afternoon·Overnight) — 정확한 시간은 시터가 칸마다 정함(`sitter_availability.starts_at/ends_at`) + 칸 정원 `max_pets`. 예약 = 시터 1명 + 견주 1명. **누가 언제 맡나** = `booking_pets.care_range`(맡긴 구간, 반려동물마다 겹침 금지 — exclusion 제약), **정원** = `booking_slots`(반려동물 × 날짜 × 칸, 그 시터의 칸 시간 기준). 겹치는 open 행은 **가장 최근 행**이 그 날의 시간·정원을 정함. 열지 않은 칸은 맡긴 구간이 절반 넘게 덮을 때만 차지(빈 Overnight 방지) — 앞뒤로 짧게 삐져나온 시간은 custom 시각으로 협의. 견주가 **맡기는 시각·찾는 시각·장소**(시터 집/견주 집/기타)를 정함 → `booking_handoffs`. 시터 시간 밖·장소 변경은 **협의**(제안 → 상대방 동의), 확정 후 변경도 제안→동의, 동의 전엔 기존 값 유효. 견주는 **여행 전체를 한 시터에게**가 기본 — 단골 스케줄 먼저, 없으면 검색(전체 가능 먼저). 시터가 확정 칸을 막으려 하면 거부 → **예약 전체 취소**(맡기기 전만 — Received 뒤엔 찾는 시각 변경으로) → 견주 재예약. 권한·할 일 담당은 칸이 아니라 **맡긴 시각 ~ 찾는 시각** 구간으로 판단. 스케줄 변경은 알림 없음. 주소는 확정 당사자에게만(찾은 뒤 24시간까지) | 반려동물에게 시터 교체는 스트레스 → 한 명이 기본. 실제 맡기는 시각이 시터 근무 시간과 다를 수 있어 협의 필요 |
-| D25 | 웹 표시 방식 (데스크톱 = 폰 프레임) | 컴퓨터 브라우저(마우스·트랙패드가 주 입력 — `pointer: coarse`가 아님, **창 폭 무관**)에서는 **402 × 874 폰 프레임** 안에 **같은 앱을 same-origin iframe**으로 띄움 (`components/shell/AppShell.web.tsx` — 네이티브는 `AppShell.tsx`가 children 그대로). **Split view (10.10, 2026-10-15):** `?view=split` + 창 폭 ≥ 900이면 폰 프레임 2개(iframe 이름 `pane-owner` · `pane-sitter`, 로그인 저장 키도 pane별 — `getAuthStorageKey()`), 기본은 폰 하나. 폰 브라우저·네이티브·iframe 내부는 앱 그대로. iframe 안에서 **마우스일 때만** `TouchEmulation`: 드래그 스크롤 + 관성, 드래그 후 클릭 차단, 가로 줄 휠 변환, 글자 선택·이미지 드래그 금지, 원형 커서, 스크롤바 숨김. 사진 선택은 `pickMedia()` 하나 — 데스크톱·데모 계정은 샘플 사진 트레이(4.7). 모드 결정은 `resolvePresentation()` 한 곳, 화면 분기는 `useLayoutMode()`만, 탭은 expo-router JS `Tabs`(NativeTabs 아님). **해커톤 후(마지막 우선순위):** 시터만 데스크톱 `expanded` 레이아웃(iframe 없이 사이드바) — Owner는 계속 프레임 | 심사위원은 PC로 봄 → 폰과 같은 경험 + 마우스로 모든 동작 필요. 앱을 박스에 직접 넣으면 RN `Modal`·Expo Router 웹 모달이 `document.body`로 portal되고(웹 모달은 `min-width: 768px`면 데스크톱 다이얼로그), 창 크기·미디어쿼리가 브라우저 기준이라 깨짐 — react-native-web 0.21.2·expo-router 57.0.24 소스 확인. iframe 안은 진짜 폰 화면이라 화면마다 지킬 금지 규칙이 거의 없음. 402 = 현재 기본 iPhone(17) 폭, 레이아웃은 360–440 대응 |
-| D26 | 역할 영역 URL | 역할 화면은 **URL 접두사 폴더** `app/owner/*` → `/owner/*`, `app/sitter/*` → `/sitter/*` (route group `(owner)`/`(sitter)` 쓰지 않음). `(auth)`·`(public)`은 URL이 겹치지 않아 그룹 유지 (`/login`, `/signup`, `/welcome`). 예전 문서의 `/(owner)/x`는 `/owner/x`로 읽음 (2026-10-01 일괄 변경) | 두 역할 모두 `tasks`·`bookings`·`notifications`·`pets/[petId]`가 있어 그룹만 쓰면 URL이 같아짐. expo-router는 이를 에러 없이 "shared route"로 받아 **새로고침·딥링크 시 알파벳 순 첫 그룹**(owner)을 렌더 → 시터가 `/tasks`를 새로고침하면 owner 가드에 막혀 화면을 잃음. D25 주소창 동기화(새로고침해도 같은 화면)가 성립하려면 URL이 역할마다 유일해야 함 (expo-router 57 `getRoutesCore`·`getStateFromPath` 확인) |
-| D27 | 제품 흐름 = Full Process 5단계 | 제품·루트 README·데모 영상·작업 순서는 [full-process.md](../full-process.md)의 **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion**을 따른다. 기존 기능은 단계에 흡수: 케어 피드·앨범·체크·알림장 = Stage 4, 예약·인수인계(D24) = Stage 2–3. **Treat Safety Guard(Phase 08)는 Stage 4 보조 기능으로 시나리오 코어(03B–07C) 뒤 P0 stretch**, P2 Q&A(구 11.4)는 Stage 1 문의 AI(07B)로 흡수 | 팀 시나리오 우선 (2026-10-01). 심사 "Potential Impact"·"Design"에 한 흐름으로 보이는 제품이 유리 |
-| D28 | 서비스 방식 · 이동 방식 | `bookings.service_type in ('boarding','house_sitting')` (기본 `boarding`). 시터가 제공하는 방식은 `sitter_profiles.services text[]`. **이동 방식 = 인수인계 장소(D24)를 다시 부른 이름:** `sitter_home` = **Owner drives**, `owner_home` = **Sitter drives**, `other` = 둘 다 이동. `house_sitting`은 맡기기·찾기 장소가 `owner_home` 고정. 정원은 house sitting도 보딩과 같은 칸 계산 (P0 단순화 — drop-in 방문 정원은 해커톤 후) | 새 상태를 만들지 않고 이미 검증된 handoff 모델 재사용 |
-| D29 | 견적 = 서버 계산 | 시터 요금표 `sitter_rates`(보딩 1박·house sitting 1박·데이케어 1일, 추가 반려동물 %, 공휴일 %, CAD) + `holidays`(온타리오 법정 공휴일) → SQL `quote_booking(...)`이 내역 JSON을 만든다. **AI는 숫자를 만들거나 계산하지 않는다** — 문의 답변(07B)은 이 JSON의 값을 그대로 쓰고, 답변 아래 견적 카드·Checkout(03C)이 같은 값 표시 | 가격 환각 방지, 화면 간 숫자 일치 |
-| D30 | 동의서 · 결제 (데모) | 필요한 동의서는 서비스·이동 방식으로 **규칙이 정함** (AI 아님): `emergency_vet`(한도), `home_access`(lockbox·열쇠·buzzer·fob), `cohabitation`(합사), `handoff_rules`(시간·Visitor parking), `safe_return`(귀가 시 받을 사람). 본문 = **고정 영문 템플릿 + 버전**, 체크 + 이름 입력 서명 → `booking_consents`. 화면에 "Demo template — not legal advice". **결제는 데모만**: 카드 정보 없이 `pay_booking_demo` → `bookings.paid_at` + 견적 스냅샷. 실결제(Stripe)는 해커톤 후 | 법률 문구를 모델이 쓰면 위험, 해커톤에서 카드 정보를 다룰 이유 없음 |
-| D31 | 조건부 보안 해제 | ① **견주 집 출입 정보** `owner_home_access`(lockbox 코드·buzzer·fob·출입 순서·시터 주차) — 견주 본인 RLS만. 시터는 RPC `get_home_access(booking)`로만, 조건 = 결제 완료 + 그 예약의 시터 + 견주 집에서 하는 인수인계(또는 house sitting 시작) **2시간 전 ~ 예약 종료(찾기 완료)**. 밖이면 `access_locked` + `unlocks_at`. 처음 열 때 `access_reveals` 기록 + 견주 알림 `access_unlocked`. ② **시터 집 정보**(주소·Visitor parking·로비 안내·짐 체크리스트) — 결제 직후 견주에게, 찾은 뒤 24시간까지 (`get_handoff_details` 조건을 "확정"에서 "결제"로). ③ 출입 정보는 **RAG·AI 프롬프트·알림 본문·로그에 넣지 않음** | 시나리오 "결제 후에도 바로 공개 안 함", 최소 노출 |
-| D32 | Pet Transit (실시간 이동) | 이동하는 쪽이 **Start trip** → `trips`에 **마지막 위치 1개만** 갱신(경로 이력 저장 안 함, 끝나면 위치 null) → 상대방은 Realtime(`postgres_changes` on `trips`, RLS = 예약 당사자)으로 구독. ETA = 직선거리 × 1.3 ÷ 속도(차 30 km/h, 도보 4.5 km/h) — 라우팅 API 없음. 도착 = 목적지 150 m 안 → `trip_arrived`. 목적지 좌표 = 프로필의 `home_lat/home_lng`("Use my current location", 주소를 저장할 때 OSM Nominatim 1회 조회(`/api/geo/geocode`, 키 없음), 또는 시드 가상 좌표). 지도 = **보기 전용** Leaflet + OpenStreetMap(웹, 자동 맞춤 + ± 버튼, 드래그 팬 없음 — D25 마우스 규칙). 위치 소스 = 폰은 실제 GPS, **데스크톱·데모 계정은 Simulate trip**(가상 경로 재생) | 심사위원 PC에는 움직이는 GPS가 없음, 위치는 이동 중 당사자에게만 |
-| D33 | Vision · 임베딩 모델 | 시나리오의 Qwen-2.5-VL은 Token Factory 카탈로그에 **없음** (2026-10-01 `GET /v1/models`) → 사진 분석(캡션·분류·인수인계 체크·알림장 사진)은 **`openbmb/MiniCPM-V-4_5`** (이미지 입력 대안: `moonshotai/Kimi-K2.6`). RAG 임베딩 = **`Qwen/Qwen3-Embedding-8B`** (카탈로그 유일 임베딩, `dimensions: 1024` 동작 확인) → Supabase **pgvector** `knowledge_chunks vector(1024)` (HNSW), service role 전용. 검색 범위는 항상 그 시터·그 반려동물·그 견주로 필터 | 카탈로그 기준 ([model-ids.md](notes/model-ids.md)). 1024차원이면 pgvector 인덱스 한도(2000) 안 |
-| D34 | 시터 5초 체크 | 시터 입력 = 칩(식사·배변·산책 분·투약) + 사진 ≤ 2 + **선택 메모 1줄(≤ 120자)**. 필수 텍스트 입력은 여전히 없음 (§8-3) | 시나리오의 "짧은 메모" — 알림장 에피소드의 재료 (D38에서 "AI가 먼저 쓰고 시터는 수정·추가만 선택"으로 보강) |
-| D35 | 시터 말투 레이어 | 견주에게 보이는 자연어 AI 출력(문의 답장·알림장·캡션)은 **시터 1인칭 말투**. `backend/app/ai/tone.py` 한 곳에서 합성: 스타일 가이드 + 같은 시터의 `tone_samples` top-k(few-shot, `MODEL_EMBED` 검색). 시드 = 익명화한 3년 대화(영어), 이후 시터의 그대로 보냄 / 수정 / 다시 생성을 기록해 갱신(수정 비율이 지표). **고정 문구(안전 경고·견적 숫자·동의서)는 제외**, 숫자는 `{PRICE}`·`{DATE}` 자리표시자 후 서버 채움. SFT는 보여주기용(D43, 11.7) | 모델 교체 없이 시터별 말투. 상세 [full-process §5](../full-process.md#5-시나리오를-앱으로-옮기며-정한-것-d27d46-요약) |
-| D36 | 시터 승인 · AI 고지 | 기본 = 수동 승인(Send 즉시 발송). 자동 발송 = 시터 옵션 + 책임 동의 모달(`sitter_profiles.ai_reply_mode`, `ai_consent_at`), 켜면 대기 없이 바로 사람 속도로(2026-10-02). 견주 화면에는 시터 메시지로 표시(메시지별 AI 라벨 없음), 약관·온보딩 1회 고지, 자동 모드 프로필 1줄. "AI냐"는 질문에 사람이라고 답하지 않음 | 승인한 메시지는 시터의 메시지 |
-| D37 | 사람 속도 전달 | 자동 발송·데모 영상에만: `inquiry_messages.visible_at`(미래 시각) + 입력 중 연출. 읽음 표시는 `read_at`(시터가 실제로 연 시각)에만 — 가짜 읽음 없음(2026-10-02). 서버는 즉시 생성·저장하고 **공개 시각만 늦춤**(서버리스 sleep 금지). 지연 공식·메시지 구조 = 슬기 TBD. 알림장·캡션·수동 승인은 지연 없음 | 서버리스 요청 수명에 안전 |
-| D38 | 시터 글쓰기 거의 제로 (2026-10-02 개정) | 알림장: AI가 하루 기록·사진에서 칩 제안(`/api/ai/report-chips`) → 시터가 고르고(틀린 칩은 끔) 짧은 메모(선택, ≤ 200자) → AI가 시터 말투로 작성 → 시터 승인 후 게시. 문의: 의도 칩 + Send. 메모·수정은 언제나 선택 | UX 원칙 5 — 사진 분석은 부족하거나 틀릴 수 있음 |
-| D39 | 모델 정책 | 미국 모델 우선·NVIDIA 모델 우선, 중국 모델은 대안 없음/가성비 큰 차이일 때만 + `model-ids.md`에 이유 기록. 예외: 임베딩 Qwen3-Embedding(**확정 2026-10-02, 다른 임베딩 모델은 비교하지 않음**), 비전 MiniCPM-V(**확정** — NVIDIA 비전 모델 3종은 Dedicated Endpoint 전용이라 상시 비용이 $48~113/일). NVIDIA가 양자화만 한 중국 모델(GLM·MiniMax·Qwen NVFP4)은 NVIDIA 모델로 치지 않음 | 해커톤 트랙 + 선호 |
-| D40 | 확정 후 변경 요청 | 서비스·이동 방식은 확정 시 고정. 양쪽 모두 변경 요청 가능, 상대 승인 필요, 거부 시 변경 요청만 취소(예약 유지) | 일방 변경 방지 |
-| D41 | 위치 공유 동의 · 범위 | Start trip → 앱 동의(누구에게·도착까지) → 브라우저 권한. P0 웹은 화면이 켜진 동안만. 06B는 P0 맨 마지막(07C 바로 다음, 08 stretch보다 먼저 — 2026-10-02), 심사는 데모 영상(Simulate trip 유지). 출시는 네이티브 앱 + 사전 위치 동의. **동의·권한 거부 시(2026-10-10):** 실시간 위치·ETA 없이 만날 장소 + Open in Google Maps 링크 버튼만 | Supabase Realtime Free(동시 200, 월 200만 메시지) 안에서 충분 |
-| D42 | Fun mood meter (P1 → Phase 12, **D61로 일부 변경: 부정 감정도 %**) | "재미용" 문구 필수, 행동 태그 + 프레임 비율을 서버가 계산, 부정 감정 퍼센트 금지. 후보 = 비전 모델 태그(A) + `agentmish/dog-emotion-classifier-v2`(Apache-2.0, B). 비용·라이선스 문제면 제외 | 임팩트용 비핵심 기능 (11.9) |
-| D43 | SFT는 보여주기용 | 앱 런타임의 말투는 Nemotron + 말투 카드 + few-shot(D35)만 사용. 파인튜닝 모델은 앱에 연결·서빙하지 않음(튜닝한 Gemma 4는 Dedicated Endpoint 필요, 새 데이터도 부족). 11.7은 README Future work + 데이터 형식 명세, 데이터가 있으면 학습 1회(선택) | 상시 서빙 비용 없이 확장 가능성을 보여줌 |
-| D44 | Meet & Greet 규칙 | **처음 만나는 견주·시터만**(이전 예약에서 인수인계를 했거나 M&G를 마친 적이 없을 때) — `request_booking`이 `meet_greet_status`를 `required` / `not_needed`로 정함. 예약 요청 뒤 · 시터 수락 전이고, `respond_booking` 수락은 done·skipped 뒤에만(`meet_greet_required`). 대면 = 양쪽 `meet_spots`(각 ≤ 3, 공개 장소) 중 선택 + 시각, 집 주소는 결제 전 비공개(D31). 건너뛰기 = 한쪽 요청 → 상대 "Continue the booking without a Meet & Greet?" → 거부 시 `cancel_booking`(reason `meet_greet_declined`) + 견주 Find a new sitter | 처음 맡기는 사이의 신뢰 확인, 단골은 생략 (2026-10-02 민식) |
-| D45 | 영상 Meet & Greet = Google Meet | 시각이 합의(accept)되는 순간 FastAPI `/api/meet-greet/video-link`가 **Google Calendar API** `events.insert`(`conferenceDataVersion=1`, `conferenceData.createRequest`, `conferenceSolutionKey.type="hangoutsMeet"`)로 이벤트 + Meet 링크 생성, 양쪽 이메일 초대(데모 `.test` 계정은 생략) → 각자 Google Calendar에 등록. 주최자 = Goldito Google 계정 1개(OAuth refresh token, 백엔드 env, OAuth 앱 게시 상태 **In production** — Testing은 7일 만료). 시각 변경 = `events.patch`, 취소 = `events.delete`. 링크는 새 탭(iframe 불가). 실패 시 시각 + .ics + 링크 붙여넣기. 서비스 계정만으로는 Meet 링크 생성이 막히는 사례가 많아 쓰지 않음 | 앱 설치 없이 브라우저·폰 어디서나, 캘린더 자동 등록, 추가 비용 없음 |
-| D46 | 에이전트 설명 | P0 구조(서버가 근거를 모아 기능마다 1회 호출)는 유지. README·영상·Devpost에서 **일이 생길 때마다 스스로 움직이고 사람이 승인하는 에이전트**로 설명(트리거 → 행동 → 승인 표). tool calling은 7.1에서 Token Factory 동작이 확인되면 07B에만 선택(7B.11) — 숫자 대조·출입 정보 제외 규칙은 그대로 | 트랙(Best Apps and Agents) + 원문 마지막 문장, 안정성 유지 |
-| D47 | Owner 탭 IA · Feed vs Diary | Owner 탭 **5개 유지:** `Home · Bookings · Feed · Diary · Mood` (→ **Snap**, D61). **Feed** = 영구 펫 앨범(인스타형 그리드→상세; 오너·시터 모두 작성; 펫 칩 = 선택/해제 멀티토글, 둘 다 켜면 날짜·시간순 합침; 케어 종료 후에도 유지). **Diary** = 돌봄/일기 스트림(내가 씀 + 맡긴 동안 Live/On air로 시터 업데이트 시간순; 히스토리는 펫·시터·날짜 필터). **Diary에 사진이 있으면 Feed에도 미러** (같은 media/post). 구 Care 탭은 없앰 → **Home → 펫 디테일**에서 Care request(추후 디테일). 구 Reports 탭 = Diary. **Mood** = 5번째 자리(플레이스홀더 → 11.9 사진/영상 기분, Fun only). **Settings는 탭이 아님** — 헤더 아바타 `/profile` 안에 둠(11.11과 합침). 알림 벨은 헤더 유지. Sitter = **D47b** | Care/Reports가 탭으로 얇음; Live와 앨범 멘탈모델 분리 (2026-10-04 민식) |
-| D47b | Sitter 탭 IA (**확정**) | Sitter **5탭:** `Home · Bookings · Feed · Diary · Mood` (→ **Snap**, D61) (Owner와 대칭; 구 Today→**Home**). **Home** = 대시보드: (A) 지금 케어 중이면 그 펫 정보·퀵액션 중심 · (B) 아니면 **승인 대기 요청** · **Upcoming** · **drop-off/pick-up 시간순**. 추후 케어 중 **다마고치/8bit status**(11.12). 구 Tasks는 Home(할 일)·Diary(완료 기록)로 흡수. **Bookings** = 요청·Meet & Greet·Past. **Feed** = + Photo. **Diary** = 스테이 로그 + 저녁 칩 알림장(구 Report). **Mood** = Owner와 동일. Treat scan = Home 버튼(08). Settings = Profile. **수익·돌봄 히스토리(추후):** 탭 추가 없음 — Bookings **Past**(스테이·견주별) + Profile **Earnings / payouts** 섹션(데모 pay 금액·기간 요약). 활동 디테일은 Diary 필터 | Owner 대칭 + 시터 대시보드 (2026-10-04 민식) |
-| D48 | 테스트 환경 (2026-10-09) | 손 테스트는 **항상 `main`을 Vercel production**(https://goldito-petcare.vercel.app)에서. 백엔드는 Render(D18). PR Preview는 CORS에 없어 업로드 · AI가 안 되므로 결과(✅)는 main 기준으로만 기록 | 브랜치를 받아 로컬에서 돌리면 환경이 사람마다 달라짐 |
-| D49 | 문의 AI의 "가능" = 예약 엔진의 규칙 (RV-1, `011c`) | `stay_capacity_check`가 `request_booking`의 일정 부분(창 확인 → `capacity_shortfall`)을 그대로 돌린다. 펫 수만큼 자리가 없거나 시터가 안 연 날이 하나라도 있으면 "불가". 이 확인이 실패하면 아무것도 약속하지 않는다: 견적 없음, 가능 여부를 말하지 말라는 `availability_note`, `needs_sitter` 강제(자동 발송 안 함) | 예약 요청이 나중에 `sitter_unavailable`로 깨지는 약속을 시터 이름으로 하지 않기 |
-| D50 | 문의 사이 공개 범위 (RV-4 · RV-5, `011e`) | 문의를 받은 시터는 오너의 표시 이름과 문의한 펫을 본다(예약 요청과 같은 수준). 펫의 Life Record · 알레르기는 `has_open_inquiry_about`이 참인 동안만 — 문의가 `open`이고, 문의한 stay가 아직 안 끝났고(`pick_up_at > now()`), 문의한 지 30일 안일 때. 하나라도 어긋나면 닫힘 | `open` 문의가 영원히 펫 기록을 열어 두던 문제 |
-| D51 | "Ask before booking" (FB-33) | 시터 프로필에 **[Ask before booking] [Book]** 나란히(Book이 주 버튼), "예약이 되는 건 요청을 보낼 때뿐"이라고 적는다. 문의 날짜는 필수(가능 여부 · 견적이 날짜에 달림). 시트 달력에 시터가 연 날 · 꽉 찬 날(펫 수 기준)을 표시, 꽉 찬 날은 보낼 때 **Ask anyway / Pick other dates** | 예약 전 질문과 예약 요청을 구분 |
-| D52 | 문의 스레드의 오너 · 시터 행동 (FB-34, `011j` · `011k`) | 오너는 시터 답장이 마지막일 때 **Write back**(AI가 다시 초안 → 시터 승인, 자동 발송 규칙 그대로)으로 이어 쓴다. **Change dates**는 새 문의가 아니라 **같은 문의**의 날짜를 바꾼다(`change_inquiry_dates`, 오너만 · 열린 문의만 · 31일 이하 · 옛 날짜의 예약된 자동 답장은 거둠). 시터의 Accept / Decline / Suggest는 팝업에 답장이 써져 있고 **Send**가 곧 발송이며, Decline · Suggest는 `can_host=false` + 견적 없음으로 나간다(`send_inquiry_reply(…, p_outcome)`) | 거절 답장 아래 견적 카드 · Request booking이 붙던 문제, 대화가 끊기던 문제 |
-| D53 | 시터가 쓰는 오너 리뷰 (FB-25 · FB-29, `011g`, 2026-10-26 `015s`로 공개) | 시터는 끝난 stay의 오너에 대해 별점 + 문구(별마다 프리셋)를 남긴다(`save_owner_note`, 다시 저장하면 수정, 알림 없음). 처음에는 본인만 읽었지만 이제 **그 오너와 모든 시터**가 읽는다(`owner_rating_summary`, 시터 이름은 첫 단어만). 시터는 오너의 요청 · 예약 화면에서 다른 시터들의 리뷰를 본다. 반대로 오너의 시터 리뷰도 시터 프로필에 **전부** 보이고(`sitter_rating_summary`), 시터는 Profile에서 자기 리뷰를 모아 본다 | 공익: 서로의 평가를 보고 판단하고, 받은 리뷰를 피드백으로 삼는다 |
-| D54 | 즐겨찾기 시터를 앞당김 (FB-28, `011h`) | 11.5를 P0로 당겼다: 리뷰 뒤 "Add Chloe to your favorites?", 프로필 ☆ / ★, Your sitters · 검색에서 즐겨찾기 먼저. 시터는 모른다 | 첫 손 테스트에서 단골 재예약 경로가 필요했음 |
-| D55 | 돌봄 구간은 이른 쪽부터 (CW-1, `011i`) | 체크인 · 할 일 · 알림장 칩 · 초안의 시터 구간은 **합의한 드롭오프와 Received 중 이른 쪽**부터, 끝은 그대로. Received는 드롭오프 2시간 전부터 되므로 | 일찍 받은 뒤 체크인이 `not_in_care_window`로 막히고 사진이 칩이 안 되던 문제 |
-| D56 | 알림장 규칙 (FB-22 · RV-6 – RV-8, `011f`) | 같은 날 같은 펫 · 시터가 알림장을 **여러 개** 보낼 수 있다(초안은 한 번에 하나, 다음 알림장의 칩 · 스냅샷은 마지막으로 보낸 알림장 이후 것만). **끈 칩은 알림장에 안 들어간다**(`off`로 서버에 전달). 하이라이트는 8개까지만 글에 쓰고 더 켜면 안내. 쓰기 모델이 내려가면 plain-list 초안(`template-fallback`)으로 200 | D38 "시터가 끈 것은 쓰지 않는다"를 서버가 지킴 |
-| D57 | 데모 리셋은 테스트 전용 (2026-10-09) | Profile → Demo tools · `POST /api/demo/reset`은 테스트 기간에만. **심사 전에 제거하고** 같은 `demo_reset` 코드로 시작 지점별 고정 계정을 만든다(심사위원이 데이터를 지울 수 없게). 리셋은 두 데모 계정이 서로 한 일만 지운다(다른 오너의 예약은 건드리지 않음) | 심사위원 데이터 보호, 리셋이 다른 사람 예약을 지우던 R60-2 |
-| D58 | 펫 프로필 온보딩 원칙 (2026-10-10, 11.15) | 반려동물 등록은 **한 화면 한 질문 · 큰 글씨 · 4지선다 · 한 번 탭**으로 3~5분 안에 끝나게 하고 모든 질문은 건너뛸 수 있다. 성격 질문은 **"MBTI/검증된 검사"가 아니라 오너의 행동 설명**(MCPQ-R · C-BARQ · DPQ의 개념을 참고해 문항은 새로 씀, 원 설문의 검증은 이어지지 않으므로 "not a behavior assessment" 표기). 시터 카드는 5축(Sociability · Sensitivity · Energy · Appetite · Trainability)을 **점수 없이 4단계 말**로 보이고, **물림 · 다른 동물 · 탈출 · 보호 행동 같은 안전 항목은 차트에 넣지 않고** 경고 칩으로 보인다. 사진 · 음성의 AI 값은 **제안만** — 오너 확인 후 저장, 음성 값은 전사 속 근거 문장이 있어야 하고 안전 항목은 AI가 미리 고르지 않는다. 음성 인식은 Token Factory에 없어서(2026-10-10 카탈로그 확인) **녹음 → 외부 STT(Groq Whisper, 무료 플랜 — 2026-10-10 결정) → 글 → Nemotron이 사실 추출**. 오너 가입 직후 첫 반려동물 등록에서만 쓰고(시터 · 데모 계정 제외), **구현은 P0 큐의 맨 마지막**. 상세: [pet-profile-onboarding.md](../pet-profile-onboarding.md) | 비어 있는 프로필(Rover의 문제)을 막고, 점수화로 오해를 만들지 않음 |
-| D59 | 외부 출처는 3개만 (2026-10-10) | **Tavily**(품종 신체 필요 · 간식 성분 · 리콜 보조), **캐나다 정부 Recalls and Safety Alerts 오픈데이터**(리콜), **직접 정리한 정적 JSON**(품종 · 독성 규칙 표, 출처 링크 포함, 슬기 감수). The Dog API(유료부터, 출처 미표기) · API Ninjas(출처 불명) · openFDA(약 · 기기뿐) · Open Pet Food Facts(바코드 계획 밖)는 쓰지 않음. 1차 안전 판정은 서버 규칙 표, 모델이 SAFE여도 서버가 DANGER로 덮는 규칙 유지 | 적게, 믿을 수 있는 것만 |
-| D60 | 예약 단계 · 홀드 · 시간 초과 (2026-10-11) | **단계는 저장하지 않고 계산**한다(`booking_stage()` · `booking_next_actor()` — 앱은 컬럼처럼 읽음): `requested → meet_greet → confirm → awaiting_payment → paid → in_care → completed`(+ `declined` · `cancelled`). 처음 만나는 사이는 **시터의 첫 동의**(`bookings.sitter_interest_at`, `express_interest`)가 새 문이고, 밋&그릿 제안 · 스킵 요청은 첫 동의 뒤에만 가능(`interest_required`). 단골 · 이미 만난 사이는 Accept 한 번(변경 없음). **홀드:** 첫 동의 ~ 확정 · 거절 · 취소 · 초과 동안 그 칸을 다른 오너가 요청 · 예약하거나 시터가 막을 수 없다. **시터 설정(D24 보완, 2026-10-11 결정):** 시터가 `sitter_profiles.accepts_multiple_owners`(기본 **꺼짐 = 한 번에 한 오너**)로 정한다. 꺼져 있으면 서로 다른 오너는 같은 칸을 동시에 못 가진다(홀드 · 확정 모두, `max_pets`와 무관 — 같은 오너의 펫 수 한도로만 남음). 켜져 있으면 지금처럼 `max_pets` 정원 안에서 여러 오너를 받는다. **오너는 문의 · 예약할 때 이 설정을 볼 수 있다**(시터 프로필 · 문의 시트 · 검색 결과의 배지 "One owner at a time" / "Hosts several owners' pets"). 문의 AI에도 사실로 전달한다. **오너의 거절**은 `cancel_booking` + 사유 칩(맞지 않는 것 같아요 · 다른 시터를 찾았어요 · 일정이 바뀌었어요 · 기타). **기한:** 첫 동의 뒤 2일 동안 시간이 안 잡히면 알림(`meet_greet_stalled`), 알림 뒤 3일 더 말이 없으면 자동 취소(`meet_greet_timeout`) — 정기 확인("스윕")은 `pg_cron` 또는 백엔드 호출. 마이그레이션 `011l_booking_steps` | 시터 · 오너 모두 지금 단계와 다음 행동을 알고, 더블부킹이 없고, 밋&그릿이 멈춘 요청이 쌓이지 않음 |
-| D61 | Snap 탭 (2026-10-13, Phase 12) | 다섯 번째 탭 `Mood` → **`Snap`** (owner · sitter 모두): **Treat check**(Phase 08 설계 그대로 + Tavily, 견주도 자기 펫 검사 가능, DANGER 견주 알림은 시터가 검사했을 때만) · **Mood**(브라우저 MediaPipe로 펫별 박스 → 크롭을 Token Factory 비전 모델이 관찰 → **서버 규칙이 8개 감정 %를 계산**, 합 100%) · **Sticker**(브라우저 MediaPipe Magic Touch로 펫만 오림 → 스티커함 → **견주 + 시터**가 각자 층으로 다이어리 꾸미기). **D42 변경:** 부정 감정도 %로 표시한다. 단 "For fun only — not a behavior or health assessment" 문구 필수, 숫자는 모델이 아니라 서버 계산, 의학 · 통증 표현 금지. 11.15 온보딩은 10/24–27 유지 → Snap은 10/14–10/22 ([phase-12-snap.md](phase-12-snap.md)) |
-| D62 | 채팅 안 AI는 제안만, 보내는 건 항상 사람 (2026-10-19, Phase 03D) | 채팅에서 AI는 **칩(말 초안 · 행동 제안)만** 만들고 **전송과 실행은 항상 사람이 누른다. 자동 전송은 하지 않는다**(채팅에서는 D36의 자동 발송 옵션을 쓰지 않는다). 행동 칩은 코드가 정한 **지금 가능한 행동 목록 안에서만** 고르고, 가격 · 날짜 · 가용성은 코드가 채운다. 이유 표시는 하지 않는다. 오너와 시터 양쪽에 준다 | D36(자동 발송은 문의 화면에만 남고, 문의 화면은 #142에서 채팅으로 합쳐지며 사라진다) |
-| D63 | 채팅 탭 · Diary는 Feed 안 (#329, 슬기 5탭, Muk nav trial) | 두 역할 모두 **`Home · Bookings · Chat · Feed · Snap`**. **Chat** = 채팅 목록(안 읽은 수는 탭 배지, 가장 최근의 새 채팅 강조), Bookings에서 채팅 목록 · Chats 칩은 빠짐. **Feed** 위에 **Photos · Diary** 전환(`?view=diary`), Diary 탭은 없어짐(옛 `/owner/diary` · `/sitter/diary`는 Feed의 Diary로 넘어감). D47 · D47b의 탭 목록을 대체 |
+| D1 | Demo, UI, and AI output language | **English only (EN)**. UI strings, AI captions, daily reports, and warnings are all in English | Judges and the video are in English. The real few-shot source is also **English**; Seulgi commits it only to `few_shot.json` after **anonymizing it (PII removed)** |
+| D2 | Frontend routing | **expo-router** (file-based, TypeScript) | Web URL = screen. Easy to split route groups by role |
+| D3 | Package management | Frontend **npm**, Backend **requirements.txt + venv** | Hackathon speed |
+| D4 | Python version | **3.12** (same locally and in Docker). 3.14 risks packages without wheels | Reproducibility |
+| D5 | Data access pattern | **Option A:** frontend = Supabase JS + RLS (reads, simple writes), FastAPI = Cloudinary signing, AI, work that needs the service role | CLAUDE.md §2 |
+| D6 | Writes that mix permissions | Handle with a **DB function (RPC, `security definer`) or a trigger**. Do not give the client broad update policies | Simpler RLS, no inserting notifications for other people |
+| D7 | Creating notifications | A **DB trigger** inserts into `notifications` (no inserts from the app layer) | So a sitter cannot insert an owner's notification directly |
+| D8 | Time zone | App-wide `APP_TIMEZONE=America/Toronto`. "Today" = 00:00 to 24:00 in this zone | Consistent task_logs creation and daily report totals |
+| D9 | missed status | **Derived, not stored**: `status='pending' AND now() > due_at + 60 min` | Meets P0 without a scheduler |
+| D10 | Feed post : media | **1 post = 1 media** (`feed_posts.media_id`). Multiple photos are P1 | Simplicity |
+| D11 | Caption location | Only `feed_posts.caption` (no `media.caption`) | No duplication |
+| D12 | AI image input | The backend gets a `w_1024,f_jpg` transform from Cloudinary and passes it to the model as a **base64 data URL**. Video uses an `so_0` thumbnail jpg | Does not depend on whether the model server can fetch outside URLs |
+| D13 | Safety input | The ingredient label also goes up through the **normal upload pipe (Phase 04)**, then `POST /api/ai/safety-check {pet_id, media_id}` (not multipart) | Reuses upload code, keeps the evidence image |
+| D14 | JWT verification | Supabase **JWKS** (`{SUPABASE_URL}/auth/v1/.well-known/jwks.json`, ES256/RS256) first; for a legacy project, fall back to `SUPABASE_JWT_SECRET` (HS256) | New projects use asymmetric keys by default |
+| D15 | Profile creation | An `auth.users` insert trigger creates `profiles` from `raw_user_meta_data.role/display_name`. **Confirm email OFF** | Avoids having no session right after sign-up |
+| D16 | Sitter assignment | ~~Fixed assignment by sitter email~~ → **replaced by D24 date-range bookings** (2026-09-29) | Real pet sitting is by trip period |
+| D17 | Reminders (P0) | **Client in-app reminders**: while the sitter app is open, check due items every 30 seconds → banner + toast. Server push is a stretch (6.7; Nebius AI Cloud is not used, D18) | Reproduces the demo's 08:00 segment without a scheduler |
+| D18 | Deployment | **Backend API:** **Render** Web Service (Docker + FastAPI, free plan, auto-deploy from GitHub `main`, `backend/Dockerfile`). **Frontend:** `expo export -p web` → **Vercel**. **Nebius AI Cloud (Serverless Endpoint · Jobs) is not used**: decided 2026-10-09 (at first, on 2026-09-29, AI Cloud was the main plan and Render the fallback) | All AI inference is on **Token Factory** (meets the hackathon's "Runs on Nebius": either runtime calls or an AI Cloud deployment is enough). AI Cloud required a card and a $25 prepayment, the event credits were not on the account, and the endpoint stays on, so about $128 until 12/15 → Render free is $0. The free plan sleeps after 15 minutes with no requests, so **ping every 10 minutes** (D20 keep-alive). Lessons in [notes/nebius-ai-cloud-feedback.md](notes/nebius-ai-cloud-feedback.md) |
+| D19 | Creating seed accounts | Python + Supabase Admin API (`auth.admin.create_user`); never insert into auth.users directly with SQL | Password hashes and triggers work properly |
+| D20 | CI/CD | **CI:** GitHub Actions `ci.yml` (PRs and pushes to main): backend ruff+pytest, frontend tsc+web export+Playwright mouse tests (1.7). **CD:** frontend = Vercel Git integration (PR Preview, auto-deploy on main), backend = **Render Git integration** (on merge to main, build and deploy with `backend/Dockerfile`, Health Check `/health`). **Keep-alive:** `keepalive.yml` calls `/health` every 10 minutes (keeps Render free from sleeping). **DB migrations are manual** (SQL Editor, in order) | Avoids changing the production DB automatically during the hackathon, keeps workflows minimal. **Playwright runs on a PR only when app code changes** (app · components · features · lib · e2e · package config, etc.; a PR that only changes docs or scripts runs just the tsc · What's New · screen map checks). A push to main always runs everything + Firefox · WebKit. |
+| D21 | Profile structure | Shared `profiles` (id, role, display_name) + a 1:1 table per role: `owner_profiles` (emergency contact, vet) / `sitter_profiles` (bio, service area, experience). The sign-up trigger also creates the row that matches the role. Sitters care for both dogs and cats (no species limit) | Clean RLS and forms per role. Avoids a mix of nullable columns |
+| D22 | Species support | **Dogs and cats**: `pets.species in ('dog','cat')`, cannot change after creation. Every FK and API field is `pet_id` | The product targets dogs & cats. Adding species later only widens the check |
+| D23 | Care by species | `care_tasks.type in ('medication','walk','feeding','litter','play','sleep')`. `walk` = dogs only, `litter` = cats only (trigger `guard_care_task_species`). The safety toxin list is also per species (phase-08) | Blocks wrong data like a cat walk, covers cat-only toxins (lilies, etc.) |
+| D24 | Part-time boarding sitter · slots · handoff | The sitter is **part-time** and cares for pets **at the sitter's home**. Slots have **fixed names only** (Morning · Afternoon · Overnight); the sitter sets the exact hours of each slot (`sitter_availability.starts_at/ends_at`) + slot capacity `max_pets`. Booking = 1 sitter + 1 owner. **Who has the pet when** = `booking_pets.care_range` (the care range, no overlap per pet: an exclusion constraint), **capacity** = `booking_slots` (pet × date × slot, by that sitter's slot hours). When open rows overlap, the **most recent row** sets that day's hours and capacity. A slot the sitter did not open is taken only when the care range covers more than half of it (prevents an empty Overnight); a short bit of time sticking out before or after is agreed as a custom time. The owner sets the **drop-off time, pick-up time, and place** (sitter's home / owner's home / other) → `booking_handoffs`. Times outside the sitter's hours or a place change are **agreed** (proposal → the other side agrees); a change after confirmation is also proposal → agreement, and the old values hold until agreed. By default the owner books **the whole trip with one sitter**: the regular sitter's schedule first, otherwise search (fully available first). If the sitter tries to block a confirmed slot, it is refused → **cancel the whole booking** (only before drop-off; after Received, change the pick-up time instead) → the owner rebooks. Permissions and task ownership are decided by the **drop-off time to pick-up time** range, not by slots. Schedule changes send no notification. The address goes only to the confirmed parties (until 24 hours after pick-up) | Changing sitters is stressful for pets → one sitter is the default. The real drop-off time can differ from the sitter's working hours, so it needs agreeing |
+| D25 | Web display (desktop = phone frame) | On a computer browser (mouse or trackpad is the main input, not `pointer: coarse`, **whatever the window width**) the **same app runs in a same-origin iframe** inside a **402 × 874 phone frame** (`components/shell/AppShell.web.tsx`; on native, `AppShell.tsx` renders children as is). **Split view (10.10, 2026-10-15):** `?view=split` + window width ≥ 900 gives two phone frames (iframe names `pane-owner` · `pane-sitter`, the sign-in storage key is also per pane: `getAuthStorageKey()`); the default is one phone. Phone browsers, native, and the inside of the iframe show the app as is. Inside the iframe, **only with a mouse**, `TouchEmulation`: drag to scroll + momentum, block the click after a drag, wheel turned into sideways scrolling on horizontal rows, no text selection or image dragging, round cursor, hidden scrollbars. Photo picking is one `pickMedia()`; desktop and demo accounts get the sample photo tray (4.7). The mode is decided in one place, `resolvePresentation()`; screens branch only with `useLayoutMode()`; tabs are expo-router JS `Tabs` (not NativeTabs). **After the hackathon (lowest priority):** a desktop `expanded` layout for sitters only (sidebar, no iframe); Owner stays in the frame | Judges watch on a PC → same experience as a phone + every action must work with a mouse. If the app is put straight into a box, RN `Modal` and Expo Router web modals portal to `document.body` (a web modal becomes a desktop dialog at `min-width: 768px`), and window size and media queries follow the browser, so it breaks (checked in the react-native-web 0.21.2 and expo-router 57.0.24 source). Inside the iframe it is a real phone screen, so there are almost no per-screen rules to follow. 402 = width of the current base iPhone (17); layouts support 360 to 440 |
+| D26 | Role area URLs | Role screens use **URL prefix folders**: `app/owner/*` → `/owner/*`, `app/sitter/*` → `/sitter/*` (no route groups `(owner)`/`(sitter)`). `(auth)` and `(public)` stay groups because their URLs do not overlap (`/login`, `/signup`, `/welcome`). Read `/(owner)/x` in older docs as `/owner/x` (changed everywhere 2026-10-01) | Both roles have `tasks`, `bookings`, `notifications`, `pets/[petId]`, so with groups alone the URLs are the same. expo-router accepts this as a "shared route" without an error and **on refresh or deep link renders the first group alphabetically** (owner) → a sitter who refreshes `/tasks` is stopped by the owner guard and loses the screen. For D25 address-bar sync (same screen after a refresh) to hold, each URL must be unique per role (checked in expo-router 57 `getRoutesCore` · `getStateFromPath`) |
+| D27 | Product flow = Full Process 5 stages | The product, root README, demo video, and work order follow **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** in [full-process.md](../full-process.md). Existing features fold into stages: care feed, album, checks, daily report = Stage 4; booking and handoff (D24) = Stages 2-3. **Treat Safety Guard (Phase 08) is a Stage 4 helper feature and a P0 stretch after the scenario core (03B to 07C)**; the P2 Q&A (old 11.4) folds into the Stage 1 inquiry AI (07B) | Team scenario first (2026-10-01). A product that reads as one flow scores better on judging "Potential Impact" and "Design" |
+| D28 | Service type · transport mode | `bookings.service_type in ('boarding','house_sitting')` (default `boarding`). The types a sitter offers are in `sitter_profiles.services text[]`. **Transport mode = another name for the handoff place (D24):** `sitter_home` = **Owner drives**, `owner_home` = **Sitter drives**, `other` = both travel. For `house_sitting`, the drop-off and pick-up place is fixed to `owner_home`. House sitting uses the same slot capacity math as boarding (P0 simplification; drop-in visit capacity is after the hackathon) | Reuses the proven handoff model without a new state |
+| D29 | Quote = server math | Sitter rate card `sitter_rates` (boarding per night · house sitting per night · daycare per day, extra pet %, holiday %, CAD) + `holidays` (Ontario statutory holidays) → SQL `quote_booking(...)` builds the line-item JSON. **AI never makes up or computes numbers**: the inquiry reply (07B) uses the values in this JSON as is, and the quote card under the reply and Checkout (03C) show the same values | Prevents price hallucination, numbers match across screens |
+| D30 | Consents · payment (demo) | **Rules decide** which consents are needed, from the service and transport mode (not AI): `emergency_vet` (limit), `home_access` (lockbox · key · buzzer · fob), `cohabitation` (pets housed together), `handoff_rules` (times · Visitor parking), `safe_return` (who receives the pet at return). Text = **fixed English template + version**, checkbox + typed-name signature → `booking_consents`. The screen says "Demo template, not legal advice". **Payment is demo only**: no card details, `pay_booking_demo` → `bookings.paid_at` + quote snapshot. Real payment (Stripe) is after the hackathon | Legal text written by a model is risky; no reason to handle card details at a hackathon |
+| D31 | Conditional unlock | ① **Owner's home entry info** `owner_home_access` (lockbox code · buzzer · fob · entry steps · sitter parking): owner-only RLS. The sitter gets it only through RPC `get_home_access(booking)`, when: paid + the sitter of that booking + from **2 hours before** a handoff at the owner's home (or the start of house sitting) **to the end of the booking (pick-up done)**. Outside that: `access_locked` + `unlocks_at`. The first open records `access_reveals` + owner notification `access_unlocked`. ② **Sitter's home info** (address · Visitor parking · lobby directions · packing checklist): to the owner right after payment, until 24 hours after pick-up (`get_handoff_details` condition changes from "confirmed" to "paid"). ③ Entry info **never goes into RAG, AI prompts, notification text, or logs** | Scenario: "not revealed right away even after payment", minimal exposure |
+| D32 | Pet Transit (live trip) | The side that travels taps **Start trip** → `trips` keeps **only the last position** (no route history; position null when done) → the other side subscribes through Realtime (`postgres_changes` on `trips`, RLS = booking parties). ETA = straight-line distance × 1.3 ÷ speed (car 30 km/h, walking 4.5 km/h); no routing API. Arrival = within 150 m of the destination → `trip_arrived`. Destination coordinates = the profile's `home_lat/home_lng` ("Use my current location", one OSM Nominatim lookup when the address is saved (`/api/geo/geocode`, no key), or made-up seed coordinates). Map = **view-only** Leaflet + OpenStreetMap (web, auto-fit + ± buttons, no drag pan: D25 mouse rule). Location source = real GPS on a phone, **Simulate trip on desktop and demo accounts** (plays a made-up route) | Judges' PCs have no moving GPS; location goes only to the parties while traveling |
+| D33 | Vision · embedding models | The scenario's Qwen-2.5-VL is **not** in the Token Factory catalog (2026-10-01 `GET /v1/models`) → photo analysis (captions · categories · handoff check · daily report photos) uses **`openbmb/MiniCPM-V-4_5`** (fallback with image input: `moonshotai/Kimi-K2.6`). RAG embedding = **`Qwen/Qwen3-Embedding-8B`** (the only embedding model in the catalog, `dimensions: 1024` confirmed working) → Supabase **pgvector** `knowledge_chunks vector(1024)` (HNSW), service role only. Search is always filtered to that sitter, that pet, and that owner | Based on the catalog ([model-ids.md](notes/model-ids.md)). 1024 dimensions fits under the pgvector index limit (2000) |
+| D34 | Sitter 5-second check | Sitter input = chips (meal · potty · walk minutes · medication) + photos ≤ 2 + **optional one-line note (≤ 120 chars)**. Still no required text input (§8-3) | The scenario's "short note": material for the daily report's story (D38 adds "AI writes first, the sitter only optionally edits or adds") |
+| D35 | Sitter tone layer | Natural-language AI output the owner sees (inquiry replies · daily reports · captions) is in the **sitter's first-person tone**. Composed in one place, `backend/app/ai/tone.py`: style guide + top-k `tone_samples` of the same sitter (few-shot, `MODEL_EMBED` search). Seed = 3 years of anonymized conversations (English); after that, it is updated by logging when the sitter sends as is / edits / regenerates (the edit ratio is the metric). **Fixed text (safety warnings · quote numbers · consents) is excluded**; numbers go in as `{PRICE}` · `{DATE}` placeholders that the server fills. SFT is a showcase only (D43, 11.7) | Per-sitter tone without swapping models. Details in [full-process §5](../full-process.md#5-what-we-decided-when-turning-the-scenario-into-the-app-d27-to-d46-summary) |
+| D36 | Sitter approval · AI disclosure | Default = manual approval (Send sends right away). Auto-send = a sitter option + a responsibility consent modal (`sitter_profiles.ai_reply_mode`, `ai_consent_at`); when on, it sends without waiting, at human pace (2026-10-02). The owner's screen shows it as the sitter's message (no per-message AI label), disclosed once in the terms and onboarding, one line on the profile in auto mode. When asked "Is this AI?", it never answers that it is a person | An approved message is the sitter's message |
+| D37 | Human-paced delivery | Only for auto-send and the demo video: `inquiry_messages.visible_at` (a future time) + a typing indicator. The read mark comes only from `read_at` (when the sitter really opened it); no fake reads (2026-10-02). The server creates and saves right away and **only delays the time it becomes visible** (no serverless sleep). Delay formula and message structure = Seulgi, TBD. Daily reports, captions, and manual approval have no delay | Safe within serverless request lifetimes |
+| D38 | Near-zero sitter writing (revised 2026-10-02) | Daily report: AI suggests chips from the day's records and photos (`/api/ai/report-chips`) → the sitter picks (turns off wrong chips) + a short note (optional, ≤ 200 chars) → AI writes in the sitter's tone → posted after the sitter approves. Inquiry: intent chips + Send. Notes and edits are always optional | UX principle 5: photo analysis can be thin or wrong |
+| D39 | Model policy | US models first and NVIDIA models first; Chinese models only when there is no alternative or a big cost/value gap, + the reason recorded in `model-ids.md`. Exceptions: embedding Qwen3-Embedding (**final 2026-10-02, no other embedding models compared**), vision MiniCPM-V (**final**: the 3 NVIDIA vision models are Dedicated-Endpoint-only, so the always-on cost is $48-113/day). Chinese models that NVIDIA only quantized (GLM · MiniMax · Qwen NVFP4) do not count as NVIDIA models | Hackathon track + preference |
+| D40 | Change requests after confirmation | Service and transport mode are fixed at confirmation. Either side can request a change; the other side must approve; if declined, only the change request is cancelled (the booking stays) | Prevents one-sided changes |
+| D41 | Location sharing consent · scope | Start trip → in-app consent (to whom · until arrival) → browser permission. P0 web shares only while the screen is on. 06B is the very last P0 phase (right after 07C, before the 08 stretch; 2026-10-02); judging uses the demo video (Simulate trip stays). Launch = native app + location consent up front. **If consent or permission is denied (2026-10-10):** no live location or ETA, only the meeting place + an Open in Google Maps link button | Fits within Supabase Realtime Free (200 concurrent, 2 million messages a month) |
+| D42 | Fun mood meter (P1 → Phase 12, **partly changed by D61: negative emotions in % too**) | A "for fun" line is required, the server computes behavior tags + frame ratios, no percentages for negative emotions. Candidates = vision model tags (A) + `agentmish/dog-emotion-classifier-v2` (Apache-2.0, B). Dropped if cost or license is a problem | Non-core feature for impact (11.9) |
+| D43 | SFT is a showcase only | The app's runtime tone uses only Nemotron + the tone card + few-shot (D35). The fine-tuned model is not connected to or served in the app (a tuned Gemma 4 needs a Dedicated Endpoint, and new data is short too). 11.7 = README Future work + a data format spec, one training run if there is data (optional) | Shows the room to grow without always-on serving costs |
+| D44 | Meet & Greet rules | **Only for an owner and sitter meeting for the first time** (when they have never done a handoff in an earlier booking or finished an M&G): `request_booking` sets `meet_greet_status` to `required` / `not_needed`. It comes after the booking request and before the sitter accepts; `respond_booking` can accept only after done or skipped (`meet_greet_required`). In person = pick one of either side's `meet_spots` (≤ 3 each, public places) + a time; home addresses stay private until payment (D31). Skip = one side asks → the other sees "Continue the booking without a Meet & Greet?" → if declined, `cancel_booking` (reason `meet_greet_declined`) + the owner gets Find a new sitter | Builds trust the first time; regulars skip it (2026-10-02 Minsik) |
+| D45 | Video Meet & Greet = Google Meet | The moment a time is agreed (accept), FastAPI `/api/meet-greet/video-link` creates an event + Meet link with the **Google Calendar API** `events.insert` (`conferenceDataVersion=1`, `conferenceData.createRequest`, `conferenceSolutionKey.type="hangoutsMeet"`) and emails an invite to both sides (skipped for demo `.test` accounts) → it lands in each person's Google Calendar. Organizer = one Goldito Google account (OAuth refresh token in the backend env, OAuth app publishing status **In production**; Testing expires in 7 days). Time change = `events.patch`, cancel = `events.delete`. The link opens in a new tab (no iframe). On failure: time + .ics + paste a link. A service account alone is often blocked from creating Meet links, so it is not used | Works in any browser or phone without installing an app, auto-added to calendars, no extra cost |
+| D46 | How we describe the agent | Keep the P0 structure (the server gathers the facts, one call per feature). In the README, video, and Devpost, describe it as **an agent that acts on its own whenever something happens, with a person approving** (trigger → action → approval table). Tool calling is optional and only for 07B, if 7.1 confirms it works on Token Factory (7B.11); the number-check and no-entry-info rules stay | The track (Best Apps and Agents) + the last sentence of the original, keeps it stable |
+| D47 | Owner tab IA · Feed vs Diary | **Keep 5** owner tabs: `Home · Bookings · Feed · Diary · Mood` (→ **Snap**, D61). **Feed** = permanent pet album (Instagram-style grid → detail; both owner and sitter post; pet chips = select/deselect multi-toggle, with both on they merge by date and time; stays after care ends). **Diary** = care/journal stream (what I write + while the pet is away, sitter updates in time order as Live/On air; history filters by pet, sitter, date). **A Diary entry with a photo is mirrored to Feed** (same media/post). The old Care tab is gone → Care request from **Home → pet detail** (details later). Old Reports tab = Diary. **Mood** = the 5th slot (placeholder → 11.9 photo/video mood, Fun only). **Settings is not a tab**: it sits inside the header avatar `/profile` (merged with 11.11). The notification bell stays in the header. Sitter = **D47b** | Care and Reports were thin as tabs; keeps the Live and album mental models apart (2026-10-04 Minsik) |
+| D47b | Sitter tab IA (**final**) | Sitter **5 tabs:** `Home · Bookings · Feed · Diary · Mood` (→ **Snap**, D61) (mirrors Owner; old Today → **Home**). **Home** = dashboard: (A) if caring for a pet now, centered on that pet's info and quick actions · (B) otherwise **requests waiting for approval** · **Upcoming** · **drop-off/pick-up in time order**. Later, a **tamagotchi/8-bit status** during care (11.12). Old Tasks folds into Home (to-dos) and Diary (done records). **Bookings** = requests · Meet & Greet · Past. **Feed** = + Photo. **Diary** = stay log + evening chip daily report (old Report). **Mood** = same as Owner. Treat scan = a Home button (08). Settings = Profile. **Earnings and care history (later):** no new tab; Bookings **Past** (by stay and owner) + a Profile **Earnings / payouts** section (summary of demo pay amounts and periods). Activity details via Diary filters | Mirrors Owner + sitter dashboard (2026-10-04 Minsik) |
+| D48 | Test environment (2026-10-09) | Hand testing is **always `main` on Vercel production** (https://goldito-petcare.vercel.app). Backend is Render (D18). PR Previews are not in CORS, so upload and AI do not work there; record results (✅) against main only | Pulling a branch and running it locally gives everyone a different environment |
+| D49 | The inquiry AI's "available" = the booking engine's rules (RV-1, `011c`) | `stay_capacity_check` runs the schedule part of `request_booking` as is (window check → `capacity_shortfall`). If there is not room for every pet, or any day the sitter did not open, the answer is "not available". If this check fails, nothing is promised: no quote, an `availability_note` saying not to state availability, `needs_sitter` forced (no auto-send) | Never make a promise in the sitter's name that the booking request later breaks with `sitter_unavailable` |
+| D50 | What an inquiry reveals (RV-4 · RV-5, `011e`) | A sitter who gets an inquiry sees the owner's display name and the pets asked about (same level as a booking request). The pet's Life Record and allergies only while `has_open_inquiry_about` is true: the inquiry is `open`, the stay asked about has not ended yet (`pick_up_at > now()`), and the inquiry is less than 30 days old. If any one fails, it closes | Fixes an `open` inquiry keeping the pet's record open forever |
+| D51 | "Ask before booking" (FB-33) | The sitter profile shows **[Ask before booking] [Book]** side by side (Book is the primary button) and says "a booking only happens when you send a request". Inquiry dates are required (availability and quote depend on dates). The sheet calendar marks days the sitter opened and full days (by pet count); sending on a full day offers **Ask anyway / Pick other dates** | Separates a question before booking from a booking request |
+| D52 | Owner and sitter actions in the inquiry thread (FB-34, `011j` · `011k`) | When the sitter's reply is the last message, the owner continues with **Write back** (AI drafts again → sitter approves, same auto-send rules). **Change dates** changes the dates of the **same inquiry**, not a new one (`change_inquiry_dates`: owner only · open inquiries only · 31 days or less · scheduled auto-replies for the old dates are withdrawn). The sitter's Accept / Decline / Suggest open a popup with the reply already written, and **Send** sends it; Decline · Suggest go out with `can_host=false` + no quote (`send_inquiry_reply(…, p_outcome)`) | Fixes a quote card and Request booking showing under a decline reply, and conversations dead-ending |
+| D53 | Owner reviews written by sitters (FB-25 · FB-29, `011g`, made public 2026-10-26 by `015s`) | After a stay ends, the sitter leaves stars + text (presets per star) about the owner (`save_owner_note`; saving again edits it; no notification). At first only the sitter could read it; now **that owner and every sitter** can (`owner_rating_summary`, sitter names first word only). Sitters see other sitters' reviews on the owner's request and booking screens. The other way, owners' reviews of a sitter are **all** shown on the sitter profile (`sitter_rating_summary`), and the sitter sees their own reviews together in Profile | Common good: each side judges by the other's ratings and uses reviews received as feedback |
+| D54 | Favorite sitters moved up (FB-28, `011h`) | 11.5 moved up to P0: "Add Chloe to your favorites?" after a review, ☆ / ★ on the profile, favorites first in Your sitters and search. The sitter is not told | The first hand test needed a rebooking path for regulars |
+| D55 | The care window starts at the earlier one (CW-1, `011i`) | For check-ins · tasks · daily report chips · drafts, the sitter's window starts at **the earlier of the agreed drop-off and Received**; the end stays the same. Because Received works from 2 hours before drop-off | Fixes check-ins blocked with `not_in_care_window` and photos not becoming chips after an early drop-off |
+| D56 | Daily report rules (FB-22 · RV-6 to RV-8, `011f`) | The same sitter can send **several** daily reports for the same pet on the same day (one draft at a time; the next report's chips and snapshot only cover what came after the last sent report). **Chips turned off never go into the report** (sent to the server as `off`). Only up to 8 highlights go into the text; turning on more shows a notice. If the writing model is down, 200 with a plain-list draft (`template-fallback`) | The server enforces D38 "never write what the sitter turned off" |
+| D57 | Demo reset is for testing only (2026-10-09) | Profile → Demo tools · `POST /api/demo/reset` only during testing. **Remove it before judging** and use the same `demo_reset` code to build fixed accounts per starting point (so judges cannot wipe data). Reset only erases what the two demo accounts did with each other (does not touch other owners' bookings) | Protects judges' data; R60-2, where reset erased other people's bookings |
+| D58 | Pet profile onboarding principles (2026-10-10, 11.15) | Pet sign-up takes 3-5 minutes with **one question per screen · large text · 4 choices · one tap**, and every question can be skipped. Personality questions are **the owner describing behavior, not "MBTI / a validated test"** (items are newly written with MCPQ-R · C-BARQ · DPQ concepts as reference; the original surveys' validation does not carry over, so it is labeled "not a behavior assessment"). The sitter card shows 5 axes (Sociability · Sensitivity · Energy · Appetite · Trainability) as **4-level words with no scores**, and **safety items such as biting · other animals · escaping · guarding are kept off the chart** and shown as warning chips. AI values from photo and voice are **suggestions only**: saved after the owner confirms; a voice value needs a supporting sentence in the transcript, and the AI never pre-selects safety items. Token Factory has no speech recognition (catalog checked 2026-10-10), so **recording → outside STT (Groq Whisper, free plan, decided 2026-10-10) → text → Nemotron extracts facts**. Used only for the first pet sign-up right after owner sign-up (not sitters or demo accounts); **build it last in the P0 queue**. Details: [pet-profile-onboarding.md](../pet-profile-onboarding.md) | Prevents empty profiles (Rover's problem) and avoids misleading scores |
+| D59 | Only 3 outside sources (2026-10-10) | **Tavily** (breed physical needs · treat ingredients · recall backup), **Government of Canada Recalls and Safety Alerts open data** (recalls), **static JSON we curate** (breed and toxin rule tables, with source links, reviewed by Seulgi). Not used: The Dog API (paid tiers, no sources cited) · API Ninjas (unknown sources) · openFDA (drugs and devices only) · Open Pet Food Facts (barcodes are out of plan). The first safety verdict comes from the server rule table; keep the rule that the server overrides to DANGER even when the model says SAFE | Few sources, trusted ones only |
+| D60 | Booking steps · hold · timeout (2026-10-11) | **Steps are computed, not stored** (`booking_stage()` · `booking_next_actor()`; the app reads them like columns): `requested → meet_greet → confirm → awaiting_payment → paid → in_care → completed` (+ `declined` · `cancelled`). For a first meeting, **the sitter's first yes** (`bookings.sitter_interest_at`, `express_interest`) is the new gate, and a Meet & Greet proposal or skip request is only possible after it (`interest_required`). Regulars and pairs who already met: one Accept (no change). **Hold:** from the first yes until confirmed · declined · cancelled · timed out, no other owner can request or book that slot and the sitter cannot block it. **Sitter setting (adds to D24, decided 2026-10-11):** the sitter decides with `sitter_profiles.accepts_multiple_owners` (default **off = one owner at a time**). When off, different owners cannot hold the same slot at once (both hold and confirmed, regardless of `max_pets`; it only stays as the per-owner pet count limit). When on, as now, several owners fit within the `max_pets` capacity. **Owners can see this setting when they inquire or book** (badge "One owner at a time" / "Hosts several owners' pets" on the sitter profile · inquiry sheet · search results). It is passed to the inquiry AI as a fact too. **An owner's decline** is `cancel_booking` + reason chips (Doesn't seem like a fit · Found another sitter · My schedule changed · Something else). **Deadlines:** if no time is set within 2 days after the first yes, a notification (`meet_greet_stalled`); 3 more days with no word after that, auto-cancel (`meet_greet_timeout`); the periodic check ("sweep") is `pg_cron` or a backend call. Migration `011l_booking_steps` | Both sitter and owner know the current step and the next action, no double booking, no pile-up of requests stuck at Meet & Greet |
+| D61 | Snap tab (2026-10-13, Phase 12) | The fifth tab `Mood` → **`Snap`** (both owner and sitter): **Treat check** (Phase 08 design as is + Tavily; owners can also check their own pet; the DANGER owner notification only when the sitter ran the check) · **Mood** (browser MediaPipe boxes each pet → a Token Factory vision model looks at the crops → **server rules compute 8 emotion %**, summing to 100%) · **Sticker** (browser MediaPipe Magic Touch cuts out only the pet → sticker box → **owner + sitter** each decorate the diary on their own layer). **Change to D42:** negative emotions are shown in % too. But the line "For fun only, not a behavior or health assessment" is required, the numbers come from the server not the model, and no medical or pain wording. 11.15 onboarding stays 10/24-27 → Snap is 10/14 to 10/22 ([phase-12-snap.md](phase-12-snap.md)) |
+| D62 | In chat, AI only suggests; a person always sends (2026-10-19, Phase 03D) | In chat, AI makes **only chips (message drafts · action suggestions)**, and **a person always taps to send or act. No auto-send** (chat does not use D36's auto-send option). Action chips are picked **only from the list of actions possible right now** that the code sets, and the code fills prices · dates · availability. No reasons are shown. Both owner and sitter get them | D36 (auto-send stays only on the inquiry screen, and the inquiry screen goes away when it merges into chat in #142) |
+| D63 | Chat tab · Diary inside Feed (#329, Seulgi's 5 tabs, Muk nav trial) | Both roles: **`Home · Bookings · Chat · Feed · Snap`**. **Chat** = chat list (unread count as a tab badge, the newest new chat highlighted); the chat list and Chats chip are gone from Bookings. **Photos · Diary** switch at the top of **Feed** (`?view=diary`); the Diary tab is gone (old `/owner/diary` · `/sitter/diary` go to Diary in Feed). Replaces the tab lists in D47 · D47b |
 
 ---
 
-## 2. 리포 구조 (최종 형태)
+## 2. Repo layout (final shape)
 
 ```
 Goldito/
-├─ README.md                  # 제품 + Getting Started (Phase 10에서 완성)
+├─ README.md                  # Product + Getting Started (finished in Phase 10)
 ├─ CLAUDE.md
 ├─ .gitignore                 # .env, data/raw/, node_modules, __pycache__, .venv, dist
 ├─ .github/workflows/
-│  ├─ ci.yml                  # Phase 01.5 — PR 검사 (backend / frontend 2 job)
-│  └─ keepalive.yml           # Phase 10.7 — 10분마다 /health 호출 (Render 무료 잠듦 방지)
+│  ├─ ci.yml                  # Phase 01.5: PR checks (backend / frontend, 2 jobs)
+│  └─ keepalive.yml           # Phase 10.7: calls /health every 10 minutes (keeps Render free from sleeping)
 ├─ docs/
 ├─ supabase/
-│  ├─ README.md               # ERD 요약 + 적용 순서
+│  ├─ README.md               # ERD summary + apply order
 │  ├─ migrations/
 │  │  ├─ 001_initial_schema.sql
 │  │  ├─ 002_rls_policies.sql
-│  │  ├─ 003_functions_triggers.sql   # 헬퍼·가입 트리거·예약 RPC·충돌 트리거·realtime (Phase 02)
-│  │  ├─ 004_booking_options.sql      # Phase 03B (service_type, services, Meet & Greet — 첫 만남 판단·건너뛰기·장소·Meet 링크, 양쪽 meet_spots)
-│  │  ├─ 005_meet_greet.sql           # Phase 03B 3B.9 (Meet & Greet RPC — 제안·응답·완료·건너뛰기, 양쪽 장소)
-│  │  ├─ 006_agreements.sql           # Phase 03C (요금·공휴일·quote_booking, 동의서, 데모 결제, 출입 정보 해제)
-│  │  ├─ 007_feed_notifications.sql   # Phase 05 (+ feed_posts.category — 09가 채움)
-│  │  ├─ 007b_feed_posts_realtime.sql  # feed_posts Realtime (008은 care 예약이라 b/c 접미사)
-│  │  ├─ 007c_feed_visibility.sql      # posted_by + visibility(shared/private), 오너 게시
+│  │  ├─ 003_functions_triggers.sql   # helpers · sign-up trigger · booking RPCs · conflict triggers · realtime (Phase 02)
+│  │  ├─ 004_booking_options.sql      # Phase 03B (service_type, services, Meet & Greet: first-meeting check · skip · place · Meet link, both sides' meet_spots)
+│  │  ├─ 005_meet_greet.sql           # Phase 03B 3B.9 (Meet & Greet RPCs: propose · respond · complete · skip, both sides' places)
+│  │  ├─ 006_agreements.sql           # Phase 03C (rates · holidays · quote_booking, consents, demo payment, entry info unlock)
+│  │  ├─ 007_feed_notifications.sql   # Phase 05 (+ feed_posts.category, filled by 09)
+│  │  ├─ 007b_feed_posts_realtime.sql  # feed_posts Realtime (b/c suffix because 008 is reserved for care)
+│  │  ├─ 007c_feed_visibility.sql      # posted_by + visibility (shared/private), owner posts
 │  │  ├─ 008_care.sql                 # Phase 06 (task_logs RPC, care_checkins, care_requests, pet_cautions)
-│  │  ├─ 008g_care_change_requests.sql   # 돌보는 중 오너 → 시터 요청, 승인·거절
-│  │  ├─ 008h_care_counter_requests.sql  # 거절 노트, counter-request(추가 비용·오너가 할 일), 오너 Accept·Decline
-│  │  ├─ 008i_revoke_trigger_functions.sql # 트리거 함수를 RPC로 호출 못 하게 (Supabase 보안 점검)
-│  │  ├─ 008j_no_direct_edits_during_stay.sql # 돌보는 중에는 오너가 할 일·Heads-up을 직접 INSERT 못 함
+│  │  ├─ 008g_care_change_requests.sql   # owner → sitter requests during care, approve · decline
+│  │  ├─ 008h_care_counter_requests.sql  # decline note, counter-request (extra cost · owner to-do), owner Accept · Decline
+│  │  ├─ 008i_revoke_trigger_functions.sql # trigger functions cannot be called as RPCs (Supabase security check)
+│  │  ├─ 008j_no_direct_edits_during_stay.sql # during care, the owner cannot INSERT tasks · Heads-ups directly
 │  │  ├─ 009_reports.sql              # Phase 07 (send_daily_report)
-│  │  ├─ 009b_care_requests_follow_the_stay.sql · 009c_handoffs_stay_consistent.sql · 009d_paid_bookings_follow_changes.sql · 009e_reopened_checkout_keeps_addresses.sql  # 확정·결제 뒤 변경이 예약·요청·체크아웃과 어긋나지 않게 (BF.x)
+│  │  ├─ 009b_care_requests_follow_the_stay.sql · 009c_handoffs_stay_consistent.sql · 009d_paid_bookings_follow_changes.sql · 009e_reopened_checkout_keeps_addresses.sql  # changes after confirm · payment stay consistent with the booking · requests · checkout (BF.x)
 │  │  ├─ 010_inquiries_rag.sql        # Phase 07B (pgvector, inquiries, knowledge_chunks)
-│  │  ├─ 010b_send_inquiry_reply.sql · 010c_tone_samples.sql · 010d_auto_reply.sql  # 시터 답장 RPC, 말투 샘플, 자동 발송
+│  │  ├─ 010b_send_inquiry_reply.sql · 010c_tone_samples.sql · 010d_auto_reply.sql  # sitter reply RPC, tone samples, auto-send
 │  │  ├─ 011_completion.sql           # Phase 07C (reviews, pet_life_records)
-│  │  ├─ 011b_life_record_columns.sql · 011c_stay_capacity_check.sql · 011e_inquiry_access.sql  # Life Record 컬럼, 문의 가능 여부 = 예약 정원 규칙, 문의 사이 공개 범위 (011d는 RV-3용으로 비워 둠)
-│  │  ├─ 011f_daily_reports_many.sql · 011g_sitter_owner_notes.sql · 011h_favorite_sitters.sql  # 같은 날 알림장 여러 개, 시터의 비공개 오너 노트, 즐겨찾기 시터 (11.5를 앞당김)
-│  │  ├─ 011i_care_window_follows_received.sql · 011j_change_inquiry_dates.sql · 011k_inquiry_reply_outcome.sql  # 일찍 Received한 시각부터 돌봄 구간, 같은 문의에서 날짜 변경, 시터 답장 결과(거절·제안은 견적 없음)
-│  │  ├─ 012_transit.sql              # Phase 06B (trips, handoff_checks, home 좌표) — P0 맨 마지막 (D41)
-│  │  ├─ 013_safety.sql               # Phase 08 (DANGER 알림 트리거) — stretch, 06B 뒤 시간이 남을 때
+│  │  ├─ 011b_life_record_columns.sql · 011c_stay_capacity_check.sql · 011e_inquiry_access.sql  # Life Record columns, inquiry availability = booking capacity rules, what an inquiry reveals (011d left empty for RV-3)
+│  │  ├─ 011f_daily_reports_many.sql · 011g_sitter_owner_notes.sql · 011h_favorite_sitters.sql  # several daily reports per day, the sitter's private owner notes, favorite sitters (11.5 moved up)
+│  │  ├─ 011i_care_window_follows_received.sql · 011j_change_inquiry_dates.sql · 011k_inquiry_reply_outcome.sql  # care window from an early Received, change dates in the same inquiry, sitter reply outcome (decline · suggest have no quote)
+│  │  ├─ 012_transit.sql              # Phase 06B (trips, handoff_checks, home coordinates), the very last P0 phase (D41)
+│  │  ├─ 013_safety.sql               # Phase 08 (DANGER notification trigger), stretch if time remains after 06B
 │  │  └─ 014_p1.sql                   # Phase 11 (P1)
-│  │                                  # 번호 = 적용 순서. 작업 순서가 바뀌면 다음 빈 번호를 쓰고 이 목록을 고친다 (008은 번호 정리 때 생긴 빈칸 — 쓰지 않음)
-│  └─ tests/rls_smoke.sql     # 역할 전환 RLS 확인 쿼리
+│  │                                  # number = apply order. If the work order changes, use the next free number and fix this list (008 is a gap left by renumbering; not used)
+│  └─ tests/rls_smoke.sql     # RLS check queries that switch roles
 ├─ backend/
 │  ├─ requirements.txt
 │  ├─ Dockerfile              # Phase 10
 │  ├─ .env.example
 │  ├─ README.md
 │  ├─ app/
-│  │  ├─ main.py              # FastAPI app, CORS, router include, 에러 핸들러
-│  │  ├─ config.py            # pydantic-settings (아래 §4 env 전부)
+│  │  ├─ main.py              # FastAPI app, CORS, router include, error handlers
+│  │  ├─ config.py            # pydantic-settings (all the §4 env below)
 │  │  ├─ deps/
 │  │  │  ├─ auth.py           # get_current_user, require_role("sitter")
-│  │  │  └─ supabase.py       # service-role client (싱글톤)
+│  │  │  └─ supabase.py       # service-role client (singleton)
 │  │  ├─ services/
 │  │  │  ├─ authz.py          # assert_owner_of(pet_id), assert_on_duty_for(pet_id)
 │  │  │  ├─ cloudinary.py     # sign params, delivery URL, fetch image → base64
 │  │  │  ├─ nebius.py         # model role → (model_id, base_url), chat(), chat_json(), embed()
-│  │  │  ├─ rag.py            # 07B — chunk → embed → knowledge_chunks upsert, match_knowledge 검색
-│  │  │  ├─ google_meet.py    # 3B.11 — refresh token → Calendar 이벤트 + Meet 링크 (D45)
-│  │  │  └─ timeutil.py       # APP_TIMEZONE 기준 today/day range
+│  │  │  ├─ rag.py            # 07B: chunk → embed → knowledge_chunks upsert, match_knowledge search
+│  │  │  ├─ google_meet.py    # 3B.11: refresh token → Calendar event + Meet link (D45)
+│  │  │  └─ timeutil.py       # today/day range in APP_TIMEZONE
 │  │  ├─ routers/
 │  │  │  ├─ health.py         # GET /health
 │  │  │  ├─ me.py             # GET /api/me
@@ -149,9 +149,9 @@ Goldito/
 │  │  │  ├─ ai_handoff_check.py # POST /api/ai/handoff-check (06B)
 │  │  │  ├─ ai_inquiry.py     # POST /api/ai/inquiry-reply (07B)
 │  │  │  ├─ ai_life_record.py # POST /api/ai/life-record (07C)
-│  │  │  ├─ ai_pet_mood.py    # POST /api/ai/pet-mood (12.2 Mood — 태그 → 규칙 %)
-│  │  │  └─ ai_safety_check.py # POST /api/ai/safety-check (12.1 Treat check — 08 설계)
-│  │  ├─ schemas/             # pydantic request/response 모델 (라우터별 파일)
+│  │  │  ├─ ai_pet_mood.py    # POST /api/ai/pet-mood (12.2 Mood: tags → rule %)
+│  │  │  └─ ai_safety_check.py # POST /api/ai/safety-check (12.1 Treat check: the 08 design)
+│  │  ├─ schemas/             # pydantic request/response models (one file per router)
 │  │  └─ ai/prompts/
 │  │     ├─ caption/{system.md}
 │  │     ├─ care_plan/{system.md}
@@ -164,313 +164,313 @@ Goldito/
 │  ├─ scripts/
 │  │  ├─ test_nebius.py       # Phase 07.1
 │  │  └─ seed_demo.py         # Phase 10.1
-│  └─ tests/                  # pytest (JSON 파싱, authz, 스키마)
+│  └─ tests/                  # pytest (JSON parsing, authz, schemas)
 └─ frontend/
    ├─ package.json, app.json, tsconfig.json
    ├─ .env.example
    ├─ README.md
-   ├─ playwright.config.ts    # 1.7 — 마우스 전용 테스트 설정
-   ├─ e2e/                    # 1.7 — Playwright (데스크톱 프레임 + 마우스) / 10.x 심사 경로
+   ├─ playwright.config.ts    # 1.7: mouse-only test config
+   ├─ e2e/                    # 1.7: Playwright (desktop frame + mouse) / 10.x judging path
    ├─ app/                    # expo-router (§3)
-   │  ├─ index.tsx            # 3.3 — 로그인/역할 보고 redirect
-   │  ├─ (auth)/              # 3.1–3.2 — login, signup (로그인 상태면 `/`로)
-   │  ├─ owner/ · sitter/     # D26 — `_layout.tsx` = 역할 가드 Stack, `(tabs)/` = JS Tabs (`/owner`, `/owner/feed` …), 상세는 Stack 위 (`owner/pets/new`, `owner/pets/[petId]`)
-   │  ├─ profile.tsx          # 3.8 — 역할별 프로필 (`/profile`, 두 역할 공통)
-   │  └─ dev/                 # gestures.tsx (1.7), health.tsx (1.3) — EXPO_PUBLIC_DEV_ROUTES=1일 때만
-   ├─ assets/demo/            # 4.7 — 샘플 사진 (강아지·고양이 일상, 가상 브랜드 간식 라벨 — PII 없음)
-   ├─ components/shell/       # D25 — AppShell.tsx / AppShell.web.tsx, DeviceFrame.web.tsx, TouchEmulation.web.ts, presentation.ts, useLayoutMode.ts, useShell.ts (화면은 `useShell`·`useLayoutMode`만 import)
+   │  ├─ index.tsx            # 3.3: redirect by sign-in state / role
+   │  ├─ (auth)/              # 3.1-3.2: login, signup (to `/` when signed in)
+   │  ├─ owner/ · sitter/     # D26: `_layout.tsx` = role guard Stack, `(tabs)/` = JS Tabs (`/owner`, `/owner/feed` …), details on top of the Stack (`owner/pets/new`, `owner/pets/[petId]`)
+   │  ├─ profile.tsx          # 3.8: profile per role (`/profile`, shared by both roles)
+   │  └─ dev/                 # gestures.tsx (1.7), health.tsx (1.3); only when EXPO_PUBLIC_DEV_ROUTES=1
+   ├─ assets/demo/            # 4.7: sample photos (everyday dogs and cats, made-up brand treat labels; no PII)
+   ├─ components/shell/       # D25: AppShell.tsx / AppShell.web.tsx, DeviceFrame.web.tsx, TouchEmulation.web.ts, presentation.ts, useLayoutMode.ts, useShell.ts (screens import only `useShell` · `useLayoutMode`)
    ├─ components/ui/          # Button, TextButton, TextField, Card, Screen, EmptyState, LoadingView, Chip, SegmentedControl, Skeleton, Badge, Toast, AlertModal, Sheet, HorizontalList
-   ├─ components/             # 도메인 컴포넌트 (RoleTabs, HeaderActions, RoleCard, PetCard, PetForm, FeedCard, TaskRow, PetSwitcher, NotificationItem, MediaPicker, QuoteCard, ConsentCard, EntryInfoCard, TripMap(.web), ChecklistCard, StarRating, LifeRecordCard …)
-   ├─ features/<domain>/      # 화면별 데이터·상태 (`pets/` petApi·useMyPets·petValidation, `profile/` profileApi) — use*.ts 훅 (route 파일은 얇게 — D25, 해커톤 후 시터 데스크톱 화면이 재사용)
+   ├─ components/             # domain components (RoleTabs, HeaderActions, RoleCard, PetCard, PetForm, FeedCard, TaskRow, PetSwitcher, NotificationItem, MediaPicker, QuoteCard, ConsentCard, EntryInfoCard, TripMap(.web), ChecklistCard, StarRating, LifeRecordCard …)
+   ├─ features/<domain>/      # per-screen data and state (`pets/` petApi · useMyPets · petValidation, `profile/` profileApi): use*.ts hooks (route files stay thin, D25; the post-hackathon sitter desktop screens reuse them)
    ├─ lib/
-   │  ├─ supabase.ts          # getSupabase() — 첫 사용 시 생성(anon, AsyncStorage persist, `getAuthStorageKey()`)
-   │  ├─ authErrors.ts        # Supabase Auth 에러 → 사람 문구
-   │  ├─ api.ts               # FastAPI fetch 래퍼 (Bearer 자동, 에러 정규화)
-   │  ├─ media.ts             # pickMedia() — 모든 사진 선택의 유일한 진입점 (4.7)
+   │  ├─ supabase.ts          # getSupabase(): created on first use (anon, AsyncStorage persist, `getAuthStorageKey()`)
+   │  ├─ authErrors.ts        # Supabase Auth errors → human wording
+   │  ├─ api.ts               # FastAPI fetch wrapper (automatic Bearer, normalized errors)
+   │  ├─ media.ts             # pickMedia(): the only entry point for every photo pick (4.7)
    │  ├─ cloudinary.ts        # uploadMedia(), thumbUrl(), videoPosterUrl()
-   │  ├─ feed.ts              # createFeedPost() — Phase 05/06/09 공용
-   │  ├─ location.ts          # 06B — 위치 소스 하나: 실제 GPS watch / Simulate trip (D32)
-   │  └─ time.ts              # APP_TIMEZONE 표시 포맷
-   ├─ providers/              # ThemeProvider(useTheme · useThemedStyles, 3.0), SessionProvider, PetProvider(선택된 pet), ToastProvider, NotificationsProvider(Realtime)
-   ├─ theme/tokens.ts         # 기본값: 색·간격(8px)·radius·타이포·layout·breakpoint — 묵 Figma 토큰으로 교체
-   ├─ theme/themes.ts         # 스킨 프리셋 (`default` + 11.10 털 색) — primary·primaryText·background·accent만 변경, 상태 색 고정
-   └─ types/db.ts             # Supabase 테이블 타입 (수동 or supabase gen types)
+   │  ├─ feed.ts              # createFeedPost(): shared by Phase 05/06/09
+   │  ├─ location.ts          # 06B: one location source: real GPS watch / Simulate trip (D32)
+   │  └─ time.ts              # APP_TIMEZONE display format
+   ├─ providers/              # ThemeProvider(useTheme · useThemedStyles, 3.0), SessionProvider, PetProvider(selected pet), ToastProvider, NotificationsProvider(Realtime)
+   ├─ theme/tokens.ts         # defaults: color · spacing (8px) · radius · type · layout · breakpoint; replaced with Muk's Figma tokens
+   ├─ theme/themes.ts         # skin presets (`default` + 11.10 coat colors): changes only primary · primaryText · background · accent, status colors fixed
+   └─ types/db.ts             # Supabase table types (by hand or supabase gen types)
 ```
 
 ---
 
-## 3. 화면 & 라우트 맵 (최종 형태)
+## 3. Screen & route map (final shape)
 
-| Route | 역할 | 화면 | 주 액션 (1개) | 도입 Phase |
+| Route | Role | Screen | Primary action (1) | Phase added |
 | :--- | :--- | :--- | :--- | :--- |
-| `/` | - | 세션·역할 보고 redirect (미로그인 → `/login`, OB.1 이후 welcome) · 프로필 로드 실패 시 Try again / Log out | - | 03 → OB.1 |
+| `/` | - | Redirect by session and role (signed out → `/login`, welcome after OB.1) · Try again / Log out if the profile fails to load | - | 03 → OB.1 |
 | `/welcome` (`app/(public)/welcome.tsx`) | - | Welcome + **Try demo** (Owner / Sitter) · "Already have an account?" | Try demo | OB.1 ([onboarding.md](../onboarding.md)) |
 | `/login` (`app/(auth)/login.tsx`) | - | Login | Sign in | 03 |
-| `/signup` (`app/(auth)/signup.tsx`) | - | Sign up (+ role 선택 1회) | Create account | 03 |
-| `/owner/` (tab: Home) | owner | My pets · **Next booking** 카드(진행 중이면 Trip·Received 상태) · **Pet status room (8bit, P1 11.12)** · 오늘 요약 | Add pet | 03 · 03B · 11.12 |
-| `/owner/pets/new`, `/owner/pets/[petId]` | owner | Pet profile (**종 Dog/Cat**·이름·품종·생일·메모·**알레르기 chips**) · **Care request** · **Life Record** 진입 | Save | 03 |
-| `/owner/pets/[petId]/care-request` | owner | 케어·투약 의뢰서 (메모처럼 작성) → AI 체크리스트 미리보기 → 확인 (Stage 2) | **Save checklist** | 06 |
-| `/owner/pets/[petId]/record` | owner | Pet Life Record — 식습관·배변·약 반응·행동·주의사항 + 지난 돌봄 목록 (Stage 5) | 읽기 | 07C |
-| `/owner/bookings` (tab: Bookings), `/owner/bookings/new`, `/owner/bookings/[bookingId]`, `/owner/sitters/[sitterId]` | owner | 예약·문의 목록 / 서비스 방식·단골 스케줄·검색·요청(이동 방식) / 상세(첫 만남 Meet & Greet — 대면 장소·Google Meet·건너뛰기 동의, D44 — ·인수인계·재예약) / 시터 프로필·스케줄·별점 + **Ask before booking** | Book care | 03B (+07B 문의) |
-| `/owner/inquiries/[inquiryId]` | owner | 문의 스레드 — AI 자동 답변 + 견적 카드 (Stage 1) | **Request booking** | 07B |
-| `/owner/bookings/[bookingId]/checkout` | owner | 견적 → 동의서 서명 → **Pay (demo)** → 시터 집 정보·짐 체크리스트 (Stage 3) | **Pay** | 03C |
-| `/owner/home-access` | owner | 내 집 출입 정보 (lockbox·buzzer·fob·출입 순서) — "Only shown to your sitter 2 hours before" | Save | 03C |
-| `/owner/bookings/[bookingId]/trip`, `/sitter/bookings/[bookingId]/trip` | both | 실시간 이동 — 보기 전용 지도·ETA·도착 카드(Visitor parking / Buzzer·Lockbox)·사진 체크 (Stage 4) | **Start trip** / 사진 → **Received·Returned** | 06B |
-| `/owner/bookings/[bookingId]/review` | owner | ★ 1–5 + 코멘트(선택) (Stage 5) | **Send review** | 07C |
-| `/profile` | both | 역할별 프로필 + **Settings**(계정·알림·What's New — 11.11을 여기로; D47). 주소·bio·**선호 만남 장소 ≤ 3** 등 (D44) | Save | 03 (+03B · 11.11) |
-| `/settings` | both | *(deprecated as tab)* → `/profile` Settings 섹션으로 흡수 (D47). 딥링크 호환 시 redirect | — | 11.11 |
-| `/owner/feed` (tab: Feed) | owner | **영구 앨범** — 펫 칩 멀티토글(선택/해제) · 3열 그리드 → 상세 (D47). 오너·시터 게시 | 스크롤 / 탭 | 05 (+09 분류) |
-| `/owner/diary` (tab: Diary) | owner | **돌봄 일기** — Live(On air) 시 시터 업데이트 시간순; 히스토리(펫·시터·날짜). 사진 있는 항목 → Feed 미러 (D47). 구 `/owner/reports` | 읽기 / 쓰기 | 05–07 |
-| `/owner/diary/[entryId]` | owner | Diary 항목 상세 (알림장·체크·사진 묶음) | 읽기 | 07 |
-| `/owner/snap` (tab: Snap) | owner | Treat check · Mood(펫별 박스 + 감정 %) · Sticker → 다이어리 꾸미기 (D61) | 카드 3개 | 12 |
-| `/owner/pets/[petId]` (Care request) | owner | 구 Care 탭 내용 — 투약·산책 의뢰는 **펫 디테일**에서 (D47, 추후 디테일). 라우트 `/owner/pets/[petId]/care-request` 유지 | Save checklist | 06 |
-| `/owner/notifications` (header bell) | owner | 알림 센터 | 탭 → 해당 화면 | 05 |
-| `/sitter/` (tab: Home) | sitter | **대시보드 (D47b):** 케어 중 → 펫 카드·퀵액션 · 아니면 Requests(미승인) · Upcoming · drop/pick **시간순**. 추후 다마고치(11.12). Tasks/check-in 흡수 · (08) Scan | Open booking / check-in | 03 → 06 |
-| `/sitter/schedule` | sitter | 스케줄 캘린더 (날짜 × 칸 open + 시간 + 정원 / blocked) | Save | 03B |
-| `/sitter/bookings` (tab: Bookings), `/sitter/bookings/[bookingId]` | sitter | Inquiries · Requests · Upcoming · **Past**(돌봄 히스토리). 추후 Past/Earnings 진입 | Accept | 03B (+03C·07B·07C) |
-| `/sitter/inquiries/[inquiryId]` | sitter | 문의 스레드 — 말투 초안 + **Send** (D36) | Send | 07B |
-| `/sitter/feed` (tab: Feed) | sitter | 맡은 펫 앨범 · + Photo (`/sitter/feed/[petId]`와 연결) | **+ Photo** | 05 |
-| `/sitter/feed/[petId]` | sitter | Pet 피드 (sitter 뷰) | **+ Photo** (FAB) | 05 |
-| `/sitter/diary` (tab: Diary) | sitter | 스테이 로그 + 저녁 칩 알림장(구 Report·Tasks) | **Send** / Mark done | 06–07 |
-| `/sitter/snap` (tab: Snap) | sitter | Owner와 같은 Snap 도구(Treat check · Mood · Sticker, D61) | 카드 3개 | 12 |
-| `/sitter/tasks`, `/sitter/report` | sitter | *(removed as tabs — redirect to Home / Diary)* | — | legacy |
-| `/sitter/snap/treat` (Snap → Stack) | sitter | Treat check (구 Treat scanner) | **Check** | 12.1 (08 설계) |
-| `/sitter/notifications` (header bell) | sitter | 알림 센터 | 탭 → 해당 화면 | 05 |
-| `/profile` (Earnings, 추후) | sitter | Profile **Earnings** — 받은 금액·기간 요약 (데모 pay). 스테이 목록은 Bookings Past | — | P1 / 10+ |
-| `/dev/gestures` | - | 마우스 동작 테스트 화면 (긴 목록·가로 줄·모달·토스트·입력창). `EXPO_PUBLIC_DEV_ROUTES=1`일 때만, 링크 없음 | - | 1.7 |
-| `/dev/health` | - | Backend `GET /health` 확인 (Check API — 1.3 화면을 `/`에서 옮김). `EXPO_PUBLIC_DEV_ROUTES=1`일 때만 | Check API | 1.3 → 3.3 |
+| `/signup` (`app/(auth)/signup.tsx`) | - | Sign up (+ pick a role once) | Create account | 03 |
+| `/owner/` (tab: Home) | owner | My pets · **Next booking** card (Trip · Received status while in progress) · **Pet status room (8bit, P1 11.12)** · today's summary | Add pet | 03 · 03B · 11.12 |
+| `/owner/pets/new`, `/owner/pets/[petId]` | owner | Pet profile (**species Dog/Cat** · name · breed · birthday · notes · **allergy chips**) · entry to **Care request** · **Life Record** | Save | 03 |
+| `/owner/pets/[petId]/care-request` | owner | Care and medication request (written like a note) → AI checklist preview → confirm (Stage 2) | **Save checklist** | 06 |
+| `/owner/pets/[petId]/record` | owner | Pet Life Record: eating habits · potty · medication reactions · behavior · cautions + list of past stays (Stage 5) | Read | 07C |
+| `/owner/bookings` (tab: Bookings), `/owner/bookings/new`, `/owner/bookings/[bookingId]`, `/owner/sitters/[sitterId]` | owner | List of bookings and inquiries / service type · regular's schedule · search · request (transport mode) / detail (first-meeting Meet & Greet (in-person place · Google Meet · skip consent, D44) · handoff · rebook) / sitter profile · schedule · stars + **Ask before booking** | Book care | 03B (+07B inquiries) |
+| `/owner/inquiries/[inquiryId]` | owner | Inquiry thread: AI auto-reply + quote card (Stage 1) | **Request booking** | 07B |
+| `/owner/bookings/[bookingId]/checkout` | owner | Quote → sign consents → **Pay (demo)** → sitter's home info · packing checklist (Stage 3) | **Pay** | 03C |
+| `/owner/home-access` | owner | My home entry info (lockbox · buzzer · fob · entry steps): "Only shown to your sitter 2 hours before" | Save | 03C |
+| `/owner/bookings/[bookingId]/trip`, `/sitter/bookings/[bookingId]/trip` | both | Live trip: view-only map · ETA · arrival card (Visitor parking / Buzzer · Lockbox) · photo check (Stage 4) | **Start trip** / photo → **Received · Returned** | 06B |
+| `/owner/bookings/[bookingId]/review` | owner | ★ 1-5 + comment (optional) (Stage 5) | **Send review** | 07C |
+| `/profile` | both | Profile per role + **Settings** (account · notifications · What's New: 11.11 moves here; D47). Address · bio · **preferred meeting spots ≤ 3**, etc. (D44) | Save | 03 (+03B · 11.11) |
+| `/settings` | both | *(deprecated as tab)* → folded into the `/profile` Settings section (D47). Redirect for deep-link compatibility | - | 11.11 |
+| `/owner/feed` (tab: Feed) | owner | **Permanent album**: pet chip multi-toggle (select/deselect) · 3-column grid → detail (D47). Owner and sitter post | Scroll / tap | 05 (+09 categories) |
+| `/owner/diary` (tab: Diary) | owner | **Care diary**: during Live (On air), sitter updates in time order; history (pet · sitter · date). Entries with photos → mirrored to Feed (D47). Old `/owner/reports` | Read / write | 05-07 |
+| `/owner/diary/[entryId]` | owner | Diary entry detail (daily report · checks · photo group) | Read | 07 |
+| `/owner/snap` (tab: Snap) | owner | Treat check · Mood (box per pet + emotion %) · Sticker → diary decorating (D61) | 3 cards | 12 |
+| `/owner/pets/[petId]` (Care request) | owner | Old Care tab content: medication and walk requests from **pet detail** (D47, details later). Route `/owner/pets/[petId]/care-request` stays | Save checklist | 06 |
+| `/owner/notifications` (header bell) | owner | Notification center | Tap → that screen | 05 |
+| `/sitter/` (tab: Home) | sitter | **Dashboard (D47b):** in care → pet card · quick actions · otherwise Requests (not yet approved) · Upcoming · drop/pick **in time order**. Tamagotchi later (11.12). Absorbs Tasks/check-in · (08) Scan | Open booking / check-in | 03 → 06 |
+| `/sitter/schedule` | sitter | Schedule calendar (date × slot open + hours + capacity / blocked) | Save | 03B |
+| `/sitter/bookings` (tab: Bookings), `/sitter/bookings/[bookingId]` | sitter | Inquiries · Requests · Upcoming · **Past** (care history). Later, entry to Past/Earnings | Accept | 03B (+03C · 07B · 07C) |
+| `/sitter/inquiries/[inquiryId]` | sitter | Inquiry thread: draft in the sitter's tone + **Send** (D36) | Send | 07B |
+| `/sitter/feed` (tab: Feed) | sitter | Album of pets in care · + Photo (links to `/sitter/feed/[petId]`) | **+ Photo** | 05 |
+| `/sitter/feed/[petId]` | sitter | Pet feed (sitter view) | **+ Photo** (FAB) | 05 |
+| `/sitter/diary` (tab: Diary) | sitter | Stay log + evening chip daily report (old Report · Tasks) | **Send** / Mark done | 06-07 |
+| `/sitter/snap` (tab: Snap) | sitter | Same Snap tools as Owner (Treat check · Mood · Sticker, D61) | 3 cards | 12 |
+| `/sitter/tasks`, `/sitter/report` | sitter | *(removed as tabs; redirect to Home / Diary)* | - | legacy |
+| `/sitter/snap/treat` (Snap → Stack) | sitter | Treat check (old Treat scanner) | **Check** | 12.1 (08 design) |
+| `/sitter/notifications` (header bell) | sitter | Notification center | Tap → that screen | 05 |
+| `/profile` (Earnings, later) | sitter | Profile **Earnings**: amounts received and period summary (demo pay). The stay list is Bookings Past | - | P1 / 10+ |
+| `/dev/gestures` | - | Mouse behavior test screen (long list · horizontal row · modal · toast · input). Only when `EXPO_PUBLIC_DEV_ROUTES=1`, no link | - | 1.7 |
+| `/dev/health` | - | Checks backend `GET /health` (Check API: the 1.3 screen moved from `/`). Only when `EXPO_PUBLIC_DEV_ROUTES=1` | Check API | 1.3 → 3.3 |
 
-- 탭 (D47 · D47b · D61 · D63): owner·sitter 모두 **`Home · Bookings · Chat · Feed · Snap`**. Diary는 Feed 안(Photos · Diary 전환). Treat check · Mood · Sticker = Snap 탭(Phase 12). 알림 벨 = 헤더; **Settings · (sitter) Earnings** = 헤더 Profile. 탭은 expo-router **JS `Tabs`** (D25).
-- 웹 쿼리 (D25, 모든 route 공통): `?frame=0` 폰 프레임 끄기 · `?frame=1` 강제로 켜기 · `?view=split` Owner·Sitter 폰 나란히 (10.10 stretch).
-- Owner Feed 펫 필터 = **멀티토글 칩**(선택/해제; 0이면 안내 또는 기본 전체). Diary·Mood도 같은 펫 집합을 쓸 수 있음. 데모는 2마리(Max 강아지, Mochi 고양이).
-- 역할 영역은 **URL 접두사 폴더** `app/owner/`·`app/sitter/` (D26) — 그룹 `(owner)`/`(sitter)`가 아님. 역할 가드는 `components/RoleTabs.tsx`: 미로그인 → `/login`, 다른 역할 → 자기 홈(`/owner` ↔ `/sitter`). `(auth)` 그룹은 로그인 상태면 `/`로.
+- Tabs (D47 · D47b · D61 · D63): both owner and sitter have **`Home · Bookings · Chat · Feed · Snap`**. Diary is inside Feed (Photos · Diary switch). Treat check · Mood · Sticker = Snap tab (Phase 12). Notification bell = header; **Settings · (sitter) Earnings** = header Profile. Tabs are expo-router **JS `Tabs`** (D25).
+- Web queries (D25, every route): `?frame=0` turns the phone frame off · `?frame=1` forces it on · `?view=split` Owner and Sitter phones side by side (10.10 stretch).
+- Owner Feed pet filter = **multi-toggle chips** (select/deselect; with 0 selected, a notice or all by default). Diary and Mood can use the same set of pets. The demo has 2 pets (Max the dog, Mochi the cat).
+- Role areas are **URL prefix folders** `app/owner/` · `app/sitter/` (D26), not groups `(owner)`/`(sitter)`. The role guard is `components/RoleTabs.tsx`: signed out → `/login`, other role → own home (`/owner` ↔ `/sitter`). The `(auth)` group sends signed-in users to `/`.
 
 ---
 
-## 4. 환경 변수 마스터 목록
+## 4. Environment variable master list
 
-`.env.example`에 **아래 이름 그대로** 둡니다. (실제 값은 `.env`, git 제외)
+Put these in `.env.example` **with exactly these names**. (Real values go in `.env`, kept out of git)
 
 ### backend/.env
 
-| 변수 | 예시 / 기본값 | 사용 Phase |
+| Variable | Example / default | Used in phase |
 | :--- | :--- | :--- |
 | `APP_ENV` | `local` \| `production` | 01 |
 | `APP_TIMEZONE` | `America/Toronto` | 06, 07 |
-| `CORS_ORIGINS` | `http://localhost:8081,http://localhost:19006` (콤마 구분) | 01 |
+| `CORS_ORIGINS` | `http://localhost:8081,http://localhost:19006` (comma-separated) | 01 |
 | `SUPABASE_URL` | `https://<ref>.supabase.co` | 03 |
 | `SUPABASE_SERVICE_ROLE_KEY` | (secret) | 04 |
-| `SUPABASE_JWT_SECRET` | (레거시 HS256 프로젝트만, 비워도 됨) | 03 |
+| `SUPABASE_JWT_SECRET` | (legacy HS256 projects only, can be empty) | 03 |
 | `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | | 04 |
 | `NEBIUS_API_KEY` | (secret) | 07 |
-| `MODEL_VISION` / `MODEL_VISION_BASE_URL` | `openbmb/MiniCPM-V-4_5` / us-central1 URL (확정 — NVIDIA 비전 모델은 Dedicated Endpoint 전용이라 공용 API에 없음, D39 · [model-ids.md](notes/model-ids.md)) | 08, 09 |
+| `MODEL_VISION` / `MODEL_VISION_BASE_URL` | `openbmb/MiniCPM-V-4_5` / us-central1 URL (final: NVIDIA vision models are Dedicated-Endpoint-only, so not on the shared API, D39 · [model-ids.md](notes/model-ids.md)) | 08, 09 |
 | `MODEL_SAFETY` / `MODEL_SAFETY_BASE_URL` | `nvidia/Nemotron-3-Ultra-550b-a55b` / us-central1 | 08 |
 | `MODEL_REPORT` / `MODEL_REPORT_BASE_URL` | `nvidia/nemotron-3-super-120b-a12b` / us-central1 | 07 |
-| `MODEL_FAST` / `MODEL_FAST_BASE_URL` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` / eu-north1 | 07.1 테스트, 07B 문의 답변 |
-| `MODEL_CHAT_OWNER` / `MODEL_CHAT_SITTER` / `MODEL_CHAT_CHIPS` | 기본 `nvidia/nemotron-3-super-120b-a12b` (비우면 `MODEL_FAST`) | 채팅 **초안**(오너 쪽 · 시터 쪽)과 **칩**(두 쪽 공통) 모델. 채팅 AI는 Nano를 쓰지 않음 (#226, base URL은 `MODEL_FAST_BASE_URL`) |
-| `MODEL_EMBED` / `MODEL_EMBED_BASE_URL` / `MODEL_EMBED_DIM` | `Qwen/Qwen3-Embedding-8B` / eu-north1 / `1024` (D33 — `dimensions` 파라미터 동작 확인 2026-10-01) | 07B RAG, 07C Life Record |
-| `TAVILY_API_KEY` | Tavily 대시보드 (Builders & Brews 등). **backend만** | 08.7 stretch (세이프티 웹 검색, 못 하면 11.3). [tavily.md](../tavily.md) |
-| `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` / `GOOGLE_OAUTH_REFRESH_TOKEN` | Goldito Google 계정의 OAuth 클라이언트 + 그 계정이 한 번 동의해 받은 refresh token (scope `https://www.googleapis.com/auth/calendar.events` + `https://www.googleapis.com/auth/meetings.space.settings` — 후자는 방을 링크 누구나 입장으로 여는 Meet REST 호출용, 없어도 링크는 만들어지지만 입장 요청이 필요, OAuth 앱 게시 상태 **In production** — Testing이면 7일 만료). **backend만** | 3B.11 (영상 Meet & Greet, D45) |
-| `GOOGLE_CALENDAR_ID` / `MEET_INVITE_ATTENDEES` | `primary` / `true` (`false`면 링크만 만들고 초대 메일 없음 — 데모 `.test` 계정은 항상 생략) | 3B.11 |
-| `DEMO_PASSWORD` | 데모 계정 전용 비밀번호 — `scripts/seed_demo.py`가 사용, frontend `EXPO_PUBLIC_DEMO_PASSWORD`와 같은 값 (심사위원에게 공개되는 값, 실제 비밀번호 재사용 금지) | 10.1 (계정 부분은 2026-10-01 먼저) |
-| `GROQ_API_KEY` | (secret) Groq Whisper `whisper-large-v3-turbo` 무료 플랜 — 음성 → 글(STT). **backend만** | 11.15 음성, [pet-profile-onboarding §6.2](../pet-profile-onboarding.md) |
+| `MODEL_FAST` / `MODEL_FAST_BASE_URL` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` / eu-north1 | 07.1 test, 07B inquiry reply |
+| `MODEL_CHAT_OWNER` / `MODEL_CHAT_SITTER` / `MODEL_CHAT_CHIPS` | default `nvidia/nemotron-3-super-120b-a12b` (`MODEL_FAST` if empty) | Model for chat **drafts** (owner side · sitter side) and **chips** (both sides). Chat AI does not use Nano (#226; base URL is `MODEL_FAST_BASE_URL`) |
+| `MODEL_EMBED` / `MODEL_EMBED_BASE_URL` / `MODEL_EMBED_DIM` | `Qwen/Qwen3-Embedding-8B` / eu-north1 / `1024` (D33: `dimensions` parameter confirmed working 2026-10-01) | 07B RAG, 07C Life Record |
+| `TAVILY_API_KEY` | Tavily dashboard (Builders & Brews, etc.). **backend only** | 08.7 stretch (safety web search; 11.3 if it slips). [tavily.md](../tavily.md) |
+| `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` / `GOOGLE_OAUTH_REFRESH_TOKEN` | OAuth client of the Goldito Google account + the refresh token that account got by consenting once (scope `https://www.googleapis.com/auth/calendar.events` + `https://www.googleapis.com/auth/meetings.space.settings`; the latter is for the Meet REST call that opens the room to anyone with the link; without it the link is still created but people must ask to join; OAuth app publishing status **In production**, as Testing expires in 7 days). **backend only** | 3B.11 (video Meet & Greet, D45) |
+| `GOOGLE_CALENDAR_ID` / `MEET_INVITE_ATTENDEES` | `primary` / `true` (with `false`, only the link is created and no invite email; always skipped for demo `.test` accounts) | 3B.11 |
+| `DEMO_PASSWORD` | Password for demo accounts only: used by `scripts/seed_demo.py`, same value as frontend `EXPO_PUBLIC_DEMO_PASSWORD` (a value shown to judges; never reuse a real password) | 10.1 (the account part first, on 2026-10-01) |
+| `GROQ_API_KEY` | (secret) Groq Whisper `whisper-large-v3-turbo` free plan: speech → text (STT). **backend only** | 11.15 voice, [pet-profile-onboarding §6.2](../pet-profile-onboarding.md) |
 
-### frontend/.env (모두 공개값 — `EXPO_PUBLIC_` 접두사)
+### frontend/.env (all public values, `EXPO_PUBLIC_` prefix)
 
-| 변수 | 사용 Phase |
+| Variable | Used in phase |
 | :--- | :--- |
-| `EXPO_PUBLIC_API_URL` (예: `http://localhost:8000`) | 01 |
+| `EXPO_PUBLIC_API_URL` (e.g. `http://localhost:8000`) | 01 |
 | `EXPO_PUBLIC_SUPABASE_URL` | 03 |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | 03 |
-| `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` (delivery URL 조립용) | 04 |
+| `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` (for building delivery URLs) | 04 |
 | `EXPO_PUBLIC_APP_TIMEZONE` (`America/Toronto`) | 06 |
-| `EXPO_PUBLIC_DEMO_PASSWORD` (데모 계정 전용 비밀번호 — 번들에 들어가는 공개값. 실제 계정·service key 금지) | OB.2, 10 |
-| `EXPO_PUBLIC_DEV_ROUTES` (`1`이면 `/dev/gestures` 노출 — 로컬·CI만, 운영 env에는 두지 않음) | 1.7 |
+| `EXPO_PUBLIC_DEMO_PASSWORD` (password for demo accounts only: a public value in the bundle. No real accounts or service keys) | OB.2, 10 |
+| `EXPO_PUBLIC_DEV_ROUTES` (`1` exposes `/dev/gestures`; local and CI only, never in the production env) | 1.7 |
 
-> ❌ service role key, Cloudinary secret, Nebius key는 **절대** frontend env에 두지 않습니다.
+> ❌ **Never** put the service role key, Cloudinary secret, or Nebius key in the frontend env.
 
 ---
 
-## 5. API 공통 규약 (FastAPI)
+## 5. Shared API conventions (FastAPI)
 
-- Base: `/health`(무인증), 나머지 `/api/*`는 **`Authorization: Bearer <supabase access_token>` 필수**.
-- 인가: service-role로 DB에 접근하는 라우터는 반드시 `services/authz.py`의 `assert_on_duty_for`(시터 — 오늘이 확정 예약 기간 안) / `assert_owner_of`를 먼저 호출 (service role은 RLS를 우회하므로).
-- 에러 형식: `{"detail": "<human message>", "code": "<snake_case>"}` — 코드 예: `unauthorized`(401), `forbidden`(403), `not_found`(404), `invalid_input`(422), `ai_timeout`(504), `ai_invalid_output`(502), `upstream_error`(502).
-- 타임아웃 (서버→Nebius): caption 20s, handoff-check 20s, inquiry-reply 45s (초안 생성 기준 — 목표 p50 < 10s, 사람 속도 지연 D37은 이 타임아웃과 별개), care-plan 45s, report-chips 30s, daily-report 60s, life-record 60s, safety 90s (vision 30 + reasoning 60). 서버→Google Calendar(meet video-link) 15s. 프론트 fetch 타임아웃은 여기에 +5s.
-- 예약 단위 권한: `services/authz.py`에 `assert_booking_party(booking_id)`(견주 또는 시터) / `assert_booked_sitter(booking_id, from_hours_before=2)`(인수인계 사진 — 맡기기 2시간 전부터)를 둔다.
-- 모든 AI 응답에 `model`(사용한 model id)과 `latency_ms` 포함 → 피드백 로그·데모 설명에 사용.
+- Base: `/health` (no auth); every other `/api/*` **requires `Authorization: Bearer <supabase access_token>`**.
+- Authorization: a router that reaches the DB with the service role must first call `assert_on_duty_for` (sitter: today is inside a confirmed booking) / `assert_owner_of` from `services/authz.py` (the service role bypasses RLS).
+- Error format: `{"detail": "<human message>", "code": "<snake_case>"}`. Example codes: `unauthorized` (401), `forbidden` (403), `not_found` (404), `invalid_input` (422), `ai_timeout` (504), `ai_invalid_output` (502), `upstream_error` (502).
+- Timeouts (server → Nebius): caption 20s, handoff-check 20s, inquiry-reply 45s (for making the draft; target p50 < 10s; the D37 human-pace delay is separate from this timeout), care-plan 45s, report-chips 30s, daily-report 60s, life-record 60s, safety 90s (vision 30 + reasoning 60). Server → Google Calendar (meet video-link) 15s. Frontend fetch timeouts are these +5s.
+- Per-booking permissions: `services/authz.py` has `assert_booking_party(booking_id)` (owner or sitter) / `assert_booked_sitter(booking_id, from_hours_before=2)` (handoff photo: from 2 hours before drop-off).
+- Every AI response includes `model` (the model id used) and `latency_ms` → used in the feedback log and demo explanation.
 
-### 엔드포인트 계약 (전체)
+### Endpoint contract (full)
 
-| Method | Path | 권한 | Body | Response | Phase |
+| Method | Path | Permission | Body | Response | Phase |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | GET | `/health` | - | - | `{status:"ok"}` | 01 |
-| GET | `/health/deep` | - | - | `{status:"ok", db:"ok"}` (Supabase `select 1`) — keep-alive 전용 | 10 |
+| GET | `/health/deep` | - | - | `{status:"ok", db:"ok"}` (Supabase `select 1`), keep-alive only | 10 |
 | GET | `/api/me` | any | - | `{id, email, role, display_name}` | 03 |
-| POST | `/api/meet-greet/video-link` | 예약 당사자 (영상 M&G가 agreed) | `{booking_id}` | `{meet_url, calendar_event_id, starts_at}` — 멱등(이미 있으면 그대로), Google 실패 → 502 `upstream_error`(화면은 .ics·링크 붙여넣기 fallback) | 3B.11 (D45) |
-| POST | `/api/media/sign` | on-duty sitter (`handoff`은 booked sitter — 맡기기 2시간 전부터) | `{pet_id, resource_type:"image"\|"video", purpose, booking_id?}` — purpose `feed`·`task_proof`·`report`·`handoff`·`safety_label` | `{cloud_name, api_key, timestamp, signature, folder, upload_url}` | 04 |
-| POST | `/api/media/complete` | 위와 같음 | `{pet_id, public_id, resource_type, purpose, width?, height?, duration?}` | `{media_id, public_id, secure_url, thumb_url}` | 04 |
-| POST | `/api/profile-photos/sign` | 로그인한 누구나(시터 · 오너) — 자기 폴더 `goldito/profile/<내 id>`에만 | — | `{cloud_name, api_key, timestamp, signature, folder, upload_url, transformation}` | #135 |
-| POST | `/api/profile-photos/complete` | 위와 같음 | `{public_id}` (내 폴더 안, Cloudinary에 실제로 있어야 함) | `{id, public_id, position, url, thumb_url}` · 9번째는 409 | #135 |
-| DELETE | `/api/profile-photos/{id}` | 내 사진만(남의 것은 404) | — | `{deleted}` — Cloudinary 파일을 먼저 지우고 DB를 지움 | #135 |
-| POST | `/api/ai/inquiry-reply` | 문의 당사자 (견주가 보낸 직후 프론트가 호출) | `{inquiry_id}` | `{message_id, body, can_host, needs_sitter, quote, sources:[{type, id}], model, latency_ms}` — `quote`는 `quote_booking` 결과 그대로 (D29) | 07B |
-| POST | `/api/ai/chat-chips` | 채팅 당사자 (3D.5, #142, D62) | `{thread_id}` | `{chips:[{id, label}], action:{id, label}|null, for_message_id, source}` — 상대의 마지막 말에 대한 **내 쪽 칩 2–3개**(시터: 가용성 · 요금 · 정책, 오너: 펫 · 날짜), 빈 채팅이면 오너의 오프너 칩. 숫자가 든 칩은 버림, 모델이 안 되면 고정 칩(`source: fallback`), 내가 마지막으로 말했으면 칩 없음. **행동 칩(`action`)**: 코드가 부킹 단계(`get_booking_stages`)와 카드 상태로 지금 가능한 행동 목록을 만들고(`request_booking` · `send_quote` · `interest` · `meet_time` · `meet_accept` · `meet_skip` · `agree` · `accept` · `final_quote` · `confirm_quote` · `pay`), 모델은 상대의 마지막 말이 분명히 그쪽으로 이어질 때만 하나를 고름. 서버가 목록에 있고 확신도 0.7 이상인지 검증하며 라벨은 코드가 정함. 단계를 못 읽으면 행동 없음. 누르는 것은 항상 사람. 저장하지 않음 |
-| POST | `/api/ai/chat-draft` | 채팅 당사자 | `{thread_id, chip}` | `{text, source}` — 누른 칩을 **내 말투의 짧은 메시지 한 개**로(시터는 말투 카드 · 예시, 오너는 중립). 가격 · 날짜 · 가용성은 DB 값이고 어긋나면 한 번 다시 쓰게 하고, 안 되면 칩의 말 그대로. **전송은 항상 사람**(D62). 컨텍스트: 최근 ~20개 메시지 + `chat_threads.ai_summary`(40개를 넘으면 갱신, `014m`) + DB 사실 |
-| POST | `/api/ai/care-plan` | owner of pet | `{pet_id, text}` (≤ 2000자) | `{tasks:[{type, time, title, dose?, notes?}], cautions:[str], skipped:[{type, title, reason}], model, latency_ms}` — 서버가 종 규칙(D23)·시각 형식·중복을 강제하고 걸러낸 항목은 `skipped`에 이유와 함께 돌려줌. **초안만**, 저장은 견주 확인 후 Supabase (§6) | 06 |
-| POST | `/api/ai/handoff-check` | booked sitter | `{booking_id, kind:"drop_off"\|"pick_up", check_type:"pet_checkin"\|"vehicle_safety"\|"return", media_id}` | `{check_id, status:"ok"\|"warning", findings:{pet_visible, crate_visible?, restraint_visible?}, message, model, latency_ms}` — 실패·타임아웃이면 `status:"unchecked"` (인수인계는 계속 가능) | 06B |
+| POST | `/api/meet-greet/video-link` | Booking party (video M&G is agreed) | `{booking_id}` | `{meet_url, calendar_event_id, starts_at}`: idempotent (returns the existing one), Google failure → 502 `upstream_error` (the screen falls back to .ics and pasting a link) | 3B.11 (D45) |
+| POST | `/api/media/sign` | on-duty sitter (`handoff`: booked sitter, from 2 hours before drop-off) | `{pet_id, resource_type:"image"\|"video", purpose, booking_id?}`; purpose `feed` · `task_proof` · `report` · `handoff` · `safety_label` | `{cloud_name, api_key, timestamp, signature, folder, upload_url}` | 04 |
+| POST | `/api/media/complete` | Same as above | `{pet_id, public_id, resource_type, purpose, width?, height?, duration?}` | `{media_id, public_id, secure_url, thumb_url}` | 04 |
+| POST | `/api/profile-photos/sign` | Anyone signed in (sitter · owner), only into their own folder `goldito/profile/<my id>` | - | `{cloud_name, api_key, timestamp, signature, folder, upload_url, transformation}` | #135 |
+| POST | `/api/profile-photos/complete` | Same as above | `{public_id}` (inside my folder, must really exist in Cloudinary) | `{id, public_id, position, url, thumb_url}` · the 9th gets 409 | #135 |
+| DELETE | `/api/profile-photos/{id}` | My photos only (someone else's → 404) | - | `{deleted}`: deletes the Cloudinary file first, then the DB row | #135 |
+| POST | `/api/ai/inquiry-reply` | Inquiry party (the frontend calls it right after the owner sends) | `{inquiry_id}` | `{message_id, body, can_host, needs_sitter, quote, sources:[{type, id}], model, latency_ms}`; `quote` is the `quote_booking` result as is (D29) | 07B |
+| POST | `/api/ai/chat-chips` | Chat party (3D.5, #142, D62) | `{thread_id}` | `{chips:[{id, label}], action:{id, label}|null, for_message_id, source}`: **2-3 chips for my side** replying to the other person's last message (sitter: availability · rates · policy, owner: pets · dates); in an empty chat, the owner's opener chips. Chips with numbers are dropped; if the model fails, fixed chips (`source: fallback`); no chips if I spoke last. **Action chip (`action`)**: the code builds the list of actions possible now from the booking stage (`get_booking_stages`) and card state (`request_booking` · `send_quote` · `interest` · `meet_time` · `meet_accept` · `meet_skip` · `agree` · `accept` · `final_quote` · `confirm_quote` · `pay`), and the model picks one only when the other person's last message clearly leads there. The server checks it is on the list and confidence is 0.7 or more; the label comes from the code. If the stage cannot be read, no action. A person always taps. Nothing is saved |
+| POST | `/api/ai/chat-draft` | Chat party | `{thread_id, chip}` | `{text, source}`: turns the tapped chip into **one short message in my voice** (sitter: tone card · examples, owner: neutral). Prices · dates · availability are DB values; if they do not match, one rewrite, and if that fails, the chip's words as is. **A person always sends** (D62). Context: last ~20 messages + `chat_threads.ai_summary` (refreshed past 40, `014m`) + DB facts |
+| POST | `/api/ai/care-plan` | owner of pet | `{pet_id, text}` (≤ 2000 chars) | `{tasks:[{type, time, title, dose?, notes?}], cautions:[str], skipped:[{type, title, reason}], model, latency_ms}`: the server enforces species rules (D23), time format, and duplicates, and returns filtered items in `skipped` with a reason. **Draft only**; saved to Supabase after the owner confirms (§6) | 06 |
+| POST | `/api/ai/handoff-check` | booked sitter | `{booking_id, kind:"drop_off"\|"pick_up", check_type:"pet_checkin"\|"vehicle_safety"\|"return", media_id}` | `{check_id, status:"ok"\|"warning", findings:{pet_visible, crate_visible?, restraint_visible?}, message, model, latency_ms}`; on failure or timeout `status:"unchecked"` (the handoff can still go ahead) | 06B |
 | POST | `/api/ai/caption` | on-duty sitter | `{pet_id, media_id}` | `{caption, category:"meal"\|"walk"\|"nap"\|"play"\|"other", source:"ai"\|"fallback", model, latency_ms}` | 09 |
-| POST | `/api/ai/report-chips` | on-duty sitter | `{pet_id, date:"YYYY-MM-DD", media_ids?:[≤2]}` | `{chips:[{id, kind, label, source:"checkin"\|"task"\|"photo", media_id?}], photos:[{media_id, description}], model, latency_ms}` — 하루 기록 칩은 서버가 DB에서(모델 없음), 사진 칩만 `MODEL_VISION`. 사진 묘사는 draft에 저장해 daily-report가 재사용 | 07 (7.7, D38) |
-| POST | `/api/ai/daily-report` | on-duty sitter | `{pet_id, date:"YYYY-MM-DD", inputs:{meal?, water?, potty?, walk_minutes?, mood?}, chips:[시터가 고른 칩], note?:(≤ 200자), media_ids?:[≤2]}` | `{report_id, body, status:"draft", model, latency_ms}` — 게시는 시터 승인(`send_daily_report`) 뒤 | 07 |
-| POST | `/api/ai/life-record` | booking party (찾기 완료 후) | `{booking_id}` | `{records:[{pet_id, record_id, summary}], model, latency_ms}` + RAG 인덱싱 | 07C |
-| POST | `/api/ai/safety-check` | **pet owner** or on-duty sitter (D61) | `{pet_id, media_id}` (media = own `safety_label` upload of that pet) | `{safety_check_id, safety_status, product_name, detected_ingredients[], matched_allergens[], hidden_sources[{ingredient, may_contain, reason}], toxic_ingredients[], unknown_ingredients[], sources[{title, url, domain}], sources_unavailable, double_checked, warning_message, model, latency_ms}` — 422 unreadable label · 503 vision down | 12.1 |
-| POST | `/api/ai/pet-mood` | any signed-in user; with `pet_id` = its owner or on-duty sitter (D61) | `{pet_id?, frames:[{index, crops:[{box:{x,y,w,h} (0–1), image: data-URL ≤ 300 KB}]}]}` — ≤ 4 frames, ≤ 8 crops; the n-th crop of every frame is the same pet | `{pets:[{frame, box, emotions:{happy, relaxed, excited, curious, sleepy, anxious, angry, sad} (whole %, sum 100), top, summary, frames_used}], disclaimer, model, latency_ms}` — nothing saved; 422 no pet found / bad crop · 503 vision down | 12.2 |
-| POST | `/api/ai/pet-theme` | owner of pet | `{pet_id, media_id}` | `{theme, coat_colors[], confidence, model, latency_ms}` (실패·저신뢰 시 `theme:"default"`) | 11.10 (P1) |
-| POST | `/api/ai/report-decor` | on-duty sitter | `{report_id}` | `{theme, preset_stickers[], model, latency_ms}` (실패 시 `theme:"calm"`, `[]`) | 11.8 (P1) |
+| POST | `/api/ai/report-chips` | on-duty sitter | `{pet_id, date:"YYYY-MM-DD", media_ids?:[≤2]}` | `{chips:[{id, kind, label, source:"checkin"\|"task"\|"photo", media_id?}], photos:[{media_id, description}], model, latency_ms}`: day-record chips come from the DB on the server (no model), only photo chips use `MODEL_VISION`. Photo descriptions are saved in the draft for daily-report to reuse | 07 (7.7, D38) |
+| POST | `/api/ai/daily-report` | on-duty sitter | `{pet_id, date:"YYYY-MM-DD", inputs:{meal?, water?, potty?, walk_minutes?, mood?}, chips:[chips the sitter picked], note?:(≤ 200 chars), media_ids?:[≤2]}` | `{report_id, body, status:"draft", model, latency_ms}`; posted after the sitter approves (`send_daily_report`) | 07 |
+| POST | `/api/ai/life-record` | booking party (after pick-up is done) | `{booking_id}` | `{records:[{pet_id, record_id, summary}], model, latency_ms}` + RAG indexing | 07C |
+| POST | `/api/ai/safety-check` | **pet owner** or on-duty sitter (D61) | `{pet_id, media_id}` (media = own `safety_label` upload of that pet) | `{safety_check_id, safety_status, product_name, detected_ingredients[], matched_allergens[], hidden_sources[{ingredient, may_contain, reason}], toxic_ingredients[], unknown_ingredients[], sources[{title, url, domain}], sources_unavailable, double_checked, warning_message, model, latency_ms}`; 422 unreadable label · 503 vision down | 12.1 |
+| POST | `/api/ai/pet-mood` | any signed-in user; with `pet_id` = its owner or on-duty sitter (D61) | `{pet_id?, frames:[{index, crops:[{box:{x,y,w,h} (0-1), image: data-URL ≤ 300 KB}]}]}`; ≤ 4 frames, ≤ 8 crops; the n-th crop of every frame is the same pet | `{pets:[{frame, box, emotions:{happy, relaxed, excited, curious, sleepy, anxious, angry, sad} (whole %, sum 100), top, summary, frames_used}], disclaimer, model, latency_ms}`; nothing saved; 422 no pet found / bad crop · 503 vision down | 12.2 |
+| POST | `/api/ai/pet-theme` | owner of pet | `{pet_id, media_id}` | `{theme, coat_colors[], confidence, model, latency_ms}` (`theme:"default"` on failure or low confidence) | 11.10 (P1) |
+| POST | `/api/ai/report-decor` | on-duty sitter | `{report_id}` | `{theme, preset_stickers[], model, latency_ms}` (on failure `theme:"calm"`, `[]`) | 11.8 (P1) |
 
-> 알림장 **전송**, task **완료**, 피드 **게시**, 견적·동의·결제·출입 정보 해제·이동 위치·리뷰는 FastAPI가 아니라 Supabase(RLS/RPC)로 처리합니다 (§6). FastAPI는 AI·Cloudinary·RAG 인덱싱·Google Meet 링크만.
+> Daily report **sending**, task **completion**, feed **posting**, quotes · consents · payment · entry info unlock · trip location · reviews go through Supabase (RLS/RPC), not FastAPI (§6). FastAPI handles only AI · Cloudinary · RAG indexing · Google Meet links.
 
 ---
 
-## 6. 쓰기 경로 요약 (누가 무엇을 어디로 쓰나)
+## 6. Write path summary (who writes what, where)
 
-| 동작 | 경로 | 부수효과 (트리거) |
+| Action | Path | Side effects (triggers) |
 | :--- | :--- | :--- |
-| 가입 | Supabase Auth `signUp({options:{data:{role, display_name}}})` | `handle_new_user` → `profiles` + `owner_profiles`/`sitter_profiles` |
-| pet 생성/수정, 알레르기, care_tasks | Supabase client (owner RLS). **pet insert는 클라이언트가 `id`(UUID)를 만들고 `.select()` 없이** — `pets_select`가 같은 테이블을 읽는 함수(`is_owner_of`)로 판단해서, 같은 문장에서 넣은 행을 못 봐 `insert().select()`가 RLS에 막힐 수 있음 (3.5). 같은 패턴의 다른 테이블도 동일 | `guard_care_task_species` |
-| 스케줄 open(칸·시간·정원)/blocked | Supabase client `sitter_availability` (본인 RLS). 기간 일부 변경 = 새 open 행 insert (최근 행 우선) | 확정 칸과 겹치거나 정원이 확정 마리 수보다 작아지면 `guard_availability_change`가 거부 → 시터가 먼저 `cancel_booking`. **알림 없음** |
-| 단골 시터·스케줄 보기 | RPC `list_my_sitters()` / `get_sitter_schedule(sitter, from, to)` | - |
-| 시터 검색 | RPC `search_sitters(drop_off_at, pick_up_at, pet_count)` — 전체 가능 먼저, 일부 가능은 참고용 | - |
-| 인수인계 시각·장소 제안 / 응답 | RPC `propose_handoff` / `respond_handoff` | 상대방 `handoff_proposed` / 제안자 `handoff_agreed` |
-| 받았음 / 돌려줬음 | RPC `complete_handoff` (시터) | owner `pet_dropped_off` / `pet_picked_up` |
-| 예약 요청 / 응답 / 취소 | RPC `request_booking`(첫 만남이면 `meet_greet_status='required'`) / `respond_booking`(첫 만남이면 M&G done·skipped 뒤에만 수락 — `meet_greet_required`) / `cancel_booking` (취소는 맡기기 전만) | 상대방에게 `booking_*` 알림 |
-| 예약 반려동물 · 내 시터 프로필 조회 | RPC `get_booking_pets(booking)` / `get_my_sitter_profile()` | - |
-| Meet & Greet (첫 만남만, D44) 제안 / 응답 / 완료 / 건너뛰기 | RPC `propose_meet_greet(p_booking, p_mode, p_at, p_place)` / `respond_meet_greet` / `complete_meet_greet` / `request_skip_meet_greet` / `respond_skip_meet_greet`(거부 = 예약 취소, reason `meet_greet_declined` — 문구는 "…would like to meet first") / `get_meet_greet_options`(양쪽 `meet_spots`) (03B). 영상이면 수락 직후 FastAPI `/api/meet-greet/video-link` (3B.11) | 상대방 `meet_greet_proposed` · 제안자 `meet_greet_agreed` (거절이면 `meet_greet_declined`) · 상대방 `meet_greet_skip_requested` · 요청자 `meet_greet_skipped` · 거부 시 `booking_cancelled` · 양쪽 `meet_greet_link_ready` |
-| 문의 보내기 | Supabase client insert `inquiries` + 첫 `inquiry_messages`(owner) → 프론트가 FastAPI `/api/ai/inquiry-reply` 호출 (07B) | AI 초안 insert 시 시터 `inquiry_received` · 시터가 보냈거나 자동 발송이 공개된 시점에 견주 `inquiry_replied` (§7, D36·D37) |
-| 견적 | RPC `quote_booking(sitter, service_type, drop_off_at, pick_up_at, pet_count)` — 읽기 전용, 문의 답변·Checkout 공용 (03C, D29) | - |
-| 동의서 서명 · 데모 결제 | Supabase client insert `booking_consents` (견주 RLS) → RPC `pay_booking_demo(booking)` — 필요한 동의서가 다 있어야 함 (`consents_missing`) (03C) | 시터 `booking_paid` |
-| 출입 정보 | 견주: Supabase client upsert `owner_home_access` (본인 RLS) / 시터: RPC `get_home_access(booking)` (D31 시간 조건) | 처음 열 때 `access_reveals` + 견주 `access_unlocked` |
-| 케어 의뢰서 저장 | FastAPI `/api/ai/care-plan` 초안 → 견주 확인 → Supabase client insert `care_requests` + `care_tasks` + `pet_cautions` (06) | `guard_care_task_species` |
-| 이동 시작 / 위치 / 종료 | RPC `start_trip(booking, kind)` / `update_trip_position(trip, lat, lng)` (5초마다) / `end_trip(trip)` (06B, D32) | 상대방 `trip_started` / 150 m 안 `trip_arrived` |
-| 인수인계 사진 체크 | FastAPI `/api/ai/handoff-check` (service role insert `handoff_checks`) → `complete_handoff(booking, kind, p_check)` | 알림 제목에 "photo verified ✅" |
-| 리뷰 | Supabase client insert `reviews` (견주 RLS, 찾기 완료 후 1회) (07C) | 시터 `review_received` |
-| Life Record | FastAPI `/api/ai/life-record` (service role insert `pet_life_records` + `knowledge_chunks`) (07C) | 견주 `life_record_updated` |
-| 오늘 task_logs 생성 | RPC `ensure_today_task_logs(pet_id)` — 화면 진입 시 자동 호출, 멱등 | - |
-| 미디어 등록 | FastAPI `/api/media/complete` (service role) | - |
-| 피드 게시 | Supabase client insert `feed_posts` (시터 on-duty 또는 펫 owner RLS, `posted_by`·`visibility`) — `lib/feed.ts` | `notify_feed_post` → owner `feed_post` (task 연결 post는 제외) |
-| task 완료 | RPC `complete_task_log(task_log_id, media_id)` → 내부에서 feed_post도 생성 | owner `task_done` |
-| 알림장 칩 제안 | FastAPI `/api/ai/report-chips` (하루 기록 칩 + 사진 칩, 사진 묘사는 draft에 저장) | - |
-| 알림장 초안 | FastAPI `/api/ai/daily-report` (service role upsert — 고른 칩·메모·사진 묘사만 입력) | - |
-| 알림장 전송 | RPC `send_daily_report(report_id, body)` | owner `report_sent` |
-| 세이프티 결과 | FastAPI `/api/ai/safety-check` (service role insert) | DANGER이고 **견주가 아닌 사람(시터)이 검사했을 때만** owner `safety_danger` (013) |
-| 경고 확인 | Supabase client update `safety_checks.acknowledged_at` (견주 · 시터 RLS, 013) | - |
-| 스티커 저장 | 브라우저에서 오린 투명 PNG → `uploadMedia({purpose: "sticker"})`(JPEG 변환 없이) → Supabase client insert `pet_stickers` (본인 `sticker` 업로드만, 013b) | - |
-| 다이어리 꾸미기 (12.3b) | Supabase client upsert `report_decor` — 자기 층만 쓰고 두 층 다 읽음(견주는 보낸 알림장, 시터는 자기 알림장, 013b) | - |
-| 알림 읽음 | Supabase client update `notifications.read_at` (본인 RLS) | - |
+| Sign up | Supabase Auth `signUp({options:{data:{role, display_name}}})` | `handle_new_user` → `profiles` + `owner_profiles`/`sitter_profiles` |
+| Create/edit pet, allergies, care_tasks | Supabase client (owner RLS). **For a pet insert, the client makes the `id` (UUID) and skips `.select()`**: `pets_select` decides with a function that reads the same table (`is_owner_of`), so it cannot see the row inserted in the same statement, and `insert().select()` can be blocked by RLS (3.5). Same for other tables with the same pattern | `guard_care_task_species` |
+| Schedule open (slot · hours · capacity)/blocked | Supabase client `sitter_availability` (own RLS). Changing part of a range = insert a new open row (latest row wins) | If it overlaps a confirmed slot or capacity drops below the confirmed pet count, `guard_availability_change` refuses → the sitter must `cancel_booking` first. **No notification** |
+| View regular sitters and schedules | RPC `list_my_sitters()` / `get_sitter_schedule(sitter, from, to)` | - |
+| Sitter search | RPC `search_sitters(drop_off_at, pick_up_at, pet_count)`: fully available first, partly available for reference | - |
+| Propose / answer handoff time and place | RPC `propose_handoff` / `respond_handoff` | other side `handoff_proposed` / proposer `handoff_agreed` |
+| Received / Returned | RPC `complete_handoff` (sitter) | owner `pet_dropped_off` / `pet_picked_up` |
+| Request / answer / cancel booking | RPC `request_booking` (`meet_greet_status='required'` for a first meeting) / `respond_booking` (for a first meeting, accept only after M&G done or skipped: `meet_greet_required`) / `cancel_booking` (cancel only before drop-off) | `booking_*` notification to the other side |
+| Read booking pets · my sitter profile | RPC `get_booking_pets(booking)` / `get_my_sitter_profile()` | - |
+| Meet & Greet (first meeting only, D44) propose / answer / complete / skip | RPC `propose_meet_greet(p_booking, p_mode, p_at, p_place)` / `respond_meet_greet` / `complete_meet_greet` / `request_skip_meet_greet` / `respond_skip_meet_greet` (decline = booking cancelled, reason `meet_greet_declined`; the wording is "…would like to meet first") / `get_meet_greet_options` (both sides' `meet_spots`) (03B). For video, FastAPI `/api/meet-greet/video-link` right after accept (3B.11) | other side `meet_greet_proposed` · proposer `meet_greet_agreed` (`meet_greet_declined` if declined) · other side `meet_greet_skip_requested` · requester `meet_greet_skipped` · `booking_cancelled` on decline · both `meet_greet_link_ready` |
+| Send an inquiry | Supabase client insert `inquiries` + the first `inquiry_messages` (owner) → the frontend calls FastAPI `/api/ai/inquiry-reply` (07B) | sitter `inquiry_received` when the AI draft is inserted · owner `inquiry_replied` when the sitter sends or an auto-send becomes visible (§7, D36 · D37) |
+| Quote | RPC `quote_booking(sitter, service_type, drop_off_at, pick_up_at, pet_count)`: read-only, shared by inquiry replies and Checkout (03C, D29) | - |
+| Sign consents · demo payment | Supabase client insert `booking_consents` (owner RLS) → RPC `pay_booking_demo(booking)`: all required consents must be there (`consents_missing`) (03C) | sitter `booking_paid` |
+| Entry info | Owner: Supabase client upsert `owner_home_access` (own RLS) / sitter: RPC `get_home_access(booking)` (D31 time condition) | on first open `access_reveals` + owner `access_unlocked` |
+| Save care request | FastAPI `/api/ai/care-plan` draft → owner confirms → Supabase client insert `care_requests` + `care_tasks` + `pet_cautions` (06) | `guard_care_task_species` |
+| Start / position / end trip | RPC `start_trip(booking, kind)` / `update_trip_position(trip, lat, lng)` (every 5 seconds) / `end_trip(trip)` (06B, D32) | other side `trip_started` / `trip_arrived` within 150 m |
+| Handoff photo check | FastAPI `/api/ai/handoff-check` (service role insert `handoff_checks`) → `complete_handoff(booking, kind, p_check)` | "photo verified ✅" in the notification title |
+| Review | Supabase client insert `reviews` (owner RLS, once after pick-up is done) (07C) | sitter `review_received` |
+| Life Record | FastAPI `/api/ai/life-record` (service role insert `pet_life_records` + `knowledge_chunks`) (07C) | owner `life_record_updated` |
+| Create today's task_logs | RPC `ensure_today_task_logs(pet_id)`: called automatically on opening the screen, idempotent | - |
+| Register media | FastAPI `/api/media/complete` (service role) | - |
+| Feed post | Supabase client insert `feed_posts` (on-duty sitter or pet owner RLS, `posted_by` · `visibility`): `lib/feed.ts` | `notify_feed_post` → owner `feed_post` (except posts linked to a task) |
+| Complete a task | RPC `complete_task_log(task_log_id, media_id)` → also creates a feed_post inside | owner `task_done` |
+| Daily report chip suggestions | FastAPI `/api/ai/report-chips` (day-record chips + photo chips; photo descriptions saved in the draft) | - |
+| Daily report draft | FastAPI `/api/ai/daily-report` (service role upsert; input is only the picked chips, note, and photo descriptions) | - |
+| Send daily report | RPC `send_daily_report(report_id, body)` | owner `report_sent` |
+| Safety result | FastAPI `/api/ai/safety-check` (service role insert) | owner `safety_danger` only when DANGER **and someone other than the owner (the sitter) ran the check** (013) |
+| Acknowledge warning | Supabase client update `safety_checks.acknowledged_at` (owner · sitter RLS, 013) | - |
+| Save sticker | Transparent PNG cut out in the browser → `uploadMedia({purpose: "sticker"})` (no JPEG conversion) → Supabase client insert `pet_stickers` (own `sticker` uploads only, 013b) | - |
+| Diary decorating (12.3b) | Supabase client upsert `report_decor`: writes only your own layer, reads both layers (owner: sent daily reports, sitter: own daily reports, 013b) | - |
+| Mark notification read | Supabase client update `notifications.read_at` (own RLS) | - |
 
 ---
 
-## 7. 알림 매트릭스 (P0)
+## 7. Notification matrix (P0)
 
-| type | 수신자 | 생성 위치 | 제목 예 (EN) | 탭 시 이동 |
+| type | Recipient | Created by | Example title (EN) | Tap goes to |
 | :--- | :--- | :--- | :--- | :--- |
-| `inquiry_received` | sitter | AI 초안 insert (07B, D36) | "Robert asked about Oct 9–12 — your draft reply is ready" | `/sitter/inquiries/[id]` |
-| `inquiry_replied` | owner | 시터 메시지가 보이는 시점(`status='sent'`, `visible_at <= now()`) | "Chloe replied 💬" | `/owner/inquiries/[id]` |
-| `booking_requested` | sitter | `request_booking` RPC | "New booking request: Oct 5 – Oct 12" | `/sitter/bookings` |
-| `meet_greet_proposed` / `meet_greet_agreed` | 상대방 / 제안자 | Meet & Greet RPC (03B) | "Robert suggested a video Meet & Greet on Oct 6, 7:00 PM" | 예약 상세 |
-| `meet_greet_declined` | 제안자 | `respond_meet_greet` 거절 (3B.9) | "Chloe can't make that Meet & Greet — suggest another time" | 예약 상세 (다시 **Schedule Meet & Greet**) |
-| `meet_greet_skip_requested` | 상대방 | `request_skip_meet_greet` RPC (03B, D44) | "Robert would like to skip the Meet & Greet. Continue the booking without meeting first?" | 예약 상세 (**Continue** / **Decline — cancels the booking**) |
-| `meet_greet_skipped` | 요청자 | `respond_skip_meet_greet` 수락 | "Chloe is OK to skip the Meet & Greet — your booking continues" | 예약 상세 |
-| `meet_greet_link_ready` | 양쪽 | `/api/meet-greet/video-link` (3B.11, D45) | "Video Meet & Greet on Oct 6, 7:00 PM — join with Google Meet" | 예약 상세 (**Join Google Meet**) |
-| `booking_paid` | sitter | `pay_booking_demo` RPC (03C) | "Robert signed and paid — Oct 9–12 is all set ✅" | `/sitter/bookings/[id]` |
-| `access_unlocked` | owner | `get_home_access` 첫 공개 (03C) | "Chloe can now see your entry info (2 h before pick-up)" | 예약 상세 |
-| `trip_started` | 상대방 | `start_trip` RPC (06B) | "Chloe is on the way — ETA 7:42 AM 🚗" | Trip 화면 |
-| `trip_arrived` | 상대방 | `update_trip_position` 150 m 안 (06B) | "Robert has arrived 🚗" | Trip 화면 |
-| `booking_confirmed` / `booking_declined` | owner | `respond_booking` RPC · `booking_declined`는 확정 전 협의에서 시터가 거절할 때 `respond_handoff`도 | "Chloe confirmed your booking for Max and Mochi 🎉" | `/owner/bookings/[id]` |
-| `handoff_proposed` | 상대방 | `propose_handoff` RPC | "Paul suggested drop-off at 8:30 AM" | 예약 상세 |
-| `handoff_agreed` | 제안자 | `respond_handoff` RPC | "Robert agreed to pick-up at 8:00 PM" | 예약 상세 |
-| `handoff_declined` | 제안자 | `respond_handoff` RPC (확정 후 변경 거절) | "Chloe declined the pick-up change" | 예약 상세 |
-| `pet_dropped_off` / `pet_picked_up` | owner | `complete_handoff` RPC | 장소별: "Max and Mochi checked in at Chloe's ✅" / Sitter drives: "Pick-up complete — care has started 🚗" / 찾기: "Max and Mochi are home safe 🏠" (사진 체크가 있으면 "· photo verified") | 예약 상세 |
-| `review_requested` | owner | 찾기 완료 트리거 (07C) | "Thanks for trusting Chloe! How was Max's stay? ⭐" | `/owner/bookings/[id]/review` |
-| `review_received` | sitter | `reviews` insert 트리거 (07C) | "Robert left you 5 stars ⭐" | `/sitter/bookings/[id]` |
+| `inquiry_received` | sitter | AI draft insert (07B, D36) | "Robert asked about Oct 9-12. Your draft reply is ready" | `/sitter/inquiries/[id]` |
+| `inquiry_replied` | owner | When the sitter's message becomes visible (`status='sent'`, `visible_at <= now()`) | "Chloe replied 💬" | `/owner/inquiries/[id]` |
+| `booking_requested` | sitter | `request_booking` RPC | "New booking request: Oct 5 to Oct 12" | `/sitter/bookings` |
+| `meet_greet_proposed` / `meet_greet_agreed` | other side / proposer | Meet & Greet RPC (03B) | "Robert suggested a video Meet & Greet on Oct 6, 7:00 PM" | Booking detail |
+| `meet_greet_declined` | proposer | `respond_meet_greet` decline (3B.9) | "Chloe can't make that Meet & Greet. Suggest another time" | Booking detail (**Schedule Meet & Greet** again) |
+| `meet_greet_skip_requested` | other side | `request_skip_meet_greet` RPC (03B, D44) | "Robert would like to skip the Meet & Greet. Continue the booking without meeting first?" | Booking detail (**Continue** / **Decline (cancels the booking)**) |
+| `meet_greet_skipped` | requester | `respond_skip_meet_greet` accept | "Chloe is OK to skip the Meet & Greet. Your booking continues" | Booking detail |
+| `meet_greet_link_ready` | both | `/api/meet-greet/video-link` (3B.11, D45) | "Video Meet & Greet on Oct 6, 7:00 PM. Join with Google Meet" | Booking detail (**Join Google Meet**) |
+| `booking_paid` | sitter | `pay_booking_demo` RPC (03C) | "Robert signed and paid. Oct 9-12 is all set ✅" | `/sitter/bookings/[id]` |
+| `access_unlocked` | owner | First reveal by `get_home_access` (03C) | "Chloe can now see your entry info (2 h before pick-up)" | Booking detail |
+| `trip_started` | other side | `start_trip` RPC (06B) | "Chloe is on the way, ETA 7:42 AM 🚗" | Trip screen |
+| `trip_arrived` | other side | `update_trip_position` within 150 m (06B) | "Robert has arrived 🚗" | Trip screen |
+| `booking_confirmed` / `booking_declined` | owner | `respond_booking` RPC · `booking_declined` also from `respond_handoff` when the sitter declines during the negotiation before confirmation | "Chloe confirmed your booking for Max and Mochi 🎉" | `/owner/bookings/[id]` |
+| `handoff_proposed` | other side | `propose_handoff` RPC | "Paul suggested drop-off at 8:30 AM" | Booking detail |
+| `handoff_agreed` | proposer | `respond_handoff` RPC | "Robert agreed to pick-up at 8:00 PM" | Booking detail |
+| `handoff_declined` | proposer | `respond_handoff` RPC (declines a change after confirmation) | "Chloe declined the pick-up change" | Booking detail |
+| `pet_dropped_off` / `pet_picked_up` | owner | `complete_handoff` RPC | By place: "Max and Mochi checked in at Chloe's ✅" / Sitter drives: "Pick-up complete, care has started 🚗" / pick-up: "Max and Mochi are home safe 🏠" (with a photo check, "· photo verified") | Booking detail |
+| `review_requested` | owner | Pick-up done trigger (07C) | "Thanks for trusting Chloe! How was Max's stay? ⭐" | `/owner/bookings/[id]/review` |
+| `review_received` | sitter | `reviews` insert trigger (07C) | "Robert left you 5 stars ⭐" | `/sitter/bookings/[id]` |
 | `life_record_updated` | owner | `/api/ai/life-record` (07C) | "Max's Life Record was updated 📒" | `/owner/pets/[id]/record` |
-| `booking_cancelled` | 상대방 | `cancel_booking` RPC · 확정 전 협의에서 견주가 거절할 때 `respond_handoff`도 · Meet & Greet 건너뛰기를 거부할 때 `respond_skip_meet_greet`도 | "Chloe can't take Max and Mochi on Oct 5–8. Find a new sitter." / 건너뛰기 거부: "Chloe would like to meet first, so this booking was cancelled. Find a new sitter." | 예약 상세 (**Find a new sitter**) |
-| `booking_refunded` | 견주 | 결제한 예약이 취소될 때(누가 취소하든) 트리거 `bookings_notify_refund` (015c, #266) | "Refunded in full" / "$268.13 CAD back for Max (demo)" | 예약 상세 (**Refunded** 칩) |
-| `feed_post` | owner (시터 게시) · 당직 sitter (오너 게시) | 트리거 on `feed_posts` insert (`task_log_id is null` · `visibility = 'shared'`) | "New photo of Max 📸" / "Robert shared a photo of Max 📸" | `/owner/feed` · `/sitter/feed/[petId]` |
-| `task_done` | owner | `complete_task_log` RPC | type별: "Max had breakfast on time 🍽️" / "Max is asleep 😴" / "Max's medication is done 💊" | `/owner/diary` (Live / history) |
-| `care_checkin` | owner | `log_care_checkin` RPC | kind별: meal / potty / mood / note (Plan B — [sitter-care-loop.md](../sitter-care-loop.md)) | `/owner/diary` |
+| `booking_cancelled` | other side | `cancel_booking` RPC · also `respond_handoff` when the owner declines during the negotiation before confirmation · also `respond_skip_meet_greet` when a Meet & Greet skip is declined | "Chloe can't take Max and Mochi on Oct 5-8. Find a new sitter." / skip declined: "Chloe would like to meet first, so this booking was cancelled. Find a new sitter." | Booking detail (**Find a new sitter**) |
+| `booking_refunded` | owner | Trigger `bookings_notify_refund` when a paid booking is cancelled (whoever cancels) (015c, #266) | "Refunded in full" / "$268.13 CAD back for Max (demo)" | Booking detail (**Refunded** chip) |
+| `feed_post` | owner (sitter posts) · on-duty sitter (owner posts) | Trigger on `feed_posts` insert (`task_log_id is null` · `visibility = 'shared'`) | "New photo of Max 📸" / "Robert shared a photo of Max 📸" | `/owner/feed` · `/sitter/feed/[petId]` |
+| `task_done` | owner | `complete_task_log` RPC | By type: "Max had breakfast on time 🍽️" / "Max is asleep 😴" / "Max's medication is done 💊" | `/owner/diary` (Live / history) |
+| `care_checkin` | owner | `log_care_checkin` RPC | By kind: meal / potty / mood / note (Plan B: [sitter-care-loop.md](../sitter-care-loop.md)) | `/owner/diary` |
 | `report_sent` | owner | `send_daily_report` RPC | "Today's report for Max is here 📝" | `/owner/diary` (entry) |
-| `safety_danger` | owner | 트리거 on `safety_checks` insert (`safety_status='DANGER'`) — 08 stretch | "Blocked a risky treat for Max ⚠️" | `/owner/notifications` |
+| `safety_danger` | owner | Trigger on `safety_checks` insert (`safety_status='DANGER'`), 08 stretch | "Blocked a risky treat for Max ⚠️" | `/owner/notifications` |
 | `task_due` (stretch) | sitter | Serverless Job / APScheduler (6.7) | "Max's walk is due at 10:30" | `/sitter/tasks` |
 | `photo_request` (P1) | sitter | Phase 11 | "Owner asked for a photo of Max" | `/sitter/feed/[id]` |
 
-프론트: `NotificationsProvider`가 `notifications` Realtime(INSERT, `user_id=eq.<me>`)을 구독 → 토스트 + unread 카운트 갱신 + type별 쿼리 invalidate (예: `feed_post` → 피드 리페치).
+Frontend: `NotificationsProvider` subscribes to `notifications` Realtime (INSERT, `user_id=eq.<me>`) → toast + unread count update + per-type query invalidation (e.g. `feed_post` → refetch the feed).
 
 ---
 
-## 8. UX 공통 규칙 (모든 화면)
+## 8. Shared UX rules (every screen)
 
-1. **상태 4종 필수:** loading(Skeleton) · empty(EmptyState 문구) · error(재시도 버튼) · success(Toast).
-2. **1화면 1 주 액션** — §3 표의 "주 액션"만 primary 버튼.
-3. **sitter 필수 텍스트 입력 금지 (P0, D38 — 글쓰기 거의 제로: AI가 하루 기록·사진에서 칩을 제안하고 시터는 고르기 + 짧은 메모만 선택)** — 예외(모두 선택): 알림장 짧은 메모(≤ 200, D38), check-in 메모 1줄(≤ 120, D34), 알림장 게시 전 본문 편집, 인수인계 제안 메모 1줄, 문의 스레드 짧은 답, 시터 정책 문서·선호 만남 장소(프로필, 한 번 작성). 견주 텍스트(문의 질문·케어 의뢰서·동의서 서명 이름·선호 만남 장소)는 허용.
-4. **DANGER 모달**은 빨간 전체 모달, "I understand — don't feed" 버튼 누르기 전 닫기 불가 (backdrop/ESC 무시).
-5. **사진 선택:** 모든 화면은 `pickMedia()`(4.7)만 사용. 네이티브 = `expo-image-picker` 카메라/앨범, 모바일 웹 = `capture` 입력, **데스크톱 프레임·데모 계정 = 샘플 사진 트레이 + Choose from library**(시스템 파일/갤러리 피커 — 폰·웹 데모 동일 문구, "Upload from computer" 금지). 샘플도 `uploadMedia()`를 그대로 타서 AI가 실제로 분석.
-6. 모든 사용자 문구는 영어 (D1). Empty state 예: "No posts yet — your sitter will share photos here."
-7. 개발 빌드에만 헤더에 `Owner`/`Sitter` 역할 라벨 표시 (`APP_ENV !== 'production'`).
-8. **마우스로 전부 동작 (D25):** 제스처 전용 기능 금지 (스와이프 뒤로가기·삭제, 시트 끌어내리기, 길게 누르기, 당겨서 새로고침 — 웹 `RefreshControl`은 동작 안 함). 항상 보이는 버튼을 둔다. 웹 미지원 라이브러리 금지 (예: `@react-native-community/datetimepicker` → 직접 만든 선택 UI). 화면 PR마다 [DESIGN.md §7.7](../../../DESIGN.md#77-works-with-a-mouse) 데스크톱 체크.
-9. **지도는 보기 전용 (D32):** 자동 맞춤(이동하는 쪽 + 목적지) + ± 버튼, 드래그 팬·핀치 없음 — 프레임 안 마우스 드래그는 스크롤로 쓰임(1.7). 위치 공유 중이면 화면 상단에 "Sharing your location with Chloe until you arrive" 항상 표시.
-10. **민감 정보 카드 (D31):** 출입 정보는 잠김 상태에서 "Unlocks Oct 9, 5:30 AM" + 자물쇠 아이콘만, 열려도 코드는 **Show code** 탭 후 표시.
-11. **외부 링크는 새 탭 (D45):** Google Meet 링크는 폰 프레임(iframe) 안에서 열지 않고 새 탭으로 연다 (`Linking.openURL` → 웹은 `window.open`). Meet는 다른 사이트 안에 넣을 수 없다.
+1. **4 states required:** loading (Skeleton) · empty (EmptyState text) · error (retry button) · success (Toast).
+2. **One primary action per screen**: only the §3 table's "Primary action" is a primary button.
+3. **No required sitter text input (P0, D38: near-zero writing; AI suggests chips from the day's records and photos, and the sitter just picks + an optional short note)**. Exceptions (all optional): daily report short note (≤ 200, D38), one-line check-in note (≤ 120, D34), editing the report text before posting, a one-line note on a handoff proposal, a short reply in the inquiry thread, the sitter's policy doc and preferred meeting spots (profile, written once). Owner text (inquiry questions · care request · consent signature name · preferred meeting spots) is allowed.
+4. **DANGER modal** is a red full-screen modal that cannot close until the "I understand, don't feed" button is pressed (backdrop/ESC ignored).
+5. **Photo picking:** every screen uses only `pickMedia()` (4.7). Native = `expo-image-picker` camera/album, mobile web = `capture` input, **desktop frame and demo accounts = sample photo tray + Choose from library** (the system file/gallery picker; same wording on phone and web demo, never "Upload from computer"). Samples also go through `uploadMedia()` as is, so the AI really analyzes them.
+6. All user-facing text is English (D1). Empty state example: "No posts yet. Your sitter will share photos here."
+7. Only dev builds show the `Owner`/`Sitter` role label in the header (`APP_ENV !== 'production'`).
+8. **Everything works with a mouse (D25):** no gesture-only features (swipe back or delete, pulling a sheet down, long press, pull to refresh: web `RefreshControl` does not work). Always have a visible button. No libraries without web support (e.g. `@react-native-community/datetimepicker` → a hand-built picker UI). Every screen PR runs the [DESIGN.md §7.7](../../../DESIGN.md#77-works-with-a-mouse) desktop check.
+9. **Maps are view-only (D32):** auto-fit (the side that travels + destination) + ± buttons, no drag pan or pinch, since a mouse drag inside the frame is used for scrolling (1.7). While sharing location, the top of the screen always shows "Sharing your location with Chloe until you arrive".
+10. **Sensitive info card (D31):** while locked, entry info shows only "Unlocks Oct 9, 5:30 AM" + a lock icon; even when open, the code shows only after tapping **Show code**.
+11. **Outside links open in a new tab (D45):** Google Meet links open in a new tab, not inside the phone frame (iframe) (`Linking.openURL` → `window.open` on web). Meet cannot be embedded in another site.
 
 ---
 
-## 9. AI 호출 공통 규칙 (`services/nebius.py`)
+## 9. Shared AI call rules (`services/nebius.py`)
 
-- **왜 OpenAI 호환 SDK(`openai` 패키지)?** Nebius Token Factory는 **OpenAI Chat Completions와 같은 HTTP/API 형식**(`base_url` + `api_key` + `model` + `messages`)을 제공합니다. Nemotron 전용 Python SDK를 따로 쓰지 않고, 공식 cookbook·예제와 동일하게 `OpenAI(base_url=..., api_key=...)`로 호출하면 **리전별 base URL**(eu-north1 / us-central1)과 **모델 ID만 바꿔** Vision·Super·Ultra·Nano를 한 코드 경로로 처리할 수 있습니다. (직접 `httpx`로 POST해도 되지만, 스트리밍·에러 타입·멀티모달 `image_url` 메시지 형식을 SDK가 이미 맞춰 줍니다.)
-- **model role → (model_id, base_url)** 매핑은 env에서 (§4). `OpenAI` 클라이언트 인스턴스는 base_url별로 캐시.
+- **Why the OpenAI-compatible SDK (`openai` package)?** Nebius Token Factory offers **the same HTTP/API format as OpenAI Chat Completions** (`base_url` + `api_key` + `model` + `messages`). Instead of a separate Nemotron-only Python SDK, calling `OpenAI(base_url=..., api_key=...)` the same way as the official cookbook and examples lets one code path handle Vision · Super · Ultra · Nano by **changing only the per-region base URL** (eu-north1 / us-central1) **and the model ID**. (A direct `httpx` POST would also work, but the SDK already handles streaming, error types, and the multimodal `image_url` message format.)
+- The **model role → (model_id, base_url)** mapping comes from env (§4). `OpenAI` client instances are cached per base_url.
 - `chat(role, messages, **kw)` / `chat_json(role, messages, schema: type[BaseModel])`.
-- `chat_json` 규칙: ① `response_format={"type":"json_object"}` 시도 (7.1에서 지원 여부 확인 후 플래그) ② 응답에서 `<think>…</think>` 제거 ③ 첫 `{…}` 블록 추출 ④ pydantic 검증 ⑤ 실패 시 "Return only valid JSON matching the schema" 보정 메시지로 **1회 재시도** ⑥ 그래도 실패 → `ai_invalid_output`.
-- Nemotron reasoning 모드: 캡션·알림장은 reasoning **off**(속도), 세이프티 reasoning 단계는 **on** (7.1에서 모델별 토글 방식 확인 후 `nebius.py`에 기록).
-- 프롬프트 원문은 코드에 하드코딩하지 않고 `app/ai/prompts/**`의 파일에서 로드 (슬기가 코드 수정 없이 튜닝).
-- 입력에 실제 PII 금지. 로그에 이미지 base64 출력 금지.
-- **근거 고정 (D27–D29):** 모델 입력은 서버가 모은 JSON뿐 (스케줄·견적·펫 프로필·RAG 검색 결과·그날 기록). 가격·날짜·가능 여부·시간은 **입력 값을 그대로** 쓰게 하고, 응답 후 서버가 숫자를 다시 대조한다 (07B — 입력에 없는 금액이 나오면 견적 카드만 두고 문장은 재생성 1회, 또 실패하면 고정 문구 "Chloe will confirm the details soon."). 출입 정보(D31)는 어떤 프롬프트에도 넣지 않는다.
-- **말투 레이어 (D35):** 견주에게 보이는 자연어를 만드는 엔드포인트(inquiry-reply · daily-report · caption)는 프롬프트를 직접 조립하지 않고 `tone.compose(sitter_id, intent, facts)`를 거친다 — 스타일 가이드 + 시터의 `tone_samples` top-k(few-shot) + 서버 근거 JSON. 1인칭("I"), 자리표시자(`{PRICE}`·`{DATE}`)는 서버가 채우고 숫자는 근거 JSON과 대조한다(D29). 안전 경고·동의서·견적 숫자는 고정 문구로 레이어를 거치지 않는다. 시터의 승인·수정·재생성은 `tone_samples`에 기록(자동 발송은 학습에서 제외). 견주 메시지는 저장 전 익명화.
-- **임베딩 (D33):** `embed(texts)` — `MODEL_EMBED`, `dimensions=MODEL_EMBED_DIM`(1024), 배치 ≤ 16. 검색은 SQL `match_knowledge(query_embedding, p_sitter, p_pets[], p_owner, k)` (cosine, 범위 필터 먼저). 출처 `source_type`: `sitter_policy` · `life_record` · `inquiry` · `care_request`. 같은 `(source_type, source_id)`는 덮어쓰기. **출처별 검색 범위:** `sitter_policy` = 그 시터 · `life_record`·`care_request` = 그 반려동물(새 시터와도 공유 — 문의 시트에서 안내, 07B) · `inquiry` = 그 견주 **그리고** 그 시터가 모두 일치할 때만, 견주 메시지만 인덱싱 (다른 시터와 나눈 대화·금액이 새 시터의 초안에 섞이지 않게).
-- **칩 제안 (D38):** `report-chips`는 하루 기록 칩을 서버가 DB에서 만들고(모델 없음), 사진 칩만 `MODEL_VISION`이 사진당 1–2개 짧은 문구로 제안한다. 칩은 제안일 뿐이고, 시터가 고른 칩과 메모만 알림장 입력이 된다 (끈 칩은 입력에서 빠짐).
-- **호출 지표 로그:** `chat()`/`chat_json()`마다 구조화 로그 1줄 — `{role, model, endpoint, ttft_ms, latency_ms, prompt_tokens, completion_tokens, retried, ok}` (TTFT는 스트리밍 첫 토큰 기준, 스트리밍 불가 모델은 null). 프롬프트·응답 본문은 남기지 않음. Phase 10 README의 **Token Factory / Nemotron 피드백**(필수·채점 항목)과 Most Valuable Feedback에 모델별 중앙값 표로 사용.
+- `chat_json` rules: ① try `response_format={"type":"json_object"}` (a flag, after 7.1 checks support) ② strip `<think>…</think>` from the response ③ extract the first `{…}` block ④ pydantic validation ⑤ on failure, **retry once** with the correction message "Return only valid JSON matching the schema" ⑥ still failing → `ai_invalid_output`.
+- Nemotron reasoning mode: **off** for captions and daily reports (speed), **on** for the safety reasoning step (after 7.1 checks each model's toggle, recorded in `nebius.py`).
+- Prompt text is not hard-coded; it loads from files in `app/ai/prompts/**` (so Seulgi can tune without code changes).
+- No real PII in inputs. Never print image base64 in logs.
+- **Grounding (D27 to D29):** the model's input is only JSON the server gathered (schedule · quote · pet profile · RAG search results · that day's records). Prices · dates · availability · times must be **used as given**, and after the response the server checks the numbers again (07B: if an amount not in the input shows up, keep only the quote card and regenerate the text once; if it fails again, the fixed line "Chloe will confirm the details soon."). Entry info (D31) never goes into any prompt.
+- **Tone layer (D35):** endpoints that write natural language for owners (inquiry-reply · daily-report · caption) do not build prompts themselves but go through `tone.compose(sitter_id, intent, facts)`: style guide + the sitter's top-k `tone_samples` (few-shot) + the server's fact JSON. First person ("I"); the server fills placeholders (`{PRICE}` · `{DATE}`) and checks numbers against the fact JSON (D29). Safety warnings · consents · quote numbers are fixed text and skip the layer. The sitter's approvals, edits, and regenerations are recorded in `tone_samples` (auto-sends are left out of learning). Owner messages are anonymized before saving.
+- **Embeddings (D33):** `embed(texts)`: `MODEL_EMBED`, `dimensions=MODEL_EMBED_DIM` (1024), batch ≤ 16. Search is SQL `match_knowledge(query_embedding, p_sitter, p_pets[], p_owner, k)` (cosine, scope filter first). Source `source_type`: `sitter_policy` · `life_record` · `inquiry` · `care_request`. The same `(source_type, source_id)` is overwritten. **Search scope per source:** `sitter_policy` = that sitter · `life_record` · `care_request` = that pet (shared with a new sitter too; noted on the inquiry sheet, 07B) · `inquiry` = only when both that owner **and** that sitter match, and only owner messages are indexed (so conversations and amounts with another sitter never mix into a new sitter's draft).
+- **Chip suggestions (D38):** for `report-chips`, the server builds day-record chips from the DB (no model), and only photo chips come from `MODEL_VISION`, 1-2 short phrases per photo. Chips are only suggestions; only the chips the sitter picked and the note become the daily report input (chips turned off are left out).
+- **Call metrics log:** one structured log line per `chat()`/`chat_json()`: `{role, model, endpoint, ttft_ms, latency_ms, prompt_tokens, completion_tokens, retried, ok}` (TTFT = first streamed token; null for models that cannot stream). Prompt and response text are not logged. Used as a per-model median table in the Phase 10 README **Token Factory / Nemotron feedback** (required, scored) and Most Valuable Feedback.
 
 ---
 
-## 10. 검증 공통 절차 (각 Phase DoD 확인 방법)
+## 10. Shared verification steps (how to check each phase's DoD)
 
-| 레벨 | 방법 |
+| Level | Method |
 | :--- | :--- |
-| Backend | `cd backend && pytest -q` (Nebius 키 없으면 AI 테스트 skip) + phase 문서의 `curl` 예시 |
-| DB/RLS | Supabase SQL Editor에서 `supabase/tests/rls_smoke.sql` 실행 (역할별 `set local request.jwt.claims`) |
-| Frontend | `npx tsc --noEmit` + Playwright 마우스 테스트 (1.7, CI) + 두 브라우저(일반 창 = owner, 시크릿 창 = sitter — 10.10 이후는 `?view=split`) 수동 시나리오를 **데스크톱 폰 프레임에서 마우스로** ([DESIGN.md §7.7](../../../DESIGN.md#77-works-with-a-mouse) 체크) |
-| 데모 | Phase 10 "A Stay with Goldito" 체크리스트 ([full-process.md §6](../full-process.md#6-데모-경로-a-stay-with-goldito)) |
+| Backend | `cd backend && pytest -q` (AI tests skip without a Nebius key) + the phase doc's `curl` examples |
+| DB/RLS | Run `supabase/tests/rls_smoke.sql` in the Supabase SQL Editor (`set local request.jwt.claims` per role) |
+| Frontend | `npx tsc --noEmit` + Playwright mouse tests (1.7, CI) + a manual scenario in two browsers (normal window = owner, private window = sitter; `?view=split` after 10.10) **with a mouse in the desktop phone frame** ([DESIGN.md §7.7](../../../DESIGN.md#77-works-with-a-mouse) check) |
+| Demo | Phase 10 "A Stay with Goldito" checklist ([full-process.md §6](../full-process.md#6-demo-path-a-stay-with-goldito)) |
 
 ---
 
-## 11. CI/CD 파이프라인 (D20)
+## 11. CI/CD pipeline (D20)
 
 ```
-PR 열기/업데이트 ──> ci.yml ─┬─ backend: ruff check · pytest -q                               ─┐
-                             └─ frontend: npm ci · tsc --noEmit · expo export · playwright (1.7) ┴─> ✅ 필수 체크 → 머지 가능
-                    Vercel ──> Preview URL (PR 코멘트)
+PR open/update ──> ci.yml ─┬─ backend: ruff check · pytest -q                               ─┐
+                           └─ frontend: npm ci · tsc --noEmit · expo export · playwright (1.7) ┴─> ✅ required checks → can merge
+                  Vercel ──> Preview URL (PR comment)
 
-main 머지 ─┬─> Vercel ──> 운영 frontend 자동 배포
-           └─> Render ──> backend/Dockerfile 빌드 · 배포 → Health Check /health (실패하면 이전 배포 유지)
+main merge ─┬─> Vercel ──> production frontend auto-deploy
+            └─> Render ──> backend/Dockerfile build · deploy → Health Check /health (keeps the previous deploy if it fails)
 
-10분 cron ──> keepalive.yml ──> GET https://goldito-backend.onrender.com/health — Render 무료 잠듦 방지 (15분 무요청 시 잠듦)
-DB migration ──> 사람이 SQL Editor에서 00N_*.sql 순서대로 (PR 본문에 "migration 00N 적용 필요" 명시)
+10-min cron ──> keepalive.yml ──> GET https://goldito-backend.onrender.com/health (keeps Render free awake; it sleeps after 15 minutes with no requests)
+DB migration ──> a person runs 00N_*.sql in order in the SQL Editor (the PR body says "migration 00N must be applied")
 ```
 
-| 항목 | 규칙 |
+| Item | Rule |
 | :--- | :--- |
-| CI 트리거 | `pull_request` + `push: main`. `paths` 필터로 backend/frontend job 각각 변경 시만 실행 (docs-only PR은 스킵 → 필수 체크는 "skipped = pass" 되도록 job 단위 `if` 사용) |
-| CI 환경 | Python 3.12 + pip cache, Node 20 LTS + npm cache + Playwright 브라우저 cache. Playwright는 `expo export` 결과를 정적 서버로 띄워 마우스만으로 테스트 (`EXPO_PUBLIC_DEV_ROUTES=1`, 백엔드 불필요). **PR은 Chromium · 1366×768만, main push는 Chromium·Firefox·WebKit × 3 해상도** (`PW_BROWSERS` · `PW_FRAME_VIEWPORTS`), Playwright는 러너 2개로 나눠(shard) 각 워커 4개, 필수 체크 이름 `frontend`는 두 shard 결과를 모으는 job이 맡음, 같은 PR의 새 push는 이전 run을 취소. **시크릿 없음** — AI 테스트는 `NEBIUS_API_KEY` 없으면 skip, Supabase 호출은 mock |
-| 브랜치 보호 | 1.5 완료 후 GitHub Settings → `main`: PR 필수, `ci / backend`·`ci / frontend` 통과 필수 (민식이 설정) |
-| GitHub Secrets | 없음 — CD는 Render · Vercel의 Git 연동. 앱 런타임 키(Supabase·Cloudinary·Nebius Token Factory API)는 **Render env / Vercel env에만** 저장 |
-| 롤백 | backend: Render 대시보드 → Deploys → 이전 배포 **Rollback**. frontend: Vercel 대시보드 "Promote previous deployment" |
-| Keep-alive | Render 무료는 **15분 동안 요청이 없으면 잠들고** 첫 요청이 30~50초. 10분마다 `/health`를 부른다 — GitHub Actions `keepalive.yml` + **cron-job.org `Goldito Keepalive`** 두 군데 (GitHub cron은 몇 분씩 늦을 수 있어서). **배포 · 테스트 작업 전에 핑이 돌고 있는지 먼저 확인** ([env-setup.md](../env-setup.md) § 배포된 백엔드) |
+| CI trigger | `pull_request` + `push: main`. A `paths` filter runs the backend/frontend job only when that part changes (a docs-only PR skips; a job-level `if` makes the required check count "skipped = pass") |
+| CI environment | Python 3.12 + pip cache, Node 20 LTS + npm cache + Playwright browser cache. Playwright serves the `expo export` output on a static server and tests with the mouse only (`EXPO_PUBLIC_DEV_ROUTES=1`, no backend needed). **PRs run Chromium · 1366×768 only; a push to main runs Chromium · Firefox · WebKit × 3 resolutions** (`PW_BROWSERS` · `PW_FRAME_VIEWPORTS`); Playwright is split across 2 runners (shards) with 4 workers each; the required check name `frontend` belongs to the job that collects both shard results; a new push to the same PR cancels the previous run. **No secrets**: AI tests skip without `NEBIUS_API_KEY`, Supabase calls are mocked |
+| Branch protection | After 1.5, GitHub Settings → `main`: PR required, `ci / backend` · `ci / frontend` must pass (Minsik sets it) |
+| GitHub Secrets | None: CD is the Render · Vercel Git integration. App runtime keys (Supabase · Cloudinary · Nebius Token Factory API) are stored **only in the Render env / Vercel env** |
+| Rollback | backend: Render dashboard → Deploys → **Rollback** to the previous deploy. frontend: Vercel dashboard "Promote previous deployment" |
+| Keep-alive | Render free **sleeps after 15 minutes with no requests**, and the first request then takes 30-50 seconds. Call `/health` every 10 minutes from two places: GitHub Actions `keepalive.yml` + **cron-job.org `Goldito Keepalive`** (GitHub cron can run a few minutes late). **Before deploy or test work, first check the ping is running** ([env-setup.md](../env-setup.md) § Deployed backend) |
 
