@@ -6,6 +6,7 @@ import { HeadsUpSection } from "../../../components/HeadsUpSection";
 import { PetForm } from "../../../components/PetForm";
 import { PetGlance } from "../../../components/PetGlance";
 import { PetAvatarEditor } from "../../../components/PetAvatarEditor";
+import { PetPixelCard } from "../../../components/pet/PetPixelCard";
 import { TextButton } from "../../../components/ui/TextButton";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
@@ -39,8 +40,15 @@ export default function PetProfileScreen() {
     void load();
   }, [load]);
 
-  // Back from the personality retake: show the new chart.
-  useFocusEffect(useCallback(() => setGlanceKey((k) => k + 1), []));
+  // Back from the personality retake or the Look screen: show the new chart and pixel pet (no loading screen).
+  useFocusEffect(
+    useCallback(() => {
+      setGlanceKey((k) => k + 1);
+      void getPet(petId)
+        .then((pet) => pet && setState({ status: "ready", pet }))
+        .catch(() => {});
+    }, [petId]),
+  );
 
   if (state.status === "loading") return <LoadingView />;
   if (state.status !== "ready") {
@@ -66,6 +74,7 @@ export default function PetProfileScreen() {
       <Stack.Screen options={{ title: pet.name }} />
       <PetAvatarEditor key={`avatar-${glanceKey}`} pet={pet} onChanged={() => setGlanceKey((k) => k + 1)} />
       <PetGlance key={glanceKey} petId={pet.id} />
+      <PetPixelCard pet={pet} onChanged={() => void load()} />
       <TextButton label="Retake personality" onPress={() => router.push(`/owner/pets/${pet.id}/personality`)} testID="open-personality" />
       <PetForm
         key={pet.id}

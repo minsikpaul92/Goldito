@@ -16,6 +16,7 @@ import { getPet, savePetLook } from "../../../../features/pets/petApi";
 import { PET_BASES, asPetRecipe, recipeFor, type ColorKey, type PetRecipe } from "../../../../features/pets/sprites/petLook";
 import { PET_PRESETS, type PetPreset } from "../../../../features/pets/sprites/petPresets";
 import { asPixelColors } from "../../../../features/pets/sprites/photoColors";
+import { useIsAdmin } from "../../../../lib/admins";
 import type { Pose } from "../../../../features/pets/sprites/scene";
 import { useThemedStyles } from "../../../../providers/ThemeProvider";
 import { useToast } from "../../../../providers/ToastProvider";
@@ -37,10 +38,11 @@ const POSES: { value: string; label: string; pose: (f: number) => Pose }[] = [
   { value: "back", label: "Back", pose: (f) => ({ view: "back", action: "idle", frame: f % 2 }) },
 ];
 
-/** The owner's Pet maker (11.12c): start from a breed, change the looks, save to `pets.profile.pixel_look`. */
+/** The Pet maker (11.12c), admins only: start from a breed, change the looks, save to `pets.profile.pixel_look`. */
 export default function PetLookScreen() {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
+  const admin = useIsAdmin();
   const { petId } = useLocalSearchParams<{ petId: string }>();
   const [pet, setPet] = useState<Pet | null | undefined>(undefined);
   const [recipe, setRecipe] = useState<PetRecipe | null>(null);
@@ -75,6 +77,7 @@ export default function PetLookScreen() {
     return PET_PRESETS.filter((p) => PET_BASES[p.base].cat === cat && (!q || p.name.toLowerCase().includes(q)));
   }, [cat, query]);
 
+  if (!admin) return <Screen><EmptyState emoji="🐾" title="Looks are set by the Goldito team" message="Your pet's look comes from its profile." /></Screen>;
   if (pet === undefined || (pet && !recipe)) return <LoadingView />;
   if (!pet || !recipe) return <Screen><EmptyState emoji="🐾" title="Pet not found" message="It may have been removed." /></Screen>;
 
