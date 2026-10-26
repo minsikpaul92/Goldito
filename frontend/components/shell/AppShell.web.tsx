@@ -120,10 +120,8 @@ export function AppShell({ children }: Props) {
   // The judge panel (#413) sits left of the phones on a wide computer window: always in the judging build, and in the
   // team build only while a phone is signed in to a judge set. The phones keep their place in the tree either way, so
   // the panel appearing never reloads them.
-  const showPanel =
-    presentation !== "direct" &&
-    windowWidth >= PANEL_MIN_WIDTH &&
-    (!isDemoToolsBuild || Object.values(accounts).some((account) => account?.judge));
+  const judgeHere = useJudgeHere(accounts);
+  const showPanel = presentation !== "direct" && windowWidth >= PANEL_MIN_WIDTH && (!isDemoToolsBuild || judgeHere);
   const reserve = showPanel ? JUDGE_PANEL_WIDTH : 0;
 
   if (presentation === "split") {
@@ -174,6 +172,22 @@ export function AppShell({ children }: Props) {
       {children}
     </ShellContext.Provider>
   );
+}
+
+/**
+ * A phone here is signed in to a judge set (#413). A phone that reloads (a scene opening) reports no account for a
+ * moment; that keeps the answer, so the panel and its scene stay. Only a team account signing in turns it off.
+ */
+function useJudgeHere(accounts: Record<string, FrameAccount>): boolean {
+  const [here, setHere] = useState(false);
+  const values = Object.values(accounts);
+  const judge = values.some((account) => account?.judge);
+  const team = values.some((account) => account && !account.judge);
+  useEffect(() => {
+    if (judge) setHere(true);
+    else if (team) setHere(false);
+  }, [judge, team]);
+  return judge || (here && !team);
 }
 
 /** Inside a split-view phone (named by the outer page): two phones must not fight over the address bar. */
