@@ -16,6 +16,8 @@ export type OwnerOnboardingDraft = {
   pending: Species[];
   /** True from the second pet on: the owner's own questions and the kind question were already answered. */
   ownerDone: boolean;
+  /** Add pet from inside the app (#367): one pet, its kind asked first, and the end goes back to where it was opened. */
+  adding: boolean;
   name: string;
   breed: string;
   /** Whole years, or null when skipped. Saved as an approximate birthday. */
@@ -54,6 +56,7 @@ export const EMPTY_DRAFT: OwnerOnboardingDraft = {
   species: null,
   pending: [],
   ownerDone: false,
+  adding: false,
   name: "",
   breed: "",
   ageYears: null,
@@ -143,6 +146,9 @@ export function draftForNextPet(draft: OwnerOnboardingDraft): OwnerOnboardingDra
     step: "name",
   };
 }
+
+/** Add pet after sign-up (#367): the same questions for one pet, without the owner's own. */
+export const ADD_PET_DRAFT: OwnerOnboardingDraft = { ...EMPTY_DRAFT, ownerDone: true, adding: true };
 
 /** An approximate birthday for a whole number of years: the same day and month, that many years back. */
 export function birthdateFromAge(ageYears: number, today = new Date()): string {

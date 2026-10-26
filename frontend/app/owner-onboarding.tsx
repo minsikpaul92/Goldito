@@ -1,4 +1,4 @@
-import { Redirect, router } from "expo-router";
+import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -19,6 +19,7 @@ import { Sheet } from "../components/ui/Sheet";
 import { Stepper } from "../components/ui/Stepper";
 import { TextButton } from "../components/ui/TextButton";
 import {
+  ADD_PET_DRAFT,
   EMPTY_DRAFT,
   OwnerOnboardingDraft,
   birthdateFromAge,
@@ -61,12 +62,17 @@ import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
 import type { Species } from "../types/db";
 
-/** Shown once to a new owner (owner_profiles.onboarded_at is null, 014v): their first pet, one question per screen. */
+/**
+ * Shown once to a new owner (owner_profiles.onboarded_at is null, 014v): their first pet, one question per screen.
+ * `?add=1` is Add pet after sign-up (#367): the same questions for one pet, then back to the screen that opened it.
+ */
 const PICK_DELAY_MS = 200;
 const MAX_NAME = 40;
 const MAX_OWNER_INTRO = 500;
 
 export default function OwnerOnboarding() {
+  const { add } = useLocalSearchParams<{ add?: string }>();
+  const adding = add === "1";
   const session = useSession();
   const toast = useToast();
   const theme = useTheme();
@@ -102,12 +108,13 @@ export default function OwnerOnboarding() {
   useEffect(() => {
     if (!userId) return;
     let active = true;
-    void loadDraft(userId).then((d) => active && setDraft(d));
+    // Add pet goes on with a pet it was adding (a reload), or starts a new one.
+    void loadDraft(userId).then((d) => active && setDraft(d.adding === adding ? d : adding ? ADD_PET_DRAFT : EMPTY_DRAFT));
     return () => {
       active = false;
       if (pickTimer.current) clearTimeout(pickTimer.current);
     };
-  }, [userId]);
+  }, [userId, adding]);
 
   const update = useCallback(
     (patch: Partial<OwnerOnboardingDraft>) => {
@@ -124,7 +131,7 @@ export default function OwnerOnboarding() {
   if (session.status !== "signedIn" || session.profile.role !== "owner") return <Redirect href="/" />;
   if (!draft) return <LoadingView />;
 
-  const ids = stepIds(draft.species, draft.ownerDone);
+  const ids = stepIds(draft.species, draft.ownerDone, !draft.ownerDone || draft.adding);
   const index = stepIndex(ids, draft.step);
   const step = ids[index];
   const petName = draft.name.trim();
@@ -155,6 +162,12 @@ export default function OwnerOnboarding() {
     setFromSummary(true);
     goTo(id);
   };
+  // Add pet ends on the screen that opened it (Home, a booking, Snap, the search bar).
+  const leaveAdding = async () => {
+    if (userId) await clearDraft(userId);
+    if (router.canGoBack()) router.back();
+    else router.replace("/owner");
+  };
 
   const finish = async (petId: string | null, finishLater = false) => {
     if (!userId) return;
@@ -163,7 +176,8 @@ export default function OwnerOnboarding() {
     try {
       // "Finish later" ends here: the pets still to come are not asked about now.
       const last = draft.pending.length === 0 || finishLater;
-      if (petId) await saveOwnerOnboarding(userId, draft, petId, last);
+      // Add pet leaves the owner's sign-up date as it is.
+      if (petId) await saveOwnerOnboarding(userId, draft, petId, last && !draft.adding);
       else await markOwnerOnboarded(userId);
       if (petId) toast.show(`${petName} is added`);
       if (petId && !last) {
@@ -174,6 +188,7 @@ export default function OwnerOnboarding() {
         setDraft(nextDraft);
         return;
       }
+      if (draft.adding) return await leaveAdding();
       await clearDraft(userId);
       router.replace("/owner");
     } catch (e) {
@@ -250,6 +265,17 @@ export default function OwnerOnboarding() {
       {leaveSheet}
     </StepFrame>
   );
+
+  if (step === "species" && draft.adding) {
+    // Add pet is one pet: tapping its kind goes on. Back closes Add pet.
+    const choose = (kind: Species) => pick(withPetCounts(draft, { dog: kind === "dog" ? 1 : 0, cat: kind === "cat" ? 1 : 0 }), () => goTo("name"));
+    return (
+      <StepFrame progress={0} title="What kind of pet?" onBack={() => void leaveAdding()} testID="own-step-species">
+        <BigOption label="Dog" selected={species === "dog"} onPress={() => choose("dog")} testID="own-species-dog" />
+        <BigOption label="Cat" selected={species === "cat"} onPress={() => choose("cat")} testID="own-species-cat" />
+      </StepFrame>
+    );
+  }
 
   if (step === "species") {
     // Each kind has a count: the questions then run once per pet, dogs first.
