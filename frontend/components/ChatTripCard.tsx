@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ChatMessage, sendChatMessage } from "../features/chat/chatApi";
-import { formatTime, isoToZoned } from "../features/schedule/dates";
+import { formatDay, formatTime, isoToZoned } from "../features/schedule/dates";
 import { Role, arrivedForNext, arrivedTime, canTravel, greetingFor, minutesAway, nextHandoff, startOpensAt, tripArrived } from "../features/transit/tripLogic";
 import { useLiveTrips } from "../features/transit/useLiveTrips";
 import { useStartTrip } from "../features/transit/useStartTrip";
@@ -188,7 +188,22 @@ export function ChatTripCard({ booking, viewer, threadId, messages, onSent, star
   const canStart = !!next && canTravel(viewer, next.handoff.locationType);
   // The trip for the handoff that is still open got there: say so instead of offering Start trip again.
   const there = !!arrivedTrip && next?.kind === arrivedTrip.handoff_kind;
-  if (!hello && !receivable && !there && !canStart) return null;
+  // The other person makes this trip (Figma "Pick-up day"): say who, what and when, and that the owner can watch it live.
+  if (!hello && !receivable && !there && !canStart) {
+    if (!next) return null;
+    const driver = canTravel("owner", next.handoff.locationType) && !canTravel("sitter", next.handoff.locationType) ? booking.ownerName : booking.sitterName;
+    const petNames = booking.pets.map((p) => p.name).filter(Boolean);
+    const pets = petNames.length > 1 ? `${petNames.slice(0, -1).join(", ")} and ${petNames[petNames.length - 1]}` : (petNames[0] ?? "the pets");
+    const when = isoToZoned(next.handoff.at);
+    const verb = next.kind === "drop_off" ? `drops ${pets} off` : `picks ${pets} up`;
+    return (
+      <View style={styles.wrap}>
+        <Card tone="blush" style={styles.card} testID="chat-trip-upcoming">
+          <Text style={styles.oneLine}>{`${driver} ${verb} on ${formatDay(when.day)} at ${formatTime(when.time)}.${viewer === "owner" ? " You'll watch the trip live." : ""}`}</Text>
+        </Card>
+      </View>
+    );
+  }
   const opens = next ? startOpensAt(next.handoff) : 0;
   const arrivedClock = arrivedAt ? ` · ${formatTime(isoToZoned(arrivedAt).time)}` : "";
   return (

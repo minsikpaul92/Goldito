@@ -812,7 +812,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Button | Received | `chat-received` | 146 |
 | Button | mine ? "Open trip" : `Track ${traveler}` | `chat-trip-open` | 171 |
 | Button | I've arrived | `chat-trip-arrive` | 178 |
-| Button | Start trip | `chat-trip-start-button` | 214 |
+| Button | Start trip | `chat-trip-start-button` | 229 |
 
 ### ChecklistCard — [components/ChecklistCard.tsx](../../frontend/components/ChecklistCard.tsx)
 
