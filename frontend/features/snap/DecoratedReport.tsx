@@ -86,7 +86,7 @@ type Props = {
  * top, the day's photo in the picture box, the sitter's words on ruled lines in a handwriting font. The owner (diary
  * entry) and the sitter (their sent report) see the same page — same text, same size — so a sticker sits in the same
  * spot for both. Each person's stickers are their own layer: "✨ Decorate" edits mine (Goldito stickers or the pet's
- * own, drag to move, size, turn, over or behind the writing, remove — all by mouse). "↗ Share" sends the page as
+ * own; drag to move, the corners to size, turn and remove, all by mouse or touch). "↗ Share" sends the page as
  * shown, both layers included (11.8 · DB.5): the image, a download, or a public link. Web only for now.
  *
  * Page layers, bottom to top: paper → picture + ruled lines → stickers behind the text → the text → stickers over it.
@@ -187,11 +187,6 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
     const item: DecorItem = { sticker_id: stickerId, public_id: ref, x: 0.5 + offset, y: 0.5 + offset, scale: 1, rotate: 0, z: topZ(draft), layer: "front" };
     setDraft([...draft, item]);
     setSelected(draft.length);
-  };
-
-  const change = (patch: (item: DecorItem) => Partial<DecorItem>) => {
-    if (selected === null) return;
-    setDraft((items) => items.map((item, i) => (i === selected ? { ...item, ...patch(item) } : item)));
   };
 
   // The corner handle or a pinch (#369).
@@ -396,16 +391,6 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
             </View>
           )}
 
-          {current ? (
-            <View style={styles.row}>
-              <Tool
-                label={current.layer === "back" ? "⬆ Over text" : "⬇ Behind text"}
-                hint={current.layer === "back" ? "Put it over the writing" : "Tuck it behind the writing"}
-                onPress={() => change((i) => ({ layer: i.layer === "back" ? "front" : "back" }))}
-                testID="decor-layer"
-              />
-            </View>
-          ) : null}
           <Button label={saving ? "Saving…" : "Save stickers"} onPress={() => void save()} disabled={saving} testID="decor-save" />
           <TextButton
             label="Cancel"
@@ -434,15 +419,6 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
         />
       ) : null}
     </View>
-  );
-}
-
-function Tool({ label, hint, onPress, testID }: { label: string; hint: string; onPress: () => void; testID: string }) {
-  const styles = useThemedStyles(makeStyles);
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel={hint} onPress={onPress} style={styles.tool} testID={testID}>
-      <Text style={styles.toolLabel}>{label}</Text>
-    </Pressable>
   );
 }
 
@@ -497,16 +473,4 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.accent,
     },
     thumbImage: { width: 48, height: 48 },
-    tool: {
-      minWidth: 44,
-      height: 36,
-      paddingHorizontal: theme.spacing.sm,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: theme.radius.sm,
-      borderWidth: 1,
-      borderColor: theme.color.border,
-      backgroundColor: theme.color.surface,
-    },
-    toolLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
   });

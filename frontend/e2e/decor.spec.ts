@@ -197,42 +197,48 @@ test.describe("diary decorating", () => {
     await expect(screen.getByTestId("decor-mine")).toHaveCount(0);
   });
 
-  test("a picture-diary page: a Goldito sticker can be tucked behind the writing and still dragged", async ({ page }) => {
-    const db = await openOwnerEntry(page, () => undefined);
+  test("a picture-diary page: new stickers go over the writing; one saved behind it stays there and still drags", async ({ page }) => {
+    // No Behind text button any more (#369): a sticker saved behind the writing earlier keeps its side.
+    const db = await openOwnerEntry(page, (d) =>
+      d.report_decor.push({
+        report_id: "sent1",
+        user_id: OWNER.id,
+        items: [{ sticker_id: "preset:heart", public_id: "preset:heart", x: 0.5, y: 0.5, scale: 1, rotate: 0, z: 1, layer: "back" }],
+        updated_at: "2026-10-05T23:00:00Z",
+      }),
+    );
     const screen = app(page);
     // Date and pet on top, like a picture diary (2026-10-05 is a Monday).
     await expect(screen.getByTestId("diary-entry-header")).toContainText("Monday, Oct 5");
     await expect(screen.getByTestId("diary-entry-header")).toContainText("Max's day");
     await expect(screen.getByTestId("diary-entry-picture")).toBeVisible();
 
-    await screen.getByTestId("decor-start").click();
-    await screen.getByTestId("decor-preset-heart").click();
     const front = screen.getByTestId("decor-canvas-front").getByTestId("decor-mine");
     const back = screen.getByTestId("decor-canvas-back").getByTestId("decor-mine");
-    await expect(front).toHaveCount(1); // new stickers go over the writing
-    await screen.getByTestId("decor-layer").click();
-    // Marked "behind the text"; while decorating it floats (faded) on the front canvas so the mouse can still grab it.
+    await expect(back).toHaveCount(1); // under the writing
+    await screen.getByTestId("decor-start").click();
+    await expect(screen.getByTestId("decor-layer")).toHaveCount(0);
+    // While decorating it floats (faded) on the front canvas so the mouse can still grab it.
+    await expect(front).toHaveCount(1);
     await expect(front).toHaveAttribute("data-layer", "back");
-    await expect(back).toHaveCount(0);
-    await expect(screen.getByTestId("decor-layer")).toContainText("Over text");
-
-    // It still follows the mouse.
     const paper = screen.getByTestId("diary-entry-paper");
-    // Clicking "Behind text" may have scrolled the sticker under the screen header: centre it before grabbing it.
     await front.evaluate((el) => el.scrollIntoView({ block: "center" }));
     const p = await box(paper);
     const from = center(await box(front));
     await drag(page, from, { x: from.x - 50, y: from.y + 20 });
     await expect.poll(async () => (await spot(front, paper)).x).toBeCloseTo(0.5 - 50 / p.width, 1);
 
+    await screen.getByTestId("decor-preset-star").click();
+    await expect(screen.getByTestId("decor-canvas-front").locator("[data-layer='front']")).toHaveCount(1); // new ones go over the writing
+
     await screen.getByTestId("decor-save").click();
     await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
-    const [item] = db.report_decor[0].items as Record<string, unknown>[];
-    expect(item).toMatchObject({ sticker_id: "preset:heart", public_id: "preset:heart", layer: "back" });
-    // Saved, it goes under the writing: the back canvas, which ignores the mouse outside decorating.
+    const items = db.report_decor[0].items as Record<string, unknown>[];
+    expect(items.map((i) => i.layer ?? "front")).toEqual(["back", "front"]);
+    // Saved, the old one goes back under the writing.
     await expect(back).toHaveCount(1);
+    await expect(front).toHaveCount(1); // the new star
     await expect(back).toHaveAttribute("data-layer", "back");
-    await expect(front).toHaveCount(0);
   });
 
   test("Save image: the decorated page downloads as a PNG with the sticker painted where it sits (11.8)", async ({ page }) => {

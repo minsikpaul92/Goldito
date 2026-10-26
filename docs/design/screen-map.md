@@ -1595,15 +1595,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `picturePress.label` | `picturePress.testID` | 297 |
-| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 355 |
-| TextButton | Make a sticker | `decor-make` | 375 |
-| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 380 |
-| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 409 |
-| TextButton | Cancel | `decor-cancel` | 410 |
-| TextButton | Decorate | `decor-start` | 421 |
-| TextButton | ↗ Share | `decor-share` | 422 |
-| Pressable | `hint` | `testID` | 443 |
+| Pressable | `picturePress.label` | `picturePress.testID` | 292 |
+| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 350 |
+| TextButton | Make a sticker | `decor-make` | 370 |
+| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 375 |
+| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 394 |
+| TextButton | Cancel | `decor-cancel` | 395 |
+| TextButton | Decorate | `decor-start` | 406 |
+| TextButton | ↗ Share | `decor-share` | 407 |
 
 ### MoodScreen — [features/snap/MoodScreen.tsx](../../frontend/features/snap/MoodScreen.tsx)
 
@@ -1689,4 +1688,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-504 actions · 502 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+503 actions · 501 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
