@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { Animated, Easing, Image, ImageSourcePropType, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, Image, ImageSourcePropType, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { BrandLogo } from "../../../components/BrandLogo";
 import { DemoSheet } from "../../../components/intro/DemoSheet";
@@ -18,9 +18,9 @@ const MAX = require("../../../assets/welcome/max.png");
 const MOCHI = require("../../../assets/welcome/mochi.png");
 const STICKERS: { src: ImageSourcePropType; size: number; at: object; delay: number; tilt?: string }[] = [
   { src: require("../../../assets/stickers/star.png"), size: 26, at: { left: 12, top: 10 }, delay: 0, tilt: "-12deg" },
-  { src: require("../../../assets/stickers/heart.png"), size: 26, at: { left: 118, top: 66 }, delay: 600 },
+  { src: require("../../../assets/stickers/heart.png"), size: 26, at: { left: 104, top: 52 }, delay: 600 },
   { src: require("../../../assets/stickers/ball.png"), size: 24, at: { right: 150, bottom: 14 }, delay: 1200 },
-  { src: require("../../../assets/stickers/sun.png"), size: 30, at: { right: 124, top: 44 }, delay: 300 },
+  { src: require("../../../assets/stickers/sun.png"), size: 30, at: { right: 124, top: 40 }, delay: 300 },
 ];
 
 /**
@@ -44,6 +44,17 @@ export default function WelcomeLanding() {
       <View style={styles.links}>
         <TextButton label="Sign up with email" onPress={() => router.push("/signup")} testID="welcome-sign-up" />
         <TextButton label="Log in" onPress={() => router.push("/login")} testID="welcome-sign-in" />
+      </View>
+      <View style={styles.legal}>
+        <Pressable accessibilityRole="link" onPress={() => router.push("/privacy")} style={styles.legalLink} testID="welcome-privacy">
+          <Text style={styles.legalText}>Privacy</Text>
+        </Pressable>
+        <Text style={styles.legalText} aria-hidden>
+          ·
+        </Text>
+        <Pressable accessibilityRole="link" onPress={() => router.push("/terms")} style={styles.legalLink} testID="welcome-terms">
+          <Text style={styles.legalText}>Terms</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -73,10 +84,15 @@ export default function WelcomeLanding() {
           Leave your pet. Keep your peace of mind.
         </Text>
         <Text style={styles.lead}>Updates from your sitter without asking. Care notes for sitters without typing.</Text>
-        <View style={styles.row}>
-          <TextButton label="How it works ›" onPress={() => router.push("/welcome/how")} testID="welcome-how" />
-          <TextButton label="Privacy" onPress={() => router.push("/privacy")} testID="welcome-privacy" />
-        </View>
+        <Pressable
+          accessibilityRole="link"
+          onPress={() => router.push("/welcome/how")}
+          style={({ pressed }) => [styles.how, pressed && styles.pressed]}
+          testID="welcome-how"
+        >
+          <Text style={styles.howText}>How it works</Text>
+          <Icon name="forward" size={18} color={theme.color.primary} />
+        </Pressable>
       </Screen>
       <DemoSheet visible={demoOpen} onClose={() => setDemoOpen(false)} />
     </View>
@@ -110,9 +126,9 @@ const makeStyles = (theme: Theme) => {
   const display = theme.fontFamily.display;
   return StyleSheet.create({
     root: { flex: 1 },
-    content: { gap: theme.spacing.md },
+    content: { gap: theme.spacing.sm + 4 },
     hero: {
-      height: 170,
+      height: 136,
       borderRadius: theme.radius.xl,
       backgroundColor: theme.color.blockMint,
       overflow: "hidden",
@@ -150,8 +166,8 @@ const makeStyles = (theme: Theme) => {
     },
     tagText: { fontSize: theme.fontSize.caption + 1, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     sticker: { position: "absolute" },
-    max: { position: "absolute", left: 14, bottom: 14, width: 80, height: 110 },
-    mochi: { position: "absolute", right: 10, bottom: 18, width: 128, height: 66 },
+    max: { position: "absolute", left: 14, bottom: 10, width: 70, height: 96 },
+    mochi: { position: "absolute", right: 10, bottom: 12, width: 112, height: 58 },
     title: {
       fontSize: theme.fontSize.title + 4,
       lineHeight: theme.fontSize.title + 10,
@@ -159,8 +175,13 @@ const makeStyles = (theme: Theme) => {
       ...(display ? { fontFamily: display } : { fontWeight: theme.fontWeight.bold }),
     },
     lead: { fontSize: theme.fontSize.body, color: theme.color.textMuted, lineHeight: 22 },
-    row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    how: { flexDirection: "row", alignItems: "center", gap: 2, alignSelf: "flex-start", minHeight: 44 },
+    howText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
+    pressed: { opacity: 0.6 },
     footer: { gap: theme.spacing.sm },
     links: { flexDirection: "row", justifyContent: "space-between" },
+    legal: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: theme.spacing.xs, marginTop: -theme.spacing.sm },
+    legalLink: { minHeight: 44, justifyContent: "center", paddingHorizontal: theme.spacing.xs },
+    legalText: { fontSize: theme.fontSize.caption + 1, color: theme.color.textMuted },
   });
 };

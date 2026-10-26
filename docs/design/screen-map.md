@@ -340,11 +340,9 @@ Shows: `TreatCheckScreen`
 
 ### `/privacy` — [app/privacy.tsx](../../frontend/app/privacy.tsx)
 
-Public privacy page (10.11): reachable signed out — the Google OAuth consent screen (Branding) and the Welcome screen link here. Sections open one at a time; closed ones stay in the DOM (hidden) so the text is still there for crawlers and tests. `/privacy?open=google-calendar-and-meet` opens that section, for the consent-screen reviewer.
+Public privacy page (10.11): reachable signed out — the Google OAuth consent screen (Branding) and the Welcome screen link here. `/privacy?open=google-calendar-and-meet` opens that section, for the consent-screen reviewer.
 
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Pressable | — | ``privacy-${id}-toggle`` | 132 |
+Shows: `LegalPage`
 
 ### `/profile` — [app/profile.tsx](../../frontend/app/profile.tsx)
 
@@ -591,9 +589,9 @@ Shows: `TodayTasks`
 
 ### `/terms` — [app/terms.tsx](../../frontend/app/terms.tsx)
 
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Pressable | — | ``terms-${id}-toggle`` | 100 |
+Terms of Service (#375): reachable signed out from sign-up, and from Settings.
+
+Shows: `LegalPage`
 
 ### `/welcome` — [app/(public)/welcome/index.tsx](../../frontend/app/(public)/welcome/index.tsx)
 
@@ -607,8 +605,9 @@ Shows: `BrandLogo` · `DemoSheet` · `SocialSignIn`
 | Button | Create account | `welcome-create` | 41 |
 | TextButton | Sign up with email | `welcome-sign-up` | 45 |
 | TextButton | Log in | `welcome-sign-in` | 46 |
-| TextButton | How it works › | `welcome-how` | 77 |
-| TextButton | Privacy | `welcome-privacy` | 78 |
+| Pressable | — | `welcome-privacy` | 49 |
+| Pressable | — | `welcome-terms` | 55 |
+| Pressable | — | `welcome-how` | 87 |
 
 ### `/welcome/how` — [app/(public)/welcome/how.tsx](../../frontend/app/(public)/welcome/how.tsx)
 
@@ -987,6 +986,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Button | Add Heads-up | `heads-up-add` | 105 |
+
+### LegalPage — [components/LegalPage.tsx](../../frontend/components/LegalPage.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| BackLink | — | ``${testID}-back`` | 61 |
 
 ### MediaConfirm — [components/MediaConfirm.tsx](../../frontend/components/MediaConfirm.tsx)
 
