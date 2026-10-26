@@ -717,6 +717,7 @@ export default function Chat() {
                       style={styles.chip}
                       testID={`chat-chip-${i + 1}`}
                     >
+                      <Icon name="ai" size={14} color={theme.color.primary} />
                       <Text style={styles.chipText}>{chip.label}</Text>
                     </Pressable>
                   ))
@@ -762,6 +763,7 @@ export default function Chat() {
               style={[styles.chip, drafting && styles.sendOff]}
               testID={`chat-chip-${i + 1}`}
             >
+              <Icon name="ai" size={14} color={theme.color.primary} />
               <Text style={styles.chipText}>{chip.label}</Text>
             </Pressable>
           ))}

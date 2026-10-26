@@ -85,7 +85,7 @@ type Props = {
  * A sent daily report as a picture-diary page both people decorate (Phase 12.3b · 12.4, D61): the date and the pet on
  * top, the day's photo in the picture box, the sitter's words on ruled lines in a handwriting font. The owner (diary
  * entry) and the sitter (their sent report) see the same page — same text, same size — so a sticker sits in the same
- * spot for both. Each person's stickers are their own layer: "✨ Decorate" edits mine (Goldito stickers or the pet's
+ * spot for both. Each person's stickers are their own layer: "Decorate" edits mine (Goldito stickers or the pet's
  * own; drag to move, the corners to size, turn and remove, all by mouse or touch). "↗ Share" sends the page as
  * shown, both layers included (11.8 · DB.5): the image, a download, or a public link. Web only for now.
  *

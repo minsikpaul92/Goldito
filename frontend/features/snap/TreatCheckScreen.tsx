@@ -232,6 +232,7 @@ function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
 
       <Button
         label={!pet ? "Pick a pet first" : unreadable || result?.partial_label ? "Retake photo" : result ? "Check another treat" : "Snap a label"}
+        ai
         onPress={() => void snapLabel()}
         disabled={!pet || !!step}
         testID="treat-snap"

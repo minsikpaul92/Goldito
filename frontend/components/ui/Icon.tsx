@@ -77,6 +77,8 @@ const ICONS = {
   bell: Bell,
   menu: Menu,
   settings: Settings,
+  /** Marks a button that asks the AI to write or check (DESIGN.md 7.6). */
+  ai: Sparkles,
   whatsNew: Sparkles,
   logOut: LogOut,
   // moving around
