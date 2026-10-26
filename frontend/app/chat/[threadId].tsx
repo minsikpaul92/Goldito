@@ -340,7 +340,8 @@ export default function Chat() {
 
   /** Owner: the booking is made from the stay on the chat's card (the sitter's place unless the owner's usual is another); no dates yet opens the sheet. */
   const startMeetGreet = async (choice: "request" | "skip") => {
-    if (!stay || !profile) return setRequesting(true);
+    // A stay whose drop-off has passed opens the sheet, which moves it to the next slot (#364).
+    if (!stay || !profile || Date.parse(stay.dropOffAt) <= Date.now()) return setRequesting(true);
     setStepBusy(true);
     try {
       const bookingId = await createBookingFromStay({ threadId, ownerId: profile.id, sitterId: header.otherId, sitterName: header.otherName, stay });

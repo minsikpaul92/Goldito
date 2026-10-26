@@ -1247,6 +1247,8 @@
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |
 | PASTTIME-1 | Book care(`/owner/bookings/new`)에서 드롭오프를 지난 시간으로 · 픽업을 드롭오프보다 앞으로 | 메시지가 둘로 나뉨: **Drop-off time has passed.** / **Pick-up must be after drop-off.** | 🤖 `booking`(trip times) | ➖ |
+| PASTTIME-2 | 채팅 첫 카드의 맡기는 시간이 오늘 이미 지난 상태(예: 오늘 9 AM, 지금 2:44 PM)에서 오너가 **Request** | 바로 보내지지 않고 Request booking 시트가 열림. 맡기는 시간이 **다음 정각(3:00 PM)** 으로 옮겨져 있고 날짜 칸이 펼쳐진 채 "The chat's drop-off had passed, so it moved." 한 줄. 데려가는 시간이 새 맡기는 시간보다 앞이면 머무는 길이를 그대로 두고 함께 옮겨짐 | 🤖 `chat-handoff` · `booking`(trip times) | 사람 확인 대기 |
+| PASTTIME-3 | 그 시트(또는 Book care · Change time)에서 오늘 날짜의 시간 고르기 | 지금보다 앞선 시간은 흐리게 줄이 그어져 눌리지 않음(오후면 AM 전체, 지난 시 · 분). 바퀴를 굴려 지난 시간에 멈추면 **Set**이 꺼짐. 내일 이후 날짜는 모든 시간이 열림 | 🤖 `chat-handoff` | ➖ |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
