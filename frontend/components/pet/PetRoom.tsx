@@ -4,12 +4,13 @@ import type { PetStatus } from "../../lib/petStatus";
 
 import { usePetRoom } from "../../features/pets/usePetRoom";
 import type { HatId } from "../../features/pets/sprites/hats";
+import type { PetRecipe } from "../../features/pets/sprites/petLook";
 import type { PixelColors } from "../../features/pets/sprites/photoColors";
 import type { Species } from "../../types/db";
 import { PetRoomCard } from "./PetRoomCard";
 
 type Props = {
-  pet: { id: string; name: string; species: Species; coat?: unknown; breed?: string | null; weightKg?: number | null; colors?: PixelColors | null; hat?: HatId | null };
+  pet: { id: string; name: string; species: Species; coat?: unknown; breed?: string | null; weightKg?: number | null; colors?: PixelColors | null; hat?: HatId | null; look?: PetRecipe | null };
   onPress?: () => void;
   /** Bump to reload now, e.g. after the sitter taps a check-in. */
   reloadKey?: number;
@@ -21,7 +22,7 @@ type Props = {
 export function PetRoom({ pet, onPress, reloadKey, children }: Props) {
   const { status, event } = usePetRoom(pet.id, reloadKey);
   return (
-    <PetRoomCard name={pet.name} species={pet.species} coat={pet.coat} breed={pet.breed} weightKg={pet.weightKg} colors={pet.colors} hat={pet.hat} status={status} event={event} onPress={onPress} testID={`pet-room-${pet.name}`}>
+    <PetRoomCard name={pet.name} species={pet.species} coat={pet.coat} breed={pet.breed} weightKg={pet.weightKg} colors={pet.colors} hat={pet.hat} look={pet.look} status={status} event={event} onPress={onPress} testID={`pet-room-${pet.name}`}>
       {typeof children === "function" ? children(status) : children}
     </PetRoomCard>
   );

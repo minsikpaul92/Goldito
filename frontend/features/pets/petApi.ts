@@ -5,6 +5,7 @@ import { Pet, Species } from "../../types/db";
 import { Coat, isCoat } from "../ownerOnboarding/questions";
 import { asHat } from "./items";
 import type { HatId } from "./sprites/hats";
+import { asPetRecipe, type PetRecipe } from "./sprites/petLook";
 import { asPixelColors, type PixelColors } from "./sprites/photoColors";
 
 const PET_COLUMNS =
@@ -35,15 +36,32 @@ export async function listMyPets(ownerId: string): Promise<Pet[]> {
   return (data ?? []) as Pet[];
 }
 
-export type PetLook = { coat: Coat | null; breed: string | null; weightKg: number | null; colors: PixelColors | null; hat: HatId | null };
+export type PetLook = { coat: Coat | null; breed: string | null; weightKg: number | null; colors: PixelColors | null; hat: HatId | null; look: PetRecipe | null };
 
 /** How the pet room draws the pet: the breed (head shape), the weight (size), the coat color, the colors picked from a photo and the hat it wears. */
 export async function getPetLook(petId: string): Promise<PetLook> {
   const { data, error } = await getSupabase().from("pets").select("breed, weight_kg, profile").eq("id", petId).maybeSingle();
-  if (error || !data) return { coat: null, breed: null, weightKg: null, colors: null, hat: null };
-  const row = data as { breed?: string | null; weight_kg?: number | string | null; profile?: { coat?: unknown; pixel_colors?: unknown; hat?: unknown } | null };
+  if (error || !data) return { coat: null, breed: null, weightKg: null, colors: null, hat: null, look: null };
+  const row = data as { breed?: string | null; weight_kg?: number | string | null; profile?: { coat?: unknown; pixel_colors?: unknown; hat?: unknown; pixel_look?: unknown } | null };
   const profile = row.profile;
-  return { coat: isCoat(profile?.coat) ? profile.coat : null, breed: row.breed ?? null, weightKg: row.weight_kg == null ? null : Number(row.weight_kg), colors: asPixelColors(profile?.pixel_colors), hat: asHat(profile?.hat) };
+  return {
+    coat: isCoat(profile?.coat) ? profile.coat : null,
+    breed: row.breed ?? null,
+    weightKg: row.weight_kg == null ? null : Number(row.weight_kg),
+    colors: asPixelColors(profile?.pixel_colors),
+    hat: asHat(profile?.hat),
+    look: asPetRecipe(profile?.pixel_look),
+  };
+}
+
+/** Save the look the owner made (`pets.profile.pixel_look`), or remove it (`null`) to go back to breed, coat and photo colors. */
+export async function savePetLook(petId: string, look: PetRecipe | null): Promise<void> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.from("pets").select("profile").eq("id", petId).maybeSingle();
+  if (error || !data) fail("save the look");
+  const { pixel_look: _old, ...rest } = ((data as { profile?: Record<string, unknown> | null }).profile ?? {}) as Record<string, unknown>;
+  const { error: saveError } = await supabase.from("pets").update({ profile: look ? { ...rest, pixel_look: look } : rest }).eq("id", petId);
+  if (saveError) fail("save the look");
 }
 
 /**
