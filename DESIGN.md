@@ -89,7 +89,7 @@ Every Figma variable carries its code name as **code syntax** (Figma uses kebab-
 | Life Record Card | `components/LifeRecordCard.tsx` | ✅ |
 | Trip Map | `components/TripMap.tsx` / `TripMap.web.tsx` | ✅ |
 | Calendar Day | `components/SlotCalendar.tsx`, `components/ui/DayPickerSheet.tsx` | 🟡 |
-| Tab Bar / Tab Bar Item | `components/RoleTabs.tsx` — Figma's last tab says **Mood**, the app's is **Snap** (D61) | 🟡 |
+| Tab Bar / Tab Bar Item | `components/RoleTabs.tsx` — Home · Bookings · Chat · Moments · **Snap**, in the app and in Figma (D61, D19) | ✅ |
 | Top Bar / Icon Button | `expo-router` headers + `components/HeaderActions.tsx`, `components/NotificationBell.tsx`, `components/HeaderMenu.tsx` | ✅ |
 | Profile Card | `components/SitterCard.tsx` + `app/owner/sitters/[sitterId].tsx` | 🟡 |
 | Choice Card | `components/RoleCard.tsx`; other big radio choices are local | 🟡 |
@@ -157,10 +157,8 @@ After any of these: `node scripts/screen-map.mjs` (CI fails if the map is stale)
 
 ### 0.7 Not decided yet
 
-- **Mood vs Snap** — Figma's Tab Bar says Mood; the app (D61) is **Snap** (treat check · mood · stickers).
 - **Skins and text** — `Balanced` also tints `text` / `text-muted`; the code allows that only for dark, readable values (§3.1).
 - **18 px subtitle** — §4 proposes it; D6 says four sizes. One of them changes.
-- **Logo** — the gold tag (v2.1) is in the app; the brand site still lists Notebook and Pixel as directions.
 
 ---
 
@@ -183,6 +181,15 @@ Each design decision, its reason, and what it replaced. Change a row only with t
 | **D11** | **Plus Jakarta Sans** for all text except titles; **Fredoka** (600) for screen, tab and section titles, one-question headings and big numbers (Oct 22, #304) | One friendly family that matches Figma's Expressive parts; Fredoka is the logo's face. Web only for now; native keeps the system font until the native app ships | D6: the system font, with Inter as Figma's stand-in |
 | **D12** | **Lucide** line icons, always through `components/ui/Icon.tsx`, named by meaning (`home`, `bell`, `back`), never by Lucide name (Oct 22, #301, #323) | Friendlier line, has a dog and a cat, covers every concept; one table to change if the set changes | Ionicons (`@expo/vector-icons`) |
 | **D13** | **Header C**: the tab title with "Name · Role" under it, the bell, and your avatar, which opens the menu drawer; no role chip (Oct 22, #294) | Shows who is signed in on every tab, which matters with two roles in split view | #147 option B: role chip, bell and a ≡ menu button |
+| **D14** | **Back, close and leave** follow one rule set: Back goes back, Close dismisses, the primary button finishes; one back per screen; typed input is never dropped silently (§7.8, Oct 25). *Proposed, pending team OK on U1 to U4.* | The audit found 19 different back and close behaviours, three backs on one screen, and sheets that lose a typed note on a scrim tap | Each screen choosing its own back |
+| **D15** | **Feedback surfaces** are picked by job: field errors inline, screen problems in a Banner, quick results in a toast with a tone, decisions in an ErrorDialog; destructive acts ask in a Sheet with a `danger` button, reversible ones offer Undo (§7.11, Oct 25). *Proposed, pending U5 to U9.* | About 30 failures showed a green success check; errors used five surfaces for the same job; Cancel booking had no danger style while Sign out did | Toast, dialog or red text chosen per screen |
+| **D16** | **Actions and forms**: the pinned primary uses `Screen footer`; one word per job (Save, Done, Next, Send, Delete); sheet actions sit in the sheet footer; one control per kind of choice (§7.12, Oct 25). *Proposed, pending U10 to U12.* | Footers were built four ways, "Done" meant four things, and pets were picked six ways | Per-feature controls and labels |
+| **D17** | **Moments, decided by Minsik (Play and Pick, Oct 25)**: the pet picker sits in the tabs and Moments opens on all pets; the tab is **Moments**; the Diary has Days, Calendar and Footprints; a sticker is seen only by its maker; owners ask for a photo only in Chat; a sitter's diary page starts shared; the paw shortcut menu waits until after the freeze; words are a little playful (toasts and empty states only) | Nine calls tried in the Moments trial and voted on one page | The Feed trial's earlier picks (filter-chip picker, a shared sticker box, an Ask link in Moments, pages kept until shared) |
+| **D18** | **UX calls, decided by Mook (Oct 25)**: U1 A, U2 C, U3 B, U4 A, U5 A, U6 A, U7 A, U8 B, U9 A, U10 A, U11 A, U12 A (§7.13). Back was the chevron + Back (U1 changed by D20); typed input is kept as a draft in long flows and a sheet asks before dropping it; Undo is 6 s; Accept is the one yes word | Twelve calls from the UX audit, drawn as phone screens and picked on one page | Icon-only Back; dropping typed text silently; per-card primaries |
+| **D19** | **Snap and the coin, settled (Mook, Oct 25)**: the fifth tab is **Snap** (treat check · mood · stickers), in the app (#341) and in Figma's Tab Bar; the logo is the **pixel gold coin with a paw** plus "Goldito" in the display face (decided Oct 19). The gold tag, Notebook and Pixel stay on the brand site as other directions, for reference | Both were still listed under §0.7 although the app and Figma had moved on | Mood as the tab name; the gold tag as the logo |
+| **D20** | **Words and playful words (Mook, Oct 26)**: Log in / Log out everywhere; the sitter's daily write-up is a Diary page; puns come only from `content/words.ts` through `useWords()`, and Settings → Playful words turns them off | The copy audit: log in, sign in and sign out mixed; the write-up called Diary, report, daily note and page; puns typed into four screens (cats got Paw-fect!) with no way to turn them off | Sign in / Sign out; "daily report"; hard-coded puns |
+| **D20** | **Back is the ← arrow alone (Mook, Oct 25)**: one control everywhere, top left, 44 × 44, read aloud as Back, no visible word; `Icon name="arrowBack"` in `BackLink`, `StepHeader` and `StepFrame`, and the native header in minimal mode. Replaces U1 A | "‹ Back" crowded the sign-up step header next to its progress bar; the arrow is what ~37 native headers already showed, and what #383 proposed | Chevron + the word Back (U1 A) |
+| **D21** | **Sign out asks in a sheet (Mook, Oct 26)**: the menu and Settings both confirm Sign out in a bottom sheet, as #387 built it. Replaces U5 A | The sheet shipped (#387) before U5 was built; one sheet in both places is already consistent, and signing out of a demo account by accident costs a judge the stay | No confirm (U5 A) |
 
 ---
 
@@ -211,7 +218,7 @@ Goldito is a private care app for **dogs and cats**. Owners hand their pet to a 
 - **Content width: 370** (402 − 2 × 16). Full-width components (cards, rows, banners, fields) are built at 370 in Figma, and everything inside them fills or grows — never a fixed inner width — so they adapt from 360 to 440. Chat bubbles are 80 % of the content width.
 - Bottom tab bar per role (owner / sitter). The primary action sits at the bottom of the screen, within thumb reach.
 - The header shows who is signed in under the title, for example **Chloe · Sitter** (header C, D13). There is no role chip.
-- **Avatar menu** (`components/HeaderMenu.tsx`): your avatar, in a thin `primary` ring, opens a full-width drawer that slides in from the right. You (→ Profile), Notifications with the count, Schedule (sitters), What's new, Settings, and Sign out pinned at the bottom with a confirm. Settings has Sign out with the same confirm.
+- **Avatar menu** (`components/HeaderMenu.tsx`): your avatar, in a thin `primary` ring, opens a full-width drawer that slides in from the right. You (→ Profile), Notifications with the count, Schedule (sitters), What's new, Settings, and Sign out pinned at the bottom; it asks in a bottom sheet (#387). Settings has Sign out with the same sheet (D21).
 
 ### 2.1 Desktop browsers (judges): phone frame
 
@@ -399,7 +406,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | Component | Rules |
 | :--- | :--- |
 | `Screen` | Wraps every screen: safe area, scroll, `background`, 16 padding, max width 480 |
-| `BackLink` | Standard back control: `<Icon name="back" />` + label **Back** (`primary`, 600, 44 min height). Use for login → Welcome, signup → previous, onboarding step-back / exit. Label stays **Back** — never “Back to Onboarding” or other destination names. See [§7.8](#78-back-navigation) |
+| `BackLink` | Standard back control: the ← arrow alone (`<Icon name="arrowBack" />`, `text` color, 44 × 44), read aloud as **Back**. Use wherever a screen draws its own top bar: Log in, How it works, Settings, What's new, Privacy, Terms. `StepHeader` and `StepFrame` draw the same arrow. See [§7.8](#78-back-close-and-leaving) |
 | `MediaPlaceholder` (`components/`) | Onboarding photo/video slot (~4:3, dashed `accent` frame). Centered in leftover tour height; title + brief for Mook’s asset brief. Replace with real media later — see [§7.9](#79-welcome--role-onboarding) |
 | `Card` | `surface`, `radius.lg`, 16 padding, 1 px `border` |
 | `Button` | `primary` (filled) and `secondary` (`surface` + `borderStrong` border, `primary` label); `radius.md`, 44 min height, 8 / 16 padding, semibold label. Pressed = `motion.pressOpacity` + `motion.pressScale`; disabled = `border` fill + `textMuted` label (Figma Button, Style × State) |
@@ -523,7 +530,7 @@ No caption box, no long report typing. Sitters tap: **Today quick check-ins** (m
 Owners may type where it saves the sitter work: the inquiry question, the care & medication request, their name on consents, and their preferred meeting spots.
 
 ### 7.3 Feedback loop
-Action → **skeleton / spinner** → **toast** on success → the other side gets a **notification**. In the demo, both sides should be visible.
+Action → **skeleton / spinner** → **toast** on success → the other side gets a **notification**. In the demo, both sides should be visible. Which surface to use for what (toast, Banner, ErrorDialog, confirm, Undo) is in [§7.11](#711-feedback-errors-and-confirms).
 
 ### 7.4 Danger is loud
 Safety result modal:
@@ -546,6 +553,8 @@ Always explain what will appear and who adds it.
 - **Avoid the emoji AI text uses all the time**, in copy, buttons, rows, chips and empty states: ✨ 🚀 💡 🔥 ✅ ❌ ⚠️ 🎯 📌 🌟 🎉 👋 🙌 💪 🤖 🔍 📝 ⭐ 💬. Use plain words, a line icon, or nothing instead. Status and section labels use the line icons (`<Icon>` or `Tag icon`: check, clock, close, warning, meal, pill, paw, tip); emoji stay for content: empty-state art, pet species, album and badge names. Buttons are words, with no emoji.
 - Any other emoji is fine, in a button too, when it helps (📍 on a "use my current location" button, a pet's 🐶 / 🐱). Swapping one for a line icon is optional.
 - Times shown in the app timezone (America/Toronto) with AM/PM.
+- **One word per thing** (D20): **Log in / Log out** (never sign in / sign out, except Google's own "Sign in with Google"); the sitter's daily write-up is a **Diary page** ("Writing Max's page", "Diary page · Sent"); the photo tab is **Moments**; errors start with **Couldn't**.
+- **Playful words** (D20): a pun only on a toast, an empty state, a loading line, a few titles and small celebrations, taken from `frontend/content/words.ts` with `useWords()` (plain, dog and cat versions; the playful one follows the pet's species). Never on safety, money, agreements, errors or button labels. **Settings → Playful words** (on by default) turns every one back to its plain line. The list and the never list: [Playful words](https://mooque-dev.github.io/goldito-design/words-trial.html).
 
 ### 7.7 Works with a mouse
 
@@ -577,14 +586,27 @@ Judges use a computer, so every action must work with a mouse and a trackpad ins
 
 `/dev/gestures` (with `EXPO_PUBLIC_DEV_ROUTES=1`) shows every pattern above in one screen, and the Playwright suite (`frontend/e2e/`) checks it with a mouse in CI. The same checklist is in the PR template.
 
-### 7.8 Back navigation
+### 7.8 Back, close and leaving
 
-Every screen that leaves a parent flow uses **`BackLink`** (`frontend/components/ui/BackLink.tsx`):
+Four jobs, four controls. Pick by the job, never by the screen. The [UX audit](https://mooque-dev.github.io/goldito-design/ux-audit.html) lists every place that does it differently today (Oct 25).
 
-- Visual: `<Icon name="back" />` (Lucide chevron) + the word **Back** (same row, `primary` color).
-- Placement: top of the screen (or the tour top bar), left-aligned, 44 px min hit area.
-- Behavior: go to the previous step or parent route (e.g. Login → `/welcome`, onboarding step 0 → role landing). Prefer `router.push` / `replace` to a known parent over inventing a second marketing link.
-- Label is always **Back** — not “Back to Onboarding”, not icon-only, not a marketing link (“How Goldito works”) for the same job.
+| Job | Control | Where | Label |
+| :--- | :--- | :--- | :--- |
+| **Go back** to the screen you came from | The **← arrow** alone (`Icon name="arrowBack"`: `BackLink`, `StepHeader`, `StepFrame`, or the native header with `headerBackButtonDisplayMode: "minimal"` and `headerBackTitle: "Back"`) | Top left, `text` color, 44 × 44 | Read aloud as **Back**. No visible word: next to a title or a progress bar it crowds the row (D20). Not "Back to the booking", not "‹ Diaries" |
+| **Step back** inside a flow (onboarding, booking, checkout) | The same ← arrow, top left. It goes one step; on step 1 it leaves the flow | Top left only. **No second Back at the bottom** | Read aloud as **Back** |
+| **Dismiss** a sheet, dialog, menu or full-screen viewer | **Close** text (sheets, dialogs) or ✕ icon labelled "Close" (full-screen photo viewers, the menu drawer) | Sheets: top right. Viewers: top left, white on the dark fade, 44 px, visible whenever the details are | **Close**. One per surface: never Close *and* Cancel |
+| **Finish** a task | The primary button that says what it does (**Save**, **Send**, **Pay**) | Pinned footer (§7.12) | A verb. After it, go back to where the task started (`router.dismissTo`), not forward to a copy of it |
+
+**Rules**
+
+1. **One back per screen.** A screen never has a native header Back *and* its own Back, or a top Back *and* a bottom Back. Sitter setup today has three (header, StepFrame top, StepFrame bottom).
+2. **Back on step 1 leaves the flow**, the same way on every flow. If the flow sets something permanent on exit (owner setup's "Add a pet later"), it says so on the button.
+3. **Typed input is never dropped silently.** If leaving would lose text, photos or ticks the person typed or picked, either keep a draft (preferred for long flows, as owner setup and the care request already do) or ask in a Sheet: *"Discard your note?"* with **Keep editing** (primary) and **Discard** (`danger`). This applies to Back, Close, a scrim tap, a drag down and Escape. [U2]
+4. **Close never saves; Done never discards.** A sheet whose changes apply as you tap (filters, search pickers) has one **Done** and no Close. A sheet that needs confirming has **Close** (discards, after rule 3) and one primary that saves. [U10]
+5. **A scrim tap, Escape and Android back all equal Close**, on every sheet, dialog and menu, except the DANGER alert (§7.4), which only closes with its button. The menu drawer's scrim closes it too.
+6. **Where Back lands** (code): `router.back()` with a `replace(parent)` fallback when there's no history; finishing a flow uses `dismissTo(origin)`; switching between Log in and Sign up uses `replace` both ways; never `push` a tab route from a stack screen (use the tab). Step state lives in the URL so the browser's Back moves one step. [U8]
+7. **Tapping the tab you're on** scrolls to the top, then pops to the tab's first screen.
+8. **Labels and size.** Every back and close control is at least 44 × 44 and has an accessibility label that says its job ("Back" for the ← arrow, "Close" for Close and ✕). A "‹" or "←" that closes is not allowed: it looks like Back. Chevrons (‹ ›) are for paging (calendar months, photos), never for Back.
 
 ### 7.9 Welcome / role onboarding
 
@@ -596,7 +618,7 @@ Public intro for **signed-out** visitors (`/welcome`, `/welcome/how`, `/login`, 
 | Boot | While the session loads, `BootView`: the four-print paw walk (`PawWalk`) with the coin and Goldito under it, never a bare spinner. The pet setup finish is meant to reuse the same walk (not built yet). |
 | Welcome | Max and Mochi on a mint block, the tagline, a butter **How it works** card (art, "Three short pages, about a minute", chevron) so a first-time visitor sees where to learn more, then **Try the demo** as the one primary button (opens `DemoSheet`: who to be), then Sign up with email and Log in as text buttons, and a small Privacy · Terms line. Without a demo password the primary is Create account. |
 | How it works | Three pages (the problem, two sides, one stay) drawn with the app's own art and demo photos; Next, Skip and Back; the last page offers Try the demo and Create account. No placeholder boxes. |
-| Sign up | Three steps under one `StepHeader` (who you are, name and email, password); its Back is the chevron plus the word Back, like `BackLink` (§7.8). The step button says **Next** ("Pick one first" while nothing is picked) and the last one **Create account** (§7.12). Back steps back and keeps what was typed, then leaves. Terms and Privacy are links. |
+| Sign up | Three steps under one `StepHeader` (who you are, name and email, password); its Back is the ← arrow, like `BackLink` (§7.8). The step button says **Next** ("Pick one first" while nothing is picked) and the last one **Create account** (§7.12). Back steps back and keeps what was typed, then leaves. Terms and Privacy are links. |
 | Demo roles | The demo sheet and the Log in demo tiles show what each side gets (`RoleArt`): the owner's home with a photo of Max arriving; the sitter with Max and Mochi and the camera. |
 | How it works 2 | Chloe's checks reach Robert along a dashed line with a "Goldito sends the update" pill on it, the step Goldito takes for them. |
 | Apple / Google | `SocialSignIn` stays hidden until they work; when shown, Apple and Google share one row of two so Welcome keeps How it works in view (`EXPO_PUBLIC_SOCIAL_SIGN_IN=1` shows them); a judge never taps a "Coming soon" button. |
@@ -623,6 +645,102 @@ Counts (number of pets, times a day) are the only thing that still uses the plai
 **Applies to (all of them, none left on the old stepper-only input):** Book care and the Ask-about-a-stay sheet (`HandoffPicker`), Change time or place and Suggest another time (`HandoffChangeSheet`), Meet & Greet (`MeetGreetSheet`), the sitter's schedule (`ScheduleSheet`), the care checklist's "Several times" (`CareLineBuilder`), care task times.
 
 ---
+
+### 7.11 Feedback, errors and confirms
+
+One surface per job. The [UX audit](https://mooque-dev.github.io/goldito-design/ux-audit.html) has the places that differ today.
+
+| Something… | Use | Never |
+| :--- | :--- | :--- |
+| **is loading a screen** | `Skeleton` in the final layout. `LoadingView` (spinner only) is for the first app load. After 10 s: "Still loading…" + **Try again** | A spinner inside a scrolling screen |
+| **is working on a button tap** | `Button loading` and a present-tense label that matches the button: Save → "Saving…", Accept → "Accepting…", Pay → "Paying…". Ellipsis is one character (…) | "Working…", "Please wait…", "Saving…" on a button that doesn't save, "..." |
+| **worked** | A toast with `tone: "success"`, naming the thing and who was told: "Sent to Robert", "Max checked in. Robert was told". No trailing period | A toast for every small thing the screen already shows |
+| **partly worked** | A toast with `tone: "warning"`: "Sent, but the stickers weren't saved" | A success check on a partial result |
+| **failed after a tap** | A toast with `tone: "error"` and **Try again** when retrying is the whole answer; an `ErrorDialog` when the person must decide something. Say what happened, what was kept and what to do: "Not sent. Your note is kept. Try again" | The default success tone on an error; raw server text (`e.message`, status text, env names) |
+| **is wrong with a field** | Red text under that field (`TextField` error) when they leave the field or press the button | A toast for a field problem |
+| **is wrong with the whole screen** (offline, payment failed, sitter late) | `Banner` with the right tone, at the top | Red inline text in the middle |
+| **is empty** | `EmptyState`: what will appear, who adds it, and an action when the person can do something (§7.5) | An empty title like "Diary"; a hidden section |
+| **is not found or failed to load** | `EmptyState` with **Try again** or **Back**; the error is the message, not the title | A dead end with no button |
+| **is destructive and can't be undone** (cancel booking, decline, delete, clear all, reset) | Ask in a Sheet: what will happen, then a `danger` button named for the act ("Cancel booking") and Close. The sheet's buttons sit in its footer | A `primary` button for a destructive confirm; `danger` for things that aren't destructive (Sign out) [U5] |
+| **is quick and reversible** (hide, remove a chip, check-in, mark done, leave a chat) | Do it, then a toast with **Undo** for 6 s [U3] | A confirm sheet; no way back |
+| **is a button that can't be pressed yet** | `dimmed` (looks off, still takes the tap) plus one line saying why, and a tap scrolls to what's missing, like Checkout's Pay | A silently disabled button |
+| **arrived from the other side** (a notification) | The bell badge (cap **9+** everywhere) and the "New" marker; a toast only if it isn't about the screen you're on, and never over a toast you just caused [U9] | A notification toast replacing your own Undo |
+
+Swipe actions (leave a chat, delete a notification) always have a visible button too (§7.7).
+
+### 7.12 Actions, sheets and forms
+
+**The main action**
+
+- One filled `primary` per screen (§7.1), including the cards in it. Cards that offer a next step use a secondary button or an Action Row; the screen's footer carries the one primary. On busy screens (booking detail, chat), the primary is the *next step of the stay*, and the cards' buttons are secondary. [U11]
+- A pinned primary uses `Screen footer=` (so toasts sit above it), never a hand-made footer view.
+- Buttons stretch to full width; `size="large"` (60 px) is for one-question flows (onboarding, step-by-step booking).
+- Colors come from the theme (`useTheme().color.primary`), never `tokens.color.primary` directly, so skins work.
+
+**One word per job**
+
+| Job | Word | Not |
+| :--- | :--- | :--- |
+| Keep changes | **Save** (or "Save {thing}") | Done, Apply, OK |
+| Close a sheet whose changes already applied | **Done** | Close (it reads as discard) |
+| Mark a task complete | **Mark done** | Done |
+| Move to the next step | **Next** (the last step says what it does: **Create account**, **Send request**) | Continue on one flow and Next on another |
+| Send something to the other person | **Send** / "Send to {name}" | Submit |
+| Say yes to a request | **Accept** (and **Confirm and pay** only at checkout) | I accept, Approve, Confirm quote [U12] |
+| Say no | **Decline** | Not this sitter, Decline and end the request |
+| Retry | **Try again** | Retry, Record again (unless it records) |
+| Leave a flow early | **Skip** for one step, **Skip for now** for the rest | Skip all, Skip all for now, Skip questions |
+
+Buttons are words. A line icon may sit before the word (`<Icon>`), never an emoji or a typed glyph ("+ Add", "↗ Share", "✏️ Edit", "‹ Diaries"). 📍 on "Use my current location" stays allowed (§7.6).
+
+**Sheet, screen or inline**
+
+| Job | Use |
+| :--- | :--- |
+| Edit one thing (a task, a caption, a time) | Sheet |
+| Edit many fields or a whole profile | Full screen with a pinned **Save** |
+| Add an item to a list (allergy, Heads-up, line) | Inline `Add Chip` (dashed **+ Add**, §6.2) that opens a field; Enter adds |
+| Confirm | Sheet (§7.11) |
+| Pick one of a few | `SegmentedControl` (2 to 4 options) or `CheckRow` radio (more, or with detail) |
+| Pick several | `CheckRow` checkbox, or `ChoiceChips multi` with the "Pick all that fit" hint |
+| Pick a pet | One `PetChips` component everywhere (face + name) |
+| View a photo | One full-screen viewer (§7.8 for its Close) |
+
+Sheet actions always sit in the sheet's `footer`, never in the scrolling body.
+
+**Forms**
+
+- Every field has a visible label above it; no `label=""`. One-question screens use the question as the label and pass it as the accessibility label.
+- Mark **optional** fields with "(optional)" in the label; required fields have no mark.
+- Placeholders start with "e.g." (§6.1). Dates use `DateField` or `DayPickerSheet`, never typed text.
+- Check a field when they leave it or press the button; show the error under the field. Don't disable the main button silently (§7.11).
+- `maxLength` on every free-text field; show a counter once they pass 80% of it.
+- On web, Enter in the last field submits.
+
+**Taps and rows**
+
+- Anything that opens another screen is an Action Row (icon tile + title + one line + ›) or a card with a last row "View … ›" (§6.2). Text links are for small extras only.
+- Facts are `Tag`s; outlined chips are for things you can tap.
+- Every tap target is at least 44 × 44, close and remove buttons included.
+
+### 7.13 UX calls (decided Oct 25)
+
+From the [UX audit](https://mooque-dev.github.io/goldito-design/ux-audit.html), picked by Mook on Oct 25 on the [UX calls page](https://mooque-dev.github.io/goldito-design/ux-calls.html) (D18). The rules above follow them.
+
+| # | Call | Options | Decision |
+| :--- | :--- | :--- | :--- |
+| U1 | Native header Back | Chevron + "Back" (this file) or chevron only (what ~37 screens show) | **The ← arrow alone, everywhere** (picked A, then changed the same night once "‹ Back" sat next to the sign-up progress bar; D20) |
+| U2 | Leaving with typed input | Keep a draft, or ask "Discard?" | **C: Both: drafts in long flows, ask before leaving a sheet** |
+| U3 | Undo time | 5 s (this file before), 6 s (the toast today), 8 s (care request) | **B: 6 s everywhere** |
+| U4 | Full-screen viewer close | ✕ top left or top right | **A: ✕ top left, labelled Close** |
+| U5 | Sign out | Confirm (two ways today) or no confirm | **B: Confirm in a sheet** (picked A, then kept the sheet #387 had just shipped; D21) |
+| U6 | Error surfaces | As §7.11, or toasts only | **A: By job, as §7.11 (add `ErrorDialog` to §6)** |
+| U7 | Skeletons before the freeze | All 53 spinner screens, tab roots only, or after | **A: Skeletons on tab roots, after the freeze; spinners until then** |
+| U8 | Steps in the URL | Now or after the freeze | **B: After the freeze; until then browser Back leaves the flow and the draft is kept** |
+| U9 | Notification toasts | Toast every notification, or only off-screen ones, queued | **A: Badge the bell, queue the toast; your Undo stays** |
+| U10 | Live sheets | Done only, or Close and Done | **A: Done only** |
+| U11 | Busy screens with many primaries (booking detail, chat) | One primary for the next step, or a primary per card | **A: One primary for the next step; card actions are secondary** |
+| U12 | Accept wording | Accept, I accept, Approve, Confirm quote | **A: Accept everywhere; Confirm and pay only at checkout** |
 
 ## 8. Imagery & icons
 
@@ -661,7 +779,7 @@ Every screen is designed for more than the happy path. Before a screen PR, check
 | **Long content** | Long names wrap (two lines max in rows); 10+ items show a count and **See all**; long notes collapse after 4 lines with **More** |
 | **Two pets, two species** | Every card and notification names the pet; filters default to all pets; test with Max 🐶 *and* Mochi 🐱 |
 | **Slow or unsure AI** | Typing dots or a skeleton while it works; when unsure, the fallback in D5 — never a blank or a guess |
-| **Undo** | Quick, reversible taps (check-ins, chip off, remove a checklist row) show a toast with **Undo** (5 s) instead of a confirm dialog. Destructive or paid actions (cancel booking, pay) ask first |
+| **Undo** | Quick, reversible taps (check-ins, chip off, remove a checklist row) show a toast with **Undo** (6 s, U3) instead of a confirm dialog. Destructive or paid actions (cancel booking, pay) ask first (§7.11) |
 
 ### 10.1 Edge cases by stage
 

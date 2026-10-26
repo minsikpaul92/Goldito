@@ -16,8 +16,8 @@ const SECTIONS: LegalSection[] = [
     body: [
       "Your account: email address, display name and whether you use Goldito as a pet owner or a sitter.",
       "Owners: pet profiles (name, species, breed, notes, allergies, care tasks), your home address, an emergency contact, your vet, bookings, and the entry information you choose to save for a sitter.",
-      "Sitters: your profile (bio, service area, home notes, prices, house rules), your calendar, and your replies and daily reports.",
-      "Both: bookings, messages in an inquiry, notifications, photos shared in the feed, daily reports, reviews, and the Life Record written after a stay.",
+      "Sitters: your profile (bio, service area, home notes, prices, house rules), your calendar, and your replies and diary pages.",
+      "Both: bookings, messages in an inquiry, notifications, photos shared in Moments, diary pages, reviews, and the Life Record written after a stay.",
       "Profile photos (up to 8 each). A sitter's are shown to owners. An owner's are shown only to a sitter you share a booking or inquiry with.",
       "The data lives in a Supabase database (hosted in Canada). Row-level security keeps each person to their own records and to the bookings they are part of.",
     ],
@@ -32,9 +32,9 @@ const SECTIONS: LegalSection[] = [
   {
     title: "AI",
     body: [
-      "Goldito drafts replies, care checklists, captions, daily reports and Life Records with AI models (NVIDIA Nemotron and other open models) run on Nebius Token Factory. For each request the text and photos needed for that task are sent there: the question, the booking dates, the pet's care notes, the sitter's policy text, the day's check-ins and photos.",
+      "Goldito drafts replies, care checklists, captions, diary pages and Life Records with AI models (NVIDIA Nemotron and other open models) run on Nebius Token Factory. For each request the text and photos needed for that task are sent there: the question, the booking dates, the pet's care notes, the sitter's policy text, the day's check-ins and photos.",
       "Prices, availability and dates come from our own database, not from the model. Entry codes are never sent to a model.",
-      "A sitter approves every reply and report before the owner sees it, unless the sitter turned on auto-send. AI drafts can be wrong and are not veterinary advice or a judgment of a pet's behaviour. The provider's own terms apply to what it receives.",
+      "A sitter approves every reply and diary page before the owner sees it, unless the sitter turned on auto-send. AI drafts can be wrong and are not veterinary advice or a judgment of a pet's behaviour. The provider's own terms apply to what it receives.",
     ],
   },
   {
@@ -56,7 +56,7 @@ const SECTIONS: LegalSection[] = [
   {
     title: "On your device",
     body: [
-      "Your sign-in session is kept in your browser's storage so you stay signed in. A few small settings (for example, what you ticked on a packing list) are kept in your browser too. We do not use advertising or tracking cookies.",
+      "Your login session is kept in your browser's storage so you stay logged in. A few small settings (for example, what you ticked on a packing list) are kept in your browser too. We do not use advertising or tracking cookies.",
     ],
   },
   {

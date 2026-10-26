@@ -3,6 +3,7 @@ import { ActivityIndicator, Image, Modal, PanResponder, Platform, Pressable, Sty
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FeedTagIcon } from "./FeedTagIcon";
+import { Icon } from "./ui/Icon";
 import { formatDay, formatTime, isoToZoned } from "../features/schedule/dates";
 import { deliveryUrl, videoPosterUrl, videoUrl } from "../lib/cloudinary";
 import { FEED_FILTERS, feedTags, type FeedTimelinePost } from "../lib/feed";
@@ -273,7 +274,7 @@ export function FeedViewer({
             style={styles.back}
             testID="feed-viewer-close"
           >
-            <Text style={styles.backLabel}>‹</Text>
+            <Icon name="close" size={26} color={theme.color.onMedia} />
           </Pressable>
           <Text style={styles.title} numberOfLines={1} testID="feed-viewer-title">
             {[petNames?.[activePost.petId], formatTime(isoToZoned(activePost.takenAt).time)].filter(Boolean).join(" · ")}
@@ -600,8 +601,8 @@ const makeStyles = (theme: Theme) =>
       alignItems: "center",
       gap: theme.spacing.sm,
     },
-    back: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-    backLabel: { color: theme.color.onMedia, fontSize: 34, lineHeight: 36, fontWeight: theme.fontWeight.semibold }, // tokens-ok: the back chevron is drawn as a large glyph
+    // ✕ top left, 44 px: closing a full-screen photo is Close, not Back (U4).
+    back: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
     title: { flex: 1, color: theme.color.onMedia, fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold },
     hold: { textAlign: "center", fontSize: theme.fontSize.small, color: "rgba(255,255,255,0.75)" },
     busy: {

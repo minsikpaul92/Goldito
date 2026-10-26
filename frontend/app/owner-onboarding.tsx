@@ -219,7 +219,7 @@ export default function OwnerOnboarding() {
       testID="own-leave-sheet"
       footer={
         <Button
-          label="Sign out"
+          label="Log out"
           variant="secondary"
           onPress={() => {
             setLeaving(false);
@@ -229,7 +229,7 @@ export default function OwnerOnboarding() {
         />
       }
     >
-      <Text style={styles.note}>Your answers stay on this device. Sign in to finish.</Text>
+      <Text style={styles.note}>Your answers stay on this device. Log in to finish.</Text>
     </Sheet>
   ) : null;
 

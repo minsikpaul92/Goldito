@@ -36,6 +36,7 @@ import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
 import { tokens } from "../theme/tokens";
+import { useWords } from "../features/settings/playfulWords";
 
 /** Space between photos, and the side margin: Figma 1730:104083 (8 px between photos, 20 px at the sides). */
 const GAP = 8;
@@ -62,6 +63,8 @@ type Props = {
   /** The pet dropdown, left of the chips. */
   /** Pets by id, when the Feed shows several together: each photo then carries its pet's face. */
   faces?: Record<string, PetFaceInfo>;
+  /** Each pet's species by id, so playful lines can say Paw-fect or Purr-fect (content/words.ts). */
+  petSpecies?: Record<string, string>;
   /** What the empty Feed says it will show. */
   emptyMessage: string;
   /** The list could not load: this message with a Try again. */
@@ -95,12 +98,14 @@ export function FeedBrowser({
   onPostChange,
   onRefresh,
   faces,
+  petSpecies,
   emptyMessage,
   error,
   testID,
 }: Props) {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
+  const words = useWords();
   const { profile } = useSession();
   const [width, setWidth] = useState(0);
   const [filter, setFilter] = useState<FeedChipKey>("all");
@@ -139,12 +144,13 @@ export function FeedBrowser({
       await stickerFromPhoto({ publicId: post.media.publicId, petId: post.petId, me: profile.id });
       setViewerId(null);
       const name = petNames?.[post.petId];
-      toast.show(name ? `Paw-fect! Saved to ${name}'s stickers` : "Paw-fect! Sticker saved");
+      const pet = { name, species: petSpecies?.[post.petId] };
+      toast.show(name ? words("stickerSaved", { pet }) : words("stickerSavedAny", { pet }));
       onRefresh?.();
     } catch (err) {
       setViewerId(null);
       const message = err instanceof Error ? err.message : "";
-      toast.show(message === NO_PET_FOUND ? message : "Couldn't make a sticker. Try again.");
+      toast.show(message === NO_PET_FOUND ? message : "Couldn't make a sticker. Try again.", { tone: "error" });
     } finally {
       setMaking(false);
     }
@@ -155,9 +161,10 @@ export function FeedBrowser({
       await (hidden ? hideFeedPost(id) : unhideFeedPost(id));
       onPostChange(id, { hidden });
       setViewerId(null);
-      toast.show(hidden ? "Photo hidden" : "Photo is back in your Feed");
+      toast.show(hidden ? "Photo hidden" : "Photo is back in Moments");
     } catch (err) {
-      toast.show(err instanceof Error ? err.message : "Couldn't do that. Try again.");
+      // lib/feed.ts already turns server errors into a line for people (DESIGN.md §7.11).
+      toast.show(err instanceof Error ? err.message : "Couldn't do that. Try again.", { tone: "error" });
     }
   };
 
@@ -176,7 +183,7 @@ export function FeedBrowser({
       setEditId(null);
       toast.show("Photo updated");
     } catch (err) {
-      toast.show(err instanceof Error ? err.message : "Couldn't save this photo. Try again.");
+      toast.show(err instanceof Error ? err.message : "Couldn't save this photo. Try again.", { tone: "error" });
     } finally {
       setSaving(false);
     }
@@ -193,7 +200,7 @@ export function FeedBrowser({
       onRemoved(id);
       toast.show(scope === "everyone" ? "Photo deleted for both" : "Photo deleted");
     } catch (err) {
-      toast.show(err instanceof Error ? err.message : "Couldn't delete this photo. Try again.");
+      toast.show(err instanceof Error ? err.message : "Couldn't delete this photo. Try again.", { tone: "error" });
     } finally {
       setDeleting(false);
     }
@@ -202,7 +209,7 @@ export function FeedBrowser({
   const empty = loading ? (
     <LoadingView />
   ) : error ? (
-    <EmptyState emoji="📸" title="Couldn't load the feed" message={error.message} action={{ label: "Try again", onPress: error.onRetry }} />
+    <EmptyState emoji="📸" title="Couldn't load Moments" message="Check your connection and try again." action={{ label: "Try again", onPress: error.onRetry }} />
   ) : showHidden ? (
     <EmptyState emoji="📸" title="Nothing hidden" message="Photos you hide wait here." />
   ) : posts.length === 0 ? (

@@ -72,6 +72,8 @@ export function ChatDeclineSheet({ visible, bookingId, role, otherName, quote, o
 
   return (
     <Sheet
+      dirty={note.trim() !== ""}
+      discardTitle="Discard your note?"
       visible={visible}
       title={quote ? "Decline the final quote?" : role === "owner" ? "Not this sitter?" : "Decline this booking?"}
       onClose={close}

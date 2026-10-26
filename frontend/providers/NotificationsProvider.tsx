@@ -107,7 +107,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
                   const done = feedBurst.current;
                   feedBurst.current = null;
                   if (!done) return;
-                  toast.show(done.count === 1 ? done.title : `${done.count} new photos`);
+                  toast.show(done.count === 1 ? done.title : `${done.count} new photos`, { passive: true });
                 }, FEED_TOAST_WINDOW_MS),
               };
               feedBurst.current = burst;
@@ -115,7 +115,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
             setFeedRevision((r) => r + 1);
             setDiaryRevision((r) => r + 1);
           } else {
-            if (row.title) toast.show(row.title);
+            if (row.title) toast.show(row.title, { passive: true });
             if (DIARY_NOTIFICATION_TYPES.has(row.type)) setDiaryRevision((r) => r + 1);
             // 11.1: the answer to a photo request is sent instead of `feed_post` — the new photo is in it.
             if (row.type === "photo_request_fulfilled") setFeedRevision((r) => r + 1);

@@ -43,7 +43,7 @@ export default function PetPersonality() {
       toast.show("Saved");
       router.back();
     } catch (e) {
-      toast.show((e as Error).message);
+      toast.show((e as Error).message, { tone: "error" });
       setSaving(false);
     }
   };

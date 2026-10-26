@@ -95,7 +95,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         setSummary(res.summary);
         setDescriptions(res.photos);
       } catch (e) {
-        toast.show((e as Error).message);
+        toast.show((e as Error).message, { tone: "error" });
       } finally {
         setBusy(null);
       }
@@ -278,7 +278,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
       setDraft(result);
       setBody(result.body);
     } catch (e) {
-      errorDialog.show({ title: "Couldn't write the report", message: (e as Error).message, onRetry: () => void generate() });
+      errorDialog.show({ title: "Couldn't write the page", message: (e as Error).message, onRetry: () => void generate() });
     } finally {
       setBusy(null);
     }
@@ -364,7 +364,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
           <Text style={styles.body}>{body}</Text>
         )}
         {sentId ? <PageActions reportId={sentId} action="delete" other={pet.ownerName} onDone={writeAnother} /> : null}
-        <Button label="Write another report" variant="secondary" onPress={writeAnother} testID={`report-another-${pet.id}`} />
+        <Button label="Write another page" variant="secondary" onPress={writeAnother} testID={`report-another-${pet.id}`} />
         <Text style={styles.muted}>It covers what happens from now on.</Text>
       </Card>
     );
@@ -421,7 +421,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
           <ChipSuggestions chips={all} off={off} onToggle={toggle} onRemove={removeCustom} testIDPrefix={`report-chip-${pet.id}`} />
           {highlights.length > REPORT_MAX_HIGHLIGHTS ? (
             <Text style={styles.muted} testID={`report-too-many-${pet.id}`}>
-              {`Only ${REPORT_MAX_HIGHLIGHTS} highlights fit in the report. Turn a few off.`}
+              {`Only ${REPORT_MAX_HIGHLIGHTS} highlights fit on the page. Turn a few off.`}
             </Text>
           ) : null}
         </>
@@ -434,7 +434,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
       {editable.length > 0 ? (
         <TextButton label="Fix a recorded value" onPress={() => setEditing(true)} testID={`report-edit-${pet.id}`} />
       ) : null}
-      <Sheet visible={editing} title="Fix a recorded value" onClose={() => setEditing(false)} testID={`report-edit-sheet-${pet.id}`}>
+      <Sheet visible={editing} title="Fix a recorded value" onClose={() => setEditing(false)} doneOnly testID={`report-edit-sheet-${pet.id}`}>
         {editable.map((chip) => {
           const group = CHECKIN_GROUPS.find((g) => g.kind === chip.check);
           if (!group) return null;

@@ -144,6 +144,8 @@ export function CheckinTiles({ pet, onSent }: { pet: CaringPet; onSent?: () => v
         ))}
       </View>
       <Sheet
+        dirty={memo.trim() !== ""}
+        discardTitle="Discard your note?"
         visible={memoFor != null}
         title={memoFor ? `${HOME_TILES[memoFor.key].label} · Other` : ""}
         onClose={() => setMemoFor(null)}

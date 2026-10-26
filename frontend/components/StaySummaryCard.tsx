@@ -28,7 +28,7 @@ export function StaySummaryCard({ summary, period, testID }: Props) {
       </Text>
       <Text style={styles.muted}>{period}</Text>
       <View style={styles.stats}>
-        {stat(summary.reports, summary.reports === 1 ? "daily note" : "daily notes", "summary-reports")}
+        {stat(summary.reports, summary.reports === 1 ? "diary page" : "diary pages", "summary-reports")}
         {stat(summary.photos, summary.photos === 1 ? "photo" : "photos", "summary-photos")}
         {stat(summary.tasksDone, summary.tasksDone === 1 ? "task done" : "tasks done", "summary-tasks")}
       </View>

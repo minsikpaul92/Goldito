@@ -49,7 +49,7 @@ export function SharePageSheet({ visible, onClose, petId, petName, day, render, 
   const shown = link && uploaded.current?.version === version ? link : null;
 
   const told = (missing: number, done: string) =>
-    toast.show(missing > 0 ? `${done}, but ${missing === 1 ? "one picture" : `${missing} pictures`} couldn't be added` : done);
+    toast.show(missing > 0 ? `${done}, but ${missing === 1 ? "one picture" : `${missing} pictures`} couldn't be added` : done, missing > 0 ? { tone: "warning" } : undefined);
 
   const share = async () => {
     setBusy("share");

@@ -224,7 +224,7 @@ export async function saveOwnerHomeAccess(fields: {
   sitterParking: string | null;
 }): Promise<void> {
   const { data: userData, error: userError } = await getSupabase().auth.getUser();
-  if (userError || !userData.user) throw new Error("Couldn't confirm you are signed in.");
+  if (userError || !userData.user) throw new Error("Couldn't confirm you are logged in.");
   const row = {
     owner_id: userData.user.id,
     entry_steps: fields.entrySteps,

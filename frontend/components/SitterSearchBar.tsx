@@ -98,6 +98,7 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
         title="Where"
         onClose={close}
         footer={<Button label="Done" onPress={close} testID="place-done" />}
+        doneOnly
         testID="place-sheet"
       >
         <TextField
@@ -157,6 +158,7 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
         title="Dates"
         onClose={close}
         footer={<Button label="Done" onPress={close} testID="stay-done" />}
+        doneOnly
         testID="stay-sheet"
       >
         {/* Quick picks for the common stays; the calendar stays for anything else (design site: qa-sitter-card.html). */}
@@ -229,6 +231,7 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
         title="Who's staying?"
         onClose={close}
         footer={<Button label="Done" onPress={close} testID="pets-done" />}
+        doneOnly
         testID="pets-sheet"
       >
         {pets.map((pet) => (

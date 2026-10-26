@@ -8,6 +8,7 @@ The in-app **Menu → What's new** screen (Phase 11.11) shows the released entri
 
 ### Added
 
+- Settings → Playful words: the little puns in toasts ("Paw-fect! Saved to Max's stickers") follow your pet, Purr-fect for a cat, and you can turn them off for plain words. Safety, money and agreements always stay plain.
 - Home shows your stay's ticket: the dates, where the stay is in its five steps, who drives each way and what was paid, for the stay in care or the next paid one. Bookings is now a plain list of every booking.
 - A new first minute: the app opens with a paw walk instead of a spinner, Welcome shows Max and Mochi with Try the demo as the main button, How it works explains Goldito in three pages, and sign-up takes three short steps. Log in shows the demo accounts with a hint for who they are.
 - Moments (the Feed tab): filter photos by Meals, Walks, Naps, Mood, Potty or No tag, see every pet together or pick one from the pet chip, and switch between Photos and Diary. Edit a photo you posted: its tags (several), the day and time, and your note. Swipe or tap the edges to turn photos and pinch to zoom. The newest photo is shown big, a photo opens with its tag, date, time and your note, and you can hide a photo or delete it on your side only. Press and hold a photo, or tap Make a sticker, to turn it into a sticker. A shared photo can be deleted for both of you for 30 minutes after it is sent. A sitter can still open the photos of a pet after the stay, and your stickers show up in your own Moments.
