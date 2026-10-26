@@ -1,4 +1,4 @@
-/* Builds the Goldito component library on "3. Components" from the local variables
+/* Builds the Goldito component library on the "Components" page from the local variables
    (color/*, spacing/*, radius/*, size/*) and text styles (Title, Body, Body Strong, Small,
    Small Strong, Caption). Every fill, stroke, padding, gap and radius is bound to a variable.
    Components already made by hand or earlier (Button, Text Button, Chip, Card, Toast,
@@ -88,11 +88,12 @@ async function txt(chars, style = "Body", color = "text", o = {}) {
   const t = figma.createText();
   t.name = o.name || "Text";
   if (TS[style]) await t.setTextStyleIdAsync(TS[style].id);
-  else { t.fontName = { family: "Inter", style: "Regular" }; }
+  else { t.fontName = await pickFont("Plus Jakarta Sans", 400, false); }   // font decision Oct 22 (#304)
   t.characters = chars;
   t.fills = [paint(color)];
   if (o.size) t.fontSize = o.size;
-  if (o.weight) t.fontName = { family: "Inter", style: o.weight };
+  // a weight override keeps the style's family (Jakarta or Fredoka since the Oct 22 font decision), not Inter
+  if (o.weight) t.fontName = await pickFont(t.fontName.family, styleWeight(o.weight), false);
   if (o.upper) t.textCase = "UPPER";
   if (o.strike) t.textDecoration = "STRIKETHROUGH";
   if (o.align) t.textAlignHorizontal = o.align;
@@ -149,6 +150,7 @@ async function variants(name, desc, defs, textProps = [], width = 0) {
   set.primaryAxisSizingMode = width ? "FIXED" : "AUTO";
   set.counterAxisSizingMode = "AUTO";
   if (width) set.resize(width, set.height);
+  if (!width || width < Math.max(...set.children.map((c) => c.width)) + 48) fitVariantSet(set);
   for (const [prop, layer] of textProps) {
     const first = set.children[0].findOne((n) => n.type === "TEXT" && n.name === layer);
     if (!first) continue;
@@ -585,7 +587,7 @@ const LIBRARY = [
       box("DANGER", { w: 402, h: 874, fill: "background" }, [
         fill(box("Header", { w: 402, gap: "xs", pad: [44, "md", "md", "md"], fill: "error" }, [await txt("⚠️ DANGER", "Small Strong", "primary-text", { upper: true }), await txt("Don't feed this treat to Max", "Title", "primary-text", { name: "Title", fill: true })])),
         grow(box("Body", { w: 402, gap: "md", pad: "md" }, [await txt("“Chewy Chompers” contains chicken — Max is allergic.", "Body", "text", { name: "Body", fill: true }),
-          fill(box("Tags", { dir: "H", gap: "xs", wrap: true }), [tag("Danger", "chicken"), tag("Danger", "animal fat (may contain chicken)")])])),
+          fill(box("Tags", { dir: "H", gap: "xs", wrap: true }, [tag("Danger", "chicken"), tag("Danger", "animal fat (may contain chicken)")]))])),
         box("Footer", { w: 402, pad: ["md", "md", "lg", "md"] }, [fill(box("Ack", { dir: "H", pad: ["sm", "md", "sm", "md"], radius: "md", fill: "error", justify: "CENTER", align: "CENTER", minH: "size/touch-target" }, [await txt("I understand — don't feed", "Body Strong", "primary-text", { name: "Action" })]))]),
       ]), [["Title", "Title"], ["Body", "Body"]]);
 
@@ -653,7 +655,9 @@ const LIBRARY = [
 
 const LOOKS = {
   Balanced: { background: "#F4F2EE", surface: "#FFFFFF", text: "#1F1B16", "text-muted": "#5E5850", border: "#E6E1D9", accent: "#DCEDE3", "border-strong": "#857E73", track: "#E6E1D9" },
-  // Playful lives in the prototypes only (Oct 6): Figma shows the Balanced look.
+  // Expressive (Oct 15): the look the Draft is built in; cream ground, brand green, tag gold for celebrations.
+  Expressive: { background: "#FBF6EA", surface: "#FFFFFF", text: "#1A1A1A", "text-muted": "#4F5B53", border: "#E3EADF", accent: "#D8F3DC", "border-strong": "#86867F", track: "#ECEAE3" },
+  // Playful lives in the prototypes only (Oct 6).
 };
 // Adds the two looks as modes on the Color collection (same variables, different values).
 async function addLookModes(log) {
@@ -682,10 +686,14 @@ async function addLookModes(log) {
 async function buildComponents(page, log) {
   await figma.setCurrentPageAsync(page);
   for (const n of page.children.filter((c) => c.getPluginData("pawnote") === "components")) n.remove();
+  // Runs before Oct 23 left the DANGER modal's two Tag instances loose at the page origin (never parented).
+  for (const n of [...page.children]) if (n.type === "INSTANCE" && /^(Archive \/ )?Tag$/.test(n.name) && n.x === 0 && n.y === 0 && !n.getPluginData("pawnote")) n.remove();
   PLACED.length = 0;
   // Start below whatever is already on the page (hand-made components stay untouched).
+  // The Archive section (moved below the library after each run) and flags don't count, or each run would land
+  // further down the page (by Oct 23 the library sat 66,000 px below the Conventions note).
   let top = 0;
-  for (const n of page.children) top = Math.max(top, n.y + n.height);
+  for (const n of page.children) if (!["archive", "decision-flag"].includes(n.getPluginData("pawnote"))) top = Math.max(top, n.y + n.height);
   let y = top + 240;
   const heading = async (chars, size, yy) => { const t = await txt(chars, "Title", "text", { size }); page.appendChild(t); t.x = 0; t.y = yy; t.setPluginData("pawnote", "components"); return t; };
   await heading("Components · from the prototypes", 48, y); y += 110;
@@ -707,4 +715,20 @@ async function buildComponents(page, log) {
     y += rowH + 140;
   }
   return count;
+}
+
+/* A variant set laid out in a wrapping row can't hug its width in Figma: it keeps the width it had when the variants
+   were combined, and its padding then pushes them out past its edge (Oct 25: Slot row, Top bar). Fit it to one row
+   up to `max`, never narrower than its widest variant. Runs on new sets and, as a repair, on existing ones. */
+function fitVariantSet(set, max = 1700) {
+  if (!set || set.type !== "COMPONENT_SET" || set.layoutMode === "NONE" || set.layoutWrap !== "WRAP" || !set.children.length) return false;
+  const kids = set.children, pad = set.paddingLeft + set.paddingRight;
+  const widest = Math.max(...kids.map((c) => c.width));
+  const row = kids.reduce((a, c) => a + c.width, 0) + set.itemSpacing * (kids.length - 1);
+  const w = Math.ceil(Math.max(widest, Math.min(row, max)) + pad);
+  if (Math.abs(set.width - w) < 1) return false;
+  set.primaryAxisSizingMode = "FIXED";
+  set.resize(w, set.height);
+  set.counterAxisSizingMode = "AUTO";   // resize() fixes both axes; the height follows the rows again
+  return true;
 }
