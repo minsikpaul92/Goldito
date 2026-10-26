@@ -38,7 +38,7 @@ import {
   sendChatMessage,
 } from "../../features/chat/chatApi";
 import { ChatAction, ChatChip, TYPED_PAUSE_MS, chipsFor, fetchChatDraft, fetchTypedChips } from "../../features/chat/chatAi";
-import { MEET_ASK, NextStep, Primary, actionPossible, finalQuote, hasPaymentCard, nextStep } from "../../features/chat/nextStep";
+import { NextStep, Primary, actionPossible, finalQuote, hasPaymentCard, nextStep } from "../../features/chat/nextStep";
 import { inCare } from "../../features/chat/careCards";
 import { arrivedForNext, canReceiveNow, canReturnNow, canStartTripNow, canTravel, nextHandoff, startOpensAt } from "../../features/transit/tripLogic";
 import { useLiveTrips } from "../../features/transit/useLiveTrips";
@@ -49,8 +49,8 @@ import type { Species } from "../../types/db";
 import { useMyPets } from "../../features/pets/useMyPets";
 import { ProfilePhoto, loadProfilePhotos } from "../../features/profile/profilePhotosApi";
 import { formatDay, formatStamp, formatTime, isoToZoned } from "../../features/schedule/dates";
-import { loadOwnerDefault, loadSitterWays, openingPlace } from "../../features/chat/handoffDefaults";
-import { SERVICE_LABEL, getSitterProfile } from "../../features/sitters/sitterApi";
+import { createBookingFromStay } from "../../features/chat/startBooking";
+import { SERVICE_LABEL } from "../../features/sitters/sitterApi";
 import { BookingError, BookingSummary, expressInterest, listOwnerBookings, listSitterBookings, requestBooking, respondBooking } from "../../lib/bookings";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useSession } from "../../providers/SessionProvider";
@@ -125,6 +125,7 @@ export default function Chat() {
   // On the web the box is a textarea: it is as tall as its text (measured on the element), up to INPUT_MAX, then it scrolls.
   // Request (before any booking) asked for the time sheet: open it as soon as the new Meet & Greet card is there.
   useEffect(() => {
+    if (loaded?.booking && loaded.booking.meetGreetStatus === "not_needed") openMeetSheet.current = false; // a pair that has met has no Meet & Greet
     if (openMeetSheet.current && meetCard.current) {
       openMeetSheet.current = false;
       meetCard.current.open();
@@ -308,7 +309,6 @@ export default function Chat() {
         hasStay: !!stay,
         priced,
         otherName: header.otherName,
-        me,
       });
   // The final quote prices the booking as it stands now (agreed times and pets), not the first card.
   const finalStay =
@@ -343,58 +343,22 @@ export default function Chat() {
     if (!stay || !profile) return setRequesting(true);
     setStepBusy(true);
     try {
-      const [sitter, mine, ways] = await Promise.all([
-        getSitterProfile(header.otherId),
-        loadOwnerDefault(profile.id).catch(() => null),
-        loadSitterWays(header.otherId).catch(() => null),
-      ]);
-      const houseSitting = !!sitter && !sitter.services.includes("boarding");
-      const type = houseSitting ? ("owner_home" as const) : openingPlace(mine, ways);
-      const bookingId = await requestBooking({
-        sitterId: header.otherId,
-        petIds: stay.pets.map((p) => p.id),
-        dropOff: { at: stay.dropOffAt, locationType: type, note: null },
-        pickUp: { at: stay.pickUpAt, locationType: type, note: null },
-        note: null,
-        serviceType: houseSitting ? "house_sitting" : "boarding",
-      });
-      await postBookingRequestCard(threadId, bookingId).catch(() => undefined);
+      const bookingId = await createBookingFromStay({ threadId, ownerId: profile.id, sitterId: header.otherId, sitterName: header.otherName, stay });
       // Skip asks the sitter to skip; Request opens the time sheet as soon as the card is in the chat.
       if (choice === "skip") await respondSkipMeetGreet(bookingId, true).catch(() => undefined);
       else openMeetSheet.current = true;
-      await load();
-    } catch (e) {
-      const code = e instanceof BookingError ? e.code : "";
-      const message =
-        code === "pet_already_booked"
-          ? "One of your pets already has a sitter (or a pending request) at that time."
-          : code === "sitter_unavailable"
-            ? `${header.otherName} no longer has room for these dates.`
-            : (e as Error).message;
-      errorDialog.show({ title: "Not sent", message });
-    } finally {
-      setStepBusy(false);
-    }
-    return undefined;
-  };
-
-  /** Sitter: there is no booking yet, so the Meet & Greet button asks the owner to start it. */
-  const askMeetGreet = async () => {
-    setStepBusy(true);
-    try {
-      await sendChatMessage(threadId, MEET_ASK);
       await load();
     } catch (e) {
       errorDialog.show({ title: "Not sent", message: (e as Error).message });
     } finally {
       setStepBusy(false);
     }
+    return undefined;
   };
 
   /** The footer's one action. The cards show the result; the screen reloads from the database. */
   const doPrimary = async (p: Primary) => {
     if (p.kind === "meet_start") return startMeetGreet("request");
-    if (p.kind === "meet_ask") return askMeetGreet();
     if (p.kind === "agree") return setAgreeing(true);
     if (p.kind === "final_quote") return setQuoting("final");
     if (p.kind === "pay") return booking ? router.push(`/owner/bookings/${booking.id}/checkout` as never) : undefined;
@@ -555,7 +519,7 @@ export default function Chat() {
     return (
       <View key={m.id} style={c.type === "payment" && !(b.status === "cancelled" || b.status === "declined") ? [styles.cardRow, owner ? styles.cardMine : styles.cardTheirs] : styles.cardWide}>
         {c.type === "meet_greet" ? (
-          <MeetGreetCard ref={current ? meetCard : undefined} booking={b} viewer={header.myRole} onChanged={load} hidePrimary />
+          <MeetGreetCard ref={current ? meetCard : undefined} booking={b} viewer={header.myRole} onChanged={load} />
         ) : c.type === "agreement" ? (
           <ChatAgreementCard booking={b} />
         ) : (
@@ -587,7 +551,8 @@ export default function Chat() {
               </Card>
             </View>
           ) : m.kind === "card" && m.card?.type === "request" ? (
-            requestCard(m, m.card)
+            // Starting the chat is the booking request: the card stays in the data but is not drawn.
+            null
           ) : m.kind === "card" && (m.card?.type === "meet_greet" || m.card?.type === "agreement" || m.card?.type === "payment") ? (
             stepCard(m, m.card)
           ) : m.kind === "card" && m.card?.type === "meet_greet_update" ? (
@@ -649,7 +614,7 @@ export default function Chat() {
         {messages.slice(0, stayAfter).map(renderMessage)}
         {stayCardEl}
         {messages.slice(stayAfter).map(renderMessage)}
-        {booking ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
+        {booking && !["requested", "meet_greet"].includes(booking.stage) ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
         {booking ? <ChatCareCards booking={booking} viewer={header.myRole} askSignal={signals.photo} /> : null}
         {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} startSignal={signals.trip} /> : null}
       </Screen>

@@ -11,7 +11,7 @@ type Update = Extract<ChatCard, { type: "meet_greet_update" }>;
 export function meetGreetUpdateText(card: Update, who: string): string {
   switch (card.event) {
     case "proposed":
-      return `${who} suggested a Meet & Greet`;
+      return who === "You" ? "You sent a Meet & Greet Request" : `${who} sent a Meet & Greet Request`;
     case "agreed":
       return `${who} accepted the Meet & Greet`;
     case "time_declined":
@@ -36,7 +36,7 @@ export function ChatMeetGreetUpdate({ card, mine, otherName, at }: { card: Updat
   const plan =
     (card.event === "proposed" || card.event === "agreed") && card.at
       ? card.mode === "video"
-        ? `Video · ${formatInstant(card.at)}`
+        ? `Online · ${formatInstant(card.at)}`
         : `In person${card.place ? ` · ${card.place}` : ""} · ${formatInstant(card.at)}`
       : null;
   return (

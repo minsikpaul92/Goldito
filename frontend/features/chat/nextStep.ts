@@ -6,13 +6,9 @@ type QuoteCard = Extract<ChatCard, { type: "quote" }>;
 
 export type Role = "owner" | "sitter";
 
-/** What the sitter's Meet & Greet button says to the owner before a booking exists. */
-export const MEET_ASK = "Shall we set up a Meet & Greet?";
-
 /** The one thing that is this person's turn (3D.7). The chat footer shows it; the cards show what happened. */
 export type Primary =
   | { kind: "meet_start"; label: string }
-  | { kind: "meet_ask"; label: string }
   | { kind: "interest"; label: string }
   | { kind: "meet"; label: string }
   | { kind: "agree"; label: string }
@@ -39,8 +35,6 @@ type Input = {
   /** A quote that is not replaced already prices the stay on the latest card. */
   priced: boolean;
   otherName: string;
-  /** My own id: tells whether I already asked for the Meet & Greet. */
-  me?: string;
   now?: number;
 };
 
@@ -112,23 +106,14 @@ export function nextStep(i: Input): NextStep {
 
   if (!booking || ["completed", "declined", "cancelled"].includes(booking.stage)) {
     if (role === "owner") return { primary: { kind: "meet_start", label: "Meet & Greet" }, quote: false, wait: null };
-    if (!hasStay) return none;
-    // The booking is the owner's to make; the sitter asks for the Meet & Greet once and then waits.
-    const asked = messages.at(-1)?.kind === "text" && messages.at(-1)?.body === MEET_ASK && messages.at(-1)?.senderId === i.me;
-    return asked ? { ...none, wait: waiting } : { primary: { kind: "meet_ask", label: "Meet & Greet" }, quote: false, wait: null };
+    return none;
   }
 
   switch (booking.stage) {
+    // Both sides answer on the Meet & Greet card in the chat (Skip, Request, Accept): nothing waits in the footer.
     case "requested":
-      // A first-time request: the owner picks Request or Skip Meet & Greet on the card (015f, #236); the sitter can
-      // still give the first yes before that.
-      return role === "sitter" ? { primary: { kind: "interest", label: "Next" }, quote, wait: null } : none;
-
-    case "meet_greet": {
-      const step = meetGreetPrimary(booking, role, i.now);
-      if (step) return { primary: { kind: "meet", label: step.label }, quote, wait: null };
-      return { primary: null, quote, wait: booking.nextActor === role || booking.nextActor === "both" ? null : waiting };
-    }
+    case "meet_greet":
+      return none;
 
     case "confirm":
       if (role === "owner" && !booking.ownerAgreedAt) return { primary: { kind: "agree", label: "I'd like to book" }, quote: false, wait: null };

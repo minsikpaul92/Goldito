@@ -24,20 +24,20 @@ Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreement
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 251 |
-| EmptyState | Chat not found | — | 259 |
-| Pressable | — | `chat-stage` | 638 |
-| Button | Skip | `chat-meet-skip` | 661 |
-| Button | Request | `chat-next-meet_start` | 662 |
-| Button | `footerPrimary.label` | ``chat-next-${footerPrimary.kind}`` | 665 |
-| Button | Send quote | `chat-send-quote` | 672 |
-| TextButton | Send quote | `chat-send-quote` | 675 |
-| TextButton | Decline | `chat-decline` | 678 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 705 |
-| Pressable | — | `chat-action-chip` | 726 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 737 |
-| Pressable | Send a card | `chat-plus` | 753 |
-| Pressable | Send | `chat-send` | 786 |
+| EmptyState | Couldn't load this chat | — | 252 |
+| EmptyState | Chat not found | — | 260 |
+| Pressable | — | `chat-stage` | 603 |
+| Button | Skip | `chat-meet-skip` | 626 |
+| Button | Request | `chat-next-meet_start` | 627 |
+| Button | `footerPrimary.label` | ``chat-next-${footerPrimary.kind}`` | 630 |
+| Button | Send quote | `chat-send-quote` | 637 |
+| TextButton | Send quote | `chat-send-quote` | 640 |
+| TextButton | Decline | `chat-decline` | 643 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 670 |
+| Pressable | — | `chat-action-chip` | 691 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 702 |
+| Pressable | Send a card | `chat-plus` | 718 |
+| Pressable | Send | `chat-send` | 751 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -994,32 +994,27 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Skip | `meet-skip` | 162 |
-| Button | Request | `meet-request` | 163 |
-| Button | Schedule Meet & Greet | `meet-schedule` | 189 |
-| TextButton | Skip Meet & Greet | `meet-skip` | 190 |
-| TextButton | Change | `meet-change` | 199 |
-| TextButton | Skip Meet & Greet | `meet-skip` | 200 |
-| Button | Accept | `meet-accept` | 210 |
-| TextButton | Suggest another time | `meet-counter` | 224 |
-| TextButton | Request skip | `meet-skip` | 225 |
-| TextButton | Decline | `meet-decline` | 226 |
-| LinkButton | Join Google Meet | `meet-join` | 237 |
-| TextButton | Get the Meet link | `meet-link-retry` | 241 |
-| CheckRow | `item` | ``meet-check-${item}`` | 256 |
-| Button | Done, we met | `meet-done` | 266 |
-| LinkButton | Add to calendar | `meet-calendar` | 268 |
-| TextButton | Change | `meet-change` | 269 |
-| Button | Accept skip | `meet-skip-accept` | 285 |
-| TextButton | Request Meet & Greet | `meet-skip-counter` | 293 |
-| TextButton | Decline | `meet-skip-decline` | 294 |
-| Sheet | Ask to skip | `meet-skip-sheet` | 321 |
-| Button | Ask to skip | `meet-skip-confirm` | 327 |
-| Sheet | Cancel | `meet-done-early-sheet` | 340 |
-| TextButton | Cancel | `meet-done-early-cancel` | 347 |
-| Button | Yes, we met | `meet-done-early-confirm` | 348 |
-| Sheet | Decline request | `meet-decline-sheet` | 362 |
-| Button | Decline request | `meet-decline-confirm` | 368 |
+| Button | Skip | `meet-skip` | 155 |
+| Button | Request | `meet-request` | 156 |
+| TextButton | Change Schedule | `meet-change` | 166 |
+| Button | Accept | `meet-accept` | 175 |
+| Button | Skip Request | `meet-skip` | 188 |
+| Button | Change Schedule | `meet-counter` | 189 |
+| LinkButton | Join Google Meet | `meet-join` | 200 |
+| TextButton | Get the Meet link | `meet-link-retry` | 204 |
+| CheckRow | `item` | ``meet-check-${item}`` | 219 |
+| Button | Done, we met | `meet-done` | 229 |
+| LinkButton | Add to calendar | `meet-calendar` | 231 |
+| TextButton | Change | `meet-change` | 232 |
+| Button | Accept | `meet-skip-accept` | 248 |
+| Button | Request | `meet-skip-counter` | 249 |
+| Sheet | Ask to skip | `meet-skip-sheet` | 275 |
+| Button | Ask to skip | `meet-skip-confirm` | 281 |
+| Sheet | Cancel | `meet-done-early-sheet` | 294 |
+| TextButton | Cancel | `meet-done-early-cancel` | 301 |
+| Button | Yes, we met | `meet-done-early-confirm` | 302 |
+| Sheet | Decline request | `meet-decline-sheet` | 316 |
+| Button | Decline request | `meet-decline-confirm` | 322 |
 
 ### MeetGreetSheet — [components/MeetGreetSheet.tsx](../../frontend/components/MeetGreetSheet.tsx)
 
@@ -1242,7 +1237,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | opening ? "Opening…" : "Start chat" | `start-chat` | 43 |
+| Button | opening ? "Opening…" : "Start chat" | `start-chat` | 62 |
 
 ### SitterAnswersForm — [components/SitterAnswersForm.tsx](../../frontend/components/SitterAnswersForm.tsx)
 
@@ -1668,4 +1663,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-499 actions · 497 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+494 actions · 492 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
