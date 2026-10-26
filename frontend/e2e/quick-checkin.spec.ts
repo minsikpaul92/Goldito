@@ -4,7 +4,7 @@ import { caring, mockUpload } from "./careFixtures";
 import { app, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
-// Sitter quick check-in (phase-06 6.10, reworked 6.16): tap what happened → optional memo/photo → Send.
+// Sitter quick check-in (phase-06 6.10, reworked 6.16, #397): one pick per group → optional memo/photo → Send.
 
 const MAX = { id: "00000000-0000-4000-8000-0000000000aa", name: "Max", species: "dog" } as const;
 const MOCHI = { id: "00000000-0000-4000-8000-0000000000bb", name: "Mochi", species: "cat" } as const;
@@ -69,7 +69,7 @@ test.describe("quick check-in", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     caring(db, [MAX]);
     let failed = false;
-    await page.route("**/rest/v1/rpc/log_care_checkin", (route) => {
+    await page.route("**/rest/v1/rpc/log_care_checkins", (route) => {
       if (failed) return route.fallback();
       failed = true;
       return route.fulfill({
@@ -147,7 +147,12 @@ test.describe("quick check-in", () => {
     await screen.getByTestId("sample-walk").click();
     await expect(screen.getByTestId("media-confirm-preview")).toBeVisible();
     await screen.getByTestId("media-confirm-use").click();
-    await expect(screen.getByTestId(`checkin-photo-${MAX.id}`)).toContainText("Photo ready");
+    // A thumbnail replaces Add photo; a tap shows it bigger.
+    await expect(screen.getByTestId(`checkin-photo-${MAX.id}`)).toHaveCount(0);
+    await screen.getByTestId(`checkin-photo-preview-${MAX.id}`).click();
+    await expect(screen.getByTestId(`checkin-photo-view-${MAX.id}`)).toBeVisible();
+    await screen.getByTestId(`checkin-photo-view-${MAX.id}-close`).click();
+    await expect(screen.getByTestId(`checkin-photo-view-${MAX.id}`)).toHaveCount(0);
     expect(sign).toHaveLength(0); // nothing uploaded until a check-in is sent
 
     await screen.getByTestId(tid(MAX, "mood", "happy")).click();
@@ -156,5 +161,48 @@ test.describe("quick check-in", () => {
     expect(sign[0]).toMatchObject({ pet_id: MAX.id, purpose: "task_proof" });
     expect(db.care_checkins[0].media_id).toBe("media-proof");
     await expect(screen.getByTestId(`checkin-photo-${MAX.id}`)).toContainText("Add photo");
+    await expect(screen.getByTestId(`checkin-photo-preview-${MAX.id}`)).toHaveCount(0);
+  });
+
+  test("a chosen photo can be removed before sending", async ({ page }) => {
+    await setup(page);
+    const screen = app(page);
+    await screen.getByTestId(`checkin-photo-${MAX.id}`).click();
+    await screen.getByTestId("sample-walk").click();
+    await screen.getByTestId("media-confirm-use").click();
+    await expect(screen.getByTestId(`checkin-photo-preview-${MAX.id}`)).toBeVisible();
+    await screen.getByTestId(`checkin-photo-remove-${MAX.id}`).click();
+    await expect(screen.getByTestId(`checkin-photo-preview-${MAX.id}`)).toHaveCount(0);
+    await expect(screen.getByTestId(`checkin-photo-${MAX.id}`)).toContainText("Add photo");
+  });
+
+  test("one pick per group: Meal, Potty, Walk and Mood go out together, as one notice to the owner", async ({ page }) => {
+    const db = await setup(page);
+    const screen = app(page);
+    await screen.getByTestId(tid(MAX, "meal", "all")).click();
+    await screen.getByTestId(tid(MAX, "potty", "normal")).click();
+    await screen.getByTestId(tid(MAX, "walk", "20")).click();
+    await screen.getByTestId(tid(MAX, "mood", "calm")).click();
+    // Another answer in a group replaces that group's pick only.
+    await screen.getByTestId(tid(MAX, "mood", "happy")).click();
+    const picks = [["meal", "all"], ["potty", "normal"], ["walk", "20"], ["mood", "happy"]];
+    for (const [kind, value] of picks) {
+      await expect(screen.getByTestId(tid(MAX, kind, value))).toHaveAttribute("aria-pressed", "true");
+    }
+    await expect(screen.getByTestId(tid(MAX, "mood", "calm"))).toHaveAttribute("aria-pressed", "false");
+    await expect(screen.getByTestId(`checkin-picked-${MAX.id}`)).toContainText("Ready to send: Fed · All, Potty · Normal");
+    await expect(screen.getByTestId(`checkin-picked-${MAX.id}`)).toContainText("Mood · Happy");
+
+    await screen.getByTestId(`checkin-memo-${MAX.id}`).fill("Loved the park");
+    await screen.getByTestId(send(MAX)).click();
+    await expect(screen.getByTestId("toast")).toContainText("Sent. Robert was told");
+
+    expect(db.care_checkins.map((c) => `${c.kind}:${c.value}`)).toEqual(["meal:all", "potty:normal", "walk:20", "mood:happy"]);
+    expect(db.care_checkins.filter((c) => c.note_text)).toHaveLength(1); // the memo rides on the first pick only
+    const notices = db.notifications.filter((n) => n.type === "care_checkin");
+    expect(notices).toHaveLength(1);
+    expect(notices[0]).toMatchObject({ title: "Max meal all · Max potty normal · Max walk 20 · Max mood happy", body: "Loved the park" });
+    for (const [kind, value] of picks) await expect(screen.getByTestId(tid(MAX, kind, value))).toHaveAttribute("aria-pressed", "false");
+    await expect(screen.getByTestId(`checkin-sent-${MAX.id}`)).toContainText("Walk · 20 min");
   });
 });

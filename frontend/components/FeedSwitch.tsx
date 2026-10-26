@@ -17,8 +17,9 @@ export function useFeedView(): FeedView {
 const BarRightContext = createContext<((node: ReactNode) => void) | null>(null);
 
 /**
- * Puts something at the right end of the Photos / Diary row (the pet chip, #345) from a screen further down. It is
- * shown while this component is mounted and replaced when `signature` changes (what the node shows, not its identity).
+ * Puts something at the right end of the Photos / Diary row (the pet chip, #345; the Diary's pet and Book, #398) from a
+ * screen further down. It is shown while this component is mounted and replaced when `signature` changes (what the
+ * node shows, not its identity). Only the page in view is mounted, so each page sets its own.
  */
 export function FeedBarRight({ children, signature }: { children: ReactNode; signature: string }) {
   const set = useContext(BarRightContext);
@@ -53,7 +54,7 @@ export function FeedSwitch({ photos, diary }: { photos: ReactNode; diary: ReactN
           onChange={(next) => router.setParams({ view: next === "diary" ? "diary" : undefined })}
           testID="feed-view"
         />
-        {view === "photos" && right ? <View style={styles.right}>{right}</View> : null}
+        {right ? <View style={styles.right}>{right}</View> : null}
       </View>
       <View style={styles.page}>{view === "diary" ? diary : photos}</View>
     </View>
@@ -73,6 +74,6 @@ const makeStyles = (theme: Theme) =>
       borderBottomWidth: 1,
       borderBottomColor: theme.color.border,
     },
-    right: { paddingBottom: 6 },
+    right: { flexShrink: 1, flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, paddingBottom: 6 },
     page: { flex: 1 },
   });
