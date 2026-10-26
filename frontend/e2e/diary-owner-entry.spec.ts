@@ -113,11 +113,23 @@ test.describe("owner diary page", () => {
     const screen = app(page);
     await screen.getByTestId("diary-write").click();
     await screen.getByTestId("diary-write-body").fill("A walk in the sun.");
+    // The picture box is the button (#369).
     await screen.getByTestId("diary-write-photo").click();
     await screen.getByTestId("sample-walk").click();
-    await expect(screen.getByTestId("diary-write-photo-added")).toBeVisible();
     // The photo shows in the page's picture box at once.
-    await expect(screen.getByTestId("diary-write-page-picture").locator("img")).toHaveAttribute("src", /^blob:/);
+    const picture = screen.getByTestId("diary-write-page-picture").locator("img");
+    await expect(picture).toHaveAttribute("src", /^blob:/);
+    // A tap on it offers Replace and Remove.
+    await expect(screen.getByTestId("diary-write-photo-remove")).toHaveCount(0);
+    await screen.getByTestId("diary-write-photo-change").click();
+    await screen.getByTestId("diary-write-photo-remove").click();
+    await expect(picture).toHaveCount(0);
+    await screen.getByTestId("diary-write-photo").click();
+    await screen.getByTestId("sample-walk").click();
+    await screen.getByTestId("diary-write-photo-change").click();
+    await screen.getByTestId("diary-write-photo-replace").click();
+    await screen.getByTestId("sample-walk").click();
+    await expect(picture).toHaveAttribute("src", /^blob:/);
     await screen.getByTestId("diary-write-save").click();
 
     await expect(screen.getByTestId("toast")).toContainText("Page saved");

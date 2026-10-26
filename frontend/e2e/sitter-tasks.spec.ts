@@ -182,7 +182,7 @@ test.describe("on a phone", () => {
     await page.goto("/login");
     await page.getByTestId("login-email").fill(SITTER.email);
     await page.getByTestId("login-password").fill(SITTER.password);
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Log in", exact: true }).click();
     await page.getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/sitter/tasks");
     const screen = page;
