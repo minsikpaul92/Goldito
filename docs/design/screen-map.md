@@ -383,11 +383,11 @@ Shows: `RoleArt` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | role ? "Next" : "Pick one first" | `signup-next` | 146 |
-| Button | Next | `signup-next` | 201 |
-| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 255 |
-| TextButton | Already have an account? Log in | `go-login` | 271 |
-| Pressable | — | `testID` | 305 |
+| Button | role ? "Next" : "Pick one first" | `signup-next` | 159 |
+| Button | Next | `signup-next` | 216 |
+| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 285 |
+| TextButton | Already have an account? Log in | `go-login` | 301 |
+| Pressable | — | `testID` | 349 |
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 
