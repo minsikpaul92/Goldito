@@ -20,6 +20,8 @@ type Props = {
   label?: string;
   /** A link below the phone (outside the app): Show both phones / Show one phone. */
   footer?: ReactNode;
+  /** Page width taken by something beside the phones (the judge panel, #413). */
+  reserve?: number;
 };
 
 const LABEL_HEIGHT = 28;
@@ -31,9 +33,9 @@ const FOOTER_HEIGHT = 40;
  * screen height; windows narrower than the phone scale the whole phone down
  * (safe because the app lives in an iframe with its own coordinates).
  */
-export function DeviceFrame({ children, columns = 1, label, footer }: Props) {
+export function DeviceFrame({ children, columns = 1, label, footer, reserve = 0 }: Props) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const scale = Math.max(MIN_SCALE, Math.min(1, (windowWidth / columns - PAGE_MARGIN * 2) / BODY_WIDTH));
+  const scale = Math.max(MIN_SCALE, Math.min(1, ((windowWidth - reserve) / columns - PAGE_MARGIN * 2) / BODY_WIDTH));
   const extras = (label ? LABEL_HEIGHT : 0) + (footer ? FOOTER_HEIGHT : 0);
   const screenHeight = Math.min(
     tokens.layout.frameHeight,

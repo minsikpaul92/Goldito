@@ -39,6 +39,8 @@ type TripContextValue = {
   requestStart: (args: StartTripArgs) => Promise<StartTripResult>;
   /** End (or cancel) the trip this device is sharing. */
   stop: (cancel?: boolean) => Promise<void>;
+  /** Starts a simulated drive at once, without the consent screen (judge panel Play, #413; demo accounts only). */
+  simulate: (args: StartTripArgs) => Promise<StartTripResult>;
 };
 
 const TripContext = createContext<TripContextValue | null>(null);
@@ -221,7 +223,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
     [halt],
   );
 
-  const value = useMemo(() => ({ sharing, requestStart, stop }), [sharing, requestStart, stop]);
+  // The judge panel's Play (#413): the simulated drive without the consent screen, demo accounts only.
+  const simulate = useCallback(
+    (args: StartTripArgs): Promise<StartTripResult> =>
+      findDemoAccount(email) ? begin(args, "simulate") : Promise.resolve({ started: false, reason: "error" }),
+    [begin, email],
+  );
+
+  const value = useMemo(() => ({ sharing, requestStart, stop, simulate }), [sharing, requestStart, stop, simulate]);
 
   return (
     <TripContext.Provider value={value}>

@@ -30,9 +30,10 @@ export function isDemoAccount(email: string | undefined): boolean {
   return findDemoAccount(email) !== null;
 }
 
-export async function resetDemo(state: DemoState): Promise<void> {
+/** `holder`: the browser's Judge seat holder id (#411); a judge set resets only for the browser that holds it. */
+export async function resetDemo(state: DemoState, holder?: string): Promise<void> {
   try {
-    await apiPost("/api/demo/reset", { state });
+    await apiPost("/api/demo/reset", holder ? { state, holder } : { state });
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
       throw new Error("Demo reset is switched off on this backend (set DEMO_RESET_ENABLED=1).");

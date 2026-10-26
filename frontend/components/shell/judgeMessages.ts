@@ -1,4 +1,5 @@
-import { Role } from "../../providers/SessionProvider";
+import type { DemoState } from "../../lib/demoReset";
+import type { Role } from "../../providers/SessionProvider";
 
 /**
  * Judge seats (#411) between the app inside a phone frame and the page around it. Same origin only.
@@ -40,6 +41,28 @@ export function paneWindow(name: string): Window | null {
   if (typeof document === "undefined") return null;
   const frames = Array.from(document.querySelectorAll("iframe"));
   return frames.find((frame) => (frame.getAttribute("name") ?? "") === name)?.contentWindow ?? null;
+}
+
+/**
+ * The judge panel (#413, frame page) → a phone: reset the judge's set, open a screen as one account of the set, or play
+ * the part a judge cannot do alone. The phone answers each with JUDGE_DONE and the same id.
+ */
+export const JUDGE_COMMAND = "goldito:judge-command";
+export const JUDGE_DONE = "goldito:judge-done";
+
+export type JudgeCommand =
+  | { type: typeof JUDGE_COMMAND; id: string; op: "reset"; state: DemoState }
+  | { type: typeof JUDGE_COMMAND; id: string; op: "go"; set: string; role: Role; path: string; highlight: string | null }
+  | { type: typeof JUDGE_COMMAND; id: string; op: "play"; set: string; what: "reply" | "drive"; role: Role };
+
+export type JudgeDone = { type: typeof JUDGE_DONE; id: string; ok: boolean; error?: string };
+
+export function isJudgeCommand(data: unknown): data is JudgeCommand {
+  return typed(data, JUDGE_COMMAND);
+}
+
+export function isJudgeDone(data: unknown): data is JudgeDone {
+  return typed(data, JUDGE_DONE);
 }
 
 export function otherRole(role: Role): Role {

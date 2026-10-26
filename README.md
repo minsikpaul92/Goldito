@@ -31,7 +31,7 @@ An AI agent answers, plans, checks, and writes, so the sitter can just care.
 > No setup: open **[goldito-petcare.vercel.app](https://goldito-petcare.vercel.app)** and tap **Try the demo**, then **Robert, the owner** (or **Chloe, the sitter**). No sign-up and no password: you get a free Judge seat. The demo accounts and pets are fictional.
 
 1. On a computer the app runs inside a phone frame: **click = tap, drag or scroll = swipe**. Sample photos are built in, so no camera is needed.
-2. **Judges:** open **[Show both phones](https://goldito-petcare.vercel.app/?view=split)** and pick a free **Judge seat** (Judge 1 to 4). Your seat is yours alone: it starts from a clean stay, signs in the owner and the sitter side by side, and frees itself when you log out or leave for 10 minutes.
+2. **Judges:** open **[Show both phones](https://goldito-petcare.vercel.app/?view=split)** and pick a free **Judge seat** (Judge 1 to 4). Your seat is yours alone: it starts from a clean stay, signs in the owner and the sitter side by side, and frees itself when you log out or leave for 10 minutes. The panel left of the phones runs the story in five scenes (Meet the pet, Treat check, Book in chat, A day of care, Home safe), each tagged with the models it uses; **Replay** runs a scene again and **Reset** brings back the clean stay.
 3. Or sign in by hand to your seat's accounts with the demo password from our Devpost page:
 
 | Seat | Owner (Robert, with Max and Mochi) | Sitter (Chloe) |

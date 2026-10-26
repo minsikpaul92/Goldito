@@ -11,7 +11,12 @@ import {
   resolvePresentation,
 } from "./presentation";
 import { FrameAccount, accountLabel, isAccountMessage } from "./accountMessage";
+import { isDemoToolsBuild } from "../../lib/demo";
+import { JUDGE_PANEL_WIDTH, JudgePanel } from "./JudgePanel.web";
 import { JUDGE_SIGN_IN, JudgeSignInMessage, isJudgeSeatMessage, otherRole, paneWindow } from "./judgeMessages";
+
+/** Below this window width the judge panel would squeeze the phones; it hides (the seats still work). */
+const PANEL_MIN_WIDTH = 1100;
 import { installTouchEmulation } from "./TouchEmulation.web";
 import { ShellContext } from "./useShell";
 
@@ -112,13 +117,24 @@ export function AppShell({ children }: Props) {
     return () => window.removeEventListener("message", onMessage);
   }, [presentation]);
 
+  // The judge panel (#413) sits left of the phones on a wide computer window: always in the judging build, and in the
+  // team build only while a phone is signed in to a judge set. The phones keep their place in the tree either way, so
+  // the panel appearing never reloads them.
+  const showPanel =
+    presentation !== "direct" &&
+    windowWidth >= PANEL_MIN_WIDTH &&
+    (!isDemoToolsBuild || Object.values(accounts).some((account) => account?.judge));
+  const reserve = showPanel ? JUDGE_PANEL_WIDTH : 0;
+
   if (presentation === "split") {
     return (
       <View style={{ flex: 1, flexDirection: "row" }} testID="split-view">
+        {showPanel ? <JudgePanel key="panel" panes={["pane-left", "pane-right"]} accounts={accounts} /> : null}
         {(["left", "right"] as const).map((side) => (
           <View key={side} style={{ flex: 1 }}>
             <DeviceFrame
               columns={2}
+              reserve={reserve}
               label={accountLabel(accounts[`pane-${side}`])}
               // Both phones keep the same height; the link sits under the left one.
               footer={side === "left" ? <FrameLink label="Show one phone" href="/" testID="show-one-phone" /> : <View />}
@@ -133,16 +149,22 @@ export function AppShell({ children }: Props) {
 
   if (presentation === "framed") {
     return (
-      <DeviceFrame
-        label={accountLabel(accounts[""])}
-        footer={
-          windowWidth >= SPLIT_MIN_WIDTH && !touchPrimary ? (
-            <FrameLink label="Show both phones" href="/?view=split" testID="show-both-phones" />
-          ) : undefined
-        }
-      >
-        <AppFrame />
-      </DeviceFrame>
+      <View style={{ flex: 1, flexDirection: "row" }}>
+        {showPanel ? <JudgePanel key="panel" panes={[""]} accounts={accounts} /> : null}
+        <View key="phone" style={{ flex: 1 }}>
+          <DeviceFrame
+            reserve={reserve}
+            label={accountLabel(accounts[""])}
+            footer={
+              windowWidth >= SPLIT_MIN_WIDTH && !touchPrimary ? (
+                <FrameLink label="Show both phones" href="/?view=split" testID="show-both-phones" />
+              ) : undefined
+            }
+          >
+            <AppFrame />
+          </DeviceFrame>
+        </View>
+      </View>
     );
   }
 
