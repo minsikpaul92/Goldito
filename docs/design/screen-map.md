@@ -382,7 +382,7 @@ Menu → Settings (Phase 11.11, D47): the account, What's New, notifications, Pr
 
 Sign up in three short steps (intro trial): who you are, your name and email, a password. One progress bar and one Back; Back on the first step leaves.
 
-Shows: `Art` · `SocialSignIn`
+Shows: `RoleArt` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
