@@ -4052,6 +4052,18 @@ begin
   perform _t_as(null);
   update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
   perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6602, -79.3832, 500);
+  perform _t_ok(v_trip.last_lat = 43.6602 and v_trip.near_notified_at is null,
+    '015q: a reading with 500 m accuracy moves the map but never sends "about 5 minutes away"');
+  begin
+    perform update_trip_position(v_trip.id, 43.6602, -79.3832, -1);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_position', '015q: an accuracy below 0 is refused');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
   v_trip := update_trip_position(v_trip.id, 43.6602, -79.3832);
   perform _t_ok(v_trip.last_lat = 43.6602 and v_trip.status = 'en_route' and v_trip.distance_m between 770 and 790,
     'L: a later position replaces the last one; still far → en route');
@@ -4068,13 +4080,39 @@ begin
         and title like 'Robert is about 5 minutes away%') = 1
       and (select near_notified_at is not null from public.trips where id = v_trip.id),
     '014r: within 5 minutes of the ETA → one "about 5 minutes away" notice for the other person');
-  -- Within 150 m → arrived, both told once, no more positions stored
+  -- 015q (#381): within 150 m → arrived only after two good readings in a row; both told once, no more positions stored
   perform _t_as(null);
   update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
   perform _t_as(robert);
-  v_trip := update_trip_position(v_trip.id, 43.6542, -79.3832);
+  v_trip := update_trip_position(v_trip.id, 43.6542, -79.3832, 500);
+  perform _t_ok(v_trip.status = 'en_route' and v_trip.last_lat = 43.6542 and v_trip.close_readings = 0,
+    '015q: one reading at about 110 m with 500 m accuracy → still en route');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6542, -79.3832, 20);
+  perform _t_ok(v_trip.status = 'en_route' and v_trip.close_readings = 1, '015q: one good reading within 150 m is not enough');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6602, -79.3832, 20);
+  perform _t_ok(v_trip.status = 'en_route' and v_trip.close_readings = 0, '015q: a good reading farther out starts the count again');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6542, -79.3832, 20);
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6541, -79.3832, 500);
+  perform _t_ok(v_trip.status = 'en_route' and v_trip.close_readings = 1,
+    '015q: a poor reading in between neither counts nor breaks the run');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6542, -79.3832, 20);
   perform _t_ok(v_trip.status = 'arrived' and v_trip.arrived_at is not null and v_trip.distance_m between 100 and 120,
-    'L: within 150 m of the destination → arrived');
+    '015q: two good readings in a row within 150 m of the destination → arrived');
   perform _t_as(null);
   update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
   perform _t_as(robert);

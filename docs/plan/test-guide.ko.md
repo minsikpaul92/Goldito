@@ -154,7 +154,7 @@
 | **알림장 보내기** (`send_daily_report`: 시터가 고친 **최종 본문**만 게시, 오너는 보낸 것만 보임, 한 번만, 오너 알림) | ✅ SQL `rls_smoke` · 🤖 `report.spec.ts` (Send) | 07 / 7.5 |
 | AI 알림장 **칩 제안 API** (`POST /api/ai/report-chips`: 하루 기록 → 칩(모델 없음), 사진 ≤ 2 → 한 줄 묘사 + 에피소드 칩, 느리거나 실패한 사진은 빼고 기록 칩은 유지, 남의 사진 403) | ✅ 🤖 pytest · 실제 비전 모델로 데모 사진 3장 확인(2026-10-07) · 화면은 시터 Diary(7.3) | 07 / 7.7 |
 | **사진 자동 캡션 · 앨범 분류** (시터는 올리기만 → AI가 캡션 + 분류 → 피드 게시, "Writing a caption…" 단계, 실패해도 게시, 오너 Feed **Timeline / Album**) | ✅ 🤖 `caption.spec.ts` + pytest (실제 비전 모델로 샘플 9장 중 8장 분류 · 지연 약 1.2초 · 실제 사진 5장 합의는 👤) | 09 / 9.1–9.3 · 9.5 |
-| Pet Transit **DB** (홈 좌표 · `trips` 마지막 위치 1개 · `start_trip` · `update_trip_position` · `end_trip` · 150 m 도착 알림 · Realtime · **예약이 취소되면 열린 trip도 취소 + 위치 삭제** (`012b`, CR-1)) | ✅ SQL `rls_smoke` L · CR-1 (사람 확인 ➖ — `012b` 호스팅 DB 적용 10/13) | 06B / 6B.1 |
+| Pet Transit **DB** (홈 좌표 · `trips` 마지막 위치 1개 · `start_trip` · `update_trip_position` · `end_trip` · 150 m 도착 알림 · Realtime · **예약이 취소되면 열린 trip도 취소 + 위치 삭제** (`012b`, CR-1) · **도착은 정확도 100 m 이내 위치가 150 m 안에서 두 번 연속일 때만** (`015q`, #381)) | ✅ SQL `rls_smoke` L · CR-1 · 015q (사람 확인 ➖, `012b` 호스팅 DB 적용 10/13 · `015q`는 PR 머지 후 적용 대기) | 06B / 6B.1 |
 | Pet Transit **사진 체크 API — 앱에는 연결하지 않음(2026-10-11 결정, P1 후보)** (`POST /api/ai/handoff-check`: 사진 → 보이는 것만 보고, ok / warning은 서버 규칙, 실패하면 unchecked, `handoff_checks`에 저장) | ✅ 🤖 pytest + SQL `rls_smoke` L · 실제 모델은 개 사진 3장(종 일치 · 불일치)만 확인 — **크레이트 · 안전벨트 감지는 임시 이미지라 미확인, 진짜 샘플 4장 대기** | 06B / 6B.5 |
 | Pet Transit **홈 핀** (Profile → Map pin for trips: 버튼 한 번에 현재 위치 1회(브라우저 권한 창이 동의) · 주소 저장 시 OSM 조회 + 한 줄 안내 · 못 찾으면 옛 핀 삭제) | ✅ 🤖 `home-location.spec.ts` + pytest `test_geo` (실제 Nominatim은 공개 주소 1건만 손으로 확인, 실제 폰 GPS는 👤) | 06B / 6B.2 |
 | Pet Transit **위치 소스 · 동의** (`lib/location.ts`: GPS / 가상 경로, `TripProvider` + 위치 공유 동의 화면 — Start trip 버튼이 붙는 S4에서 화면 단위로 확인) | 🟡 🤖 `location.spec.ts`(소스 단위) · 동의 화면은 프로필 핀으로만 e2e | 06B / 6B.2 |
@@ -572,7 +572,7 @@
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
 | TRIP-1 | 결제 전 · 합의 시각 2시간보다 이른 때 · 이동하는 쪽이 아닌 사람(시터 집이면 시터)이 Start trip | 모두 거절 (`not_paid` · `trip_too_early` · `not_traveler`), 제3자는 `not_allowed` | SQL `rls_smoke` L | ➖ |
-| TRIP-2 | 견주가 첫 위치와 함께 Start trip → 위치 몇 번 갱신 → 목적지 150 m 안 | `en_route` + 거리 · ETA, 1초 안의 중복 호출은 무시, 150 m 안에서 `arrived`와 양쪽 알림 1회, 이후엔 위치를 저장하지 않음 | SQL `rls_smoke` L | ➖ |
+| TRIP-2 | 견주가 첫 위치와 함께 Start trip → 위치 몇 번 갱신 → 목적지 150 m 안 | `en_route` + 거리 · ETA, 1초 안의 중복 호출은 무시, 150 m 안의 좋은 위치가 두 번 연속이면 `arrived`와 양쪽 알림 1회(`015q`, TRIP-25), 이후엔 위치를 저장하지 않음(지도의 마지막 점 = 도착을 정한 위치) | SQL `rls_smoke` L · 015q | ➖ |
 | TRIP-3 | End trip · Cancel trip | 위치 · ETA · 거리가 지워지고 `completed` / `cancelled`, 같은 예약 · 같은 인수인계에 새 Start trip 가능 | SQL `rls_smoke` L | ➖ |
 | TRIP-4 | 예약 당사자 아닌 계정, 시터 프로필 목록에서 좌표 | `trips` 행이 0건, 시터의 `home_lat` 열은 읽기 거부, 클라이언트가 직접 INSERT · UPDATE 하면 거부 | SQL `rls_smoke` L | ➖ |
 | TRIP-5 | 인수인계 장소 = 견주 집 / 다른 곳 | 시터가 이동(목적지 = 견주 집 좌표) / 둘 다 이동 가능하지만 목적지 없음 → 지도 · ETA 없음, 거리로 도착 판정 안 함 | SQL `rls_smoke` L | ➖ |
@@ -595,6 +595,7 @@
 | TRIP-22 | **두 사람 동시** — 시터(Chloe)가 견주 집으로 Start trip → Simulate, 견주는 Home에 있음 | 견주 Home에 새로고침 없이 "Chloe is on the way" 카드 → 탭하면 지도 + ETA가 줄어들며 갱신 → "Chloe has arrived" 카드. 시터 화면에는 출입 정보 카드. 시터가 Received를 누르면 견주 Trip 화면이 "No trip running"이 되고 예약에 ✓ Received | 🤖 `transit.spec.ts`(브라우저 둘, 같은 DB, 폴링으로 갱신) · **실제 두 계정 · 두 폰 👤** | ➖ |
 | TRIP-23 | 견주가 드롭오프 2시간 전 Start trip(위치 공유 중) → 둘 중 한 명이 예약을 **Cancel** (CR-1) | 그 trip이 같은 순간 `cancelled`가 되고 위치 · ETA · 거리가 지워짐. 이동하던 기기의 다음 위치는 `trip_not_active`로 거절돼 공유가 멈추고, 양쪽 Home의 이동 카드가 사라짐 | SQL `rls_smoke` CR-1 · 화면은 👤 (DB는 10/13 적용 — 사람 확인 대기) | ➖ |
 | TRIP-24 | 이동 중 ETA가 5분 이하로 줄어듦 (`014r`) | 상대에게 알림 한 번 "Robert is about 5 minutes away 🚗"(`trip_near`, 누르면 Trip 화면), 이후 위치가 더 와도 다시 안 옴. 도착하면 기존 `trip_arrived`. 채팅 카드의 "N min away" 줄과 같은 기준 | SQL `rls_smoke` L · 014r | ➖ |
+| TRIP-25 | 목적지 약 110 m에서 정확도 500 m 위치 하나 → 정확도 20 m 위치 하나 → 다시 20 m 위치 하나 (`015q`, #381, Owner-026) | 정확도가 100 m보다 나쁜 위치는 지도는 옮기지만 도착 · "about 5 minutes away" 판정에는 안 씀. 좋은 위치 하나로는 `en_route` 그대로, 두 번 연속이면 `arrived`. 150 m 밖의 좋은 위치가 오면 처음부터 다시 셈, 사이에 낀 나쁜 위치는 세지도 끊지도 않음. 정확도 없이 오는 위치(가상 운전)는 좋은 위치로 셈. 정확도가 0보다 작으면 `invalid_position` | SQL `rls_smoke` L · 015q | ➖ |
 
 ### 3.19 개인정보 페이지 (PRIV) — Phase 10 · 10.11
 
