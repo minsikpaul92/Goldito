@@ -996,10 +996,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Button | Skip | `meet-skip` | 155 |
 | Button | Request | `meet-request` | 156 |
-| TextButton | Change Schedule | `meet-change` | 166 |
+| TextButton | Modify | `meet-change` | 166 |
 | Button | Accept | `meet-accept` | 175 |
 | Button | Skip Request | `meet-skip` | 188 |
-| Button | Change Schedule | `meet-counter` | 189 |
+| Button | Modify | `meet-counter` | 189 |
 | LinkButton | Join Google Meet | `meet-join` | 200 |
 | TextButton | Get the Meet link | `meet-link-retry` | 204 |
 | CheckRow | `item` | ``meet-check-${item}`` | 219 |

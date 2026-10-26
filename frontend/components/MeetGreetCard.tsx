@@ -163,7 +163,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
         <Text style={styles.title}>{`Waiting for ${other}`}</Text>
         <Text style={styles.body}>{summary}</Text>
         <View style={styles.links}>
-          <TextButton label="Change Schedule" onPress={() => void openSheet()} testID="meet-change" />
+          <TextButton label="Modify" onPress={() => void openSheet()} testID="meet-change" />
         </View>
       </>
     );
@@ -186,7 +186,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
         />
         <View style={styles.pair}>
           <Button label="Skip Request" variant="secondary" onPress={() => setConfirm("skip")} disabled={busy} style={styles.half} testID="meet-skip" />
-          <Button label="Change Schedule" variant="secondary" onPress={() => void openSheet()} disabled={busy} style={styles.half} testID="meet-counter" />
+          <Button label="Modify" variant="secondary" onPress={() => void openSheet()} disabled={busy} style={styles.half} testID="meet-counter" />
         </View>
       </>
     );
