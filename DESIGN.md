@@ -185,8 +185,9 @@ Each design decision, its reason, and what it replaced. Change a row only with t
 | **D15** | **Feedback surfaces** are picked by job: field errors inline, screen problems in a Banner, quick results in a toast with a tone, decisions in an ErrorDialog; destructive acts ask in a Sheet with a `danger` button, reversible ones offer Undo (§7.11, Oct 25). *Proposed, pending U5 to U9.* | About 30 failures showed a green success check; errors used five surfaces for the same job; Cancel booking had no danger style while Sign out did | Toast, dialog or red text chosen per screen |
 | **D16** | **Actions and forms**: the pinned primary uses `Screen footer`; one word per job (Save, Done, Next, Send, Delete); sheet actions sit in the sheet footer; one control per kind of choice (§7.12, Oct 25). *Proposed, pending U10 to U12.* | Footers were built four ways, "Done" meant four things, and pets were picked six ways | Per-feature controls and labels |
 | **D17** | **Moments, decided by Minsik (Play and Pick, Oct 25)**: the pet picker sits in the tabs and Moments opens on all pets; the tab is **Moments**; the Diary has Days, Calendar and Footprints; a sticker is seen only by its maker; owners ask for a photo only in Chat; a sitter's diary page starts shared; the paw shortcut menu waits until after the freeze; words are a little playful (toasts and empty states only) | Nine calls tried in the Moments trial and voted on one page | The Feed trial's earlier picks (filter-chip picker, a shared sticker box, an Ask link in Moments, pages kept until shared) |
-| **D18** | **UX calls, decided by Mook (Oct 25)**: U1 A, U2 C, U3 B, U4 A, U5 A, U6 A, U7 A, U8 B, U9 A, U10 A, U11 A, U12 A (§7.13). Back is the chevron + Back; typed input is kept as a draft in long flows and a sheet asks before dropping it; Undo is 6 s; Accept is the one yes word | Twelve calls from the UX audit, drawn as phone screens and picked on one page | Icon-only Back; dropping typed text silently; per-card primaries |
+| **D18** | **UX calls, decided by Mook (Oct 25)**: U1 A, U2 C, U3 B, U4 A, U5 A, U6 A, U7 A, U8 B, U9 A, U10 A, U11 A, U12 A (§7.13). Back was the chevron + Back (U1 changed by D20); typed input is kept as a draft in long flows and a sheet asks before dropping it; Undo is 6 s; Accept is the one yes word | Twelve calls from the UX audit, drawn as phone screens and picked on one page | Icon-only Back; dropping typed text silently; per-card primaries |
 | **D19** | **Snap and the coin, settled (Mook, Oct 25)**: the fifth tab is **Snap** (treat check · mood · stickers), in the app (#341) and in Figma's Tab Bar; the logo is the **pixel gold coin with a paw** plus "Goldito" in the display face (decided Oct 19). The gold tag, Notebook and Pixel stay on the brand site as other directions, for reference | Both were still listed under §0.7 although the app and Figma had moved on | Mood as the tab name; the gold tag as the logo |
+| **D20** | **Back is the ← arrow alone (Mook, Oct 25)**: one control everywhere, top left, 44 × 44, read aloud as Back, no visible word; `Icon name="arrowBack"` in `BackLink`, `StepHeader` and `StepFrame`, and the native header in minimal mode. Replaces U1 A | "‹ Back" crowded the sign-up step header next to its progress bar; the arrow is what ~37 native headers already showed, and what #383 proposed | Chevron + the word Back (U1 A) |
 
 ---
 
@@ -403,7 +404,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | Component | Rules |
 | :--- | :--- |
 | `Screen` | Wraps every screen: safe area, scroll, `background`, 16 padding, max width 480 |
-| `BackLink` | Standard back control: `<Icon name="back" />` + label **Back** (`primary`, 600, 44 min height). Use for login → Welcome, signup → previous, onboarding step-back / exit. Label stays **Back** — never “Back to Onboarding” or other destination names. See [§7.8](#78-back-navigation) |
+| `BackLink` | Standard back control: the ← arrow alone (`<Icon name="arrowBack" />`, `text` color, 44 × 44), read aloud as **Back**. Use wherever a screen draws its own top bar: Log in, How it works, Settings, What's new, Privacy, Terms. `StepHeader` and `StepFrame` draw the same arrow. See [§7.8](#78-back-close-and-leaving) |
 | `MediaPlaceholder` (`components/`) | Onboarding photo/video slot (~4:3, dashed `accent` frame). Centered in leftover tour height; title + brief for Mook’s asset brief. Replace with real media later — see [§7.9](#79-welcome--role-onboarding) |
 | `Card` | `surface`, `radius.lg`, 16 padding, 1 px `border` |
 | `Button` | `primary` (filled) and `secondary` (`surface` + `borderStrong` border, `primary` label); `radius.md`, 44 min height, 8 / 16 padding, semibold label. Pressed = `motion.pressOpacity` + `motion.pressScale`; disabled = `border` fill + `textMuted` label (Figma Button, Style × State) |
@@ -587,8 +588,8 @@ Four jobs, four controls. Pick by the job, never by the screen. The [UX audit](h
 
 | Job | Control | Where | Label |
 | :--- | :--- | :--- | :--- |
-| **Go back** to the screen you came from | Chevron + the word **Back** (`BackLink`, or the native header with `headerBackButtonDisplayMode: "default"` and `headerBackTitle: "Back"`) | Top left, `primary`, 44 px | Always **Back**. Not "Back to the booking", not "‹ Diaries", not icon-only |
-| **Step back** inside a flow (onboarding, booking, checkout) | The same Back, top left. It goes one step; on step 1 it leaves the flow | Top left only. **No second Back at the bottom** | **Back** |
+| **Go back** to the screen you came from | The **← arrow** alone (`Icon name="arrowBack"`: `BackLink`, `StepHeader`, `StepFrame`, or the native header with `headerBackButtonDisplayMode: "minimal"` and `headerBackTitle: "Back"`) | Top left, `text` color, 44 × 44 | Read aloud as **Back**. No visible word: next to a title or a progress bar it crowds the row (D20). Not "Back to the booking", not "‹ Diaries" |
+| **Step back** inside a flow (onboarding, booking, checkout) | The same ← arrow, top left. It goes one step; on step 1 it leaves the flow | Top left only. **No second Back at the bottom** | Read aloud as **Back** |
 | **Dismiss** a sheet, dialog, menu or full-screen viewer | **Close** text (sheets, dialogs) or ✕ icon labelled "Close" (full-screen photo viewers, the menu drawer) | Sheets: top right. Viewers: top left, white on the dark fade, 44 px, visible whenever the details are | **Close**. One per surface: never Close *and* Cancel |
 | **Finish** a task | The primary button that says what it does (**Save**, **Send**, **Pay**) | Pinned footer (§7.12) | A verb. After it, go back to where the task started (`router.dismissTo`), not forward to a copy of it |
 
@@ -601,7 +602,7 @@ Four jobs, four controls. Pick by the job, never by the screen. The [UX audit](h
 5. **A scrim tap, Escape and Android back all equal Close**, on every sheet, dialog and menu, except the DANGER alert (§7.4), which only closes with its button. The menu drawer's scrim closes it too.
 6. **Where Back lands** (code): `router.back()` with a `replace(parent)` fallback when there's no history; finishing a flow uses `dismissTo(origin)`; switching between Log in and Sign up uses `replace` both ways; never `push` a tab route from a stack screen (use the tab). Step state lives in the URL so the browser's Back moves one step. [U8]
 7. **Tapping the tab you're on** scrolls to the top, then pops to the tab's first screen.
-8. **Labels and size.** Every back and close control is at least 44 × 44 and has an accessibility label that matches what you see ("Back" for Back, "Close" for Close). A "‹" that closes is not allowed: it looks like Back.
+8. **Labels and size.** Every back and close control is at least 44 × 44 and has an accessibility label that says its job ("Back" for the ← arrow, "Close" for Close and ✕). A "‹" or "←" that closes is not allowed: it looks like Back. Chevrons (‹ ›) are for paging (calendar months, photos), never for Back.
 
 ### 7.9 Welcome / role onboarding
 
@@ -613,7 +614,7 @@ Public intro for **signed-out** visitors (`/welcome`, `/welcome/how`, `/login`, 
 | Boot | While the session loads, `BootView`: the four-print paw walk (`PawWalk`) with the coin and Goldito under it, never a bare spinner. The pet setup finish is meant to reuse the same walk (not built yet). |
 | Welcome | Max and Mochi on a mint block, the tagline, a butter **How it works** card (art, "Three short pages, about a minute", chevron) so a first-time visitor sees where to learn more, then **Try the demo** as the one primary button (opens `DemoSheet`: who to be), then Sign up with email and Log in as text buttons, and a small Privacy · Terms line. Without a demo password the primary is Create account. |
 | How it works | Three pages (the problem, two sides, one stay) drawn with the app's own art and demo photos; Next, Skip and Back; the last page offers Try the demo and Create account. No placeholder boxes. |
-| Sign up | Three steps under one `StepHeader` (who you are, name and email, password); its Back is the chevron plus the word Back, like `BackLink` (§7.8). The step button says **Next** ("Pick one first" while nothing is picked) and the last one **Create account** (§7.12). Back steps back and keeps what was typed, then leaves. Terms and Privacy are links. |
+| Sign up | Three steps under one `StepHeader` (who you are, name and email, password); its Back is the ← arrow, like `BackLink` (§7.8). The step button says **Next** ("Pick one first" while nothing is picked) and the last one **Create account** (§7.12). Back steps back and keeps what was typed, then leaves. Terms and Privacy are links. |
 | Demo roles | The demo sheet and the Log in demo tiles show what each side gets (`RoleArt`): the owner's home with a photo of Max arriving; the sitter with Max and Mochi and the camera. |
 | How it works 2 | Chloe's checks reach Robert along a dashed line with a "Goldito sends the update" pill on it, the step Goldito takes for them. |
 | Apple / Google | `SocialSignIn` stays hidden until they work; when shown, Apple and Google share one row of two so Welcome keeps How it works in view (`EXPO_PUBLIC_SOCIAL_SIGN_IN=1` shows them); a judge never taps a "Coming soon" button. |
@@ -724,7 +725,7 @@ From the [UX audit](https://mooque-dev.github.io/goldito-design/ux-audit.html), 
 
 | # | Call | Options | Decision |
 | :--- | :--- | :--- | :--- |
-| U1 | Native header Back | Chevron + "Back" (this file) or chevron only (what ~37 screens show) | **A: Chevron + Back** |
+| U1 | Native header Back | Chevron + "Back" (this file) or chevron only (what ~37 screens show) | **The ← arrow alone, everywhere** (picked A, then changed the same night once "‹ Back" sat next to the sign-up progress bar; D20) |
 | U2 | Leaving with typed input | Keep a draft, or ask "Discard?" | **C: Both: drafts in long flows, ask before leaving a sheet** |
 | U3 | Undo time | 5 s (this file before), 6 s (the toast today), 8 s (care request) | **B: 6 s everywhere** |
 | U4 | Full-screen viewer close | ✕ top left or top right | **A: ✕ top left, labelled Close** |

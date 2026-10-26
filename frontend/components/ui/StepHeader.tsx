@@ -28,8 +28,7 @@ export function StepHeader({ flow, step, total, onBack, help, testID }: Props) {
       <View style={styles.top}>
         {onBack ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} hitSlop={theme.spacing.sm} style={styles.back} testID={testID ? `${testID}-back` : undefined}>
-            <Icon name="back" size={22} color={theme.color.primary} />
-            <Text style={styles.backText}>Back</Text>
+            <Icon name="arrowBack" size={24} color={theme.color.text} />
           </Pressable>
         ) : (
           <View style={styles.back} />
@@ -61,8 +60,8 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     wrap: { paddingVertical: theme.spacing.sm },
     top: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
-    back: { minWidth: 32, height: 44, flexDirection: "row", alignItems: "center", gap: 2 },
-    backText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
+    // The ← arrow alone, 44 px, read aloud as Back: one look for every Back (U1).
+    back: { width: 44, height: 44, justifyContent: "center" },
     mid: { flex: 1, gap: theme.spacing.xs },
     track: { height: 8, borderRadius: 4, backgroundColor: theme.color.border, overflow: "hidden" },
     fill: { height: 8, borderRadius: 4, backgroundColor: theme.color.success },
