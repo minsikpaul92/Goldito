@@ -1,11 +1,13 @@
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { useThemedStyles } from "../providers/ThemeProvider";
+import type { LatLng } from "../lib/location";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 import type { TripMapProps } from "./tripMapProps";
+import { Icon } from "./ui/Icon";
 
 const HEIGHT = 240;
 
@@ -19,39 +21,77 @@ function pin(emoji: string, label: string) {
 }
 
 /**
- * The trip map (phase-06b 6B.3, D32): Leaflet + OpenStreetMap tiles. It fits the traveller and the place on its own,
- * has ± buttons and can be dragged to look around; the wheel and pinch stay off so the screen still scrolls.
+ * The trip map (phase-06b 6B.3, D32): Leaflet + OpenStreetMap tiles. It fits the traveller and the place on its own.
+ * A finger or the mouse drags it, two fingers pinch zoom, and ± zoom. The wheel zooms only once the map has focus
+ * (a click or Tab on it), so scrolling past it still scrolls the screen (#381).
  */
 export function TripMap({ traveler, dest, travelerLabel, testID = "trip-map" }: TripMapProps) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const markers = useRef<{ traveler?: L.Marker; dest?: L.Marker }>({});
-  // After the person has used ± the map stops re-fitting on every new position.
-  const zoomedByHand = useRef(false);
+  const points = useRef<LatLng[]>([]);
+  // Once the person has moved the map it stops re-fitting on every new position; Recenter fits it again.
+  const moved = useRef(false);
+  const [movedByHand, setMovedByHand] = useState(false);
+  // True while the map moves itself, so that move is not taken for the person's.
+  const fitting = useRef(false);
+
+  const markMoved = useCallback(() => {
+    moved.current = true;
+    setMovedByHand(true);
+  }, []);
+
+  const fit = useCallback(() => {
+    const instance = map.current;
+    if (!instance) return;
+    const at = points.current;
+    fitting.current = true;
+    try {
+      if (at.length === 2) {
+        instance.fitBounds(L.latLngBounds(at.map((p) => [p.lat, p.lng] as [number, number])), {
+          padding: [40, 40],
+          maxZoom: 16,
+          animate: false,
+        });
+      } else if (at.length === 1) {
+        instance.setView([at[0].lat, at[0].lng], 15, { animate: false });
+      }
+    } finally {
+      fitting.current = false;
+    }
+  }, []);
 
   useEffect(() => {
     if (!host.current) return;
     const instance = L.map(host.current, {
       zoomControl: false,
       dragging: true,
+      touchZoom: true,
+      doubleClickZoom: true,
       scrollWheelZoom: false,
-      touchZoom: false,
-      doubleClickZoom: false,
       boxZoom: false,
-      keyboard: false,
+      keyboard: true,
       attributionControl: true,
     });
     instance.attributionControl.setPrefix(false);
-    // Once the person pans or zooms, the map stops re-fitting on every new position.
-    instance.on("dragstart", () => {
-      zoomedByHand.current = true;
+    instance.on("focus", () => instance.scrollWheelZoom.enable());
+    instance.on("blur", () => instance.scrollWheelZoom.disable());
+    // Drag, pinch, wheel, double tap and the arrow keys all count as the person moving the map.
+    instance.on("dragstart zoomstart", () => {
+      if (!fitting.current) markMoved();
+    });
+    instance.on("keydown", (e) => {
+      if ((e as L.LeafletKeyboardEvent).originalEvent.key.startsWith("Arrow")) markMoved();
     });
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: "© OpenStreetMap contributors",
     }).addTo(instance);
+    fitting.current = true;
     instance.setView([43.6532, -79.3832], 12);
+    fitting.current = false;
     map.current = instance;
     const current = markers.current;
     return () => {
@@ -60,12 +100,12 @@ export function TripMap({ traveler, dest, travelerLabel, testID = "trip-map" }: 
       delete current.traveler;
       delete current.dest;
     };
-  }, []);
+  }, [markMoved]);
 
   useEffect(() => {
     const instance = map.current;
     if (!instance) return;
-    const sync = (key: "traveler" | "dest", at: { lat: number; lng: number } | null, icon: L.DivIcon) => {
+    const sync = (key: "traveler" | "dest", at: LatLng | null, icon: L.DivIcon) => {
       const existing = markers.current[key];
       if (!at) {
         existing?.remove();
@@ -77,22 +117,19 @@ export function TripMap({ traveler, dest, travelerLabel, testID = "trip-map" }: 
     };
     sync("traveler", traveler, pin("🚗", travelerLabel));
     sync("dest", dest, pin("📍", "Handoff place"));
-    if (zoomedByHand.current) return;
-    const points = [traveler, dest].filter((p): p is { lat: number; lng: number } => p != null);
-    if (points.length === 2) {
-      instance.fitBounds(L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number])), {
-        padding: [40, 40],
-        maxZoom: 16,
-        animate: false,
-      });
-    } else if (points.length === 1) {
-      instance.setView([points[0].lat, points[0].lng], 15, { animate: false });
-    }
-  }, [traveler, dest, travelerLabel]);
+    points.current = [traveler, dest].filter((p): p is LatLng => p != null);
+    if (!moved.current) fit();
+  }, [traveler, dest, travelerLabel, fit]);
 
   const zoom = (delta: number) => {
-    zoomedByHand.current = true;
+    markMoved();
     map.current?.setZoom((map.current.getZoom() ?? 12) + delta);
+  };
+
+  const recenter = () => {
+    moved.current = false;
+    setMovedByHand(false);
+    fit();
   };
 
   return (
@@ -106,6 +143,11 @@ export function TripMap({ traveler, dest, travelerLabel, testID = "trip-map" }: 
         <Pressable accessibilityRole="button" accessibilityLabel="Zoom out" onPress={() => zoom(-1)} style={styles.button} testID={`${testID}-zoom-out`}>
           <Text style={styles.buttonText}>−</Text>
         </Pressable>
+        {movedByHand && points.current.length > 0 ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Recenter" onPress={recenter} style={styles.button} testID={`${testID}-recenter`}>
+            <Icon name="recenter" size={20} color={theme.color.text} />
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );

@@ -9,6 +9,9 @@
 
 export type LatLng = { lat: number; lng: number };
 
+/** One reading: a point and, from a real GPS, how far off it may be in metres (the server ignores poor ones for arrival). */
+export type Fix = LatLng & { accuracy?: number };
+
 export type LocationErrorReason = "denied" | "unavailable" | "unsupported" | "timeout";
 
 export class LocationError extends Error {
@@ -49,20 +52,27 @@ export function offsetPoint(from: LatLng, meters: number, bearingDeg: number): L
 /**
  * The fictional drive for "Simulate the drive": a gently bowed line from `from` that stops ~60 m short of `to`,
  * so the real arrival rule (150 m) fires. Built from the two homes, so it always ends at the real destination.
+ * The car stays parked for one more step: arrival needs two readings in a row inside the circle (015q).
  */
 export function buildSimulatedRoute(from: LatLng, to: LatLng, steps = 25): LatLng[] {
   const total = distanceMeters(from, to);
   const reach = total > SIM_STOP_SHORT_M ? 1 - SIM_STOP_SHORT_M / total : 1;
   const bow = total * 0.03;
   const bearing = (Math.atan2(to.lng - from.lng, to.lat - from.lat) * 180) / Math.PI;
-  return Array.from({ length: steps }, (_, i) => {
+  const route = Array.from({ length: steps }, (_, i) => {
     const t = (reach * i) / (steps - 1);
     const onLine = { lat: from.lat + (to.lat - from.lat) * t, lng: from.lng + (to.lng - from.lng) * t };
     return offsetPoint(onLine, Math.sin(Math.PI * t) * bow, bearing + 90);
   });
+  return [...route, route[route.length - 1]];
 }
 
 type GeolocationLike = Pick<Geolocation, "getCurrentPosition" | "watchPosition" | "clearWatch">;
+
+function toFix(p: { coords: { latitude: number; longitude: number; accuracy?: number | null } }): Fix {
+  const { latitude: lat, longitude: lng, accuracy } = p.coords;
+  return accuracy != null && Number.isFinite(accuracy) ? { lat, lng, accuracy } : { lat, lng };
+}
 
 function geolocation(): GeolocationLike {
   const geo = (globalThis as { navigator?: { geolocation?: GeolocationLike } }).navigator?.geolocation;
@@ -95,7 +105,7 @@ export function getCurrentPosition(): Promise<LatLng> {
 }
 
 export type LocationSourceOptions =
-  | { mode: "gps"; onPosition: (p: LatLng) => void; onError: (error: LocationError) => void }
+  | { mode: "gps"; onPosition: (p: Fix) => void; onError: (error: LocationError) => void }
   | {
       mode: "simulate";
       route: LatLng[];
@@ -150,12 +160,12 @@ export function startLocationSource(options: LocationSourceOptions): () => void 
     options.onError(error as LocationError);
     return stop;
   }
-  let latest: LatLng | null = null;
+  let latest: Fix | null = null;
   let sentFirst = false;
   const watch = geo.watchPosition(
     (p) => {
       if (stopped) return;
-      latest = { lat: p.coords.latitude, lng: p.coords.longitude };
+      latest = toFix(p);
       if (!sentFirst) {
         sentFirst = true;
         options.onPosition(latest);

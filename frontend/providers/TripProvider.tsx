@@ -4,6 +4,7 @@ import { ShareLocationSheet } from "../components/ShareLocationSheet";
 import { useShell } from "../components/shell/useShell";
 import { findDemoAccount } from "../lib/demo";
 import {
+  Fix,
   LatLng,
   LocationError,
   buildSimulatedRoute,
@@ -100,7 +101,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
   /** One position goes to the server; the answer says whether this was the arrival. */
   const send = useCallback(
-    (tripId: string, position: LatLng) => {
+    (tripId: string, position: Fix) => {
       updateTripPosition(tripId, position)
         .then((trip) => {
           if (trip.status !== "en_route") halt(); // arrived (or ended elsewhere): sharing is over
