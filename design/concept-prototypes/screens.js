@@ -254,7 +254,7 @@ window.GOLDITO_SCREENS = [
   "docs": [
    [
     "Phase 12",
-    "docs/plan/phases/phase-12-snap.md"
+    "README.md"
    ]
   ]
  },
@@ -809,7 +809,7 @@ window.GOLDITO_SCREENS = [
   "docs": [
    [
     "Onboarding plan",
-    "docs/plan/onboarding.md"
+    "README.md"
    ]
   ]
  },
@@ -853,7 +853,7 @@ window.GOLDITO_SCREENS = [
    ],
    [
     "Onboarding plan",
-    "docs/plan/onboarding.md"
+    "README.md"
    ]
   ]
  },

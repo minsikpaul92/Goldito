@@ -16,7 +16,7 @@ Every feature must pass both tests:
 
 Sitter inputs should be limited to: **take a photo, tap a button** (picking AI-suggested chips; a short note on the daily report is optional — D38, near-zero typing). AI and automation do the rest.
 
-**Product flow (source of truth):** [full-process.md](full-process.md) — 5 stages, **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D46). Rover booking × Kidsnote care × Uber trips, with an AI agent doing the typing.
+**Product flow (source of truth):** [the root README](../../README.md#how-goldito-works) — 5 stages, **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D46). Rover booking × Kidsnote care × Uber trips, with an AI agent doing the typing.
 
 ---
 
@@ -166,7 +166,7 @@ client.chat.completions.create(
 
 ### C. Treat safety (Vision → Ultra → Tavily 8.7)
 - Vision (MiniCPM-V) extracts the ingredient list from the label photo.
-- Ultra compares it against the pet's allergens + species-specific toxins, reasoning about hidden sources. WARNING or unknown ingredients → Tavily search (8.7 stretch, [tavily.md](tavily.md)) → Ultra re-evaluates.
+- Ultra compares it against the pet's allergens + species-specific toxins, reasoning about hidden sources. WARNING or unknown ingredients → Tavily search (live in the Snap treat check; see the [root README](../../README.md#tavily-live-answers-from-trusted-sites)) → Ultra re-evaluates.
 - Output (strict JSON, validated server-side):
 
 ```json
@@ -208,7 +208,7 @@ The 3-year dataset contains real owners' personal data. It must be anonymized **
 
 ## 9. Data Model (summary)
 
-> **Source of truth: [phases/phase-02-db.md](phases/phase-02-db.md)** (17 P0 tables, RLS, RPCs) and [phase-11-p1.md](phases/phase-11-p1.md) (P1). This is an at-a-glance list only — change phase-02 first when the schema changes.
+> **Source of truth: the migrations and [supabase/README.md](../../supabase/README.md).** This is an at-a-glance list only — change the migrations first when the schema changes.
 
 | Area | Tables |
 | :--- | :--- |
@@ -242,13 +242,13 @@ Why: Supabase free storage is too small for photos and videos. Cloudinary's free
 - **Video:** max **30 s** (shorter OK); if longer, **trim UI** then client compress (~720p) before upload. Free max video **100 MB**.
 - **Thumbnails:** `c_fill,w_400,h_400` for feed grid; video poster via `so_0` + `.jpg`.
 - **Privacy:** use a dedicated folder per pet; don't expose the API secret to the client.
-- **Detail:** [phases/phase-04-upload.md](phases/phase-04-upload.md) § Media normalize policy
+- **Detail:** `frontend/lib/mediaNormalize.ts`
 
 ---
 
 ## 12. Tavily Guide
 
-**Source of truth: [tavily.md](tavily.md)** (what Tavily is, keyword query rules, trusted domains, recall search, 8-second budget, `TAVILY_API_KEY`).
+**Source of truth:** `backend/app/services/tavily.py` and the [root README](../../README.md#tavily-live-answers-from-trusted-sites).
 
 - Used in the treat safety guard as **Phase 08.7 (stretch)** — right after 8.1–8.6; Phase 11.3 only if 8.7 slips.
 - Qualifies us for **Best Use of Tavily ($3,000)** — requires a functional runtime call; the warning modal shows **Sources** links.
@@ -276,7 +276,7 @@ Required in the Devpost submission (and eligible for Most Valuable Feedback). Lo
 - [x] Few-shot sample size → replaced by the D35 tone layer: the same sitter's `tone_samples` top-k, 3 default examples only when there are none (2026-10-02)
 - [x] Nano Omni availability — not on the shared API (2026-09-29); all three NVIDIA vision models are dedicated-endpoint only (2026-10-02, D39) → vision stays MiniCPM-V-4_5 (final)
 - [x] Toronto Builders & Brews (Sep 29) — attended (Token Factory $100, AI Cloud $100, Tavily 8k credits)
-- [x] Product flow: team Full Process scenario first (5 stages) — 2026-10-01 (D27, [full-process.md](full-process.md))
+- [x] Product flow: team Full Process scenario first (5 stages) — 2026-10-01 (D27)
 - [x] Payment: demo only (no card data); consents: fixed English templates, not legal advice — 2026-10-01 (D30)
 - [x] Treat Safety Guard: P0 stretch after the scenario core — 2026-10-01 (D27)
 - [x] Sitter-tone layer, manual approval by default, opt-in auto-send with human pacing, near-zero sitter typing — 2026-10-02 (D35–D38, D38 revised the same day)
@@ -284,4 +284,4 @@ Required in the Devpost submission (and eligible for Most Valuable Feedback). Lo
 - [x] Fun mood meter is P1; SFT is a showcase only; no RFT application — 2026-10-02 (D42–D43)
 - [x] Auto-send answers right away at a human pace; read receipts only on real reads; 06B right after 07C (08 only if time remains); the agent story goes in the README and video (tool calling optional, 7B.11) — 2026-10-02 (D36, D37, D41, D46)
 - [x] Meet & Greet for first-time pairs only (after the request, before Accept; a declined skip cancels the booking); video on Google Meet; daily note from chips + an optional short note — 2026-10-02 (D44, D45, D38)
-- [ ] Still open: [full-process §9](full-process.md#9-열린-질문--tbd-2026-10-02) — delay formula (Seulgi), location-consent fallback, Google account + OAuth setup, Meet join access
+- [ ] Still open: full-process §9 (removed; in git history) — delay formula (Seulgi), location-consent fallback, Google account + OAuth setup, Meet join access

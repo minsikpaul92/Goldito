@@ -1,6 +1,6 @@
 import { isoToZoned, timeToMinutes } from "../features/schedule/dates";
 
-/** The five faces of the pet room (pet-status-room §7). */
+/** The five faces of the pet room. */
 export type PetMood = "excited" | "calm" | "tired" | "hungry" | "sleepy";
 
 /** One check-in of today, newest or oldest first (`kind` stays a plain string so a new kind never breaks this). */

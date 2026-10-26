@@ -195,7 +195,7 @@ Each design decision, its reason, and what it replaced. Change a row only with t
 
 ## 1. Product feel
 
-Goldito is a private care app for **dogs and cats**. Owners hand their pet to a part-time sitter; the app keeps them updated without asking. One stay runs through five stages — Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion ([full-process.md](docs/plan/full-process.md)) — so screens should feel like one continuous journey (Rover booking × KidsNote care × Uber trip), not separate tools.
+Goldito is a private care app for **dogs and cats**. Owners hand their pet to a part-time sitter; the app keeps them updated without asking. One stay runs through five stages — Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion ([README](README.md#how-goldito-works)) — so screens should feel like one continuous journey (Rover booking × KidsNote care × Uber trip), not separate tools.
 
 | Keyword | Means in UI |
 | :--- | :--- |
@@ -525,7 +525,7 @@ Each screen has at most one filled `primary` button. Everything else is secondar
 Sitter task row → big **Complete with photo**. Owner booking → **Request booking**.
 
 ### 7.2 No typing for sitters (P0)
-No caption box, no long report typing. Sitters tap: **Today quick check-ins** (meal, potty, walk minutes, mood, note) and scheduled tasks (**Mark done** or with photo). Report screen = the **5-second check**: up to 2 photos → **AI-suggested chips** from the day's check-ins, tasks, and photos (the sitter turns off wrong ones) + an optional short note (≤ 200 chars) → Generate → review → **Send** posts it (D34 · D38). Optional edit before Send is OK. Inquiries: the AI drafts the reply in the sitter's tone; the sitter just taps **Send** (Edit / Add / Regenerate are optional, D36 · D38). See [sitter-care-loop.md](docs/plan/sitter-care-loop.md).
+No caption box, no long report typing. Sitters tap: **Today quick check-ins** (meal, potty, walk minutes, mood, note) and scheduled tasks (**Mark done** or with photo). Report screen = the **5-second check**: up to 2 photos → **AI-suggested chips** from the day's check-ins, tasks, and photos (the sitter turns off wrong ones) + an optional short note (≤ 200 chars) → Generate → review → **Send** posts it (D34 · D38). Optional edit before Send is OK. Inquiries: the AI drafts the reply in the sitter's tone; the sitter just taps **Send** (Edit / Add / Regenerate are optional, D36 · D38).
 
 Owners may type where it saves the sitter work: the inquiry question, the care & medication request, their name on consents, and their preferred meeting spots.
 
@@ -553,6 +553,11 @@ Always explain what will appear and who adds it.
 - **Avoid the emoji AI text uses all the time**, in copy, buttons, rows, chips and empty states: ✨ 🚀 💡 🔥 ✅ ❌ ⚠️ 🎯 📌 🌟 🎉 👋 🙌 💪 🤖 🔍 📝 ⭐ 💬. Use plain words, a line icon, or nothing instead. Status and section labels use the line icons (`<Icon>` or `Tag icon`: check, clock, close, warning, meal, pill, paw, tip); emoji stay for content: empty-state art, pet species, album and badge names. Buttons are words, with no emoji.
 - Any other emoji is fine, in a button too, when it helps (📍 on a "use my current location" button, a pet's 🐶 / 🐱). Swapping one for a line icon is optional.
 - Times shown in the app timezone (America/Toronto) with AM/PM.
+- **Questions and choices** (sign-up and onboarding; the wording itself lives in `frontend/features/onboarding/questions.ts` and `frontend/features/ownerOnboarding/questions.ts`):
+  - Everyday words that older users and non-native speakers get at a glance ("When a guest visits", not "When a visitor comes in").
+  - A question reads as a question ("Do you take cats?", "How many walks a day?"), never a noun phrase ("Pick-up preference").
+  - A choice is a short keyword, not a sentence ("Pulls away", "Fast & wants more!"). Sitter counts stay at three choices (1 · 2 · 3+); owner pet questions use the pet's `{name}` and a 4-step scale from weaker to stronger.
+  - No medical or diagnostic words: "Based on what you tell us", never "Behavior assessment" or "Separation anxiety". Skipping is always **Skip**.
 - **One word per thing** (D20): **Log in / Log out** (never sign in / sign out, except Google's own "Sign in with Google"); the sitter's daily write-up is a **Diary page** ("Writing Max's page", "Diary page · Sent"); the photo tab is **Moments**; errors start with **Couldn't**.
 - **Playful words** (D20): a pun only on a toast, an empty state, a loading line, a few titles and small celebrations, taken from `frontend/content/words.ts` with `useWords()` (plain, dog and cat versions; the playful one follows the pet's species). Never on safety, money, agreements, errors or button labels. **Settings → Playful words** (on by default) turns every one back to its plain line. The list and the never list: [Playful words](https://mooque-dev.github.io/goldito-design/words-trial.html).
 
@@ -610,7 +615,7 @@ Four jobs, four controls. Pick by the job, never by the screen. The [UX audit](h
 
 ### 7.9 Welcome / role onboarding
 
-Public intro for **signed-out** visitors (`/welcome`, `/welcome/how`, `/login`, `/signup`). Spec: [onboarding.md](docs/plan/onboarding.md); design: the [intro trial](https://mooque-dev.github.io/goldito-design/intro-trial.html) (#374).
+Public intro for **signed-out** visitors (`/welcome`, `/welcome/how`, `/login`, `/signup`). Design: the [intro trial](https://mooque-dev.github.io/goldito-design/intro-trial.html) (#374).
 
 | Rule | Detail |
 | :--- | :--- |
