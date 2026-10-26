@@ -97,7 +97,8 @@ export function TripMap({ traveler, dest, travelerLabel, testID = "trip-map" }: 
 
   return (
     <View style={styles.wrap} testID={testID}>
-      <div ref={host} style={{ height: HEIGHT, width: "100%" }} />
+      {/* The map owns the drag: the phone frame's mouse-as-finger scrolling stays out of it (TouchEmulation). */}
+      <div ref={host} data-gesture-owner="map" style={{ height: HEIGHT, width: "100%" }} />
       <View style={styles.zoom}>
         <Pressable accessibilityRole="button" accessibilityLabel="Zoom in" onPress={() => zoom(1)} style={styles.button} testID={`${testID}-zoom-in`}>
           <Text style={styles.buttonText}>+</Text>
