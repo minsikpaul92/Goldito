@@ -42,7 +42,7 @@ import { MEET_ASK, NextStep, Primary, actionPossible, finalQuote, hasPaymentCard
 import { inCare } from "../../features/chat/careCards";
 import { arrivedForNext, canReceiveNow, canReturnNow, canStartTripNow, canTravel, nextHandoff, startOpensAt } from "../../features/transit/tripLogic";
 import { useLiveTrips } from "../../features/transit/useLiveTrips";
-import { meetGreetPrimary } from "../../lib/meetGreet";
+import { meetGreetPrimary, respondSkipMeetGreet } from "../../lib/meetGreet";
 import { useLiveChat } from "../../features/chat/useLiveChat";
 import { SPECIES_EMOJI } from "../../features/pets/petFormat";
 import type { Species } from "../../types/db";
@@ -110,6 +110,8 @@ export default function Chat() {
   const [signals, setSignals] = useState({ handoff: 0, trip: 0, photo: 0, receive: 0, returned: 0 });
   const [stepBusy, setStepBusy] = useState(false);
   const meetCard = useRef<MeetGreetHandle>(null);
+  /** Set by Request: open the Meet & Greet time sheet once the new booking's card is on screen. */
+  const openMeetSheet = useRef(false);
   const [quoteBusy, setQuoteBusy] = useState(false);
   const [chips, setChips] = useState<ChatChip[]>([]);
   const [action, setAction] = useState<ChatAction | null>(null);
@@ -121,6 +123,14 @@ export default function Chat() {
   const [inputHeight, setInputHeight] = useState(INPUT_MIN);
 
   // On the web the box is a textarea: it is as tall as its text (measured on the element), up to INPUT_MAX, then it scrolls.
+  // Request (before any booking) asked for the time sheet: open it as soon as the new Meet & Greet card is there.
+  useEffect(() => {
+    if (openMeetSheet.current && meetCard.current) {
+      openMeetSheet.current = false;
+      meetCard.current.open();
+    }
+  }, [loaded]);
+
   useEffect(() => {
     if (Platform.OS !== "web") return;
     const el = input.current as unknown as HTMLTextAreaElement | null;
@@ -329,7 +339,7 @@ export default function Chat() {
   };
 
   /** Owner: the booking is made from the stay on the chat's card (the sitter's place unless the owner's usual is another); no dates yet opens the sheet. */
-  const startMeetGreet = async () => {
+  const startMeetGreet = async (choice: "request" | "skip") => {
     if (!stay || !profile) return setRequesting(true);
     setStepBusy(true);
     try {
@@ -349,6 +359,9 @@ export default function Chat() {
         serviceType: houseSitting ? "house_sitting" : "boarding",
       });
       await postBookingRequestCard(threadId, bookingId).catch(() => undefined);
+      // Skip asks the sitter to skip; Request opens the time sheet as soon as the card is in the chat.
+      if (choice === "skip") await respondSkipMeetGreet(bookingId, true).catch(() => undefined);
+      else openMeetSheet.current = true;
       await load();
     } catch (e) {
       const code = e instanceof BookingError ? e.code : "";
@@ -380,7 +393,7 @@ export default function Chat() {
 
   /** The footer's one action. The cards show the result; the screen reloads from the database. */
   const doPrimary = async (p: Primary) => {
-    if (p.kind === "meet_start") return startMeetGreet();
+    if (p.kind === "meet_start") return startMeetGreet("request");
     if (p.kind === "meet_ask") return askMeetGreet();
     if (p.kind === "agree") return setAgreeing(true);
     if (p.kind === "final_quote") return setQuoting("final");
@@ -643,7 +656,12 @@ export default function Chat() {
       {/* A final quote carries Confirm and Decline on its card: the footer does not repeat them (#289). */}
       {footerPrimary || step.quote || step.wait ? (
         <View style={styles.next}>
-          {footerPrimary ? (
+          {footerPrimary?.kind === "meet_start" ? (
+            <View style={styles.pair}>
+              <Button label="Skip" variant="secondary" disabled={stepBusy} onPress={() => void startMeetGreet("skip")} style={styles.half} testID="chat-meet-skip" />
+              <Button label="Request" disabled={stepBusy} onPress={() => void startMeetGreet("request")} style={styles.half} testID="chat-next-meet_start" />
+            </View>
+          ) : footerPrimary ? (
             <Button
               label={footerPrimary.label}
               disabled={stepBusy}
@@ -847,6 +865,8 @@ const makeStyles = (theme: Theme) =>
     requestLine: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     requestNote: { fontSize: theme.fontSize.small, color: theme.color.text, fontStyle: "italic", marginTop: 2 },
     requestLive: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary, marginTop: 2 },
+    pair: { flexDirection: "row", gap: theme.spacing.sm },
+    half: { flex: 1 },
     next: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
     chipsScroll: { flexGrow: 0, maxWidth: 480, width: "100%", alignSelf: "center" },
     chips: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.md },

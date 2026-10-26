@@ -43,12 +43,12 @@ type Props = {
 };
 
 /** What the chat footer can ask of the card: do the step that is this person's turn. */
-export type MeetGreetHandle = { primary: () => void; skip: () => void };
+export type MeetGreetHandle = { primary: () => void; skip: () => void; open: () => void };
 
 export function meetGreetSummary(b: BookingSummary): string | null {
   const { mode, at, place } = b.meetGreet;
   if (!mode || !at) return null;
-  return mode === "video" ? `Video · ${formatInstant(at)}` : `In person · ${place ?? ""} · ${formatInstant(at)}`;
+  return mode === "video" ? `Online · ${formatInstant(at)}` : `In person · ${place ?? ""} · ${formatInstant(at)}`;
 }
 
 /**
@@ -70,7 +70,8 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
   const [confirm, setConfirm] = useState<"skip" | "decline" | "done-early" | null>(null);
   const [checked, setChecked] = useState<string[]>([]);
   const primaryRef = useRef<() => void>(() => undefined);
-  useImperativeHandle(ref, () => ({ primary: () => primaryRef.current(), skip: () => setConfirm("skip") }), []);
+  useImperativeHandle(ref, () => ({ primary: () => primaryRef.current(), skip: () => setConfirm("skip"), open: () => openRef.current() }), []);
+  const openRef = useRef<() => void>(() => undefined);
 
   const status = booking.meetGreetStatus;
   if (status === "not_needed") return null;
@@ -101,6 +102,8 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
     setError(null);
     setSheet({ key: Date.now(), spots: await getMeetGreetOptions(booking.id) });
   };
+
+  openRef.current = () => void openSheet();
 
   const send = (mode: MeetGreetMode, at: string, place: string | null) => {
     setSheet(null);
@@ -154,10 +157,10 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
     // The owner's choice right after Request booking (015f, #236). Both buttons stay on the card, also in the chat.
     body = (
       <>
-        <Text style={styles.title}>Meet before the first stay?</Text>
+        <Text style={styles.title}>Meet & Greet</Text>
         <View style={styles.pair}>
-          <Button label="Request Meet & Greet" onPress={() => void openSheet()} disabled={busy} style={styles.half} testID="meet-request" />
-          <Button label="Skip Meet & Greet" variant="secondary" onPress={() => setConfirm("skip")} disabled={busy} style={styles.half} testID="meet-skip" />
+          <Button label="Skip" variant="secondary" onPress={() => setConfirm("skip")} disabled={busy} style={styles.half} testID="meet-skip" />
+          <Button label="Request" onPress={() => void openSheet()} disabled={busy} style={styles.half} testID="meet-request" />
         </View>
       </>
     );

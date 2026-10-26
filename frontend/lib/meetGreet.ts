@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "./api";
+import { apiPost, getApiBaseUrl } from "./api";
 import { BookingError, BookingSummary, bookingErrorMessage } from "./bookings";
 import { getSupabase } from "./supabase";
 
@@ -83,19 +83,35 @@ export function declineMeetGreet(bookingId: string) {
   return call("decline_meet_greet", { p_booking: bookingId }, "Couldn't decline. Try again.");
 }
 
-export type MeetSpots = { ownerName: string; ownerSpots: string[]; sitterName: string; sitterSpots: string[] };
+export type MeetSpots = {
+  ownerName: string;
+  ownerSpots: string[];
+  sitterName: string;
+  sitterSpots: string[];
+  /** A park near the owner's home, only when nobody saved a spot. */
+  nearby?: string | null;
+};
 
 /** Both sides' preferred public meeting spots (≤ 3 each) for the In person sheet. */
 export async function getMeetGreetOptions(bookingId: string): Promise<MeetSpots> {
   const { data, error } = await getSupabase().rpc("get_meet_greet_options", { p_booking: bookingId }).maybeSingle();
   if (error || !data) return { ownerName: "", ownerSpots: [], sitterName: "", sitterSpots: [] };
   const row = data as { owner_name: string; owner_spots: string[]; sitter_name: string; sitter_spots: string[] };
-  return {
+  const spots: MeetSpots = {
     ownerName: row.owner_name,
     ownerSpots: row.owner_spots ?? [],
     sitterName: row.sitter_name,
     sitterSpots: row.sitter_spots ?? [],
   };
+  if (spots.ownerSpots.length === 0 && spots.sitterSpots.length === 0) {
+    try {
+      const park = await apiPost<{ found: boolean; name: string | null }>("/api/geo/meet-park", { booking_id: bookingId });
+      spots.nearby = park.found ? park.name : null;
+    } catch {
+      spots.nearby = null;
+    }
+  }
+  return spots;
 }
 
 /** FastAPI call with the user's Supabase token; null when the backend can't help (no URL, not set up, down). */

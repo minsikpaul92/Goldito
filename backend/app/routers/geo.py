@@ -235,3 +235,62 @@ def reverse(body: ReverseRequest, _user: CurrentUser = Depends(get_current_user)
         address=street_address(hit),
         full=address_line(hit) if body.exact else None,
     )
+
+
+class MeetParkRequest(BaseModel):
+    booking_id: str = Field(min_length=10, max_length=64)
+
+
+class MeetParkResponse(BaseModel):
+    found: bool
+    # "Trinity Bellwoods Park": a public place near the owner's home, never the home itself.
+    name: str | None = None
+
+
+def _km(a: tuple[float, float], b: tuple[float, float]) -> float:
+    from math import asin, cos, radians, sin, sqrt
+
+    dlat, dlng = radians(b[0] - a[0]), radians(b[1] - a[1])
+    h = sin(dlat / 2) ** 2 + cos(radians(a[0])) * cos(radians(b[0])) * sin(dlng / 2) ** 2
+    return 6371 * 2 * asin(sqrt(h))
+
+
+def nearest_park(lat: float, lng: float) -> str | None:
+    """The closest named park within about 2 km of a point (OpenStreetMap), or None."""
+    box = 0.02
+    hits = _get(
+        NOMINATIM_URL,
+        {
+            "q": "park",
+            "format": "jsonv2",
+            "limit": 10,
+            "viewbox": f"{lng - box},{lat + box},{lng + box},{lat - box}",
+            "bounded": 1,
+        },
+    )
+    parks = [h for h in hits if h.get("name") and h.get("type") in ("park", "common", "garden", "recreation_ground", "dog_park")]
+    if not parks:
+        return None
+    parks.sort(key=lambda h: _km((lat, lng), (float(h["lat"]), float(h["lon"]))))
+    return parks[0]["name"]
+
+
+@router.post("/meet-park", response_model=MeetParkResponse)
+def meet_park(body: MeetParkRequest, user: CurrentUser = Depends(get_current_user)) -> MeetParkResponse:
+    """A park near the owner's home for an in-person Meet & Greet when nobody saved a meeting spot. Either side of the
+    booking may ask; only the park's name leaves, never the owner's address or point."""
+    from app.deps.supabase import get_service_client
+
+    db = get_service_client()
+    booking = (db.table("bookings").select("owner_id, sitter_id").eq("id", body.booking_id).limit(1).execute().data or [None])[0]
+    if not booking or user.id not in (booking["owner_id"], booking["sitter_id"]):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found.")
+    home = (db.table("owner_profiles").select("home_lat, home_lng").eq("id", booking["owner_id"]).limit(1).execute().data or [None])[0]
+    if not home or home.get("home_lat") is None or home.get("home_lng") is None:
+        return MeetParkResponse(found=False)
+    try:
+        name = nearest_park(float(home["home_lat"]), float(home["home_lng"]))
+    except httpx.HTTPError:
+        log.warning("meet-park: the lookup is down")
+        return MeetParkResponse(found=False)
+    return MeetParkResponse(found=name is not None, name=name)
