@@ -27,7 +27,7 @@ export function StepHeader({ flow, step, total, onBack, help, testID }: Props) {
     <View style={styles.wrap} testID={testID}>
       <View style={styles.top}>
         {onBack ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} hitSlop={theme.spacing.sm} style={styles.back}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} hitSlop={theme.spacing.sm} style={styles.back} testID={testID ? `${testID}-back` : undefined}>
             <Icon name="back" size={24} color={theme.color.text} />
           </Pressable>
         ) : (

@@ -128,7 +128,7 @@ Routes follow `expo-router` files (`frontend/app/`): `app/owner/(tabs)/bookings.
 | Home safe · review (07C) | `/owner/bookings/[bookingId]/review` |
 | Life Record (07C) | `/owner/pets/[petId]/record` |
 | Edge states ①–⑤ | the screen of that stage, shown with `Banner` (or `AlertModal` for DANGER); the edge state's name goes in the Banner's `testID` |
-| Onboarding · Welcome / Role / Log in | `/welcome`, `/welcome/owner`, `/welcome/sitter`, `/login` |
+| Onboarding · Welcome / How it works / Log in | `/welcome`, `/welcome/how` (`/welcome/owner` and `/welcome/sitter` redirect there), `/login` |
 | Onboarding · Create account / Add your pet | `/signup`, `/owner/pets/new` |
 | Onboarding · Your look, Health & care, Notifications, Permission prompt | not built (OB.4 on hold; 11.15 pet onboarding) |
 | Sitter setup · Services & rates, House rules, Availability, Live profile | `/profile`, `/sitter/schedule` |
@@ -587,15 +587,16 @@ Every screen that leaves a parent flow uses **`BackLink`** (`frontend/components
 
 ### 7.9 Welcome / role onboarding
 
-Public intro for **signed-out** visitors (`/welcome`, `/welcome/owner`, `/welcome/sitter`). Spec: [onboarding.ko.md](docs/plan/onboarding.ko.md).
+Public intro for **signed-out** visitors (`/welcome`, `/welcome/how`, `/login`, `/signup`). Spec: [onboarding.ko.md](docs/plan/onboarding.ko.md); design: the [intro trial](https://mooque-dev.github.io/goldito-design/intro-trial.html) (#374).
 
 | Rule | Detail |
 | :--- | :--- |
 | Who sees it | **Signed-out only.** `(public)` layout redirects signed-in users away. After **Sign out**, Welcome shows again (OB.1). **`intro_seen` skip (OB.4) is deferred** — keep showing Welcome for judges; do not block Phase 04. |
-| Layout | One phone-height step, **no scroll**: top `BackLink` + progress · full title/body (do **not** clip with `numberOfLines`) · media column fills leftover height · footer CTA + dots |
-| Media | `MediaPlaceholder` fills the leftover column (photo-sized area, no large empty bands). Real demo stills/clips replace it later; keep the dashed brief until then |
-| Exit to auth | Last step → Sign in / Try demo / Create account → existing `/login` · `/signup` (login keeps `BackLink` → `/welcome`) |
-
+| Boot | While the session loads, `BootView`: the four-print paw walk (`PawWalk`) with the coin and Goldito under it, never a bare spinner. The pet setup finish is meant to reuse the same walk (not built yet). |
+| Welcome | Max and Mochi on a mint block, the tagline, then **Try the demo** as the one primary button (opens `DemoSheet`: who to be), then Sign up with email and Log in as text buttons. Without a demo password the primary is Create account. |
+| How it works | Three pages (the problem, two sides, one stay) drawn with the app's own art and demo photos; Next, Skip and Back; the last page offers Try the demo and Create account. No placeholder boxes. |
+| Sign up | Three steps under one `StepHeader` (who you are, name and email, password); Back steps back and keeps what was typed, then leaves. Terms and Privacy are links. |
+| Apple / Google | `SocialSignIn` stays hidden until they work (`EXPO_PUBLIC_SOCIAL_SIGN_IN=1` shows them); a judge never taps a "Coming soon" button. |
 
 ### 7.10 Dates and times
 

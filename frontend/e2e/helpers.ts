@@ -46,7 +46,7 @@ export async function signIn(page: Page, user: MockUser) {
   await page.goto("/login");
   await app(page).getByTestId("login-email").fill(user.email);
   await app(page).getByTestId("login-password").fill(user.password);
-  await app(page).getByRole("button", { name: "Sign in" }).click();
+  await app(page).getByRole("button", { name: "Log in", exact: true }).click();
 }
 
 /** Press, move like a finger, release — with real mouse events. */

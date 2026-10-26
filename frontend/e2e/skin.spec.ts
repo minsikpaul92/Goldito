@@ -13,7 +13,7 @@ async function signInAs(page: import("@playwright/test").Page, query: string) {
   await page.goto(`/login${query}`);
   await app(page).getByTestId("login-email").fill(OWNER.email);
   await app(page).getByTestId("login-password").fill(OWNER.password);
-  await app(page).getByRole("button", { name: "Sign in" }).click();
+  await app(page).getByRole("button", { name: "Log in", exact: true }).click();
 }
 
 /** The screen background and the header title font of the Bookings tab. */

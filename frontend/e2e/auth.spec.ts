@@ -87,40 +87,47 @@ test.describe("auth and role routing", () => {
     await expect(app(page).getByTestId("your-bookings")).toHaveCount(0);
   });
 
-  test("signing up as a sitter sends the role and opens the sitter area", async ({ page }) => {
+  test("signing up as a sitter takes three steps, sends the role and opens the sitter area", async ({ page }) => {
     const { signups } = await mockSupabase(page, []);
     await page.goto("/signup");
     const signup = app(page);
+    await expect(signup.getByRole("button", { name: "Pick one to continue" })).toBeDisabled();
     await signup.getByTestId("role-sitter").click();
     await expect(signup.getByTestId("role-sitter")).toHaveAttribute("aria-checked", "true");
     await expect(signup.getByTestId("role-owner")).toHaveAttribute("aria-checked", "false");
+    await signup.getByTestId("signup-continue").click();
     await signup.getByTestId("signup-first-name").fill("Chloe");
     await signup.getByTestId("signup-last-name").fill("Park");
     await signup.getByTestId("signup-email").fill("chloe@goldito.test");
+    await signup.getByTestId("signup-continue").click();
     await signup.getByTestId("signup-password").fill("care-snap-tap");
-    await signup.getByTestId("signup-confirm").fill("care-snap-tap");
     await signup.getByRole("button", { name: "Create account" }).click();
 
     await expect(page).toHaveURL(/\/sitter$/);
     expect(signups).toEqual([{ email: "chloe@goldito.test", role: "sitter", display_name: "Chloe Park" }]);
   });
 
-  test("sign up asks for a first and a last name", async ({ page }) => {
+  test("sign up asks for a first and a last name before the password", async ({ page }) => {
     await mockSupabase(page, []);
     await page.goto("/signup");
     const signup = app(page);
-    await expect(signup.getByTestId("signup-brand")).toBeVisible();
+    await expect(signup.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "1");
     await signup.getByTestId("role-owner").click();
+    await signup.getByTestId("signup-continue").click();
+    await expect(signup.getByText("Your sitter sees your first name.")).toBeVisible();
     await signup.getByTestId("signup-first-name").fill("Robert");
     await signup.getByTestId("signup-email").fill("robert@goldito.test");
-    await signup.getByTestId("signup-password").fill("max-and-mochi");
-    await signup.getByTestId("signup-confirm").fill("max-and-mochi");
-    await expect(signup.getByRole("button", { name: "Create account" })).toBeDisabled();
+    await expect(signup.getByTestId("signup-continue")).toBeDisabled();
     await signup.getByTestId("signup-last-name").fill("Kim");
+    await signup.getByTestId("signup-continue").click();
+    await expect(signup.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "3");
+    await expect(signup.getByRole("button", { name: "Create account" })).toBeDisabled();
+    await signup.getByTestId("signup-password").fill("max-and-mochi");
     await expect(signup.getByRole("button", { name: "Create account" })).toBeEnabled();
+    await expect(signup.getByTestId("signup-terms-link")).toBeVisible();
   });
 
-  test("sign up checks the email shape and that both passwords match, and Back returns", async ({ page }) => {
+  test("sign up checks the email shape and the password length, and Back steps back then leaves", async ({ page }) => {
     const { signups } = await mockSupabase(page, []);
     await page.goto("/login");
     const screen = app(page);
@@ -128,20 +135,24 @@ test.describe("auth and role routing", () => {
     await expect(page).toHaveURL(/\/signup$/);
 
     await screen.getByTestId("role-owner").click();
+    await screen.getByTestId("signup-continue").click();
     await screen.getByTestId("signup-first-name").fill("Robert");
     await screen.getByTestId("signup-last-name").fill("Kim");
     await screen.getByTestId("signup-email").fill("robert@goldito");
-    await screen.getByTestId("signup-password").fill("max-and-mochi");
-    await screen.getByTestId("signup-confirm").fill("max-and-moch");
-    await expect(screen.getByText("Passwords don't match.")).toBeVisible();
-    await expect(screen.getByRole("button", { name: "Create account" })).toBeDisabled();
-
-    await screen.getByTestId("signup-confirm").fill("max-and-mochi");
-    await expect(screen.getByText("Passwords don't match.")).toHaveCount(0);
-    await screen.getByRole("button", { name: "Create account" }).click();
+    await screen.getByTestId("signup-continue").click();
     await expect(screen.getByTestId("signup-error")).toHaveText("Enter a valid email address, like you@example.com.");
+    await screen.getByTestId("signup-email").fill("robert@goldito.test");
+    await screen.getByTestId("signup-continue").click();
+    await screen.getByTestId("signup-password").fill("max");
+    await screen.getByRole("button", { name: "Create account" }).click();
+    await expect(screen.getByTestId("signup-error")).toHaveText("Use a password with at least 6 characters.");
     expect(signups).toHaveLength(0);
 
+    // Back walks the steps, keeping what was typed, then leaves.
+    await screen.getByTestId("signup-back").click();
+    await expect(screen.getByTestId("signup-email")).toHaveValue("robert@goldito.test");
+    await screen.getByTestId("signup-back").click();
+    await expect(screen.getByTestId("role-owner")).toHaveAttribute("aria-checked", "true");
     await screen.getByTestId("signup-back").click();
     await expect(page).toHaveURL(/\/login$/);
     // A direct link has nothing to go back to → Welcome (OB.1).
@@ -158,7 +169,7 @@ test.describe("auth and role routing", () => {
 
     await page.goto("/login");
     const screen = app(page);
-    await expect(screen.getByTestId("demo-block")).toContainText("or try a demo");
+    await expect(screen.getByTestId("demo-block")).toContainText("or try the demo");
     await screen.getByTestId("demo-owner").click();
     await expect(page).toHaveURL(/\/owner$/);
 
