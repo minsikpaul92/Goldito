@@ -116,6 +116,8 @@ export default function CheckoutScreen() {
     [ready?.signed],
   );
 
+  const unsigned = (ready?.required ?? []).filter((k) => !signedKinds.has(k));
+  const allOn = unsigned.length > 0 && unsigned.every((k) => checks[k]);
   const missing = (ready?.required ?? []).filter((k) => !signedKinds.has(k) && !checks[k]);
   // The signature is the owner's own name, as on their profile (#282): any other text does not sign.
   const profileName = session.profile?.displayName ?? "";
@@ -206,14 +208,14 @@ export default function CheckoutScreen() {
 
         <View style={styles.consentsHead}>
           <Text style={styles.consentsLabel} testID="checkout-consents-count">{`Consents (${required.length - missing.length}/${required.length})`}</Text>
-          {missing.length > 0 ? (
+          {unsigned.length > 0 ? (
             <Pressable
               accessibilityRole="button"
               disabled={busy}
-              onPress={() => setChecks((c) => ({ ...c, ...Object.fromEntries(missing.map((k) => [k, true])) }))}
+              onPress={() => setChecks((c) => ({ ...c, ...Object.fromEntries(unsigned.map((k) => [k, !allOn])) }))}
               testID="checkout-agree-all"
             >
-              <Text style={styles.selectAll}>Select all</Text>
+              <Text style={styles.selectAll}>{allOn ? "Deselect all" : "Select all"}</Text>
             </Pressable>
           ) : null}
         </View>
