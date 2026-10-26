@@ -46,6 +46,11 @@ export function TripMap({ traveler, dest, travelerLabel, testID = "trip-map" }: 
   const fit = useCallback(() => {
     const instance = map.current;
     if (!instance) return;
+    // Leaflet drops a new view while a zoom still animates (± or the wheel just before): fit once it has ended.
+    if (instance.getPanes().mapPane.classList.contains("leaflet-zoom-anim")) {
+      instance.once("zoomend", fit);
+      return;
+    }
     const at = points.current;
     fitting.current = true;
     try {
