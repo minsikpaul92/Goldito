@@ -1,14 +1,22 @@
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
+import { StyleSheet, View } from "react-native";
 
+import { Art } from "../../../components/art/Art";
 import { QuickCheckIn } from "../../../components/QuickCheckIn";
-import { Button } from "../../../components/ui/Button";
+import { BackLink } from "../../../components/ui/BackLink";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
+import { ScreenHeader } from "../../../components/ui/ScreenHeader";
 import { useCaringPets } from "../../../features/care/useCaringPets";
+import { useThemedStyles } from "../../../providers/ThemeProvider";
+import { Theme } from "../../../theme/themes";
 
-/** One pet's 5-second check-in (opened from the pet chips on Home). */
+const goBack = () => (router.canGoBack() ? router.back() : router.replace("/sitter"));
+
+/** One pet's 5-second check-in (opened from the pet chips on Home), laid out as the Oct 25 design. */
 export default function SitterCheckin() {
+  const styles = useThemedStyles(makeStyles);
   const { petId } = useLocalSearchParams<{ petId: string }>();
   const { state, reload } = useCaringPets();
   if (state.status === "loading") return <LoadingView />;
@@ -16,6 +24,7 @@ export default function SitterCheckin() {
   if (!pet) {
     return (
       <Screen>
+        <BackLink onPress={goBack} testID="checkin-back" />
         <EmptyState
           emoji="🐾"
           title={state.status === "error" ? "Couldn't load this pet" : "Not in your care right now"}
@@ -27,15 +36,29 @@ export default function SitterCheckin() {
   }
   return (
     <Screen testID="sitter-checkin-screen">
-      <Stack.Screen options={{ title: `${pet.name} · Check-in` }} />
-      <QuickCheckIn pet={pet} />
-      <Button
-        label={`📸 Photos of ${pet.name}`}
-        variant="secondary"
-        onPress={() => router.push(`/sitter/feed/${pet.id}`)}
-        testID="checkin-photos"
-        style={{ marginTop: 12 }}
+      <BackLink onPress={goBack} testID="checkin-back" />
+      <ScreenHeader
+        title={`${pet.name} · Check-in`}
+        subtitle="Tap what happened, then Send"
+        right={
+          <View style={styles.face} aria-hidden>
+            <Art name={pet.species === "cat" ? "owner/pet-cat" : "owner/pet-dog"} size={36} />
+          </View>
+        }
       />
+      <QuickCheckIn pet={pet} onPhotos={() => router.push(`/sitter/feed/${pet.id}`)} />
     </Screen>
   );
 }
+
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    face: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.color.surface,
+    },
+  });
