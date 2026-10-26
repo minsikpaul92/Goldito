@@ -473,7 +473,7 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-voice-questions")).toHaveCSS("opacity", "0");
     await expect(screen.getByText("We don't keep the recording.")).toBeVisible();
     // Everything of the first view is on one screen (no scrolling to reach Skip), and there is one Back, at the top,
-    // with its word (#383). Measured inside the phone frame.
+    // as the ← arrow (#383, U1). Measured inside the phone frame.
     const row = await screen.getByTestId("own-step-voice").evaluate(() => {
       const rect = (id: string) => document.querySelector(`[data-testid="${id}"]`)!.getBoundingClientRect();
       const skip = rect("own-skip");
@@ -482,7 +482,7 @@ test.describe("owner onboarding", () => {
     });
     expect(row.skipBottom).toBeLessThanOrEqual(row.height);
     expect(row.backTop).toBeLessThan(row.skipTop);
-    await expect(screen.getByTestId("own-back")).toHaveText("Back");
+    await expect(screen.getByTestId("own-back")).toHaveAttribute("aria-label", "Back");
     await expect(screen.getByTestId("own-back-bottom")).toHaveCount(0);
     await screen.getByTestId("own-mic").click();
     await expect(screen.getByTestId("own-mic-status")).toContainText("of 1:00");

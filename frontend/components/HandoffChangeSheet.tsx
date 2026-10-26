@@ -187,6 +187,8 @@ export function HandoffChangeSheet({
 
   return (
     <Sheet
+      dirty={(Object.keys(drafts) as HandoffKind[]).some((k) => drafts[k].note !== start[k].note)}
+      discardTitle="Discard your note?"
       visible={visible}
       title={title}
       onClose={onClose}

@@ -27,7 +27,7 @@ type Props = {
   testID?: string;
 };
 
-/** One question per screen, large text (11.15 §7.1): logo, Back and the progress bar, a 28 px question, the answers, the footer. */
+/** One question per screen, large text (11.15 §7.1): logo, the ← Back and the progress bar, a 28 px question, the answers, the footer. */
 export function StepFrame({ progress, title, hint, onBack, onSkipAll, onSkip, skipTestID = "own-skip", children, footer, rowNext, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -57,8 +57,7 @@ export function StepFrame({ progress, title, hint, onBack, onSkipAll, onSkip, sk
       <View style={styles.top}>
         {onBack ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={styles.back} testID="own-back">
-            <Icon name="back" size={22} color={theme.color.primary} />
-            <Text style={styles.backText}>Back</Text>
+            <Icon name="arrowBack" size={theme.icon.md} color={theme.color.text} />
           </Pressable>
         ) : (
           <View style={styles.back} />
@@ -81,8 +80,7 @@ const makeStyles = (theme: Theme) =>
     content: { gap: theme.spacing.md, paddingBottom: theme.spacing.xl },
     header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: theme.layout.touchTarget },
     top: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
-    back: { minWidth: theme.layout.touchTarget, height: theme.layout.touchTarget, flexDirection: "row", alignItems: "center", gap: 2 },
-    backText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
+    back: { width: theme.layout.touchTarget, height: theme.layout.touchTarget, justifyContent: "center" },
     track: { flex: 1, height: 8, borderRadius: theme.radius.pill, backgroundColor: theme.color.track, overflow: "hidden" },
     bar: { height: 8, borderRadius: theme.radius.pill, backgroundColor: theme.color.primary },
     title: {

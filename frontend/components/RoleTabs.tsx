@@ -81,9 +81,9 @@ export function headerOptions(theme: Theme) {
     headerShadowVisible: false,
     headerStyle: { backgroundColor: theme.ui.chrome },
     headerTintColor: theme.color.primary,
-    // The chevron and the word Back on every header (U1, DESIGN.md §7.8); never the route segment ("(tabs), back").
+    // The ← arrow alone, like every Back (U1, DESIGN.md §7.8); screen readers say "Back", never the route segment ("(tabs), back").
     headerBackTitle: "Back",
-    headerBackButtonDisplayMode: "generic" as const,
+    headerBackButtonDisplayMode: "minimal" as const,
     headerTitleStyle: {
       color: theme.color.text,
       fontSize: display ? theme.fontSize.title : theme.fontSize.body,

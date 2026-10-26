@@ -390,6 +390,8 @@ export default function OwnerBookingDetail() {
       <AgreeSheet visible={agreeing} booking={booking} onClose={() => setAgreeing(false)} onAgreed={() => void load()} />
 
       <Sheet
+        dirty={passNote.trim() !== ""}
+        discardTitle="Discard your note?"
         visible={confirmCancel}
         title={passing ? "Not this sitter?" : "Cancel this booking?"}
         onClose={() => setConfirmCancel(false)}

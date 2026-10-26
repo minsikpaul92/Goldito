@@ -117,6 +117,8 @@ export function AddPhotoSheet({
   const sharing = canShare && share;
   return (
     <Sheet
+      dirty={note.trim() !== ""}
+      discardTitle="Discard your note?"
       visible={visible}
       title="Add a photo"
       onClose={() => {

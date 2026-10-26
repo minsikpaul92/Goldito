@@ -367,6 +367,8 @@ function TaskSheet({
 
   return (
     <Sheet
+      dirty={task ? title !== task.title || dose !== (task.dose ?? "") || notes !== (task.notes ?? "") : dose.trim() !== "" || notes.trim() !== ""}
+      discardTitle="Discard this task?"
       visible={visible}
       title={task ? "Edit task" : "Add a care task"}
       onClose={() => {

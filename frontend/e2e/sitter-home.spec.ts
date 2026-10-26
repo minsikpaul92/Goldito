@@ -113,6 +113,28 @@ test.describe("sitter home dashboard", () => {
     expect(db.care_checkins[1]).toMatchObject({ kind: "mood", value: "missing" });
   });
 
+  test("closing a sheet with words in it asks first; Keep editing keeps them (U2)", async ({ page }) => {
+    await home(page);
+    const screen = app(page);
+    await screen.getByTestId("tile-ate").click();
+    await screen.getByTestId("tile-option-ate-other").click();
+    // Nothing typed yet: Close just closes.
+    await screen.getByTestId("tile-memo-close").click();
+    await expect(screen.getByTestId("tile-memo")).toHaveCount(0);
+
+    await screen.getByTestId("tile-ate").click();
+    await screen.getByTestId("tile-option-ate-other").click();
+    await screen.getByTestId("tile-memo-text").fill("Only ate the chicken bits");
+    await screen.getByTestId("tile-memo-close").click();
+    await expect(screen.getByTestId("tile-memo-discard")).toContainText("Discard your note?");
+    await screen.getByTestId("tile-memo-keep").click();
+    await expect(screen.getByTestId("tile-memo-text")).toHaveValue("Only ate the chicken bits");
+    // The backdrop asks too; Discard closes.
+    await screen.getByTestId("tile-memo-backdrop").click({ position: { x: 20, y: 20 } });
+    await screen.getByTestId("tile-memo-discard-confirm").click();
+    await expect(screen.getByTestId("tile-memo")).toHaveCount(0);
+  });
+
   test("allergies of every pet in care are on top, in the warning color", async ({ page }) => {
     const db = await home(page);
     db.pet_allergies.push({ id: "al1", pet_id: MAX.id, allergen: "chicken" }, { id: "al2", pet_id: MOCHI.id, allergen: "fish" });

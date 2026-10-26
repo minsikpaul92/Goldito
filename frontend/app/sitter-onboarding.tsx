@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { SitterAnswersForm } from "../components/SitterAnswersForm";
 import { EmptyState } from "../components/ui/EmptyState";
 import { LoadingView } from "../components/ui/LoadingView";
+import { clearLocalDraft, loadLocalDraft, saveLocalDraft } from "../features/onboarding/localDraft";
 import { loadDraft, saveDraft } from "../features/onboarding/onboardingApi";
 import { OnboardingDraft, emptyDraft } from "../features/onboarding/questions";
 import { useSession } from "../providers/SessionProvider";
@@ -27,17 +28,23 @@ export default function SitterOnboarding() {
   useEffect(() => {
     if (!userId) return;
     let active = true;
-    loadDraft(userId)
-      .then((d) => {
+    Promise.all([loadDraft(userId), loadLocalDraft(userId)])
+      .then(([d, local]) => {
         if (!active) return;
         savedHours.current = d.availability.hours;
-        setDraft(d);
+        // Answers left halfway on this device win over the last saved ones (U2).
+        setDraft(local ?? d);
       })
       .catch((e: Error) => active && setLoadError(e.message));
     return () => {
       active = false;
     };
   }, [userId]);
+
+  // Every change is kept on this device until the answers are saved (U2: long flows keep a draft).
+  useEffect(() => {
+    if (userId && draft) void saveLocalDraft(userId, draft);
+  }, [userId, draft]);
 
   if (session.status === "loading") return <LoadingView />;
   if (session.status !== "signedIn" || session.profile.role !== "sitter") return <Redirect href="/" />;
@@ -53,6 +60,7 @@ export default function SitterOnboarding() {
     setSaving(true);
     try {
       await saveDraft(userId!, next, savedHours.current);
+      await clearLocalDraft(userId!);
       toast.show("Saved");
       done();
     } catch (e) {

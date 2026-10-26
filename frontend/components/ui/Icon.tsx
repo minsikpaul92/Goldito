@@ -9,6 +9,7 @@ import Car from "lucide-react-native/icons/car";
 import ChevronDown from "lucide-react-native/icons/chevron-down";
 import Check from "lucide-react-native/icons/check";
 import Clock from "lucide-react-native/icons/clock";
+import ArrowLeft from "lucide-react-native/icons/arrow-left";
 import ChevronLeft from "lucide-react-native/icons/chevron-left";
 import ChevronRight from "lucide-react-native/icons/chevron-right";
 import Circle from "lucide-react-native/icons/circle";
@@ -79,6 +80,8 @@ const ICONS = {
   logOut: LogOut,
   // moving around
   back: ChevronLeft,
+  /** Back to the previous screen: the ← arrow, everywhere (U1, Mook Oct 25). `back` stays for calendar month arrows. */
+  arrowBack: ArrowLeft,
   forward: ChevronRight,
   expand: ChevronDown,
   close: X,

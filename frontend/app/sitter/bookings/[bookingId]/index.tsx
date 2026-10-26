@@ -551,6 +551,8 @@ export default function SitterBookingDetail() {
       ) : null}
 
       <Sheet
+        dirty={declineNote.trim() !== ""}
+        discardTitle="Discard your note?"
         visible={confirmDecline}
         title={`Decline ${owner}'s request?`}
         onClose={closeDecline}

@@ -149,7 +149,7 @@ export default function SitterCareRequest() {
         </View>
       ) : null}
 
-      <Sheet visible={declining} title="Reply to this request" onClose={() => setDeclining(false)} testID="decline-sheet">
+      <Sheet dirty={note.trim() !== "" || fee.trim() !== ""} discardTitle="Discard your reply?" visible={declining} title="Reply to this request" onClose={() => setDeclining(false)} testID="decline-sheet">
         <Text style={styles.muted}>Pick a reason or leave a note. The owner sees both.</Text>
         <View style={styles.reasons}>
           {DECLINE_REASONS.map((r, i) => (

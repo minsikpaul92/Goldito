@@ -77,6 +77,8 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
 
   return (
     <Sheet
+      dirty={other.trim() !== ""}
+      discardTitle="Discard this place?"
       visible={visible}
       title="Schedule Meet & Greet"
       onClose={onClose}
