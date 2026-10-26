@@ -483,7 +483,7 @@ test.describe("reviews in the chat", () => {
     await expect(screen.getByTestId("chat-review")).toContainText("Your review");
     await expect(screen.getByTestId("review-send")).toHaveCount(0);
 
-    // The sitter reads Robert's review in her chat and writes her own private note about him.
+    // The sitter reads Robert's review in her chat and writes her own review of him.
     screen = await openChatAs(page, SITTER);
     await expect(screen.getByTestId("received-review")).toContainText("Max came home happy and tired!");
     await expect(screen.getByTestId("chat-send-quote")).toHaveCount(0);
@@ -492,10 +492,10 @@ test.describe("reviews in the chat", () => {
     await screen.getByTestId("owner-note-rating-5").click();
     await screen.getByTestId("owner-note-comment").fill("Easy handoff.");
     await screen.getByTestId("owner-note-save").click();
-    await expect(screen.getByTestId("owner-note")).toContainText("Only you can see this");
+    await expect(screen.getByTestId("owner-note")).toContainText("Robert and other sitters can see this");
     expect(db.sitter_owner_notes).toHaveLength(1);
 
-    // The owner never sees the sitter's note.
+    // The owner's chat has no card for it (they read it in Profile).
     screen = await openChatAs(page, OWNER);
     await expect(screen.getByTestId("owner-note")).toHaveCount(0);
   });

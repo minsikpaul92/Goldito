@@ -1,13 +1,14 @@
 import { expect, test } from "@playwright/test";
 
 import { app, signIn } from "./helpers";
-import { MockDb, OWNER, SITTER, mockSupabase } from "./supabaseMock";
+import { MockDb, MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // Handoff check (phase-03b 3B.6): Received from 2 h before drop-off, then Returned.
 
 const BOOKING = "00000000-0000-4000-8000-0000000000e1";
 const MAX = "00000000-0000-4000-8000-0000000000c1";
 const HOUR = 3_600_000;
+const PAUL: MockUser = { id: "00000000-0000-4000-8000-000000000003", email: "paul@goldito.test", password: "paul-pass", role: "sitter", displayName: "Paul Kim" };
 
 /** A confirmed stay whose drop-off is `dropInMs` from now. */
 function seed(db: MockDb, dropInMs: number) {
@@ -182,7 +183,7 @@ test.describe("handoff check", () => {
     await expect(review).toContainText("Max came home so happy!");
   });
 
-  test("the sitter rates the owner privately after the stay; nobody else sees it and the owner is not told (FB-25)", async ({ page }) => {
+  test("the sitter reviews the owner after the stay; the owner is not notified (FB-25, #415)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, -72 * HOUR);
     for (const h of db.booking_handoffs) h.completed_at = h.scheduled_at;
@@ -192,7 +193,7 @@ test.describe("handoff check", () => {
     await page.goto(`/sitter/bookings/${BOOKING}`);
     const screen = app(page);
     const card = screen.getByTestId("owner-note");
-    await expect(card).toContainText("Only you can see this. Robert is never told.");
+    await expect(card).toContainText("Robert and other sitters can see this.");
     const notices = db.notifications.length;
 
     await expect(screen.getByTestId("owner-note-done")).toHaveCount(0);
@@ -201,7 +202,7 @@ test.describe("handoff check", () => {
     await screen.getByTestId("owner-note-preset-Happy to host again").click();
     await screen.getByTestId("owner-note-comment").fill("Max is a sweetheart.");
     await screen.getByTestId("owner-note-save").click();
-    await expect(card).toContainText("Your note about Robert");
+    await expect(card).toContainText("Your review of Robert");
     await expect(card).toContainText("Max is a sweetheart.");
     expect(db.sitter_owner_notes).toHaveLength(1);
     expect(db.sitter_owner_notes[0]).toMatchObject({ rating: 5, comment: "Happy to host again\nMax is a sweetheart.", owner_id: OWNER.id });
@@ -220,17 +221,46 @@ test.describe("handoff check", () => {
     await expect(page).toHaveURL(/\/sitter$/);
   });
 
-  test("when the same owner asks again, the sitter sees their earlier private notes (FB-29)", async ({ page }) => {
-    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+  test("on a new request the sitter sees every sitter's review of that owner, with first names (FB-29, #415)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL]);
     seed(db, 5 * HOUR);
-    db.sitter_owner_notes.push({ id: "n1", booking_id: "old-stay", sitter_id: SITTER.id, owner_id: OWNER.id, rating: 2, comment: "Late for the handoff", created_at: "2026-09-01T12:00:00Z", updated_at: "2026-09-01T12:00:00Z" });
+    db.sitter_owner_notes.push(
+      { id: "n1", booking_id: "old-stay", sitter_id: SITTER.id, owner_id: OWNER.id, rating: 2, comment: "Late for the handoff", created_at: "2026-09-01T12:00:00Z", updated_at: "2026-09-01T12:00:00Z" },
+      { id: "n2", booking_id: "paul-stay", sitter_id: PAUL.id, owner_id: OWNER.id, rating: 5, comment: "Clear care notes", created_at: "2026-09-10T12:00:00Z", updated_at: "2026-09-10T12:00:00Z" },
+    );
     await signIn(page, SITTER);
     await expect(page).toHaveURL(/\/sitter$/);
     await page.goto(`/sitter/bookings/${BOOKING}`);
-    const past = app(page).getByTestId("past-owner-notes");
-    await expect(past).toContainText("Your notes from earlier stays with Robert");
-    await expect(past).toContainText("Late for the handoff");
-    await expect(past).toContainText("Only you can see this");
+    const reviews = app(page).getByTestId("owner-reviews");
+    await expect(reviews).toContainText("Reviews of Robert");
+    await expect(reviews.getByTestId("owner-reviews-line")).toHaveText("★ 3.5 · 2 reviews");
+    await expect(reviews.getByTestId("owner-reviews-item").first()).toContainText("Clear care notes");
+    await expect(reviews.getByTestId("owner-reviews-item").first()).toContainText("Paul ·");
+    await expect(reviews.getByTestId("owner-reviews-item").nth(1)).toContainText("You ·");
+  });
+
+  test("the owner reads what sitters said about them, and the sitter reads the owners' reviews, in Profile (#415)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, 5 * HOUR);
+    db.sitter_owner_notes.push({ id: "n1", booking_id: "old-stay", sitter_id: SITTER.id, owner_id: OWNER.id, rating: 4, comment: "Happy to host again", created_at: "2026-09-01T12:00:00Z", updated_at: "2026-09-01T12:00:00Z" });
+    db.reviews.push({ id: "r1", booking_id: "old-stay", owner_id: OWNER.id, sitter_id: SITTER.id, rating: 5, comment: "Max came home happy", created_at: "2026-09-02T12:00:00Z" });
+
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto("/profile");
+    await expect(app(page).getByTestId("owner-reviews")).toContainText("Reviews from sitters");
+    await expect(app(page).getByTestId("owner-reviews")).toContainText("Happy to host again");
+    await expect(app(page).getByTestId("owner-reviews")).toContainText("Chloe ·");
+    await expect(app(page).getByTestId("sitter-reviews")).toHaveCount(0);
+
+    await page.evaluate(() => localStorage.clear());
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    await page.goto("/profile");
+    await expect(app(page).getByTestId("sitter-reviews")).toContainText("Reviews from owners");
+    await expect(app(page).getByTestId("sitter-reviews-line")).toHaveText("★ 5.0 · 1 review");
+    await expect(app(page).getByTestId("sitter-reviews")).toContainText("Max came home happy");
+    await expect(app(page).getByTestId("owner-reviews")).toHaveCount(0);
   });
 
   test("Received waits until 2 hours before drop-off", async ({ page }) => {

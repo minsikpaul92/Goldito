@@ -57,7 +57,8 @@ import { PetRecordFold } from "../../../../components/PetRecordFold";
 import { MedalButtons } from "../../../../components/pet/MedalButtons";
 import { ReceivedReview } from "../../../../components/ReceivedReview";
 import { ReturnSheet } from "../../../../components/ReturnSheet";
-import { OwnerNoteCard, PastOwnerNotes } from "../../../../components/OwnerNote";
+import { OwnerNoteCard } from "../../../../components/OwnerNote";
+import { OwnerReviews } from "../../../../components/Reviews";
 import { requestLifeRecord } from "../../../../features/completion/completionApi";
 import { useTheme, useThemedStyles } from "../../../../providers/ThemeProvider";
 import { useOnBookingChange } from "../../../../providers/NotificationsProvider";
@@ -289,7 +290,7 @@ export default function SitterBookingDetail() {
           </Card>
         ) : null}
 
-        <PastOwnerNotes ownerId={booking.ownerId} ownerName={owner} bookingId={booking.id} />
+        <OwnerReviews ownerId={booking.ownerId} title={`Reviews of ${owner}`} exceptBookingId={booking.id} />
 
         <MeetGreetCard booking={booking} viewer="sitter" onChanged={load} />
 

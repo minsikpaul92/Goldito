@@ -2106,6 +2106,21 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, row);
   }
 
+  if (path === "rpc/owner_rating_summary") {
+    // 015s: the owner and any sitter see every review sitters left about the owner, first names only.
+    const { p_owner } = request.postDataJSON();
+    if (me !== p_owner && users.find((u) => u.id === me)?.role !== "sitter") return json(route, 200, null);
+    const about = db.sitter_owner_notes
+      .filter((n) => n.owner_id === p_owner)
+      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+    const avg = about.length ? Math.round((about.reduce((n, r) => n + Number(r.rating), 0) / about.length) * 10) / 10 : null;
+    const reviews = about.map((n) => ({
+      booking_id: n.booking_id, rating: n.rating, comment: n.comment, created_at: n.created_at, mine: n.sitter_id === me,
+      reviewer: (users.find((u) => u.id === n.sitter_id)?.displayName ?? "A sitter").split(" ")[0],
+    }));
+    return json(route, 200, { avg, count: about.length, reviews });
+  }
+
   if (path === "rpc/sitter_rating_summary") {
     const { p_sitter } = request.postDataJSON();
     const mine = db.reviews.filter((r) => r.sitter_id === p_sitter);
@@ -2113,7 +2128,6 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const recent = mine
       .filter((r) => r.comment)
       .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
-      .slice(0, 3)
       .map((r) => ({
         rating: r.rating, comment: r.comment, created_at: r.created_at,
         reviewer: (users.find((u) => u.id === r.owner_id)?.displayName ?? "An owner").split(" ")[0],
@@ -2334,8 +2348,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
             !db.diary_page_hidden.some((h) => h.report_id === row.id && h.user_id === me))) &&
         // RLS: a review is private to the owner who wrote it and the sitter it is about (011).
         (path !== "reviews" || row.owner_id === me || row.sitter_id === me) &&
-        // RLS (011g): the sitter's note about an owner is the sitter's alone.
-        (path !== "sitter_owner_notes" || row.sitter_id === me) &&
+        // RLS (011g, 015s): the sitter's review of an owner, for its sitter and that owner (other sitters use the summary RPC).
+        (path !== "sitter_owner_notes" || row.sitter_id === me || row.owner_id === me) &&
         // RLS (011h): an owner's favorites are theirs alone.
         (path !== "owner_favorite_sitters" || row.owner_id === me) &&
         // RLS (014j): a chat is for its two people.

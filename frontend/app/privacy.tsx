@@ -26,6 +26,7 @@ const SECTIONS: LegalSection[] = [
     title: "Who can see it",
     body: [
       "A sitter sees an owner's pets and care notes for the booking. An owner's home address, emergency contact and vet are shown to a sitter only once their booking is paid, and only until a day after the pick-up. Entry codes open only after payment and close to the hand-off.",
+      "Reviews are shared. An owner's review of a sitter shows on the sitter's profile. A sitter's review of an owner is seen by that owner and by other sitters. Reviewers are shown by first name.",
       "While a trip is running, the person travelling shares their position with the other person in that booking, and only then. On the web it works only while the screen stays on.",
     ],
   },

@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { DemoTools } from "../components/DemoTools";
 import { AddressInput } from "../components/AddressInput";
+import { OwnerReviews, SitterReviews } from "../components/Reviews";
 import { SitterBadges } from "../components/SitterBadges";
 import { ProfilePhotoGallery } from "../components/ProfilePhotoGallery";
 import { SitterAnswersSummary } from "../components/SitterAnswersSummary";
@@ -447,6 +448,11 @@ export default function ProfileScreen() {
         <ProfilePhotoGallery profileId={profile.id} />
       </View>
       {profile.role === "sitter" ? <SitterBadges sitterId={profile.id} /> : null}
+      {profile.role === "sitter" ? (
+        <SitterReviews sitterId={profile.id} title="Reviews from owners" />
+      ) : (
+        <OwnerReviews ownerId={profile.id} title="Reviews from sitters" />
+      )}
       <TextField
         label="Your name"
         value={displayName}
