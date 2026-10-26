@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { app, signIn } from "./helpers";
 import { MockDb, MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
+import { earliestTime, freshStay, nextSlot, tripProblem } from "../lib/trip";
 
 // Book care (phase-03b 3B.3): pets → times + places → your sitters / search → request.
 
@@ -264,5 +265,44 @@ test.describe("book care", () => {
     db.pets.splice(0);
     await page.goto("/owner/bookings/new");
     await expect(screen.getByText("Add a pet first")).toBeVisible();
+  });
+});
+
+// Times that have passed (#364, Owner-019 / 020): the rules behind the messages, the moved stay and the picker. No browser.
+test.describe("trip times", () => {
+  // Oct 25, 2:44 PM in Toronto, when Seulgi opened Request booking.
+  const NOW = new Date("2026-10-25T18:44:00Z");
+  const at = (day: string, time: string) => ({ day, time, locationType: "sitter_home" as const, note: "" });
+
+  test("a past drop-off and a pick-up before the drop-off say different things", () => {
+    const now = NOW.getTime();
+    expect(tripProblem([MAX], at("2026-10-25", "09:00"), at("2026-10-26", "17:00"), now)).toBe("Drop-off time has passed.");
+    expect(tripProblem([MAX], at("2026-10-27", "09:00"), at("2026-10-26", "17:00"), now)).toBe("Pick-up must be after drop-off.");
+    expect(tripProblem([MAX], at("2026-10-26", "09:00"), at("2026-10-28", "17:00"), now)).toBeNull();
+    expect(tripProblem([], at("2026-10-26", "09:00"), at("2026-10-28", "17:00"), now)).toBe("Pick at least one pet.");
+    expect(tripProblem([MAX], at("2026-10-26", "09:00"), at("2026-12-28", "17:00"), now)).toBe("A trip can be up to 31 days.");
+  });
+
+  test("a stay whose drop-off has passed moves to the next whole hour and keeps a later pick-up", () => {
+    expect(nextSlot(NOW)).toEqual({ day: "2026-10-25", time: "15:00" });
+    expect(nextSlot(new Date("2026-10-26T03:30:00Z"))).toEqual({ day: "2026-10-26", time: "09:00" }); // 11:30 PM
+    expect(freshStay({ day: "2026-10-25", time: "09:00" }, { day: "2026-10-26", time: "17:00" }, NOW)).toEqual({
+      drop: { day: "2026-10-25", time: "15:00" },
+      pick: { day: "2026-10-26", time: "17:00" },
+      moved: true,
+    });
+    // The whole stay has passed: the pick-up keeps the stay's length after the new drop-off.
+    expect(freshStay({ day: "2026-10-24", time: "09:00" }, { day: "2026-10-25", time: "09:00" }, NOW)).toEqual({
+      drop: { day: "2026-10-25", time: "15:00" },
+      pick: { day: "2026-10-26", time: "15:00" },
+      moved: true,
+    });
+    const future = { day: "2026-10-26", time: "09:00" };
+    expect(freshStay(future, { day: "2026-10-27", time: "17:00" }, NOW).moved).toBe(false);
+  });
+
+  test("only today has an earliest time", () => {
+    expect(earliestTime("2026-10-25", NOW)).toBe("14:45");
+    expect(earliestTime("2026-10-26", NOW)).toBeNull();
   });
 });
