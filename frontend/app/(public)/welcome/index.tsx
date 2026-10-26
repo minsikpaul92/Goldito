@@ -75,7 +75,6 @@ export default function WelcomeLanding() {
         <Text style={styles.lead}>Updates from your sitter without asking. Care notes for sitters without typing.</Text>
         <View style={styles.row}>
           <TextButton label="How it works ›" onPress={() => router.push("/welcome/how")} testID="welcome-how" />
-          <TextButton label="Privacy" onPress={() => router.push("/privacy")} testID="welcome-privacy" />
         </View>
       </Screen>
       <DemoSheet visible={demoOpen} onClose={() => setDemoOpen(false)} />

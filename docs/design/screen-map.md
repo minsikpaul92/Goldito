@@ -388,11 +388,11 @@ Shows: `Art` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | role ? "Continue" : "Pick one to continue" | `signup-continue` | 146 |
-| Button | Continue | `signup-continue` | 201 |
-| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 255 |
-| TextButton | Already have an account? Log in | `go-login` | 271 |
-| Pressable | — | `testID` | 305 |
+| Button | role ? "Continue" : "Pick one to continue" | `signup-continue` | 159 |
+| Button | Continue | `signup-continue` | 217 |
+| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 292 |
+| TextButton | Already have an account? Log in | `go-login` | 308 |
+| Pressable | — | `testID` | 356 |
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 
@@ -608,7 +608,6 @@ Shows: `BrandLogo` · `DemoSheet` · `SocialSignIn`
 | TextButton | Sign up with email | `welcome-sign-up` | 45 |
 | TextButton | Log in | `welcome-sign-in` | 46 |
 | TextButton | How it works › | `welcome-how` | 77 |
-| TextButton | Privacy | `welcome-privacy` | 78 |
 
 ### `/welcome/how` — [app/(public)/welcome/how.tsx](../../frontend/app/(public)/welcome/how.tsx)
 
@@ -1690,4 +1689,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-505 actions · 503 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+504 actions · 502 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
