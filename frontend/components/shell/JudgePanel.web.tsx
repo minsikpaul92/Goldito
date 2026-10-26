@@ -23,7 +23,8 @@ type Props = {
   accounts: Record<string, FrameAccount>;
 };
 
-type Command = JudgeCommand extends infer C ? (C extends JudgeCommand ? Omit<C, "type" | "id"> : never) : never;
+type WithoutEnvelope<T> = T extends unknown ? Omit<T, "type" | "id"> : never;
+type Command = WithoutEnvelope<JudgeCommand>;
 
 /**
  * The judge panel (#413), left of the phone on a computer: five scenes in story order, More (Mood, Live trip,
