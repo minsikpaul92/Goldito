@@ -597,6 +597,7 @@ Public intro for **signed-out** visitors (`/welcome`, `/welcome/how`, `/login`, 
 | How it works | Three pages (the problem, two sides, one stay) drawn with the app's own art and demo photos; Next, Skip and Back; the last page offers Try the demo and Create account. No placeholder boxes. |
 | Sign up | Three steps under one `StepHeader` (who you are, name and email, password); Back steps back and keeps what was typed, then leaves. Terms and Privacy are links. |
 | Apple / Google | `SocialSignIn` stays hidden until they work (`EXPO_PUBLIC_SOCIAL_SIGN_IN=1` shows them); a judge never taps a "Coming soon" button. |
+| Privacy and Terms | One `LegalPage`: `BackLink`, `ScreenHeader` (title, Last updated), then one `Collapsible` card per section, one open at a time. No native header on top of it. Welcome links to both from a small caption line under the buttons. |
 
 ### 7.10 Dates and times
 

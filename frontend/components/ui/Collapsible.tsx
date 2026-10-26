@@ -1,9 +1,10 @@
 import { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { Card } from "./Card";
+import { Icon } from "./Icon";
 
 type Props = {
   title: string;
@@ -14,10 +15,13 @@ type Props = {
   children: ReactNode;
   testID?: string;
   toggleTestID?: string;
+  /** Keep the closed body in the page, hidden (long reading pages: Privacy, Terms; text stays findable). */
+  keepMounted?: boolean;
 };
 
-/** A card whose header opens and closes it: ▸ closed, ▾ open. For optional groups that stay out of the way. */
-export function Collapsible({ title, open, summary, onToggle, children, testID, toggleTestID }: Props) {
+/** A card whose header opens and closes it, with a chevron that points down when open. For groups that stay out of the way. */
+export function Collapsible({ title, open, summary, onToggle, children, testID, toggleTestID, keepMounted }: Props) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   return (
     <Card style={styles.card} testID={testID}>
@@ -36,9 +40,11 @@ export function Collapsible({ title, open, summary, onToggle, children, testID, 
             </Text>
           ) : null}
         </View>
-        <Text style={styles.chevron}>{open ? "▾" : "▸"}</Text>
+        <View style={[styles.chevron, !open && styles.chevronClosed]}>
+          <Icon name="expand" size={20} color={theme.color.textMuted} />
+        </View>
       </Pressable>
-      {open ? <View style={styles.body}>{children}</View> : null}
+      {open || keepMounted ? <View style={open ? styles.body : styles.hidden}>{children}</View> : null}
     </Card>
   );
 }
@@ -57,6 +63,8 @@ const makeStyles = (theme: Theme) =>
     heading: { flex: 1, paddingVertical: theme.spacing.sm },
     summary: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
-    chevron: { fontSize: theme.fontSize.body, color: theme.color.textMuted, paddingLeft: theme.spacing.sm },
+    chevron: { paddingLeft: theme.spacing.sm },
+    chevronClosed: { transform: [{ rotate: "-90deg" }] },
+    hidden: { display: "none" },
     body: { gap: theme.spacing.md, paddingHorizontal: theme.spacing.md, paddingBottom: theme.spacing.md },
   });
