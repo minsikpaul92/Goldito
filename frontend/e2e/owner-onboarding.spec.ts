@@ -447,7 +447,7 @@ test.describe("owner onboarding", () => {
         json({
           breed: { value: "Maltese", quote: "4 year old Maltese" },
           age_years: { value: 4, quote: "4 year old" },
-          weight_kg: { value: 5.9, quote: "13 pounds" },
+          weight: { value: 13, unit: "lbs", quote: "13 pounds" },
           foods: [{ value: "chicken", quote: "allergic to chicken" }],
           answers: { s1: { value: "once", quote: "once snapped at a groomer" } },
           notes: {
@@ -504,7 +504,8 @@ test.describe("owner onboarding", () => {
     // One box per question, filled with what was heard, to fix.
     await expect(screen.getByTestId("own-voice-breed")).toHaveValue("Maltese");
     await expect(screen.getByTestId("own-voice-age")).toHaveValue("4");
-    await expect(screen.getByTestId("own-voice-weight")).toHaveValue("5.9");
+    // The weight keeps the unit said (#396).
+    await expect(screen.getByTestId("own-voice-weight")).toHaveValue("13 lbs");
     await expect(screen.getByTestId("own-voice-allergies")).toHaveValue("chicken");
     await expect(screen.getByTestId("own-voice-personality")).toHaveValue("He is a sweet boy");
     await expect(screen.getByTestId("own-voice-careful")).toHaveValue("He gets nervous with thunder");
@@ -523,7 +524,15 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-skip").click(); // color
     await expect(screen.getByTestId("own-age-value")).toHaveText("4 years");
     await screen.getByTestId("own-next").click();
+    await expect(screen.getByTestId("own-weight")).toHaveValue("13");
+    await expect(screen.getByTestId("own-weight-unit-lbs")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("own-heard-weight")).toHaveText("You said: “13 pounds”");
+    // Switching the unit by hand converts the number, and the line stays.
+    await screen.getByTestId("own-weight-unit-kg").click();
     await expect(screen.getByTestId("own-weight")).toHaveValue("5.9");
+    await expect(screen.getByTestId("own-heard-weight")).toBeVisible();
+    await screen.getByTestId("own-weight-unit-lbs").click();
+    await expect(screen.getByTestId("own-weight")).toHaveValue("13");
     await screen.getByTestId("own-next").click();
     // The intro is the owner's own words for the free-text items, ready to fix.
     await expect(screen.getByTestId("own-pet-intro")).toHaveValue("He is a sweet boy\nWatch out: He gets nervous with thunder");

@@ -174,12 +174,30 @@ function parseWeight(text: string): number | null {
   return text.trim() !== "" && Number.isFinite(n) && n > 0 ? n : null;
 }
 
+/** A weight in `unit` as kg, to two decimals like the column. */
+export function toKg(n: number, unit: WeightUnit): number {
+  return unit === "lbs" ? Math.round(n * KG_PER_LB * 100) / 100 : n;
+}
+
 /** The weight in kg as stored (two decimals, like the column), or null when it is empty, not a number or out of range. */
 export function weightFromDraft(draft: OwnerOnboardingDraft): number | null {
   const n = parseWeight(draft.weight);
   if (n === null) return null;
-  const kg = draft.weightUnit === "lbs" ? Math.round(n * KG_PER_LB * 100) / 100 : n;
+  const kg = toKg(n, draft.weightUnit);
   return kg > 0 && kg < 1000 ? kg : null;
+}
+
+const UNIT_WORDS: Record<string, WeightUnit> = {
+  kg: "kg", kgs: "kg", kilo: "kg", kilos: "kg", kilogram: "kg", kilograms: "kg",
+  lb: "lbs", lbs: "lbs", pound: "lbs", pounds: "lbs",
+};
+
+/** A weight as said or typed ("20 lbs", "about 9 kilos", "6,5"): the number, and the unit when one is named. */
+export function readWeight(text: string): Pick<OwnerOnboardingDraft, "weight"> & Partial<Pick<OwnerOnboardingDraft, "weightUnit">> {
+  const said = text.trim().match(/(\d+(?:[.,]\d+)?)\s*([a-z]+)?/i);
+  if (!said) return { weight: text.trim() };
+  const unit = said[2] ? UNIT_WORDS[said[2].toLowerCase()] : undefined;
+  return unit ? { weight: said[1], weightUnit: unit } : { weight: said[1] };
 }
 
 /** The text of a weight in kg, shown in `unit` (kg to two decimals, lbs to one). */

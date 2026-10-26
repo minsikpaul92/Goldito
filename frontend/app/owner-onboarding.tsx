@@ -32,6 +32,7 @@ import {
   petCounts,
   profileFromDraft,
   saveDraft,
+  toKg,
   weightFromDraft,
   withPetCounts,
 } from "../features/ownerOnboarding/draft";
@@ -351,7 +352,7 @@ export default function OwnerOnboarding() {
       if (!species) return {};
       const facts = await extractFacts(species, petName, text, openQuestions(petName, draft.safety));
       setSpoken(facts);
-      return formFromFacts(facts, draft.weightUnit);
+      return formFromFacts(facts);
     };
     return frame(
       `Tell us about ${petName}`,
@@ -460,7 +461,8 @@ export default function OwnerOnboarding() {
 
   if (step === "weight") {
     const kg = weightFromDraft(draft);
-    const heardKg = draft.voice.weight_kg;
+    // A draft from before #396 has no `weight` in what was heard.
+    const said = draft.voice.weight ?? null;
     return frame(
       `How much does ${petName} weigh?`,
       <>
@@ -482,7 +484,7 @@ export default function OwnerOnboarding() {
           accessibilityLabel={`Weight in ${draft.weightUnit}`}
           testID="own-weight"
         />
-        {heard(heardKg, kg !== null && heardKg !== null && Math.abs(kg - heardKg.value) < 0.06, "weight")}
+        {heard(said, kg !== null && said !== null && Math.abs(kg - toKg(said.value, said.unit)) < 0.06, "weight")}
       </>,
       nextButton(draft.weight.trim() === ""),
       undefined,
