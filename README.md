@@ -29,7 +29,14 @@ the server owns every fact, and a person approves every word.
 ## Goldito in 30 seconds
 
 **The problem.** We have worked as pet sitters for three years, many stays with the same dogs and cats. Apps connect owners and sitters, and take a cut of every booking, but the stay itself is still typed by hand: replies to "can you take her?", the pill schedule, the "don't knock" rule, the evening update, the photo the owner asks for twice. Much of it happens outside the app, and when the stay ends, everything the sitter learned about the pet is lost in a chat thread.
-<!-- TODO(Q6): numbers from our three years (stays, clients, messages, time spent typing per day). -->
+
+| Our three years of sitting | |
+| :--- | :--- |
+| Stays | 120 to 180 (3 to 5 pets a month) |
+| Clients | 50 to 80 |
+| Messages | 5,000 to 7,000 |
+| Time spent on replies, photo and activity updates, daily reports, and schedule checks | **about 40 minutes a day** |
+| The same work with Goldito (our estimate) | **about 10 minutes a day, roughly 75% less** |
 
 **What Goldito does.** One app, and one chat per owner and sitter, carries the whole stay: inquiry, Meet & Greet, booking, the trip, daily care, and the ride home.
 
@@ -235,8 +242,8 @@ Tap a stage for the details.
 ## Who it's for
 
 - **Independent pet sitters and the owners they care for, starting in Canada** (consent forms, holidays, and the quote follow Ontario first).
+- **What a sitter gets back:** in our own work, about 30 minutes a day (40 minutes of messages, updates, reports, and schedule checks down to about 10, our estimate).
 - **How it pays (plan):** Goldito takes **no cut of the sitting fee**. The AI features come with a **subscription**, and optional extras are sold: **outfits for the 8-bit pet** and **sticker packs** for the diary.
-<!-- TODO(Q6): the size of the problem, in numbers from our three years. -->
 <!-- TODO(Q8): what real owners and sitters said, once they have tried it. -->
 
 ---
