@@ -174,16 +174,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
           try {
             const trip = await startTrip(args.bookingId, args.kind, false, undefined, false);
             return { started: true, trip, sharing: false, because: "denied" };
-          } catch (fallback) {
-            return { started: false, reason: "error", message: fallback instanceof Error ? fallback.message : "Couldn't start the trip. Try again." };
+          } catch {
+            return { started: false, reason: "error", message: "Couldn't start the trip. Try again." };
           }
         }
         const message =
           error instanceof LocationError
             ? "We couldn't read your location. Check that location is on and try again."
-            : error instanceof Error
-              ? error.message
-              : "Couldn't start the trip. Try again.";
+            : "Couldn't start the trip. Try again.";
         return { started: false, reason: "error", message };
       }
     },

@@ -185,7 +185,7 @@ export async function listMySentReports(petId: string, sitterId: string): Promis
       at: r.sent_at as string,
       kind: "report" as const,
       emoji: "📓",
-      label: "Daily report · Sent",
+      label: "Diary page · Sent",
       memo: r.body,
       media: null,
       by: "You",

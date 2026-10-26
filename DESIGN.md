@@ -187,7 +187,9 @@ Each design decision, its reason, and what it replaced. Change a row only with t
 | **D17** | **Moments, decided by Minsik (Play and Pick, Oct 25)**: the pet picker sits in the tabs and Moments opens on all pets; the tab is **Moments**; the Diary has Days, Calendar and Footprints; a sticker is seen only by its maker; owners ask for a photo only in Chat; a sitter's diary page starts shared; the paw shortcut menu waits until after the freeze; words are a little playful (toasts and empty states only) | Nine calls tried in the Moments trial and voted on one page | The Feed trial's earlier picks (filter-chip picker, a shared sticker box, an Ask link in Moments, pages kept until shared) |
 | **D18** | **UX calls, decided by Mook (Oct 25)**: U1 A, U2 C, U3 B, U4 A, U5 A, U6 A, U7 A, U8 B, U9 A, U10 A, U11 A, U12 A (§7.13). Back was the chevron + Back (U1 changed by D20); typed input is kept as a draft in long flows and a sheet asks before dropping it; Undo is 6 s; Accept is the one yes word | Twelve calls from the UX audit, drawn as phone screens and picked on one page | Icon-only Back; dropping typed text silently; per-card primaries |
 | **D19** | **Snap and the coin, settled (Mook, Oct 25)**: the fifth tab is **Snap** (treat check · mood · stickers), in the app (#341) and in Figma's Tab Bar; the logo is the **pixel gold coin with a paw** plus "Goldito" in the display face (decided Oct 19). The gold tag, Notebook and Pixel stay on the brand site as other directions, for reference | Both were still listed under §0.7 although the app and Figma had moved on | Mood as the tab name; the gold tag as the logo |
+| **D20** | **Words and playful words (Mook, Oct 26)**: Log in / Log out everywhere; the sitter's daily write-up is a Diary page; puns come only from `content/words.ts` through `useWords()`, and Settings → Playful words turns them off | The copy audit: log in, sign in and sign out mixed; the write-up called Diary, report, daily note and page; puns typed into four screens (cats got Paw-fect!) with no way to turn them off | Sign in / Sign out; "daily report"; hard-coded puns |
 | **D20** | **Back is the ← arrow alone (Mook, Oct 25)**: one control everywhere, top left, 44 × 44, read aloud as Back, no visible word; `Icon name="arrowBack"` in `BackLink`, `StepHeader` and `StepFrame`, and the native header in minimal mode. Replaces U1 A | "‹ Back" crowded the sign-up step header next to its progress bar; the arrow is what ~37 native headers already showed, and what #383 proposed | Chevron + the word Back (U1 A) |
+| **D21** | **Sign out asks in a sheet (Mook, Oct 26)**: the menu and Settings both confirm Sign out in a bottom sheet, as #387 built it. Replaces U5 A | The sheet shipped (#387) before U5 was built; one sheet in both places is already consistent, and signing out of a demo account by accident costs a judge the stay | No confirm (U5 A) |
 
 ---
 
@@ -216,7 +218,7 @@ Goldito is a private care app for **dogs and cats**. Owners hand their pet to a 
 - **Content width: 370** (402 − 2 × 16). Full-width components (cards, rows, banners, fields) are built at 370 in Figma, and everything inside them fills or grows — never a fixed inner width — so they adapt from 360 to 440. Chat bubbles are 80 % of the content width.
 - Bottom tab bar per role (owner / sitter). The primary action sits at the bottom of the screen, within thumb reach.
 - The header shows who is signed in under the title, for example **Chloe · Sitter** (header C, D13). There is no role chip.
-- **Avatar menu** (`components/HeaderMenu.tsx`): your avatar, in a thin `primary` ring, opens a full-width drawer that slides in from the right. You (→ Profile), Notifications with the count, Schedule (sitters), What's new, Settings, and Sign out pinned at the bottom with a confirm. Settings has Sign out with the same confirm.
+- **Avatar menu** (`components/HeaderMenu.tsx`): your avatar, in a thin `primary` ring, opens a full-width drawer that slides in from the right. You (→ Profile), Notifications with the count, Schedule (sitters), What's new, Settings, and Sign out pinned at the bottom; it asks in a bottom sheet (#387). Settings has Sign out with the same sheet (D21).
 
 ### 2.1 Desktop browsers (judges): phone frame
 
@@ -551,6 +553,8 @@ Always explain what will appear and who adds it.
 - **Avoid the emoji AI text uses all the time**, in copy, buttons, rows, chips and empty states: ✨ 🚀 💡 🔥 ✅ ❌ ⚠️ 🎯 📌 🌟 🎉 👋 🙌 💪 🤖 🔍 📝 ⭐ 💬. Use plain words, a line icon, or nothing instead. Status and section labels use the line icons (`<Icon>` or `Tag icon`: check, clock, close, warning, meal, pill, paw, tip); emoji stay for content: empty-state art, pet species, album and badge names. Buttons are words, with no emoji.
 - Any other emoji is fine, in a button too, when it helps (📍 on a "use my current location" button, a pet's 🐶 / 🐱). Swapping one for a line icon is optional.
 - Times shown in the app timezone (America/Toronto) with AM/PM.
+- **One word per thing** (D20): **Log in / Log out** (never sign in / sign out, except Google's own "Sign in with Google"); the sitter's daily write-up is a **Diary page** ("Writing Max's page", "Diary page · Sent"); the photo tab is **Moments**; errors start with **Couldn't**.
+- **Playful words** (D20): a pun only on a toast, an empty state, a loading line, a few titles and small celebrations, taken from `frontend/content/words.ts` with `useWords()` (plain, dog and cat versions; the playful one follows the pet's species). Never on safety, money, agreements, errors or button labels. **Settings → Playful words** (on by default) turns every one back to its plain line. The list and the never list: [Playful words](https://mooque-dev.github.io/goldito-design/words-trial.html).
 
 ### 7.7 Works with a mouse
 
@@ -729,7 +733,7 @@ From the [UX audit](https://mooque-dev.github.io/goldito-design/ux-audit.html), 
 | U2 | Leaving with typed input | Keep a draft, or ask "Discard?" | **C: Both: drafts in long flows, ask before leaving a sheet** |
 | U3 | Undo time | 5 s (this file before), 6 s (the toast today), 8 s (care request) | **B: 6 s everywhere** |
 | U4 | Full-screen viewer close | ✕ top left or top right | **A: ✕ top left, labelled Close** |
-| U5 | Sign out | Confirm (two ways today) or no confirm | **A: No confirm** |
+| U5 | Sign out | Confirm (two ways today) or no confirm | **B: Confirm in a sheet** (picked A, then kept the sheet #387 had just shipped; D21) |
 | U6 | Error surfaces | As §7.11, or toasts only | **A: By job, as §7.11 (add `ErrorDialog` to §6)** |
 | U7 | Skeletons before the freeze | All 53 spinner screens, tab roots only, or after | **A: Skeletons on tab roots, after the freeze; spinners until then** |
 | U8 | Steps in the URL | Now or after the freeze | **B: After the freeze; until then browser Back leaves the flow and the draft is kept** |

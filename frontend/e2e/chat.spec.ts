@@ -697,6 +697,7 @@ test.describe("chat hub", () => {
   });
 
   test("a first-time pair goes from the sitter's yes to a paid booking in the chat, and the five circles follow the database", async ({ page }) => {
+    test.setTimeout(90_000); // the whole stay from the first yes to the payment, on two phones
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedBooking(db, true);
 

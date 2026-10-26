@@ -104,7 +104,7 @@ export default function SignupScreen() {
     }
     if (!data.session) {
       // Only when "Confirm email" is on in Supabase (D15 recommends off).
-      setNotice("Check your email to confirm your account, then sign in.");
+      setNotice("Check your email to confirm your account, then log in.");
     }
   }
 

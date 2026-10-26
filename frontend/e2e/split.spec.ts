@@ -29,7 +29,7 @@ test.describe("split view", () => {
     await expect(page.locator(LEFT_PANE)).toHaveCount(1);
     await expect(page.locator(RIGHT_PANE)).toHaveCount(1);
     await expect(page.locator(APP_FRAME)).toHaveCount(0); // not the one-phone frame
-    await expect(page.getByText("Not signed in")).toHaveCount(2);
+    await expect(page.getByText("Not logged in")).toHaveCount(2);
     await expect.poll(() => paneUrl(page, "pane-left")).toMatch(/\/login$/);
     await expect.poll(() => paneUrl(page, "pane-right")).toMatch(/\/login$/);
 
@@ -45,9 +45,8 @@ test.describe("split view", () => {
     // Each phone keeps its own session: signing the sitter out leaves the owner signed in, even after a reload.
     await page.frameLocator(RIGHT_PANE).getByTestId("open-menu").click();
     await page.frameLocator(RIGHT_PANE).getByTestId("log-out").click();
-    await page.frameLocator(RIGHT_PANE).getByTestId("log-out-confirm").click();
     await expect.poll(() => paneUrl(page, "pane-right")).toMatch(/\/welcome$/);
-    await expect(page.getByText("Not signed in")).toHaveCount(1);
+    await expect(page.getByText("Not logged in")).toHaveCount(1);
     await page.frameLocator(LEFT_PANE).locator("body").evaluate(() => window.location.reload());
     await expect.poll(() => paneUrl(page, "pane-left")).toMatch(/\/owner$/);
     await expect(page.frameLocator(LEFT_PANE).getByTestId("open-menu")).toBeVisible();

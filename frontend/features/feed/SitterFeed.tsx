@@ -28,6 +28,7 @@ import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
 import { FeedPet, feedPetsFromBookings } from "./caringPets";
 import { usePetFaces } from "./usePetFaces";
+import { useWords } from "../settings/playfulWords";
 
 type FeedState =
   | { status: "loading" }
@@ -123,6 +124,7 @@ function SitterPetFeed({
   const petId = pet.id;
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
+  const words = useWords();
   const errorDialog = useErrorDialog();
   const session = useSession();
   const currentUserId = session.status === "signedIn" ? session.profile.id : null;
@@ -216,7 +218,7 @@ function SitterPetFeed({
         note,
       });
       closeAdd();
-      toast.show(share ? `Pawsted! ${pet.ownerName} can see it` : "Saved just for you");
+      toast.show(share ? words("photoShared", { pet, name: pet.ownerName }) : words("savedPrivate", { pet }));
       await loadPage(0, false, true);
     } catch (err) {
       const message =
@@ -248,6 +250,7 @@ function SitterPetFeed({
         }
         onRefresh={() => void loadPage(0, false, true)}
         faces={several ? Object.fromEntries(pets.map((p) => [p.id, { species: p.species, photo: faces[p.id], name: p.name }])) : undefined}
+        petSpecies={Object.fromEntries(pets.map((p) => [p.id, p.species]))}
         emptyMessage={pet.caring ? `Tap + to share ${pet.name}'s day.` : "Photos you save for yourself show up here."}
         error={feed.status === "error" && feed.posts.length === 0 ? { message: feed.message, onRetry: () => void loadPage(0, false) } : null}
         testID="sitter-feed-list"

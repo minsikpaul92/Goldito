@@ -74,7 +74,7 @@ export async function generateReport(input: GenerateInput): Promise<ReportDraft>
     return { id: res.report_id, body: res.body, status: "draft", fallback: res.fallback ?? false };
   } catch (error) {
     if (error instanceof ApiError && error.status === 422) throw new Error("Too many highlights. Turn a few off and try again.");
-    throw explain(error, "Couldn't write the report. Check your connection and try again.");
+    throw explain(error, "Couldn't write the page. Check your connection and try again.");
   }
 }
 
@@ -87,7 +87,7 @@ export async function getTodayReport(petId: string, sitterId: string): Promise<R
     .eq("pet_id", petId)
     .eq("sitter_id", sitterId)
     .eq("report_date", appToday());
-  if (error) throw new Error("Couldn't load today's report.");
+  if (error) throw new Error("Couldn't load today's page.");
   const rows = ((data ?? []) as unknown as (Omit<ReportDraft, "photoUrl"> & { sent_at: string | null; media: Embed<PageMedia> })[]).map((r) => ({
     ...r,
     photoUrl: pageMediaUrl(first(r.media)),
@@ -112,10 +112,10 @@ export async function saveDraftByHand(petId: string, body: string): Promise<stri
 export async function sendReport(reportId: string, body: string): Promise<void> {
   const { error } = await getSupabase().rpc("send_daily_report", { p_report: reportId, p_body: body });
   if (!error) return;
-  if (error.message.includes("report_already_sent")) throw new Error("This report was already sent.");
+  if (error.message.includes("report_already_sent")) throw new Error("This page was already sent.");
   if (error.message.includes("body_required")) throw new Error("Write something before sending.");
   if (error.message.includes("body_too_long")) throw new Error(`Keep it under ${REPORT_BODY_MAX} characters.`);
-  throw new Error("Couldn't send the report. Check your connection and try again.");
+  throw new Error("Couldn't send the page. Check your connection and try again.");
 }
 
 /** An owner's own diary page (014p): sent at once, no AI, no notice; only the owner ever sees it. */
