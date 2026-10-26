@@ -49,14 +49,14 @@ function whoLine(kind: "drop_off" | "pick_up", h: Handoff, b: BookingSummary, vi
   return `${label} · ${driver} ${verb(driver, "drive")}`;
 }
 
-type Props = { booking: BookingSummary; viewer: Viewer; onPress?: () => void };
+type Props = { booking: BookingSummary; viewer: Viewer; onPress?: () => void; testID?: string };
 
 /**
- * A stay on the Bookings tab, for both sides (Figma 1730:103907): who it is with, the pets, drop-off → pick-up as big
+ * The current stay on Home, for both sides (Figma 1730:103907; on Bookings until Oct 25): who it is with, the pets, drop-off → pick-up as big
  * dates, where it is in the five steps, the two handoffs, and what was paid. The status tags keep the details a step
  * pill can't say ("Waiting for Chloe", "suggested a change").
  */
-export function BookingTicket({ booking, viewer, onPress }: Props) {
+export function BookingTicket({ booking, viewer, onPress, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const step = stepOf(booking.stage);
   const other = viewer === "owner" ? booking.sitterName : booking.ownerName;
@@ -79,7 +79,7 @@ export function BookingTicket({ booking, viewer, onPress }: Props) {
       disabled={!onPress}
       onPress={onPress}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-      testID={`booking-card-${booking.id}`}
+      testID={testID ?? `booking-card-${booking.id}`}
     >
       <View style={styles.top}>
         <View style={styles.topText}>

@@ -4,6 +4,7 @@ import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from "react-nati
 
 import { ActiveTripCard } from "../../../components/ActiveTripCard";
 import { placeLabel } from "../../../components/BookingCard";
+import { BookingTicket } from "../../../components/BookingTicket";
 import { SitterToday } from "../../../components/home/SitterToday";
 import { SitterPetRoom } from "../../../components/pet/SitterPetRoom";
 import { Pager } from "../../../components/ui/Pager";
@@ -15,7 +16,7 @@ import { caringPetsFromBookings, isCaring } from "../../../features/feed/caringP
 import { useMyChats } from "../../../features/chat/useMyChats";
 import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
 import { appToday, formatInstant, formatTime, isoToZoned } from "../../../features/schedule/dates";
-import { BookingSummary, HandoffKind, listSitterBookings } from "../../../lib/bookings";
+import { BookingSummary, HandoffKind, homeStay, listSitterBookings } from "../../../lib/bookings";
 import { PhotoRequest, listOpenPhotoRequestsForSitter } from "../../../lib/photoRequests";
 import { useSession } from "../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
@@ -125,10 +126,12 @@ export default function SitterHome() {
 
   const open = (b: BookingSummary) => router.push(`/sitter/bookings/${b.id}`);
   const caringPets = caringPetsFromBookings(confirmed, now);
+  const stay = homeStay(state.bookings);
 
   const banners = (
     <>
       <ActiveTripCard role="sitter" />
+      {stay ? <BookingTicket booking={stay} viewer="sitter" onPress={() => open(stay)} testID="home-stay-ticket" /> : null}
       {state.photoRequests.map((r) => {
         const pet = caringPets.find((p) => p.id === r.pet_id);
         if (!pet) return null;

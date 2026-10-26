@@ -53,16 +53,16 @@ Shows: `Art` · `BrandLogo` · `OrDivider` · `SocialSignIn`
 
 ### `/owner` — [app/owner/(tabs)/index.tsx](../../frontend/app/owner/(tabs)/index.tsx)
 
-Owner Home: two sides of a card, flipped with a button (#286). Today: the stay in progress (hero, today's numbers, the latest update) and my pets. Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
+Owner Home: two sides of a card, flipped with a button (#286). Today: the stay in progress (hero, the stay's ticket, today's numbers, the latest update) and my pets. The ticket moved here from the Bookings tab (Oct 25); with no stay in care it shows the next paid one. Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
 
-Shows: `ActiveTripCard` · `LatestCard` · `PetTile` · `StatTiles` · `StayHero` · `PetPage`
+Shows: `ActiveTripCard` · `BookingTicket` · `LatestCard` · `PetTile` · `StatTiles` · `StayHero` · `PetPage`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 38 |
-| EmptyState | No pets yet | — | 51 |
-| TextButton | + Add pet | `add-pet` | 78 |
-| Button | See today's updates | `see-updates` | 90 |
+| EmptyState | Couldn't load your pets | — | 43 |
+| EmptyState | No pets yet | — | 56 |
+| TextButton | + Add pet | `add-pet` | 86 |
+| Button | See today's updates | `see-updates` | 98 |
 
 ### `/owner-onboarding` — [app/owner-onboarding.tsx](../../frontend/app/owner-onboarding.tsx)
 
@@ -99,16 +99,16 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 Owner Bookings tab (Figma 1730:103907). While a booking is under way, Your bookings come first (Upcoming · Requests · Past, each stay a ticket) and **Book care** takes you down to the search. With nothing under way the bookings are hidden and the search leads: a hotel-style line (place, dates, pets), the favorite sitters free for those dates, and everyone nearby (3B.3). Past stays are one tap away either way.
 
-Shows: `BookingCard` · `BookingTicket` · `PhotoViewerSheet` · `SitterResultCard` · `SitterSearchBar`
+Shows: `BookingCard` · `PhotoViewerSheet` · `SitterResultCard` · `SitterSearchBar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 112 |
-| SegmentedControl | — | `owner-bookings-tabs` | 157 |
-| Button | Book care | `book-care` | 181 |
-| TextButton | Open Profile | `search-open-profile` | 195 |
-| TextButton | Try again | `search-retry` | 203 |
-| TextButton | pastOpen ? "Hide past bookings" : `Past bookings (${past.length})` | `past-toggle` | 244 |
+| EmptyState | Couldn't load your bookings | — | 111 |
+| SegmentedControl | — | `owner-bookings-tabs` | 156 |
+| Button | Book care | `book-care` | 177 |
+| TextButton | Open Profile | `search-open-profile` | 191 |
+| TextButton | Try again | `search-retry` | 199 |
+| TextButton | pastOpen ? "Hide past bookings" : `Past bookings (${past.length})` | `past-toggle` | 240 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -398,17 +398,17 @@ Shows: `Art` · `SocialSignIn`
 
 Sitter Home dashboard (D47b; was Today / 3B.8): **Now caring** when on duty, else **Requests** · **Today** (drop/pick due today) · **Upcoming** by time. Pets in care show as pixel pets with feed / walk / poop / nap taps (11.12).
 
-Shows: `ActiveTripCard` · `SitterToday` · `SitterPetRoom`
+Shows: `ActiveTripCard` · `BookingTicket` · `SitterToday` · `SitterPetRoom`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load today | — | 84 |
-| EmptyState | No pets in your care today | — | 116 |
-| Pressable | — | `home-photo-request` | 136 |
-| Pressable | — | `today-requests` | 148 |
-| Pressable | — | `today-chats` | 158 |
-| Pressable | — | ``handoff-row-${b.id}-${kind}`` | 181 |
-| Pressable | — | ``request-row-${b.id}`` | 201 |
+| EmptyState | Couldn't load today | — | 85 |
+| EmptyState | No pets in your care today | — | 117 |
+| Pressable | — | `home-photo-request` | 139 |
+| Pressable | — | `today-requests` | 151 |
+| Pressable | — | `today-chats` | 161 |
+| Pressable | — | ``handoff-row-${b.id}-${kind}`` | 184 |
+| Pressable | — | ``request-row-${b.id}`` | 204 |
 
 ### `/sitter-onboarding` — [app/sitter-onboarding.tsx](../../frontend/app/sitter-onboarding.tsx)
 
@@ -424,13 +424,13 @@ Shows: `SitterAnswersForm`
 
 Sitter Bookings tab (phase-03b 3B.4): Requests · In progress · Upcoming · Past → booking detail. Chats have their own tab (#329). A number on a chip = something to answer; the tab opens on that chip by itself. In progress is only there while something is in progress.
 
-Shows: `BookingCard` · `BookingTicket`
+Shows: `BookingCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 94 |
-| SegmentedControl | — | `sitter-bookings-tabs` | 115 |
-| EmptyState | — | — | 131 |
+| EmptyState | Couldn't load your bookings | — | 93 |
+| SegmentedControl | — | `sitter-bookings-tabs` | 114 |
+| EmptyState | — | — | 130 |
 
 ### `/sitter/bookings/[bookingId]` — [app/sitter/bookings/[bookingId]/index.tsx](../../frontend/app/sitter/bookings/[bookingId]/index.tsx)
 
@@ -689,7 +689,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | ``booking-card-${booking.id}`` | 77 |
+| Pressable | — | `testID ?? `booking-card-${booking.id}`` | 77 |
 | Tag | `badge.label` | — | 118 |
 
 ### CareLineBuilder — [components/CareLineBuilder.tsx](../../frontend/components/CareLineBuilder.tsx)

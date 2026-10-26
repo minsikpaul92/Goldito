@@ -21,6 +21,23 @@ test.describe("owner Home stay", () => {
     await expect(screen.getByTestId("stay-hero")).not.toContainText("Mochi"); // Mochi is home
   });
 
+  test("the stay's ticket is on Home, and Bookings lists the stay as a plain row (Oct 25)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [{ id: MAX, name: "Max", species: "dog" }]);
+    await signIn(page, OWNER);
+    const screen = app(page);
+    const ticket = screen.getByTestId("home-stay-ticket");
+    await expect(ticket).toContainText("Boarding at");
+    await expect(ticket).toContainText("Care");
+    await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
+    const row = screen.getByTestId("booking-card-b1");
+    await expect(row).toBeVisible();
+    await expect(row).not.toContainText("DROP-OFF");
+    await screen.getByRole("tab").getByText("Home", { exact: true }).click();
+    await ticket.click();
+    await expect(page).toHaveURL(/\/owner\/bookings\/b1$/);
+  });
+
   test("with nothing logged yet the tiles read 0/0, 0 and 0m", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     caring(db, [{ id: MAX, name: "Max", species: "dog" }]);

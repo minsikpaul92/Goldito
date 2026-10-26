@@ -892,6 +892,16 @@ export function needsSitter(b: BookingSummary): boolean {
   return sitterBucket(b) !== "past" && (b.nextActor === "sitter" || b.nextActor === "both");
 }
 
+/**
+ * The stay Home shows as its ticket (Oct 25: the ticket moved from the Bookings tab to Home, so Bookings is a plain
+ * list): the one in care now, else the paid one that starts first. Requests and past stays only show on Bookings.
+ */
+export function homeStay<T extends BookingSummary>(bookings: T[], now: number = Date.now()): T | null {
+  const live = bookings.filter((b) => (b.stage === "in_care" || b.stage === "paid") && !overdueUnstarted(b, now));
+  const starts = (b: T) => (b.dropOff ? Date.parse(b.dropOff.at) : Number.MAX_SAFE_INTEGER);
+  return live.find((b) => b.stage === "in_care") ?? [...live].sort((a, b) => starts(a) - starts(b))[0] ?? null;
+}
+
 export type OwnerBucket = "upcoming" | "requests" | "past";
 
 /**
