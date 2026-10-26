@@ -339,7 +339,7 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("chat-header-name")).toBeVisible();
   });
 
-  test("Request booking is a sheet over the chat: no service or pet choice, one line for the day and time, one send posts a card the sitter reads", async ({ page }) => {
+  test("Request booking is a sheet over the chat: service and pet chips, one line for the day and time, one send posts a card the sitter reads", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
     db.sitter_profiles.push({ id: SITTER.id, service_area: "Toronto M4W", services: ["boarding"] });
@@ -351,9 +351,8 @@ test.describe("chat hub", () => {
     await screen.getByTestId("chat-request-booking").click();
     await expect(screen.getByTestId("request-sheet")).toBeVisible();
     await expect(screen.getByTestId("chat-header")).toBeVisible(); // the chat stays behind the sheet
-    await expect(screen.getByText("Who's staying?")).toHaveCount(0);
-    await expect(screen.getByText("Boarding", { exact: true })).toHaveCount(0);
-    await expect(screen.getByTestId("request-pets")).toContainText("Max");
+    await expect(screen.getByTestId("request-pet-" + MAX)).toHaveAttribute("aria-checked", "true"); // the stay's pets start picked
+    await screen.getByTestId("request-dates").click(); // Change opens the drop-off and pick-up lines
     // The day and the time share one line.
     const day = await box(screen.getByTestId("request-drop-day"));
     const time = await box(screen.getByTestId("request-drop-time"));
@@ -373,8 +372,7 @@ test.describe("chat hub", () => {
     await screen.getByTestId("request-pick-address-suggestion-1").click();
     await expect(screen.getByTestId("request-pick-address-address-ok")).toBeVisible();
     await expect(screen.getByTestId("request-pick-place")).toHaveText("At 750 Bloor St W, Toronto, ON M6G 3K4");
-    await screen.getByTestId("request-note-toggle").click();
-    await screen.getByTestId("request-note").fill("Max gets anxious with loud noises");
+        await screen.getByTestId("request-note").fill("Max gets anxious with loud noises");
     await screen.getByTestId("request-send").click();
 
     await expect(screen.getByTestId("request-sheet")).toBeHidden();

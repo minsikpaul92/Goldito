@@ -157,6 +157,7 @@ test.describe("handoff in the chat", () => {
     const screen = await openChatAs(page, OWNER);
 
     await screen.getByTestId("chat-request-booking").click();
+    await screen.getByTestId("request-dates").click();
     await expect(screen.getByTestId("request-drop-place")).toHaveText("At my place, 9 Oak Ave");
     await expect(screen.getByTestId("request-pick-place")).toHaveText("At my place, 9 Oak Ave");
     // I choose the sitter's place instead; the send remembers it as my default.
@@ -173,6 +174,7 @@ test.describe("handoff in the chat", () => {
     await page.reload();
     await expect(screen.getByTestId("chat-request-booking")).toBeVisible();
     await screen.getByTestId("chat-request-booking").click();
+    await screen.getByTestId("request-dates").click();
     await expect(screen.getByTestId("request-drop-place")).toHaveText("At Chloe's place, Toronto M4W");
   });
 });

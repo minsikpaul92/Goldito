@@ -1182,13 +1182,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${label} day`` | ``request-${kind}-day`` | 182 |
-| Pressable | ``${label} time`` | ``request-${kind}-time`` | 185 |
-| TextButton | changing[kind] ? "Done" : "Change place" | ``request-${kind}-change`` | 194 |
-| SegmentedControl | — | ``request-${kind}-type`` | 199 |
-| Sheet | sending ? "Sending…" : "Send request" | `request-error` | 226 |
-| Button | sending ? "Sending…" : "Send request" | `request-send` | 241 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``request-pet-${pet.name}`` | 255 |
+| Pressable | ``${label} day`` | ``request-${kind}-day`` | 181 |
+| Pressable | ``${label} time`` | ``request-${kind}-time`` | 184 |
+| TextButton | changing[kind] ? "Done" : "Change place" | ``request-${kind}-change`` | 193 |
+| SegmentedControl | — | ``request-${kind}-type`` | 198 |
+| Sheet | sending ? "Sending…" : "Send" | `request-error` | 225 |
+| Button | sending ? "Sending…" : "Send" | `request-send` | 240 |
+| Pressable | — | `request-dates` | 258 |
 
 ### ReturnSheet — [components/ReturnSheet.tsx](../../frontend/components/ReturnSheet.tsx)
 
