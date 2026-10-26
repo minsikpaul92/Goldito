@@ -1,17 +1,21 @@
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { StyleSheet } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { DiaryTimeline } from "../../components/DiaryTimeline";
+import { PetFace } from "../../components/PetFace";
+import { BackLink } from "../../components/ui/BackLink";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { Screen } from "../../components/ui/Screen";
-import { SegmentedControl } from "../../components/ui/SegmentedControl";
+import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { DIARY_DAYS, DiaryEntry, listDiary } from "../../features/diary/diaryApi";
 import { useMyPets } from "../../features/pets/useMyPets";
 import { useNotifications } from "../../providers/NotificationsProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+
+const goBack = () => (router.canGoBack() ? router.back() : router.replace("/owner"));
 
 type State =
   | { status: "loading" }
@@ -71,6 +75,7 @@ export default function OwnerHistory() {
   if (petsStatus === "error" && pets.length === 0) {
     return (
       <Screen>
+        <BackLink onPress={goBack} testID="history-back" />
         <EmptyState
           emoji="🕘"
           title="Couldn't load your pets"
@@ -83,17 +88,38 @@ export default function OwnerHistory() {
   if (pets.length === 0) {
     return (
       <Screen>
+        <BackLink onPress={goBack} testID="history-back" />
         <EmptyState emoji="🐾" title="No pets yet" message="Add a pet on Home first." />
       </Screen>
     );
   }
 
-  const petOptions = pets.slice(0, 4).map((p) => ({ value: p.id, label: p.name }));
+  // Who did it: the sitter on the newest row ("What Chloe did"), else a plain "your sitter".
+  const sitter = state.status === "ready" ? state.entries.find((e) => e.by && e.by !== "Your sitter")?.by : undefined;
 
   return (
     <Screen contentStyle={styles.content}>
-      {petOptions.length > 1 ? (
-        <SegmentedControl options={petOptions} value={petId} onChange={setPetId} testID="diary-pet" />
+      <BackLink onPress={goBack} testID="history-back" />
+      <ScreenHeader title="History" subtitle={`What ${sitter ?? "your sitter"} did · today and the last ${DIARY_DAYS} days`} />
+      {pets.length > 1 ? (
+        <View style={styles.chips} accessibilityRole="radiogroup" testID="diary-pet">
+          {pets.slice(0, 4).map((p) => {
+            const on = p.id === petId;
+            return (
+              <Pressable
+                key={p.id}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: on }}
+                onPress={() => setPetId(p.id)}
+                style={[styles.chip, on && styles.chipOn]}
+                testID={`diary-pet-${p.id}`}
+              >
+                <PetFace pet={{ species: p.species }} size={28} />
+                <Text style={styles.chipLabel}>{p.name}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
       ) : null}
 
       {state.status === "loading" ? <LoadingView /> : null}
@@ -118,4 +144,23 @@ export default function OwnerHistory() {
   );
 }
 
-const makeStyles = (theme: Theme) => StyleSheet.create({ content: { gap: theme.spacing.md } });
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    content: { gap: theme.spacing.md },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
+    // A pet chip: its face and name; the one shown is mint with an ink edge (DESIGN.md chips).
+    chip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.xs + 2,
+      minHeight: 44,
+      paddingLeft: theme.spacing.xs + 2,
+      paddingRight: theme.spacing.sm + 4,
+      borderRadius: theme.ui.radius.chip,
+      borderWidth: 1.5,
+      borderColor: theme.color.borderStrong,
+      backgroundColor: theme.color.surface,
+    },
+    chipOn: { borderWidth: 2, borderColor: theme.color.text, backgroundColor: theme.color.accent },
+    chipLabel: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+  });
