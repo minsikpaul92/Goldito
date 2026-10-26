@@ -85,6 +85,13 @@ export default function OwnerOnboarding() {
   const [showOtherFood, setShowOtherFood] = useState(false);
   /** Back on the very first question: nothing is before it, so it asks before signing out (#366). */
   const [leaving, setLeaving] = useState(false);
+  /** Next on the foods step asks once what was picked (or that nothing was). */
+  const [checkingFoods, setCheckingFoods] = useState(false);
+  // The "Something else" box is for one food at a time: it closes when the owner leaves the step.
+  useEffect(() => {
+    setShowOtherFood(false);
+    setOtherFood("");
+  }, [draft?.step]);
   // On the summary the card also shows what the typed breed needs (it fills in a moment after).
   const needs = useBreedNeeds(draft?.species ?? null, draft && draft.step === "summary" ? draft.breed : null);
   const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -577,7 +584,12 @@ export default function OwnerOnboarding() {
 
   if (step === "foods") {
     const foods = foodsFromDraft(draft);
+    const closeOther = () => {
+      setShowOtherFood(false);
+      setOtherFood("");
+    };
     const toggle = (food: string) => {
+      closeOther();
       const key = normalizeAllergen(food);
       const on = foods.includes(key);
       const nextFoods = on ? foods.filter((f) => f !== key) : [...foods, key];
@@ -586,8 +598,7 @@ export default function OwnerOnboarding() {
     const addOther = () => {
       const key = normalizeAllergen(otherFood);
       if (key && !foods.includes(key)) update({ foods: [...foods, key], foodsChecked: false, safety: { ...draft.safety, s6: "listed" } });
-      setOtherFood("");
-      setShowOtherFood(false);
+      closeOther();
     };
     const typed = foods.filter((f) => !FOOD_CHIPS.some((c) => normalizeAllergen(c) === f));
     // Foods the owner mentioned: offered as chips to tap, never added for them.
@@ -622,13 +633,6 @@ export default function OwnerOnboarding() {
                 testID={`own-food-${normalizeAllergen(f.value)}`}
               />
             ))}
-          <BigOption
-            label="None"
-            selected={foods.length === 0 && draft.safety.s6 === "none"}
-            onPress={() => update({ foods: [], foodsChecked: false, safety: { ...draft.safety, s6: "none" } })}
-            style={styles.half}
-            testID="own-food-none"
-          />
           <BigOption label="Something else" onPress={() => setShowOtherFood(true)} style={styles.half} testID="own-food-else" />
         </View>
         {heardFoods.length > 0 ? heard(heardFoods[0], true, "foods", "We heard") : null}
@@ -647,18 +651,41 @@ export default function OwnerOnboarding() {
             <Button label="Add" onPress={addOther} disabled={otherFood.trim() === ""} testID="own-food-other-add" />
           </View>
         ) : null}
+        {/* Nothing picked is an answer too. Next asks once what was picked, voice-heard foods included (#366). */}
+        <Sheet
+          visible={checkingFoods}
+          title={foods.length > 0 ? `${petName} must avoid these?` : `Nothing ${petName} must avoid?`}
+          onClose={() => setCheckingFoods(false)}
+          testID="own-foods-sheet"
+          footer={
+            <>
+              <Button
+                label="Yes, that's right"
+                onPress={() => {
+                  setCheckingFoods(false);
+                  update({ foodsChecked: true, safety: { ...draft.safety, s6: foods.length > 0 ? "listed" : "none" } });
+                  next();
+                }}
+                testID="own-foods-confirm"
+              />
+              <TextButton label="Change" onPress={() => setCheckingFoods(false)} testID="own-foods-change" />
+            </>
+          }
+        >
+          <Text style={styles.note} testID="own-foods-list">
+            {foods.length > 0 ? foods.map((f) => f.charAt(0).toUpperCase() + f.slice(1)).join(", ") : "No food allergies."}
+          </Text>
+        </Sheet>
       </>,
       undefined,
-      "If there are none, tap None.",
+      undefined,
       false,
-      // No extra checkbox (#366): Next on this screen is the owner's look at the list, voice-heard foods included.
       <Button
         label="Next"
         onPress={() => {
-          update({ foodsChecked: true });
-          next();
+          closeOther();
+          setCheckingFoods(true);
         }}
-        disabled={foods.length === 0 && draft.safety.s6 !== "none"}
         testID="own-next"
       />,
     );
