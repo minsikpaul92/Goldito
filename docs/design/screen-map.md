@@ -1690,4 +1690,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-503 actions · 501 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+505 actions · 503 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
