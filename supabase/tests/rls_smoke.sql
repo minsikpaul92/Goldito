@@ -7600,4 +7600,57 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 015v: a judge set's sitter shows in search only for the owner of the same set
+-- ---------------------------------------------------------------------------
+
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-4000-8000-0000000000f1', 'demo-owner-judge1@goldito.test', '{"role":"owner","display_name":"Robert"}'),
+  ('00000000-0000-4000-8000-0000000000f2', 'demo-sitter-judge1@goldito.test', '{"role":"sitter","display_name":"Chloe"}'),
+  ('00000000-0000-4000-8000-0000000000f3', 'demo-sitter-judge2@goldito.test', '{"role":"sitter","display_name":"Chloe"}');
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  judge_owner constant uuid := '00000000-0000-4000-8000-0000000000f1';
+  judge_sitter constant uuid := '00000000-0000-4000-8000-0000000000f2';
+  other_judge_sitter constant uuid := '00000000-0000-4000-8000-0000000000f3';
+  d constant date := app_today() + 300;
+  drop_at timestamptz := local_ts(d, '09:30');
+  pick_at timestamptz := local_ts(d, '16:00');
+  v_ids uuid[];
+begin
+  perform _t_as(null);
+  update public.owner_profiles set home_lat = 43.6644, home_lng = -79.3573 where id in (robert, judge_owner);
+  update public.sitter_profiles set home_lat = 43.6644 + 0.008993, home_lng = -79.3573
+    where id in (judge_sitter, other_judge_sitter);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  select x, 'open', d, d, s.slot, s.a, s.b, 2
+  from unnest(array[judge_sitter, other_judge_sitter]) x
+  cross join (values ('morning'::care_slot, '08:00'::time, '12:00'::time),
+                     ('afternoon'::care_slot, '12:00'::time, '18:00'::time)) s (slot, a, b);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot)
+  select x, 'blocked', d, d, 'overnight' from unnest(array[judge_sitter, other_judge_sitter]) x;
+
+  perform _t_ok(sitter_visible_to(judge_sitter, judge_owner) and not sitter_visible_to(other_judge_sitter, judge_owner)
+    and not sitter_visible_to(judge_sitter, robert) and sitter_visible_to('00000000-0000-4000-8000-0000000000b1', judge_owner),
+    '015v: a judge sitter is visible only to her own set''s owner; other sitters to everyone');
+
+  perform _t_as(judge_owner);
+  select array_agg(x.sitter_id) into v_ids
+  from search_sitters_nearby(drop_at, pick_at, 1, 5) x where x.sitter_id in (judge_sitter, other_judge_sitter);
+  perform _t_ok(v_ids = array[judge_sitter], '015v: a judge owner finds only the own set''s sitter (nearby search)');
+  select array_agg(x.sitter_id) into v_ids
+  from search_sitters(drop_at, pick_at, 1) x where x.sitter_id in (judge_sitter, other_judge_sitter);
+  perform _t_ok(v_ids = array[judge_sitter], '015v: …and in the date search');
+
+  perform _t_as(robert);
+  perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, pick_at, 1, 5) x
+    where x.sitter_id in (judge_sitter, other_judge_sitter)), '015v: another owner never sees a judge sitter (nearby search)');
+  perform _t_ok(not exists (select 1 from search_sitters(drop_at, pick_at, 1) x
+    where x.sitter_id in (judge_sitter, other_judge_sitter)), '015v: …nor in the date search');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;
