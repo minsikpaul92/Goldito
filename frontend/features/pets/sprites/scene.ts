@@ -202,7 +202,7 @@ export function sceneRoles(species: Species, shape: Shape, mood: PetMood, rawPos
   return g;
 }
 
-const FIXED: Record<string, string> = {
+export const FIXED: Record<string, string> = {
   w: "#FFFFFF",
   m: "#7A2E2E",
   t: "#F28B9B",
