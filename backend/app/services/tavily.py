@@ -1,4 +1,4 @@
-"""Tavily web search for the treat check (Phase 12.1, D59 · D61, docs/plan/tavily.ko.md).
+"""Tavily web search for the treat check (Phase 12.1, D59 · D61, docs/plan/tavily.md).
 
 Every check searches, and only on trusted veterinary and government sites — no retry without the domain filter. The
 searches run together under one time limit; a search that fails or is late is simply left out, and an unset key means

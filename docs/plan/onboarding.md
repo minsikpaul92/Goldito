@@ -1,8 +1,8 @@
 # 제품 온보딩 — 심사·데모·가입 첫 경험
 
-> **목적:** 해커톤 **실 URL 데모**에서 심사위원이 가입·설정 없이 **Owner / Sitter 역할**과 **“A Stay with Goldito”**(5단계 — [full-process.ko.md](full-process.ko.md)) 가치를 이해하고 바로 체험하게 한다.
+> **목적:** 해커톤 **실 URL 데모**에서 심사위원이 가입·설정 없이 **Owner / Sitter 역할**과 **“A Stay with Goldito”**(5단계 — [full-process.md](full-process.md)) 가치를 이해하고 바로 체험하게 한다.
 >
-> **관련:** [루트 README — How Goldito Works · A Stay with Goldito](../../README.md) · [전체 서비스 흐름](full-process.ko.md) · [Phase 03](phases/phase-03-auth.md) (Auth) · [Phase 10](phases/phase-10-deploy.md) (시드·배포) · [Devpost 제출](../hackathon/devpost-submission.ko.md) · [architecture D1](phases/architecture.ko.md#1-결정-로그-확정) (UI·카피 **영어**)
+> **관련:** [루트 README — How Goldito Works · A Stay with Goldito](../../README.md) · [전체 서비스 흐름](full-process.md) · [Phase 03](phases/phase-03-auth.md) (Auth) · [Phase 10](phases/phase-10-deploy.md) (시드·배포) · [Devpost 제출](../hackathon/devpost-submission.ko.md) · [architecture D1](phases/architecture.md#1-결정-로그-확정) (UI·카피 **영어**)
 
 ---
 
@@ -90,7 +90,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 
 **풀 튜토리얼(coach marks)은 P0 제외.** Empty state + 데모 데이터로 충분.
 
-> **오너 가입 직후의 반려동물 등록(오너의 첫 입력)은 별도 명세:** 한 화면 한 질문 · 큰 글씨 · 사진 · 음성으로 채우기 — [pet-profile-onboarding.ko.md](pet-profile-onboarding.ko.md) (11.15). 이 문서는 로그인 **전** 경험(Welcome · Try demo)을 다룬다.
+> **오너 가입 직후의 반려동물 등록(오너의 첫 입력)은 별도 명세:** 한 화면 한 질문 · 큰 글씨 · 사진 · 음성으로 채우기 — [pet-profile-onboarding.md](pet-profile-onboarding.md) (11.15). 이 문서는 로그인 **전** 경험(Welcome · Try demo)을 다룬다.
 
 ---
 
@@ -110,7 +110,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 4. Sitter → Report → 5-second check + 2 sample photos → **Generate → Send**; Owner → Reports / Feed **Album**
 5. (Optional) Owner → Bookings → Checkout of the second request (consents + **Pay (demo)**, Stage ③) · Returned → review → **Life Record** (Stage ⑤) · (08 done) Sitter Home → **Scan a treat** → `chicken_jerky` → DANGER
 
-> 데스크톱 프레임·마우스 조작·샘플 트레이는 [architecture D25](phases/architecture.ko.md) · [DESIGN.md §2.1·§7.7](../../DESIGN.md#21-desktop-browsers-judges-phone-frame).
+> 데스크톱 프레임·마우스 조작·샘플 트레이는 [architecture D25](phases/architecture.md) · [DESIGN.md §2.1·§7.7](../../DESIGN.md#21-desktop-browsers-judges-phone-frame).
 
 ---
 
@@ -150,7 +150,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 | **OB.4** | (deferred) intro_seen skip | OB.2 | 두 번째 방문 login 직행 — **P0 제외**, Phase 04와 무관 |
 | **OB.5** | README + Devpost 문구 | OB.3, 10.2 | Test accounts + judge checklist (Phase 10) |
 
-`/(public)/welcome`은 [architecture §3 라우트 맵](phases/architecture.ko.md#3-화면--라우트-맵-최종-형태)에 반영됨 (OB.1).
+`/(public)/welcome`은 [architecture §3 라우트 맵](phases/architecture.md#3-화면--라우트-맵-최종-형태)에 반영됨 (OB.1).
 
 **담당 제안:** UI OB.2·OB.3 — 민식 (Expo); 비주얼 OB.2 — 묵; 카피 — README와 슬기 검수 (톤).
 

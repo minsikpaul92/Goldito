@@ -3,7 +3,7 @@
 > **누구를 위한 문서?** 개발에 같이 참여하는 사람(민식 · 슬기 · 묵)과 테스트하는 사람.
 > **무엇을 알 수 있나?** ① 지금 무엇이 만들어졌고 무엇이 아직인지 ② 어떻게 확인하는지 ③ 확인 결과.
 > **언제 갱신하나?** 작업(Task) 하나가 끝날 때마다 **같은 커밋에서** 현황표와 시나리오를 고친다 ([CLAUDE.md](../../CLAUDE.md) §5).
-> 제품 흐름은 [full-process.ko.md](full-process.ko.md), 할 일 큐는 [GitHub issues](https://github.com/minsikpaul92/Goldito/issues).
+> 제품 흐름은 [full-process.md](full-process.md), 할 일 큐는 [GitHub issues](https://github.com/minsikpaul92/Goldito/issues).
 
 **마지막 갱신:** 2026-10-09 · #60 머지(FLOW-13~23 · REPORT-11~12 · RV-6~10 수정) · 테스트는 **main = Vercel** (§1.1) · 슬기 QA 트랙 [Phase Q](phases/phase-q-quality.md) · 이전: 첫 수동 테스트 결과 (§3.0), 코드 리뷰 시나리오 (§3.17)
 
@@ -56,7 +56,7 @@
 - 드롭오프 완료(10/4), **픽업 예정 10/7 05:37 UTC (토론토 10/7 새벽 1:37)**.
 - 그래서 **지금 Chloe는 "돌보는 중"** 이다 → 시터 Home의 할 일 · 체크인이 보인다.
 - ⚠️ **픽업 시각이 지나면** 시터 쪽 시나리오(TASK · CHK)가 "Tasks open once the stay has started" 등으로 막힌다. 그때는 새 예약을 만들어 드롭오프를 완료 처리하거나 시드 스크립트(Phase 10, 10.1)를 쓴다.
-- **상태는 누가 마지막에 무엇을 했는지에 따라 다르다.** 원하는 시작 상태(`empty` · `pets` · `confirmed` · `ready` · `in_care`)로 리셋하는 법은 [test-run.ko.md](test-run.ko.md) §1 (`backend/scripts/reset_demo.py`, dry run 먼저 — 민식 PC에서; 백엔드 배포 뒤에는 앱의 Profile → Demo tools).
+- **상태는 누가 마지막에 무엇을 했는지에 따라 다르다.** 원하는 시작 상태(`empty` · `pets` · `confirmed` · `ready` · `in_care`)로 리셋하는 법은 [test-run.md](test-run.md) §1 (`backend/scripts/reset_demo.py`, dry run 먼저 — 민식 PC에서; 백엔드 배포 뒤에는 앱의 Profile → Demo tools).
 
 ### 1.4 테스트가 남기는 데이터
 
@@ -460,7 +460,7 @@
 | CAP-6 | 오너 → Feed → **Timeline / Album** 토글 | Timeline = 최신순 카드. Album = 날짜 헤더("Oct 9, 2026") 아래 분류별 3열, **빈 분류는 안 보임**, "Meals · 2" 같은 개수. 사진을 누르면 뷰어 | 🤖 `caption` | ➖ |
 | CAP-7 | 할 일(밥 · 산책 · 낮잠 · 놀이)을 사진과 함께 완료 | 오너 Album에서 그 사진이 할 일 종류대로 Meals · Walks · Naps · Play에 들어감 | **👤** | ➖ |
 
-### 3.13 완료 · 리뷰 · Life Record (DONE) — Phase 07C · *사전: Life Record는 백엔드 + `NEBIUS_API_KEY`, 돌봄이 끝난(Returned) 예약 — 만드는 법은 [test-run.ko.md](test-run.ko.md) §2*
+### 3.13 완료 · 리뷰 · Life Record (DONE) — Phase 07C · *사전: Life Record는 백엔드 + `NEBIUS_API_KEY`, 돌봄이 끝난(Returned) 예약 — 만드는 법은 [test-run.md](test-run.md) §2*
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |

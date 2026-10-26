@@ -5,7 +5,7 @@ type DemoAccount = { email: string; name: string };
 export type DemoSet = { key: string; label: string; owner: DemoAccount; sitter: DemoAccount; pets: [string, string] };
 
 /**
- * Seeded demo accounts (onboarding.ko.md OB.3). One owner and one sitter per teammate, so a reset only touches
+ * Seeded demo accounts (onboarding.md OB.3). One owner and one sitter per teammate, so a reset only touches
  * the set of whoever asks for it. The first set is the default pair that judges use. Keep in sync with
  * backend/app/services/demo_accounts.py (the pets too), backend/scripts/seed_demo.py, README and Devpost. The password is a
  * public, demo-only value (architecture §4), never a real password or a service key.

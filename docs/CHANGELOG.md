@@ -29,7 +29,7 @@ The in-app **Menu → What's new** screen (Phase 11.11) shows the released entri
 
 ### Changed
 
-- The app is now called **Goldito** (was Pawddy). You will be signed out once. New photos and videos go to the `goldito/` Cloudinary folder (older `pawddy/` and `pawnote/` media still loads). What had to be done by hand: [plan/rename-goldito.ko.md](plan/rename-goldito.ko.md).
+- The app is now called **Goldito** (was Pawddy). You will be signed out once. New photos and videos go to the `goldito/` Cloudinary folder (older `pawddy/` and `pawnote/` media still loads).
 - The app is now called **Pawddy** (was PawNote). Demo sign-in emails are now `@pawddy.test`; new photos and videos go to the `pawddy/` Cloudinary folder (older `pawnote/` media still loads).
 
 ## [0.2.0] — 2026-10-14

@@ -1,6 +1,6 @@
 # 수동 테스트 런북 (2026-10-09 갱신)
 
-> 지금까지 만든 기능을 **손으로** 확인하는 순서입니다. 시나리오 표 자체는 [test-guide.ko.md](test-guide.ko.md) §3에 있고, 이 문서는 **어디서 시작 → 준비 → 순서 → 결과 적기**만 다룹니다.
+> 지금까지 만든 기능을 **손으로** 확인하는 순서입니다. 시나리오 표 자체는 [test-guide.md](test-guide.md) §3에 있고, 이 문서는 **어디서 시작 → 준비 → 순서 → 결과 적기**만 다룹니다.
 >
 > PR #55~#60은 **모두 `main`에 머지**됐습니다(#60 = `ad80583`, 2026-10-09). **테스트는 항상 `main`을 Vercel에서** 합니다 — 브랜치를 받아서 로컬로 테스트하지 않습니다 (2026-10-09 결정).
 
@@ -8,7 +8,7 @@
 
 **주소: https://goldito-petcare.vercel.app** (main이 머지될 때마다 자동 배포). 로그인 화면 **Try demo → Demo owner / Demo sitter**.
 
-> **백엔드는 Render에 배포돼 있습니다 (U0, 2026-10-09 — https://goldito-backend.onrender.com).** 업로드 · AI(알림장 칩 · 초안, 문의 답장, 캡션, 케어 체크리스트, Life Record) · 데모 리셋이 모두 Vercel에서 됩니다. 무료 플랜이라 **15분 동안 아무도 안 쓰면 잠들고, 그 뒤 첫 요청은 30~50초** 걸립니다 — 그래서 10분마다 핑으로 깨워 둡니다. 처음 한 번 느린 건 괜찮지만, **매번 처음이 느리면 핑이 멈춘 것**이니 민식에게 알려 주세요 (확인 방법: [env-setup.ko.md](env-setup.ko.md) § 배포된 백엔드).
+> **백엔드는 Render에 배포돼 있습니다 (U0, 2026-10-09 — https://goldito-backend.onrender.com).** 업로드 · AI(알림장 칩 · 초안, 문의 답장, 캡션, 케어 체크리스트, Life Record) · 데모 리셋이 모두 Vercel에서 됩니다. 무료 플랜이라 **15분 동안 아무도 안 쓰면 잠들고, 그 뒤 첫 요청은 30~50초** 걸립니다 — 그래서 10분마다 핑으로 깨워 둡니다. 처음 한 번 느린 건 괜찮지만, **매번 처음이 느리면 핑이 멈춘 것**이니 민식에게 알려 주세요 (확인 방법: [env-setup.md](env-setup.md) § 배포된 백엔드).
 
 **데모 계정의 상태는 누가 마지막에 뭘 했는지에 따라 다릅니다.** 시작하기 전에 원하는 상태로 리셋하세요(§1 아래).
 
@@ -32,7 +32,7 @@
 2. 결과는 §5대로 test-guide에 적습니다 (`main` 기준).
 3. **(개발자만) 로컬로 띄울 때** — 코드를 고치는 중 확인용이고, 결과 기록(✅)은 Vercel(main) 기준입니다:
    ```bash
-   cd backend && .venv/bin/uvicorn app.main:app --port 8000    # backend/.env 필요 (env-setup.ko.md)
+   cd backend && .venv/bin/uvicorn app.main:app --port 8000    # backend/.env 필요 (env-setup.md)
    cd frontend && npx expo start --web --port 8081              # 다른 터미널
    ```
 
@@ -112,7 +112,7 @@ cd backend
 
 ## 5. 결과 적는 법
 
-- 시나리오 표의 **상태** 칸을 `✅ 10/09 이름` 또는 `❌ 10/09 이름 — 한 줄 이유`로 고칩니다 (`test-guide.ko.md`). 사람이 안 해 본 줄은 ➖ 그대로. **Vercel(main)에서 한 것만** 기록합니다.
+- 시나리오 표의 **상태** 칸을 `✅ 10/09 이름` 또는 `❌ 10/09 이름 — 한 줄 이유`로 고칩니다 (`test-guide.md`). 사람이 안 해 본 줄은 ➖ 그대로. **Vercel(main)에서 한 것만** 기록합니다.
 - 버그 · 요청은 GitHub 이슈 양식 **QA feedback**으로 올립니다(폰에서도 가능, 번호 = 이슈 번호). 심각도에서 `Blocks the demo path` · `The app says something untrue`를 고르면 민식이 바로 봅니다 — [phases/phase-q-quality.md](phases/phase-q-quality.md) Q.1.
 - 막히면 **어느 단계에서 어떤 화면 문구가 떴는지**만 알려 주면 됩니다 (스크린샷이면 더 좋음).
 

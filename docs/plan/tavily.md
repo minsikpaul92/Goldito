@@ -37,7 +37,7 @@ Tavily 권장: **챗봇에게 묻듯 문장으로 쓰지 말고, 검색창에 �
 - **신뢰 도메인:** `aspca.org`, `fda.gov`, `avma.org`, `petpoisonhelpline.com`, `vcahospitals.com` — 결과가 0개면 도메인 필터 없이 1회 재시도 — **Phase 12 Treat check는 재시도하지 않는다**(검증된 사이트만, 2026-10-13: 매 검사마다 신뢰 도메인으로만 호출).
 - 한 번의 스캔에서 쿼리 **최대 4개**(성분 3 + 리콜 1), 병렬 호출, **총 8초** 제한. 실패하면 Tavily 없이 Ultra 1차 결과를 그대로 반환.
 
-### 펫 온보딩에서 쓰는 곳 (P1, [pet-profile-onboarding.ko.md](pet-profile-onboarding.ko.md) §8.1)
+### 펫 온보딩에서 쓰는 곳 (P1, [pet-profile-onboarding.md](pet-profile-onboarding.md) §8.1)
 
 - **T1 품종 신체 필요 조회** — 정적 JSON에 없는 품종이 입력되면 런타임 `search`(`include_domains`: `akc.org`, `vcahospitals.com`, `merckvetmanual.com`, 고양이 `icatcare.org` · `cfa.org`) → Nemotron이 **반환 본문만으로** 3칩 요약 → `breed_notes`에 캐시 → 출처 링크와 함께 시터 카드에 표시. 새 품종당 1회라 크레딧이 거의 안 든다.
 - **T2 오프라인 표 만들기** — `backend/scripts/build_breed_needs.py`가 같은 함수로 후보를 만들고 슬기가 감수한 뒤 정적 JSON으로 커밋.

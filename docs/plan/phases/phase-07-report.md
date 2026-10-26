@@ -1,14 +1,14 @@
 # Phase 07 — 알림장 AI (Daily Report)
 
-> **상태 (2026-10-10):** 머지됨 (PR #49 · #55, 수정 #60) — DoD 손 확인 대기(슬기 Q.1). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [Phase 목록](README.ko.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+> **상태 (2026-10-10):** 머지됨 (PR #49 · #55, 수정 #60) — DoD 손 확인 대기(슬기 Q.1). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.md) 현황표 · [Phase 목록](README.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
 
-> 공통 전제: [architecture.ko.md](architecture.ko.md) — D1 영어, **D34 5초 체크**, AI 규칙 §9, API 계약 §5
+> 공통 전제: [architecture.md](architecture.md) — D1 영어, **D34 5초 체크**, AI 규칙 §9, API 계약 §5
 > **말투 레이어 (D35 · D38):** 알림장 본문은 `tone.compose()`(07B 7B.8)를 거쳐 시터 1인칭 말투로 쓴다. 입력은 **AI가 하루 기록·사진에서 제안하고 시터가 고른 칩 + 시터의 짧은 메모(선택) + 사진 묘사** (시터 글쓰기 거의 제로 — 사진 분석은 부족하거나 틀릴 수 있어 메모 칸을 둠). 알림장은 시터가 미리보기를 승인(Send)하는 즉시 게시되며 사람 속도 지연은 없다 (D37).
-> 제품 흐름: [full-process.ko.md](../full-process.ko.md) Stage 4-3·4-4 — 시터 5초 체크 + 사진 2장 → AI 스마트 알림장
+> 제품 흐름: [full-process.md](../full-process.md) Stage 4-3·4-4 — 시터 5초 체크 + 사진 2장 → AI 스마트 알림장
 
 ## Goal
 
-하루의 **피드 캡션 + 완료/누락 task + `care_checkins`(식사·배변·산책·기분·note) + Report 화면 5초 체크(AI 칩 제안 중 시터가 고른 칩 + 짧은 메모(선택) + 사진 ≤ 2 — D38)**만을 근거로 Nemotron **Super**가 **따뜻한 영어 알림장 초안**을 만들고, 펫시터는 **미리보기를 승인(Send)**해야 게시되고, 견주는 **읽기 전용**으로 받는다. 사진은 Vision(`MODEL_VISION`)이 먼저 한 줄 묘사 + 에피소드 칩 1–2개로 바꾼다 (7.7 `/api/ai/report-chips`). (Plan B: [sitter-care-loop.ko.md](../sitter-care-loop.ko.md))
+하루의 **피드 캡션 + 완료/누락 task + `care_checkins`(식사·배변·산책·기분·note) + Report 화면 5초 체크(AI 칩 제안 중 시터가 고른 칩 + 짧은 메모(선택) + 사진 ≤ 2 — D38)**만을 근거로 Nemotron **Super**가 **따뜻한 영어 알림장 초안**을 만들고, 펫시터는 **미리보기를 승인(Send)**해야 게시되고, 견주는 **읽기 전용**으로 받는다. 사진은 Vision(`MODEL_VISION`)이 먼저 한 줄 묘사 + 에피소드 칩 1–2개로 바꾼다 (7.7 `/api/ai/report-chips`). (Plan B: [sitter-care-loop.md](../sitter-care-loop.md))
 
 > 목표 문장 예 (시나리오 4-4, 영어): *"Max took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited — it was adorable. Her potty was perfectly healthy, too. 🐶"*
 

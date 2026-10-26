@@ -1,10 +1,10 @@
 # Phase 10 — 데모 시드 · 배포 · 제출 README
 
-> 공통 전제: [architecture.ko.md](architecture.ko.md) — D18 배포, D19 시드
+> 공통 전제: [architecture.md](architecture.md) — D18 배포, D19 시드
 
 ## Goal
 
-심사위원·팀이 **15분 안에** "A Stay with Goldito" — [full-process.ko.md](../full-process.ko.md)의 **5단계(Inquiry → Meet & Greet → Booking → Care & Transit → Completion)** — 전체를 재현할 수 있게 **시드 데이터**, **공개 데모 URL**, **테스트 계정**, **루트 README 실행 가이드**를 완성하고, **12/15 심사 종료까지 데모가 살아 있게** 운영 준비를 끝낸다. 로그인 UX·Welcome·Try demo는 **[onboarding.ko.md](../onboarding.ko.md)** (OB.3·OB.5와 연동).
+심사위원·팀이 **15분 안에** "A Stay with Goldito" — [full-process.md](../full-process.md)의 **5단계(Inquiry → Meet & Greet → Booking → Care & Transit → Completion)** — 전체를 재현할 수 있게 **시드 데이터**, **공개 데모 URL**, **테스트 계정**, **루트 README 실행 가이드**를 완성하고, **12/15 심사 종료까지 데모가 살아 있게** 운영 준비를 끝낸다. 로그인 UX·Welcome·Try demo는 **[onboarding.md](../onboarding.md)** (OB.3·OB.5와 연동).
 
 ### Goal 달성 기준
 
@@ -36,7 +36,7 @@
 
 ---
 
-## "A Stay with Goldito" 데모 스크립트 (Goal 시나리오 — [full-process.ko.md §6](../full-process.ko.md#6-데모-경로-a-stay-with-goldito))
+## "A Stay with Goldito" 데모 스크립트 (Goal 시나리오 — [full-process.md §6](../full-process.md#6-데모-경로-a-stay-with-goldito))
 
 | # | Stage | 액션 | 검증 (상대방 화면) | Phase |
 | :--- | :--- | :--- | :--- | :--- |
@@ -58,9 +58,9 @@
 | :--- | :--- | :--- |
 | 10.1 | Seed script | **계정 부분 완료 (2026-10-01):** `seed_demo.py`가 demo-owner/demo-sitter 생성·갱신 + `--check` 읽기 전용 확인 (backend/README "Demo accounts"). **2026-10-09:** 테스트용 `scripts/reset_demo.py --state empty · pets · confirmed · ready · in_care`(+ 앱 Profile → Demo tools, `POST /api/demo/reset`)가 생김 (#60). **심사 전에 바뀌는 것:** 리셋 기능을 없애고(심사위원이 데이터를 지울 수 없게) 같은 `demo_reset` 코드로 **시작 지점별 고정 데모 계정**(빈 계정 · 펫만 · 수락된 예약 → 돌보는 중 · 끝난 돌봄)을 만들어 Try demo가 그중에서 고름 — 한 계정을 두 심사위원이 동시에 쓰는 문제는 결정 필요 (TODO "Demo accounts for judging"). R60-3~R60-5(리셋 견고성)는 여기서 흡수. 남은 것: 아래 pet·예약·task·Paul·샘플 피드. `backend/scripts/seed_demo.py` (service role, D19): `auth.admin.create_user` × 2 (`demo-owner@goldito.test`, `demo-sitter@goldito.test`, `email_confirm=True`, 비밀번호는 env `DEMO_PASSWORD`), pet Max(dog, Maltese, 4y, allergy chicken, care_tasks medication+walk), pet Mochi(cat, Domestic Shorthair, 3y, care_tasks feeding+litter), **시나리오 데이터 (D27):** Chloe `sitter_rates`(Boarding 55 · House sitting 70 · Daycare 35 · +50% · +25%)·`services`·`policies`(가상 정책 문단 3개)·`visitor_parking`·`lobby_notes`·`home_lat/lng`(가상 좌표 — 공원 근처, 실제 주소 아님), Robert `owner_home_access`(가짜 lockbox `0000`·buzzer `#000` — 명백히 가짜 값)·`home_lat/lng`, `pet_cautions` 2개, `care_requests` 1개, Chloe **말투 데이터**(가상 시터 스타일 카드 + `tone_samples` 시드 — 익명화 원본이 아닌 공개용 샘플, 7B.8) · `ai_reply_mode='auto'` + `ai_consent_at`(장면 ① — 대기 없이 바로 사람 속도, D36) · Robert·Chloe·Paul `meet_spots` 각 2개(가상 공원 입구·카페 — 실제 주소 아님, D44) · **승인 대기 초안 1건**(시드 전용 견주 Joy → Chloe 문의, `status='draft'` — 시터 데모에서 Send / Edit / Regenerate 화면을 보여 주기 위함, D36), 결제·동의 완료 예약(`paid_at`, `booking_consents` 5종 — 서비스 role insert), 지난 9월 Paul 예약(완료) + `pet_life_records`(Max·Mochi) + `reviews`(★5) + RAG 인덱싱(`rag.index_source`), 데모 집 좌표(06B에서 `demo_accounts.ensure_home_point`로 시드됨 — 가상 운전은 두 집 좌표에서 계산하므로 경로 JSON은 필요 없음), 공휴일 시드(03C),  sitter_availability open = 오늘-7일 ~ 오늘+60일, 모든 칸, 정원 3, 칸 시간 = Chloe 기본(Morning 08–12 · Afternoon 12–18 · Overnight 18–08), **확정 booking 1건 = 어제 09:30 맡김(Received 완료) ~ 오늘+6일 17:00 찾음, 장소 Chloe's place (Max + Mochi)** — 과거 시각이라 RPC가 아니라 service role로 `bookings` + `booking_pets`(care_range) + `booking_slots` + agreed `booking_handoffs`를 함께 insert (smoke test `_t_booking`과 같은 형태) → Try demo 즉시 "Now caring" + 과거 예약 1건(단골 표시용). 가짜 `home_address`, 추가로 시터2(Paul) 계정 + open 구간 (재예약 검색 데모용), owner_profiles 가짜 긴급 연락처, 샘플 feed 2개(선택, Cloudinary `goldito/demo/` 공용 이미지). **멱등** (`--reset`이면 demo 계정 데이터 삭제 후 재생성). 실제 PII 0 |
 | 10.2 | README | 루트 README는 이미 5단계 흐름 구조 (2026-10-01) + **The Goldito Agent** 표(트리거 → 행동 → 사람 승인, D46 — 영상 내레이션도 같은 표현) — 배포 직전 **실제로 만든 기능과 대조**해 안 된 것은 지우거나 "What's Next"로 이동 (특히 08 stretch). Getting Started (복붙 명령, Windows/mac 둘 다), "How we use Nemotron" 표를 실제 model·latency(07.1·07B 지표)로 갱신, architecture 그림, **단계별 스크린샷 5장**. backend/frontend README 최신화 |
-| 10.3 | Deploy backend | **U0로 앞당겨 완료 (2026-10-09) — Render 무료 플랜**, https://goldito-backend.onrender.com. Render Web Service가 GitHub `main`을 보고 `backend/Dockerfile`로 빌드 · 배포(Root Directory `backend`, Health Check `/health`), env는 Render → Environment ([env-setup.ko.md](../env-setup.ko.md) § 배포된 백엔드). CI(`ci.yml`)가 PR마다 같은 이미지를 빌드해 `/health`를 확인. **Nebius AI Cloud는 쓰지 않음** (D18 — 카드 등록 + $25 선결제, 행사 크레딧 없음, 상시 켜 두면 12/15까지 약 $128; 시도한 기록은 [notes/nebius-ai-cloud-feedback.md](notes/nebius-ai-cloud-feedback.md)). AI 추론은 그대로 Token Factory |
-| 10.4 | Deploy frontend | **Vercel 연결은 2026-10-02에 앞당김** — Production **https://goldito-petcare.vercel.app** (main 머지마다 자동 배포, 2026-10-09부터 수동 테스트도 여기서), `frontend/vercel.json` + [env-setup.ko.md § Vercel](../env-setup.ko.md). `EXPO_PUBLIC_API_URL`은 U0에서 채움. 10.4에서 남은 것: 심사 전 `EXPO_PUBLIC_DEMO_TOOLS` 비우기 · 최종 production env 확인. `npx expo export -p web` → `dist/` → Vercel (SPA rewrite `/(.*) → /index.html`), env `EXPO_PUBLIC_*` production 값. backend `CORS_ORIGINS`에 Vercel 도메인 추가. **CD:** Vercel GitHub 연동 — Root Directory `frontend`, Build `npx expo export -p web`, Output `dist`. PR마다 Preview URL, main 머지 시 production. Preview 도메인(`*.vercel.app`)은 CORS에 정규식으로 허용하거나 Preview는 staging backend 없이 UI 확인용으로만 사용. **폰 프레임이 같은 도메인 iframe이므로** 보안 헤더를 넣을 때 `X-Frame-Options: DENY` 금지, CSP는 `frame-ancestors 'self'` (D25) |
-| 10.5 | 데모 계정 문서 | `docs/DEMO_ACCOUNTS.md`: URL, 이메일 2개, 비밀번호는 repo에 적지 않고 **Devpost 제출란**과 배포 env(`DEMO_PASSWORD` 시드용, `EXPO_PUBLIC_DEMO_PASSWORD` Try demo용 — 데모 계정 전용 값, [onboarding.ko.md](../onboarding.ko.md))에만 (repo엔 "see submission"), 데모 순서 5줄 |
+| 10.3 | Deploy backend | **U0로 앞당겨 완료 (2026-10-09) — Render 무료 플랜**, https://goldito-backend.onrender.com. Render Web Service가 GitHub `main`을 보고 `backend/Dockerfile`로 빌드 · 배포(Root Directory `backend`, Health Check `/health`), env는 Render → Environment ([env-setup.md](../env-setup.md) § 배포된 백엔드). CI(`ci.yml`)가 PR마다 같은 이미지를 빌드해 `/health`를 확인. **Nebius AI Cloud는 쓰지 않음** (D18 — 카드 등록 + $25 선결제, 행사 크레딧 없음, 상시 켜 두면 12/15까지 약 $128; 시도한 기록은 [notes/nebius-ai-cloud-feedback.md](notes/nebius-ai-cloud-feedback.md)). AI 추론은 그대로 Token Factory |
+| 10.4 | Deploy frontend | **Vercel 연결은 2026-10-02에 앞당김** — Production **https://goldito-petcare.vercel.app** (main 머지마다 자동 배포, 2026-10-09부터 수동 테스트도 여기서), `frontend/vercel.json` + [env-setup.md § Vercel](../env-setup.md). `EXPO_PUBLIC_API_URL`은 U0에서 채움. 10.4에서 남은 것: 심사 전 `EXPO_PUBLIC_DEMO_TOOLS` 비우기 · 최종 production env 확인. `npx expo export -p web` → `dist/` → Vercel (SPA rewrite `/(.*) → /index.html`), env `EXPO_PUBLIC_*` production 값. backend `CORS_ORIGINS`에 Vercel 도메인 추가. **CD:** Vercel GitHub 연동 — Root Directory `frontend`, Build `npx expo export -p web`, Output `dist`. PR마다 Preview URL, main 머지 시 production. Preview 도메인(`*.vercel.app`)은 CORS에 정규식으로 허용하거나 Preview는 staging backend 없이 UI 확인용으로만 사용. **폰 프레임이 같은 도메인 iframe이므로** 보안 헤더를 넣을 때 `X-Frame-Options: DENY` 금지, CSP는 `frame-ancestors 'self'` (D25) |
+| 10.5 | 데모 계정 문서 | `docs/DEMO_ACCOUNTS.md`: URL, 이메일 2개, 비밀번호는 repo에 적지 않고 **Devpost 제출란**과 배포 env(`DEMO_PASSWORD` 시드용, `EXPO_PUBLIC_DEMO_PASSWORD` Try demo용 — 데모 계정 전용 값, [onboarding.md](../onboarding.md))에만 (repo엔 "see submission"), 데모 순서 5줄 |
 | 10.6 | Feedback log | README 피드백 표: Token Factory, AI Cloud(써 보려다 그만둔 이유 — [notes/nebius-ai-cloud-feedback.md](notes/nebius-ai-cloud-feedback.md)), 각 Nemotron 모델별 (용도 / 잘된 점 / 개선점 / 온보딩 / 재사용 의향) — 개발 중 `notes/`에 쌓인 메모 정리 |
 | 10.7 | 유지 계획 (~12/15) | ⓪ **Render 잠듦 방지 (2026-10-09):** Render 무료는 15분 무요청 시 잠들어 첫 요청이 30~50초 → `.github/workflows/keepalive.yml`이 **10분마다** `/health` + **cron-job.org `Goldito Keepalive`** 10분마다 (2026-10-09 등록). **배포 · 테스트 · 영상 녹화 전에 핑이 살아 있는지 확인** (Actions 실행 간격 ≤ 15분, 응답 1초 안) · ① Supabase 무료 일시정지 방지: 같은 cron에 하루 한 번 → backend `GET /health/deep`(Supabase `select 1` 수행; `/health`는 가볍게 유지) ② Cloudinary·Nebius 크레딧 잔량 주 1회 확인 (캡처 1장 ≈ 비용 계산표) ③ 데모 계정 데이터 오염 시 `seed_demo.py --reset` |
 | 10.8 | 내부 마감 10/28 체크리스트 | 아래 DoD 전부 + 영상 업로드(YouTube public, < 3분, 영어 음성) + Devpost 초안 |
@@ -106,9 +106,9 @@ Playbook §12 — seed(10.1) / deploy backend(10.3) / deploy frontend(10.4) 각�
 2. **경쟁 서비스 이름은 쓰지 않는다.** 차이는 *기능이 있냐*가 아니라 **"그 일을 누가 하냐"**로 쓴다 — 시중 앱은 연결하고 예약마다 수수료를 가져가지만, 머무는 동안의 답장 · 규칙 · 일일 노트는 사람이 직접 친다. **우리가 수수료를 얼마 받는다/덜 받는다는 말은 쓰지 않는다**(만들어 둔 것이 없다 — 데모 결제뿐). 수수료 이야기를 더 하고 싶으면 What's Next에 비전으로만.
 3. **근거는 경험으로:** "수십 번의 케어, 같은 반려동물을 여러 번 맡았다." 숫자는 쓰지 않는다. 시니어 이야기는 통계가 아니라 **관찰**("in our experience")로 쓴다.
 4. **앱에 머물 이유(시팅 밖의 기능)** 한 줄을 5단계 띠 아래에 넣는다 — **지금 만들어진 것만 단정하고**, 계획은 "coming"으로 표시한다(아래).
-5. **한국어 판(`docs/README.ko.md`)도 같이** 바꾼다.
+5. **한국어 판(`README.md`)도 같이** 바꾼다.
 6. 첫 화면 이미지/GIF(문의 → AI 초안 → 승인)는 **나중에**(영상과 함께).
-7. 모든 문장은 쓰기 직전에 [test-guide 현황표](../test-guide.ko.md)와 대조해 **안 만든 것은 지우거나 "coming"** 으로 (10.2의 기존 규칙).
+7. 모든 문장은 쓰기 직전에 [test-guide 현황표](../test-guide.md)와 대조해 **안 만든 것은 지우거나 "coming"** 으로 (10.2의 기존 규칙).
 
 **맨 위 블록 초안 v0 (EN)**
 

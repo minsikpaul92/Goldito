@@ -1,9 +1,9 @@
 # Phase 06 — 케어·투약 의뢰서 → 미션 체크리스트 · 5초 체크 · Activity 히스토리
 
-> **상태 (2026-10-10):** 완료 (2026-10-05, PR #48; 6.7 서버 푸시는 하지 않음). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [Phase 목록](README.ko.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+> **상태 (2026-10-10):** 완료 (2026-10-05, PR #48; 6.7 서버 푸시는 하지 않음). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.md) 현황표 · [Phase 목록](README.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
 
-> 공통 전제: [architecture.ko.md](architecture.ko.md) — D8 시간대, D9 missed, D17 리마인더, **D34 5초 체크**  
-> **Product spec (Plan B, locked):** [sitter-care-loop.ko.md](../sitter-care-loop.ko.md) · 제품 흐름: [full-process.ko.md](../full-process.ko.md) Stage 2-1 (의뢰서) · Stage 4-3 (5초 체크)
+> 공통 전제: [architecture.md](architecture.md) — D8 시간대, D9 missed, D17 리마인더, **D34 5초 체크**  
+> **Product spec (Plan B, locked):** [sitter-care-loop.md](../sitter-care-loop.md) · 제품 흐름: [full-process.md](../full-process.md) Stage 2-1 (의뢰서) · Stage 4-3 (5초 체크)
 
 ## Goal
 
@@ -54,7 +54,7 @@
 | 6.5 | missed / late | D9 파생 (변경 없음) |
 | 6.6 ✅ | `useDueReminder` | scheduled task만 (변경 없음) |
 | 6.7 | (Stretch) 서버 `task_due` | 변경 없음 |
-| 6.8 ✅ | DB `care_checkins` + RLS | [sitter-care-loop §3](../sitter-care-loop.ko.md#3-check-in-kinds-care_checkins) · idx(pet_id, created_at desc) |
+| 6.8 ✅ | DB `care_checkins` + RLS | [sitter-care-loop §3](../sitter-care-loop.md#3-check-in-kinds-care_checkins) · idx(pet_id, created_at desc) |
 | 6.9 ✅ | `log_care_checkin` RPC | on-duty · insert · owner `care_checkin` · optional media → feed_post (+ Diary) |
 | 6.10 ✅ | Sitter Home quick row | Meal · Poop · Walk · Mood · Note — Home 대시보드 (구 Today, D47b) |
 | 6.11 ✅ | Owner Diary activity | `list_pet_activity` … → **`/owner/diary`** (구 Care Activity) |
@@ -91,7 +91,7 @@
 
 ## AI 프롬프트
 
-Playbook §8 — extend with check-in RPC + Activity (see [sitter-care-loop.ko.md](../sitter-care-loop.ko.md))
+Playbook §8 — extend with check-in RPC + Activity (see [sitter-care-loop.md](../sitter-care-loop.md))
 
 ---
 

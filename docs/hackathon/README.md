@@ -1,7 +1,5 @@
 # Nebius x NVIDIA Global AI Hackathon — Summary
 
-🇰🇷 Korean: [README.ko.md](README.ko.md)
-
 Condensed from the official Devpost pages (Overview, Rules, Resources, Updates) as of Sep 28, 2026.
 If anything here conflicts with the [Official Rules](https://nebiusglobalaihackathon.devpost.com/rules), the Official Rules win.
 

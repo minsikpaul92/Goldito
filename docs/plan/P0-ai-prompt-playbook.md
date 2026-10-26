@@ -1,11 +1,11 @@
 # P0 개발 Todo & AI 프롬프트 플레이북
 
-> ⚠️ **정본은 [phases/architecture.ko.md](phases/architecture.ko.md) + 각 phase 문서입니다.** 아래 프롬프트는 출발점일 뿐이며, 스키마·엔드포인트 body·파일 경로가 다르면 phase 문서를 따르세요 (예: safety-check는 multipart가 아니라 `{pet_id, media_id}`, UI·AI 출력은 영어 전용, Nebius client는 `backend/app/services/nebius.py`). 프롬프트에 해당 phase 문서의 "작업 상세" 표를 함께 붙여 넣는 것을 권장합니다.
+> ⚠️ **정본은 [phases/architecture.md](phases/architecture.md) + 각 phase 문서입니다.** 아래 프롬프트는 출발점일 뿐이며, 스키마·엔드포인트 body·파일 경로가 다르면 phase 문서를 따르세요 (예: safety-check는 multipart가 아니라 `{pet_id, media_id}`, UI·AI 출력은 영어 전용, Nebius client는 `backend/app/services/nebius.py`). 프롬프트에 해당 phase 문서의 "작업 상세" 표를 함께 붙여 넣는 것을 권장합니다.
 
-> **목적:** P0 — [Full Process 5단계](full-process.ko.md)(문의 → 사전 미팅 → 예약 → 돌봄 & 이동 → 완료) — 까지 **AI(Cursor·Claude)에게 줄 명령**을 단계별로 정리. 세이프티 가드는 시나리오 코어 뒤 stretch (D27).
+> **목적:** P0 — [Full Process 5단계](full-process.md)(문의 → 사전 미팅 → 예약 → 돌봄 & 이동 → 완료) — 까지 **AI(Cursor·Claude)에게 줄 명령**을 단계별로 정리. 세이프티 가드는 시나리오 코어 뒤 stretch (D27).
 > **원칙:** 한 프롬프트 = 한 산출물. 항상 *수용 기준(DoD)* 를 붙인다.
 
-관련 문서: [개발 계획](README.ko.md) · **[Phase별 Goal & 상세](phases/README.ko.md)** · [스키마 정본 phase-02](phases/phase-02-db.md) · [제품 README](../README.ko.md)
+관련 문서: [개발 계획](README.md) · **[Phase별 Goal & 상세](phases/README.md)** · [스키마 정본 phase-02](phases/phase-02-db.md) · [제품 README](../README.md)
 
 ---
 
@@ -22,7 +22,7 @@ AI는 **위에서 아래로** 진행할 때 실패가 적습니다. AI 기능은
 ```text
 You are working in the Goldito monorepo (Nebius x NVIDIA hackathon).
 Stack: Expo (React Native Web), FastAPI (Python 3.12), Supabase (Postgres + Auth + Realtime + pgvector), Cloudinary (media), Nebius Token Factory — Nemotron for replies/reasoning/reports, MiniCPM-V for vision, Qwen3 Embedding for RAG (AI only in backend).
-Product flow: docs/plan/full-process.ko.md (5 stages).
+Product flow: docs/plan/full-process.md (5 stages).
 
 Rules:
 - Minimize scope: only change files needed for this task.
@@ -34,7 +34,7 @@ Rules:
 
 Read before coding:
 - CLAUDE.md, the assigned GitHub issue (current focus)
-- docs/plan/phases/architecture.ko.md + the phase doc for this task (source of truth)
+- docs/plan/phases/architecture.md + the phase doc for this task (source of truth)
 
 Task:
 <아래 단계별 Task 내용>
@@ -310,7 +310,7 @@ DoD: sitter posts photo, owner sees it within realtime or refresh; notification 
 Implement medication/walk tasks:
 - OwnerTaskScreen: create care_task with a species-allowed type (medication, feeding, play, sleep + walk for dogs / litter for cats), title, dose optional, scheduled_time, repeat daily
 - RPC ensure_today_task_logs(p_pet) in 008_care.sql, called automatically when the screen opens (idempotent) — phase-06 6.2
-- SitterTasksScreen: list pending task_logs for today; primary **Mark done** (no photo), secondary **Done with photo** via pickMedia() → complete_task_log(p_task_log, p_media_id default null); a feed_post is created only when a photo is attached (Plan B — docs/plan/sitter-care-loop.ko.md)
+- SitterTasksScreen: list pending task_logs for today; primary **Mark done** (no photo), secondary **Done with photo** via pickMedia() → complete_task_log(p_task_log, p_media_id default null); a feed_post is created only when a photo is attached (Plan B — docs/plan/sitter-care-loop.md)
 - Notify owner on completion (task_done), with or without a photo
 
 DoD: owner creates an 8am medication; the sitter marks it done without a photo (notification + Activity, no feed card), then completes another task with a sample photo (notification + feed card).
@@ -457,7 +457,7 @@ Implement POST /api/ai/life-record {booking_id} per phase-07c 7C.4: booking part
 | 8.3 | Step2 Ultra: allergens + hidden sources | 8.2 | DANGER/WARNING/SAFE |
 | 8.4 | Sitter UI: scanner → modal with warning_message | 8.3 | 데모 가능 |
 | 8.5 | `safety_checks` 저장 + owner notify if DANGER | 8.4 | |
-| 8.7 | (stretch) Tavily 출처 — [tavily.ko.md](tavily.ko.md) 키워드 규칙 | 8.1–8.6 | 모달 Sources |
+| 8.7 | (stretch) Tavily 출처 — [tavily.md](tavily.md) 키워드 규칙 | 8.1–8.6 | 모달 Sources |
 
 ### AI 프롬프트 — 8.1–8.3 파이프라인
 
@@ -549,7 +549,7 @@ DoD: fresh DB can demo the 5-stage stay in 15 minutes.
 | POST /api/ai/daily-report | `{ pet_id, date, inputs, chips, note?, media_ids? }` | `{ report_id, body, status, model, latency_ms }` |
 | POST /api/ai/safety-check | `{ pet_id, media_id }` | SafetyCheck JSON (phase-08) |
 
-> 정본은 [architecture §5 엔드포인트 계약](phases/architecture.ko.md#엔드포인트-계약-전체).
+> 정본은 [architecture §5 엔드포인트 계약](phases/architecture.md#엔드포인트-계약-전체).
 
 ---
 
@@ -664,5 +664,5 @@ DoD: fresh DB can demo the 5-stage stay in 15 minutes.
 ## 16. 지금 당장 첫 Cursor 채팅에 넣을 한 줄
 
 ```text
-Read CLAUDE.md and the assigned GitHub issue. Work ONLY on the assigned issue. Read docs/plan/full-process.ko.md and the linked phase doc for Goal and DoD. Use the common prompt header from section 1.
+Read CLAUDE.md and the assigned GitHub issue. Work ONLY on the assigned issue. Read docs/plan/full-process.md and the linked phase doc for Goal and DoD. Use the common prompt header from section 1.
 ```

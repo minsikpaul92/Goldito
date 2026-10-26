@@ -2,7 +2,7 @@
 
 > **담당:** 슬기 · **같이 보는 사람:** 민식 (급한 개발), 묵 (디자인)
 > **왜 따로 뺐나:** [work-split-2026-10-09.ko.md](../work-split-2026-10-09.ko.md) — 마감(10/30)까지 민식은 데모 경로를 막는 급한 개발(백엔드 배포 → 문의 AI 안전 RV-1~5 → 06B Pet Transit → 예약 흐름 → 데모 배포), 슬기는 **안 급한 것 · 익명화된 실제 데이터가 필요한 것 · 시터 실무 경험이 필요한 QA/UX**를 맡는다.
-> **공통 전제:** [CLAUDE.md](../../../CLAUDE.md) (작업 순서 · 브랜치 · 커밋 규칙) · [architecture.ko.md](architecture.ko.md) (D31 출입 정보 · D35 말투 · D38 시터 입력 최소화 · §9 AI 규칙)
+> **공통 전제:** [CLAUDE.md](../../../CLAUDE.md) (작업 순서 · 브랜치 · 커밋 규칙) · [architecture.md](architecture.md) (D31 출입 정보 · D35 말투 · D38 시터 입력 최소화 · §9 AI 규칙)
 
 ---
 
@@ -13,18 +13,18 @@
 | 순서 | 문서 | 무엇을 보나 |
 | :--- | :--- | :--- |
 | 1 | 루트 [README.md](../../../README.md) — *How Goldito Works* · *A Stay with Goldito* | 제품 한 장 요약, 데모 경로 5단계 |
-| 2 | [full-process.ko.md](../full-process.ko.md) | 5단계 흐름 · 결정 D27~D47 · §9 열린 질문(슬기 담당: #1 지연 공식, #5 말투 데이터, #8 zero-retention, #9 mood meter 데이터) |
+| 2 | [full-process.md](../full-process.md) | 5단계 흐름 · 결정 D27~D47 · §9 열린 질문(슬기 담당: #1 지연 공식, #5 말투 데이터, #8 zero-retention, #9 mood meter 데이터) |
 | 3 | [work-split-2026-10-09.ko.md](../work-split-2026-10-09.ko.md) | 누가 무엇을, 충돌 막는 규칙 §4 |
 | 4 | **이 문서** | 내 작업 목록 Q.0~Q.10 |
-| 5 | [test-guide.ko.md](../test-guide.ko.md) §2 · §3 · §4 | 기능 상태표, 시나리오(ID · 기대 결과), 알려진 제약 |
-| 6 | [test-run.ko.md](../test-run.ko.md) | 손 테스트 시작점 · 데모 리셋 상태(`empty` · `pets` · `confirmed` · `ready` · `in_care`) |
+| 5 | [test-guide.md](../test-guide.md) §2 · §3 · §4 | 기능 상태표, 시나리오(ID · 기대 결과), 알려진 제약 |
+| 6 | [test-run.md](../test-run.md) | 손 테스트 시작점 · 데모 리셋 상태(`empty` · `pets` · `confirmed` · `ready` · `in_care`) |
 | 7 | GitHub 이슈 양식 **QA feedback** (`.github/ISSUE_TEMPLATE/qa-feedback.yml`) · 예전 사례는 [feedback-2026-10-08.ko.md](../feedback-2026-10-08.ko.md) | 피드백을 올리는 곳과 형식 |
 | 8 | [review-2026-10-08.ko.md](../review-2026-10-08.ko.md) §5 · §6 | 내가 맡을 M · L 항목 상세 (현상 → 원인 → 수정 → 테스트) |
-| 필요할 때 | [P0-ai-prompt-playbook.ko.md](../P0-ai-prompt-playbook.ko.md) · [README.ko.md](../README.ko.md) §8 (익명화) · [DESIGN.md](../../../DESIGN.md) | 프롬프트 · 익명화 규칙 · UI 토큰 |
+| 필요할 때 | [P0-ai-prompt-playbook.md](../P0-ai-prompt-playbook.md) · [README.md](../README.md) §8 (익명화) · [DESIGN.md](../../../DESIGN.md) | 프롬프트 · 익명화 규칙 · UI 토큰 |
 
 ### 0.2 환경 (Q.0)
 
-**손 테스트는 설치 없이 Vercel에서** — `main`이 머지될 때마다 자동 배포되는 **https://goldito-petcare.vercel.app** 에서 합니다 (2026-10-09 결정, [test-run.ko.md](../test-run.ko.md) §0). 결과(✅)도 Vercel(main) 기준으로만 적습니다.
+**손 테스트는 설치 없이 Vercel에서** — `main`이 머지될 때마다 자동 배포되는 **https://goldito-petcare.vercel.app** 에서 합니다 (2026-10-09 결정, [test-run.md](../test-run.md) §0). 결과(✅)도 Vercel(main) 기준으로만 적습니다.
 
 1. https://goldito-petcare.vercel.app → 로그인 화면 **Try demo** → **Demo owner**(Robert) / **Demo sitter**(Chloe).
 2. 두 계정 동시에: 크롬 일반 창 + 시크릿 창에 각각 같은 주소.
@@ -58,7 +58,7 @@
 | **Q.0** | 환경 · 계정 (§0.2) | Vercel에서 두 계정이 동시에 열림 | https://goldito-petcare.vercel.app 에서 오너 · 시터 데모 로그인(일반 창 + 시크릿 창), Demo tools로 원하는 상태로 리셋 1회. 로컬 환경은 Q.2 전까지만 준비하면 됨 | 0.5일 |
 | **Q.1** | **전체 손 테스트 + 시터 관점 피드백** — 데모 경로를 처음부터: 문의(INQ) → Meet & Greet → 예약 · 체크아웃(FLOW) → Received · 체크인 · 사진 · 알림장(REPORT · CAP) → Returned · 리뷰 · Life Record(DONE). 특히 새 기능 REPORT-11 · 12, FLOW-15~23 | test-guide 상태 칸 갱신, 발견한 것마다 GitHub 이슈 양식 **QA feedback** (본 것 · 기대 · 실무에서는 · 심각도) | 시나리오마다 ✅ 또는 이슈 번호. `blocks-demo` · `false-promise`는 민식에게 바로 알림 | 1.5일 |
 | **Q.2** | **문구 · 프리셋 검수 (실무 표현)** — ① 리뷰 프리셋 `frontend/features/completion/reviewPresets.ts` (오너 → 시터 · 시터 → 오너, 별마다 3개) ② 알림장 기록 칩 문구 `backend/app/ai/report_chips.py` (`MEAL` · `POTTY` · `MOOD`) ③ 체크인 선택지 `frontend/features/care/checkinOptions.ts` ④ 화면 안내 문구(빈 화면 · 버튼). 알림 제목은 SQL 함수 안에 있으니 **목록만** 피드백으로 | 코드 수정 PR (`fix/q-wording`) | 영어(D1) 유지, 관련 e2e · pytest 통과(문구를 고치면 테스트 기대값도) | 1일 |
-| **Q.3** | **익명화** (기존 담당) — 3년치 대화 · 알림장 → 이름 · 연락처 · 주소 · 위치 · 실견명 치환, 말투 유지 → train / validation / hold-out JSONL. `{PRICE}` · `{DATE}` 자리표시자 규칙. Nebius **zero-retention** 사용 여부와 제3자 처리 고지 결정 | 익명화 규칙 문서(`docs/plan/anonymization.ko.md`), JSONL은 **리포 밖** 또는 gitignore된 `data/` | 샘플 20개를 민식이 무작위로 봐서 개인정보 0. full-process §9 #5 · #8 답 기록 | 2일 |
+| **Q.3** | **익명화** (기존 담당) — 3년치 대화 · 알림장 → 이름 · 연락처 · 주소 · 위치 · 실견명 치환, 말투 유지 → train / validation / hold-out JSONL. `{PRICE}` · `{DATE}` 자리표시자 규칙. Nebius **zero-retention** 사용 여부와 제3자 처리 고지 결정 | 익명화 규칙 문서(`docs/plan/anonymization.md`), JSONL은 **리포 밖** 또는 gitignore된 `data/` | 샘플 20개를 민식이 무작위로 봐서 개인정보 0. full-process §9 #5 · #8 답 기록 | 2일 |
 | **Q.4** | **말투 데이터 넣기** — ① 문의: 데모 시터 Chloe의 스타일 카드 + 예시 답장 5~10개를 익명화 기록에서 골라 `backend/app/ai/prompts/tone/demo_sitters.json` → `scripts/seed_tone.py` (dry run → `--apply`) ② **알림장:** `backend/app/ai/prompts/daily_report/few_shot.json` 예시를 실제 알림장(익명화) 스타일로, 필요하면 `tone_samples` `kind='report'` 샘플 ③ **자동 발송 지연 공식 · 메시지 분할** (7B.10, `backend/app/ai/inquiry.py` `human_delay`) — **R1b 머지 뒤** | PR (`data/tone-samples`) + `docs/plan/phases/notes/tone-before-after.ko.md`(같은 질문 3개 · 같은 하루 3개의 전/후) | 문의 · 알림장 전/후 예시가 "슬기다운" 말투, pytest 통과, 프롬프트에 원본 데이터 없음 | 2일 |
 | **Q.4b** | **프롬프트 엔지니어링 + RAG 우선 답변** — AI가 만드는 **대화**(문의 답장)와 **문장**(알림장 · 캡션 · Life Record · 케어 체크리스트)이 매끄럽고 시터답게 나오게 한다. 원칙: **답은 먼저 데이터베이스(RAG)에서 만들고, 거기 없는 내용만 AI가 쓴다.** ① **RAG 우선 (문의):** 지금 `backend/app/services/rag.py`의 `search`는 유사도 기준 없이 가장 가까운 5개를 그대로 모델에 넘긴다 → **유사도 기준값**을 정해, 기준 이상으로 맞는 근거(시터 정책 · 지난 문의 답 · Life Record · 케어 요청서)가 있으면 **그 내용을 바탕으로** 답하고(시터 말투로 다듬기만), 근거가 없으면 모델이 쓰되 사실(가격 · 날짜 · 가능 여부 · 펫 정보)은 지어내지 않고 "확인해서 알려 드릴게요"로 시터 확인(`needs_sitter`)으로 보낸다. 어떤 근거를 썼는지 출처 칩은 유지 ② **프롬프트 다듬기:** `backend/app/ai/prompts/**`(system · few-shot) — 문장 길이, 이모지, 같은 표현 반복, 어색한 연결, 질문에 없는 말 덧붙이기를 고친다. Q.4 말투 데이터와 같이 본다 ③ **바꾸지 않는 것:** 서버가 정하는 사실(D29 가격 · 날짜 · 가능 여부, D31 출입 정보는 프롬프트에 안 넣음), 시터 승인(D36) | ② 프롬프트 PR (`data/prompt-tuning`) — **언제든 가능** → ① RAG 우선 코드 PR (`fix/q-rag-first`) — **R1b 머지 뒤** (`inquiry.py` · `routers/ai_inquiry.py`는 그때까지 민식 작업 중) + `notes/prompt-before-after.ko.md` (같은 질문 5개 — RAG에 답이 있는 것 3 · 없는 것 2 — 와 알림장 하루 2개의 전/후) | 근거가 있는 질문은 근거와 같은 내용으로 답하고, 없는 질문은 사실을 지어내지 않고 시터 확인으로 감 (pytest: 기준 이상 · 이하 두 경우), 문장이 자연스럽다는 전/후 예시, 기존 pytest · ruff 통과 | 2~3일 |
 | **Q.5** | **R3 Medium — 알림장 · 캡션 · Life Record · 시드** ([review §5](../review-2026-10-08.ko.md)). 먼저: **M-14**(기록 칩을 끄면 오너 체크리스트에서 놓친 약이 숨음) · **M-20**(메모 속 번호 · 코드가 Life Record에 — D31) · **M-16**(보낸 알림장이 초안으로 — `011f` 뒤 다시 확인). 그다음 M-13 · M-15 · M-17 · M-18 · M-19 · M-21 · M-22 · M-23 · M-24 (M-12는 완료) | 항목마다 커밋 하나, 브랜치 `fix/q-review-medium` | review 문서의 "테스트" 칸대로 pytest / Playwright 추가, 항목 제목에 ✅ | 3~4일 |

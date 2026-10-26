@@ -29,7 +29,7 @@
 
 **Image-input models in the catalog (2026-10-01, `architecture.modality = text+image->text`):** `openbmb/MiniCPM-V-4_5` (both base URLs) and `moonshotai/Kimi-K2.6` (both) — plus `moonshotai/Kimi-K3`, `zai-org/GLM-5.3-Flash`, `deepseek-ai/DeepSeek-V4.1-Flash` on the eu-north1 gateway only. Default stays MiniCPM-V-4.5 (smoke-tested); compare Kimi-K2.6 in the 6B.5 spike only if handoff checks are unreliable. No NVIDIA vision or embedding model is listed.
 
-**Tavily:** not a Nebius model — web search for unknown ingredients/recalls (Phase 08.7 stretch, 11.3 fallback). See [tavily.ko.md](../../tavily.ko.md).
+**Tavily:** not a Nebius model — web search for unknown ingredients/recalls (Phase 08.7 stretch, 11.3 fallback). See [tavily.md](../../tavily.md).
 
 ---
 
@@ -113,7 +113,7 @@ Input: one fictional sentence ("Max is a Maltese who is allergic to chicken."). 
 
 ## Speech-to-text check (2026-10-10)
 
-`GET /v1/models` with our key (read-only): **25 models** on `api.tokenfactory.nebius.com`, **18** on the us-central1 URL. **No speech-to-text / audio model** (no whisper · asr · speech · audio · parakeet · canary · voxtral). Image-input models in the list: `openbmb/MiniCPM-V-4_5`, `moonshotai/Kimi-K2.6` (and K3 on the first URL), `google/gemma-3-27b-it`. So voice input in the pet profile onboarding ([pet-profile-onboarding.ko.md](../../pet-profile-onboarding.ko.md) §6.2) records audio in the browser, turns it into text with an **external speech-to-text service — Groq `whisper-large-v3-turbo`, free plan (decided 2026-10-10)** — and uses Nemotron only to extract facts from the text. Check Safari / Chrome recordings and Groq's terms when building. Re-check the list if a speech model is announced.
+`GET /v1/models` with our key (read-only): **25 models** on `api.tokenfactory.nebius.com`, **18** on the us-central1 URL. **No speech-to-text / audio model** (no whisper · asr · speech · audio · parakeet · canary · voxtral). Image-input models in the list: `openbmb/MiniCPM-V-4_5`, `moonshotai/Kimi-K2.6` (and K3 on the first URL), `google/gemma-3-27b-it`. So voice input in the pet profile onboarding ([pet-profile-onboarding.md](../../pet-profile-onboarding.md) §6.2) records audio in the browser, turns it into text with an **external speech-to-text service — Groq `whisper-large-v3-turbo`, free plan (decided 2026-10-10)** — and uses Nemotron only to extract facts from the text. Check Safari / Chrome recordings and Groq's terms when building. Re-check the list if a speech model is announced.
 
 ## Treat check calls (12.1, 2026-10-14)
 

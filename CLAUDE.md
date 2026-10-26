@@ -4,7 +4,7 @@
 
 This file guides AI assistants (Claude, Cursor, etc.) working in **Goldito**: a Kidsnote-style pet care app for the **Nebius x NVIDIA Global AI Hackathon** (track: Best Apps and Agents).
 
-**Human team:** Minsik (full-stack **and, since 2026-10-04, the AI backend track too** — from 2026-10-09 the urgent demo-path work), Seulgi (from 2026-10-09 **Phase Q**: QA, sitter-eye UX and wording, anonymized data and tone, R3/R4 review items — `docs/plan/phases/phase-q-quality.md`, split in `docs/plan/work-split-2026-10-09.ko.md`), Muk (UX/UI), JeonBeomGu-S (from 2026-10-19: QA fixes first, new features after; full stack).  
+**Human team:** Minsik (full-stack **and, since 2026-10-04, the AI backend track too** — from 2026-10-09 the urgent demo-path work), Seulgi (from 2026-10-09 **Phase Q**: QA, sitter-eye UX and wording, anonymized data and tone, R3/R4 review items — `docs/plan/phases/phase-q-quality.md`), Muk (UX/UI), JeonBeomGu-S (from 2026-10-19: QA fixes first, new features after; full stack).  
 **User-facing explanations to Minsik:** Korean. **Code & comments:** English.
 
 ---
@@ -19,7 +19,7 @@ Every feature must pass:
 
 **Product benchmark:** **Rover** (booking, fast replies) × Korean **Kidsnote** (medication request, check-in/out, daily report 알림장, album) × **Uber** (live trips). We adapt that loop for **dogs and cats** + **NVIDIA Nemotron** on **Nebius Token Factory**.
 
-**Product flow (source of truth):** `docs/plan/full-process.ko.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D47).
+**Product flow (source of truth):** `docs/plan/full-process.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D47).
 
 **Demo north star:** The 5-stage flow in root `README.md` — *How Goldito Works* and the demo path *A Stay with Goldito* — must work end-to-end before hackathon submit.
 
@@ -42,15 +42,15 @@ Every feature must pass:
 
 **Source of truth docs:**
 
-- Product: `README.md`, `docs/README.ko.md`
-- **Feature status + test scenarios:** `docs/plan/test-guide.ko.md`
-- **Product flow (5 stages, demo path):** `docs/plan/full-process.ko.md`
-- Plan & data model: `docs/plan/README.ko.md`
+- Product: `README.md`
+- **Feature status + test scenarios:** `docs/plan/test-guide.md`
+- **Product flow (5 stages, demo path):** `docs/plan/full-process.md`
+- Plan & data model: `docs/plan/README.md`
 - **Active task queue:** [GitHub issues](https://github.com/minsikpaul92/Goldito/issues): milestone = priority (P0 hackathon, P1, P2 after hackathon), assignee = owner. There is no TODO file: do not create or update one, read the assigned issue and update the issue (comment, checklist, PR `Closes #N`).
-- **Blueprint (decisions, repo layout, routes, env, API contract):** `docs/plan/phases/architecture.ko.md`
+- **Blueprint (decisions, repo layout, routes, env, API contract):** `docs/plan/phases/architecture.md`
 - **Design guide (tokens, components, UI patterns):** `DESIGN.md` — §0 maps Muk's Figma (source of truth) to the code; every screen and button: the screen map (`node frontend/scripts/screen-map.mjs` writes `docs/design/screen-map.md`; generated, not committed)
-- Phase goals & DoD: `docs/plan/phases/` (see `README.ko.md` index)
-- AI prompt snippets: `docs/plan/P0-ai-prompt-playbook.ko.md`
+- Phase goals & DoD: `docs/plan/phases/` (see `README.md` index)
+- AI prompt snippets: `docs/plan/P0-ai-prompt-playbook.md`
 - Hackathon rules: `docs/hackathon/README.md`
 - Discord MCP (`.mcp.json`, token in `backend/.env`): QA channel `qa` = `1560683683072180224`
 
@@ -147,7 +147,7 @@ Build the app minimal. A screen should be understandable at a glance, without ex
 
 - A **step** is one coherent, verifiable slice of a task that could be reviewed alone, in the order the work depends on itself — typically *database* → *backend* → *app* → *tests / e2e* → *docs*, or one numbered task of the phase doc (e.g. `6B.1`). A step never mixes tasks of different IDs.
 - **One commit per step**, made when that step's checks pass (typecheck, the tests that touch it, `ruff` / smoke for backend / SQL), then pushed. No "wip" commits, no squashing steps together afterwards, no step left uncommitted at the end of a session.
-- Each commit updates `docs/plan/test-guide.ko.md` for what *that step* changed (§5); the closing commit of the phase does the final tidy.
+- Each commit updates `docs/plan/test-guide.md` for what *that step* changed (§5); the closing commit of the phase does the final tidy.
 - A step that needs a person (a photo, a key, a hosted-DB apply) is committed as far as it can go, and the phase doc's "Before you start" list says what the person does.
 
 ### 4.2 Pull request (per phase)
@@ -180,7 +180,7 @@ English only for commit messages and GitHub PR content.
 
 ### Phase order
 
-`00 prep → 01 repo → 02 db → 03 auth → 03B booking → 03C payment → 04 upload → 05 feed → 06 checks → 07 report → 07B inquiry → 09 caption → 07C completion → 06B transit → 12 Snap (treat check = the 08 design, mood, stickers; D61) → 10 deploy → 11 P1` — 06B is the last scenario phase, right after 07C; 12 runs 10/14–10/22, before the rest of 10 and the 11.15 onboarding (D61). Dates in `docs/plan/phases/README.ko.md`.  
+`00 prep → 01 repo → 02 db → 03 auth → 03B booking → 03C payment → 04 upload → 05 feed → 06 checks → 07 report → 07B inquiry → 09 caption → 07C completion → 06B transit → 12 Snap (treat check = the 08 design, mood, stickers; D61) → 10 deploy → 11 P1` — 06B is the last scenario phase, right after 07C; 12 runs 10/14–10/22, before the rest of 10 and the 11.15 onboarding (D61). Dates in `docs/plan/phases/README.md`.  
 After **07.1** (Nebius client), the AI backend track (07B inquiry → 6.12 care-plan → 7.2/7.4 report → 9.1 caption → 7C.4 life-record → 6B.5 photo-check — Seulgi's before 2026-10-04, now Minsik's) is interleaved with the app queue, and each agent session works on **one** assigned issue. An agent works only on issues assigned to its person (Minsik, Seulgi, Muk, JeonBeomGu-S). Seulgi's Phase Q runs in parallel (migration names: next free name, `supabase/README.md` § Naming).
 
 ### Coding discipline
@@ -198,17 +198,17 @@ After **07.1** (Nebius client), the AI backend track (07B inquiry → 6.12 care-
 
 When a task is **done** (DoD met):
 
-1. The PR body closes the issue (`Closes #N`). The record of finished work is the commit, the PR and `test-guide.ko.md`; closed docs move to `docs/archive/` (frozen, read only when asked, never a source of truth).
-2. If the whole phase is done, update its row in `docs/plan/phases/README.ko.md` (status column).
+1. The PR body closes the issue (`Closes #N`). The record of finished work is the commit, the PR and `test-guide.md`; closed docs move to `docs/archive/` (frozen, read only when asked, never a source of truth).
+2. If the whole phase is done, update its row in `docs/plan/phases/README.md` (status column).
 3. If you discovered new work, open an issue with a milestone (P0 hackathon only if it blocks the demo or makes the app say something untrue; otherwise P1 or P2 after hackathon) and an assignee. Do not silently expand scope in the same task.
-4. Update [`docs/plan/test-guide.ko.md`](docs/plan/test-guide.ko.md) **in the same commit**: the feature's row in the status table (§2) and its scenarios (§3: new ID, expected result, which Playwright spec or SQL smoke covers it, what stays manual). Add new limits to §4. Never mark a scenario ✅ unless a person actually ran it (date + name).
+4. Update [`docs/plan/test-guide.md`](docs/plan/test-guide.md) **in the same commit**: the feature's row in the status table (§2) and its scenarios (§3: new ID, expected result, which Playwright spec or SQL smoke covers it, what stays manual). Add new limits to §4. Never mark a scenario ✅ unless a person actually ran it (date + name).
 
 If an issue and a phase doc disagree, **phase Goal/DoD wins**; fix the issue to match.
 
 ### 5.1 Docs hygiene — open work in the queue, finished work in the archive
 
 - **One question, one document.** If two docs answer the same question, merge them and delete one — do not archive a duplicate.
-- **Open work lives in GitHub issues.** Finished work is recorded by the commit, the PR and `test-guide.ko.md`; never add finished items to an archive file.
+- **Open work lives in GitHub issues.** Finished work is recorded by the commit, the PR and `test-guide.md`; never add finished items to an archive file.
 - **`docs/archive/` is for whole documents that are closed** (every item in a `feedback-*` / `review-*` / `status-*` file is done or moved to an issue). Move them with `git mv` — do not delete — and add a first line: `Frozen record — not the plan. The queue is GitHub issues.` `docs/archive/todo-completed-2026-10.md` is the lookup for everything finished before 2026-10-10.
 - **Archive = read only when asked** ("did we do X?"). Never use it as a source of truth, never edit it, never follow a plan or decision from it without checking the current docs.
 - When you archive or merge a doc, fix the links that pointed to it in the same commit (`grep -rn <filename> .`).
@@ -227,7 +227,7 @@ Work in steps (§4.1a): when a step's checks pass, update test-guide (§5), make
 Before opening the PR and again when the phase is done: update the PR body and `Closes #N` (§4.2, §5). Report after each step: the commit, how it was verified, and the next step.
 ```
 
-Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1.
+Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.md` §1.
 
 ---
 
@@ -275,10 +275,10 @@ Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; c
 
 - Public demo URL + test owner/sitter accounts documented
 - Root README Getting Started runs the project
-- Video path matches *A Stay with Goldito* (5 stages, `docs/plan/full-process.ko.md` §6)
+- Video path matches *A Stay with Goldito* (5 stages, `docs/plan/full-process.md` §6)
 - Feedback on Token Factory / Nemotron filled in README log
 - Design feels like a **product**, not a single API demo page
 
 ---
 
-*Last aligned with repo docs: phases 00–12 (incl. 03C · 06B · 07B · 07C · 12 Snap), full-process.ko.md, P0 playbook, **D47 / D47b · D61 · D63** both roles Home · Bookings · Chat · Feed · Snap. If you change process, update this file together with the docs it names.*
+*Last aligned with repo docs: phases 00–12 (incl. 03C · 06B · 07B · 07C · 12 Snap), full-process.md, P0 playbook, **D47 / D47b · D61 · D63** both roles Home · Bookings · Chat · Feed · Snap. If you change process, update this file together with the docs it names.*

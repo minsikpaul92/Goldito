@@ -1,6 +1,6 @@
 # Phase 12 — Snap 탭 (Treat check · Mood · Sticker)
 
-> 공통 전제: [architecture.ko.md](architecture.ko.md) — **D61**(Snap 탭), D42(재미용 기분 — D61로 일부 변경), D12–D13, AI 규칙 §9, UX 규칙 §8-4 · [DESIGN.md](../../../DESIGN.md) §7.4(DANGER) · §7.7(마우스)
+> 공통 전제: [architecture.md](architecture.md) — **D61**(Snap 탭), D42(재미용 기분 — D61로 일부 변경), D12–D13, AI 규칙 §9, UX 규칙 §8-4 · [DESIGN.md](../../../DESIGN.md) §7.4(DANGER) · §7.7(마우스)
 > **결정 (2026-10-13, 민식):** 다섯 번째 탭 `Mood`를 **`Snap`**으로 바꾸고, 펫이나 라벨을 찍어서 쓰는 도구 세 개를 넣는다. Phase 08(간식 세이프티 가드)은 이 Phase의 **12.1 Treat check**로 들어온다(08 설계를 그대로 쓰되 견주도 쓸 수 있게). 11.8(스티커) · 11.9(기분)도 여기로 당겨 온다. 11.15 펫 온보딩은 계획대로 10/24–27에 유지 → Snap은 **10/14–10/22** 안에 끝낸다.
 
 ## Goal
@@ -22,7 +22,7 @@ Owner와 Sitter 모두 **Snap** 탭에서 사진 한 장(또는 짧은 영상)�
 
 ---
 
-## 결정 (D61 — architecture.ko.md에 기록)
+## 결정 (D61 — architecture.md에 기록)
 
 | 항목 | 결정 |
 | :--- | :--- |
@@ -261,7 +261,7 @@ Snap 탭
 Read CLAUDE.md, the assigned GitHub issue and docs/plan/phases/phase-12-snap.md (§ 다음에 이어서).
 Branch feat/phase-12-snap, PR #90. Continue from the first unfinished item there:
 the 12.1 real-model check if keys are in backend/.env, otherwise 12.S2 (the MediaPipe spike).
-One commit per step with test-guide.ko.md updated (CLAUDE.md §4.1a), push to the same PR.
+One commit per step with test-guide.md updated (CLAUDE.md §4.1a), push to the same PR.
 ```
 
 ---
@@ -284,4 +284,4 @@ One commit per step with test-guide.ko.md updated (CLAUDE.md §4.1a), push to th
 
 ## 다음 Phase
 
-[Phase 10](phase-10-deploy.md) 나머지(고정 데모 계정 · README · 영상) → [11.15](../pet-profile-onboarding.ko.md) 온보딩(10/24–27).
+[Phase 10](phase-10-deploy.md) 나머지(고정 데모 계정 · README · 영상) → [11.15](../pet-profile-onboarding.md) 온보딩(10/24–27).

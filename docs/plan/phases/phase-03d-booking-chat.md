@@ -2,7 +2,7 @@
 
 > **상태 (2026-10-20):** 진행 중 · 3D.1 ~ 3D.7 머지, 다음은 3D.8 ([#145](https://github.com/minsikpaul92/Goldito/issues/145)) · P0 (결정 2026-10-17, Minsik). 에픽: [#130](https://github.com/minsikpaul92/Goldito/issues/130). **담당 (2026-10-19):** Minsik = 3D.1 ([#138](https://github.com/minsikpaul92/Goldito/issues/138)) · 요청 화면 단순화 ([#168](https://github.com/minsikpaul92/Goldito/issues/168)) · 3D.4~3D.9. JeonBeomGu-S = 사진 한 줄과 뷰어 ([#136](https://github.com/minsikpaul92/Goldito/issues/136)) · 3D.3 ([#140](https://github.com/minsikpaul92/Goldito/issues/140)). 03B의 시터 검색(PR #128)이 먼저 머지되어야 한다.
 
-> 공통 전제: [architecture.ko.md](architecture.ko.md) — D27–D47, **D29 견적 · D31 보안 해제 · D35/D36 시터 말투·승인 · D38 타이핑 최소**
+> 공통 전제: [architecture.md](architecture.md) — D27–D47, **D29 견적 · D31 보안 해제 · D35/D36 시터 말투·승인 · D38 타이핑 최소**
 
 ## Goal
 

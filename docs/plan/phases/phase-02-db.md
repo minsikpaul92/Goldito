@@ -1,9 +1,9 @@
 # Phase 02 — Supabase DB + RLS
 
-> **상태 (2026-10-10):** 완료 (2026-10-01). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [Phase 목록](README.ko.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+> **상태 (2026-10-10):** 완료 (2026-10-01). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.md) 현황표 · [Phase 목록](README.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
 
-> 공통 전제: [architecture.ko.md](architecture.ko.md) — D5–D11, D21–D24, 쓰기 경로 §6
-> **이 문서의 스키마가 정본**입니다. SQL은 이 문서를 따르고, 둘이 다르면 이 문서를 먼저 고친 뒤 migration을 맞춥니다. ([README.ko.md §9](../README.ko.md#9-데이터-모델-요약)는 요약)
+> 공통 전제: [architecture.md](architecture.md) — D5–D11, D21–D24, 쓰기 경로 §6
+> **이 문서의 스키마가 정본**입니다. SQL은 이 문서를 따르고, 둘이 다르면 이 문서를 먼저 고친 뒤 migration을 맞춥니다. ([README.md §9](../README.md#9-데이터-모델-요약)는 요약)
 
 ## Goal
 
@@ -159,7 +159,7 @@ requested ──(인수인계 2개 agreed + 시터 수락 + 모든 칸 자리 �
 | **feed_posts** | `pet_id → pets cascade` · `sitter_id → profiles` (게시한 시터) · `media_id → media not null` · `caption text` · `caption_source text check in ('ai','fallback','task')` · `task_log_id → task_logs null` | idx(pet_id, created_at desc) |
 | **daily_reports** | `pet_id → pets cascade` · `sitter_id → profiles` (작성한 시터) · `report_date date not null` · `body text not null` · `status text not null default 'draft' check in ('draft','sent')` · `inputs jsonb not null default '{}'` (퀵탭) · `source_snapshot jsonb` (AI에 준 입력 원본 — 환각 검증용) · `model text` · `sent_at timestamptz` · `updated_at` | **unique(pet_id, report_date, sitter_id)** — 시터마다 그날 자기가 맡은 시간에 대해 1개 (오전 Chloe·오후 Paul이면 하루 2개) |
 | **safety_checks** | `pet_id → pets cascade` · `checked_by → profiles` · `media_id → media` · `safety_status text check in ('DANGER','WARNING','SAFE')` · `result_json jsonb not null` · `model_vision text` · `model_reasoning text` · `acknowledged_at timestamptz` | idx(pet_id, created_at desc) |
-| **notifications** | `user_id → profiles cascade` · `pet_id → pets null` · `booking_id → bookings null` · `type text not null` ([architecture §7](architecture.ko.md#7-알림-매트릭스-p0)) · `ref_id uuid` · `title text not null` · `body text` · `read_at timestamptz` | idx(user_id, created_at desc), partial idx(user_id) where read_at is null |
+| **notifications** | `user_id → profiles cascade` · `pet_id → pets null` · `booking_id → bookings null` · `type text not null` ([architecture §7](architecture.md#7-알림-매트릭스-p0)) · `ref_id uuid` · `title text not null` · `body text` · `read_at timestamptz` | idx(user_id, created_at desc), partial idx(user_id) where read_at is null |
 
 ### 종별 케어 규칙 (D23)
 

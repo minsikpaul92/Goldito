@@ -1,9 +1,9 @@
 # Phase 06B — Pet Transit: 실시간 이동 · 도착 안내 · 인수인계 사진 체크 (Stage 4)
 
-> 공통 전제: [architecture.ko.md](architecture.ko.md) — **D28 이동 방식**, **D31 출입 정보**, **D32 Pet Transit**, **D33 Vision**, UX §8-9·10, 알림 §7
-> 제품 흐름: [full-process.ko.md — Stage 4 (4-1, 4-2)](../full-process.ko.md#stage-4--care--uber-style-pet-transit--ai-스마트-알림장-핵심-실행-단계)
+> 공통 전제: [architecture.md](architecture.md) — **D28 이동 방식**, **D31 출입 정보**, **D32 Pet Transit**, **D33 Vision**, UX §8-9·10, 알림 §7
+> 제품 흐름: [full-process.md — Stage 4 (4-1, 4-2)](../full-process.md#stage-4--care--uber-style-pet-transit--ai-스마트-알림장-핵심-실행-단계)
 > **순서 변경 (D41, 2026-10-02):** 이 Phase는 **P0 큐의 맨 마지막**(Phase 07C 바로 다음 — 08 stretch보다 먼저, Phase 10 배포 직전 · 2026-10-02 확정)에 만든다. 인수인계 Received/Returned는 03B로 이미 동작하므로 이 Phase가 늦어져도 앞 단계는 막히지 않는다. 심사에서는 **데모 영상**(Simulate trip)으로 이동을 보여주고, 웹 데모 URL의 Simulate trip 버튼은 유지한다.
-> **위치 공유 동의 (D41):** Start trip → **앱 동의 화면**("Share your live location with Chloe until you arrive?" — 누구에게·언제까지, 도착하면 자동 종료) → Allow 후에만 브라우저/OS 위치 권한 팝업. P0 웹은 **화면이 켜진 동안만** 공유(iOS·Android 웹은 백그라운드 불가). 출시(네이티브 앱)에서는 위치 권한을 미리 동의받아 이동 중 계속 공유. **동의 거부 · 권한 거부 (2026-10-10 결정, [full-process §9](../full-process.ko.md#9-열린-질문--tbd-2026-10-02) #4):** 실시간 위치·지도·ETA는 나오지 않고, 양쪽 화면에 **만나기로 한 장소 + Open in Google Maps 버튼**(Google Maps 링크)만 보인다.
+> **위치 공유 동의 (D41):** Start trip → **앱 동의 화면**("Share your live location with Chloe until you arrive?" — 누구에게·언제까지, 도착하면 자동 종료) → Allow 후에만 브라우저/OS 위치 권한 팝업. P0 웹은 **화면이 켜진 동안만** 공유(iOS·Android 웹은 백그라운드 불가). 출시(네이티브 앱)에서는 위치 권한을 미리 동의받아 이동 중 계속 공유. **동의 거부 · 권한 거부 (2026-10-10 결정, [full-process §9](../full-process.md#9-열린-질문--tbd-2026-10-02) #4):** 실시간 위치·지도·ETA는 나오지 않고, 양쪽 화면에 **만나기로 한 장소 + Open in Google Maps 버튼**(Google Maps 링크)만 보인다.
 > **비용 근거:** 이동 30분 · 5초 간격 ≈ 720 메시지(전송 + 수신) → Supabase Realtime Free(동시 연결 200, 월 200만 메시지) 안에서 월 2,700회 이상 이동 가능. 지도 = Leaflet + OSM 타일 (데모 수준 무료).
 > **인수인계 사진 체크는 앱에서 뺀다 (2026-10-11 결정):** 견주와 시터가 직접 만나 건네므로 "인계가 됐다"는 증거로는 쓸모가 거의 없고, 비전 모델은 이미 캡션 · 알림장 칩에서 쓴다. 이미 만든 `POST /api/ai/handoff-check` · `handoff_checks`는 **P1 후보로 그대로 두고 앱에 연결하지 않는다**(Take a photo · Retake / Continue anyway · "photo verified ✅" 없음). Received / Returned가 열린 trip을 같이 끝내는 것만 06B에 남긴다.
 
@@ -125,7 +125,7 @@
 | **S5 trip 종료** | 6B.6 전반 — `complete_handoff`가 열린 trip을 닫음(시그니처 불변). 사진 UI는 뺌(2026-10-11) | 스모크 L · Playwright(Received가 도착한 trip을 닫음) |
 | **S6 FB-9** | Returned **확인 시트**(오늘 남은 할 일 · 알림장 미발송) + 픽업 30분 전보다 이르면 "정말 지금 Return?" 경고 + 빨간 **Return**(그 외엔 평소 버튼) / **Cancel**. 서버 변경 없음. **시작점: 닫힌 브랜치의 커밋 `ade2301`**(`git show ade2301`)은 확인 시트 + 이른 경고만 있었음 — 읽고 다시 적용 | `handoff.spec.ts` |
 | **S7 Google Maps · 공유 없이 시작** | 6B.8 — 양쪽 모두 **Open in Google Maps**, 동의 화면에 **Start without sharing my location**, 공유 안 하는 trip(`012`의 `trips.sharing` · `start_trip(p_share)`), 상대 화면 "isn't sharing a live location" + 장소 카드, 오래된 위치 "Last location N min ago" | 스모크 L · Playwright(링크가 올바른 장소 · 코드 노출 없음) |
-| **S8 마무리** | 6B.7 두 컨텍스트 e2e, 루트 `README.md` · `docs/README.ko.md`의 🚧(Transit · Returned 확인 시트 · 위치 거절 — 사진 체크는 앱에 없음) → ✅, test-guide 시나리오, TODO tidy, DoD 1~6 확인 | CI 통과 · 사용자에게 "Phase 완료" 보고 |
+| **S8 마무리** | 6B.7 두 컨텍스트 e2e, 루트 `README.md` · `README.md`의 🚧(Transit · Returned 확인 시트 · 위치 거절 — 사진 체크는 앱에 없음) → ✅, test-guide 시나리오, TODO tidy, DoD 1~6 확인 | CI 통과 · 사용자에게 "Phase 완료" 보고 |
 
 ---
 
@@ -146,7 +146,7 @@
 | 4 | Muk | Trip 화면(지도 · ETA · 도착 카드 · 사진 체크) **Figma 프레임**이 없으면 에이전트는 `DESIGN.md`로 와이어프레임 수준으로 만든다 — 나중에 Muk이 다듬을 화면이라고 PR에 적어 둔다 |
 | 5 | Minsik | **실제 폰 1회**(GPS): Vercel URL에서 Start trip → 위치 팝업 → 상대 창에 지도 · ETA. S4 뒤, 머지 전에 (6B.2 DoD) |
 | 6 | Minsik | 머지 때 에이전트에게 **"012 호스팅 DB에 적용해줘"** 라고 말하기(Supabase 연결). 적용하기 **전에 Seulgi에게 알리기**(Received · Returned가 열린 trip을 닫는 동작이 추가됨 — 시그니처는 그대로, S6의 Returned 경고는 앱 화면만 바뀜) |
-| 7 | Minsik | 지난 마무리 중 남은 것(06B와 별개): Render `CRON_SECRET` + cron-job.org 15분 호출([env-setup.ko.md](../env-setup.ko.md)) · `/privacy` 페이지 · Supabase Leaked password protection |
+| 7 | Minsik | 지난 마무리 중 남은 것(06B와 별개): Render `CRON_SECRET` + cron-job.org 15분 호출([env-setup.md](../env-setup.md)) · `/privacy` 페이지 · Supabase Leaked password protection |
 
 새 외부 서비스나 환경 변수는 없다: 지도는 Leaflet + OSM 타일(무료, `© OpenStreetMap contributors` 표기), Google Maps 링크는 키가 필요 없다.
 

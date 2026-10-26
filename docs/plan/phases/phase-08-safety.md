@@ -2,8 +2,8 @@
 
 > **2026-10-13 (D61):** 이 설계는 [Phase 12](phase-12-snap.md)의 **12.1 Treat check**로 구현한다 — Snap 탭에서 진입, 견주도 자기 펫 검사 가능, Tavily(8.7) 포함. 바뀐 점은 phase-12-snap.md § 12.1 표에 있고, 나머지(파이프라인 · 스키마 · 판정 기준 · 샘플)는 이 문서 그대로.
 
-> 공통 전제: [architecture.ko.md](architecture.ko.md) — D12–D13, AI 규칙 §9, UX 규칙 §8-4
-> **우선순위 (D27, 2026-10-01):** 시나리오([full-process.ko.md](../full-process.ko.md))에는 없는 기능 → Stage 4 돌봄 중 보조 안전장치로 두고 **시나리오 코어(03B–07C)와 06B(P0 맨 마지막) 뒤, 시간이 남을 때만 하는 P0 stretch** (2026-10-02). 시간이 없으면 Phase 10 이후 P1. 진입은 탭이 아니라 sitter Today의 **Scan a treat** 버튼 → `/sitter/scan` (3B.0에서 Scan 탭 제거)
+> 공통 전제: [architecture.md](architecture.md) — D12–D13, AI 규칙 §9, UX 규칙 §8-4
+> **우선순위 (D27, 2026-10-01):** 시나리오([full-process.md](../full-process.md))에는 없는 기능 → Stage 4 돌봄 중 보조 안전장치로 두고 **시나리오 코어(03B–07C)와 06B(P0 맨 마지막) 뒤, 시간이 남을 때만 하는 P0 stretch** (2026-10-02). 시간이 없으면 Phase 10 이후 P1. 진입은 탭이 아니라 sitter Today의 **Scan a treat** 버튼 → `/sitter/scan` (3B.0에서 Scan 탭 제거)
 
 ## Goal
 
@@ -87,7 +87,7 @@ POST /api/ai/safety-check {pet_id, media_id}
 | 8.4 | TreatScannerScreen `/sitter/scan` (Today **Scan a treat** 버튼 → Stack) | 큰 **Scan a treat label** 버튼 → 업로드 → 2단계 진행 표시 "Reading label…" → "Checking for Max…" → 결과 모달. 에러·재촬영. 하단 최근 스캔 10개 |
 | 8.5 | 결과 모달 `components/ui/AlertModal` | DANGER: 빨간 전체 화면, ⚠️ 아이콘, warning_message, matched·toxic 칩, 버튼 "I understand — don't feed" → `acknowledged_at` update. WARNING: 주황, hidden_sources 설명, "Ask owner first" 안내. SAFE: 초록, "Looks safe for Max ✅" |
 | 8.6 | Notify owner | `013_safety.sql`: `after insert on safety_checks when (new.safety_status='DANGER')` → owner `safety_danger`, title "Blocked a risky treat for {name} ⚠️" |
-| 8.7 | **(Stretch) Tavily 웹 근거** — [tavily.ko.md](../tavily.ko.md) 검색 규칙 | `services/tavily.py`: 성분마다 키워드 쿼리 ≤ 3개(`"{ingredient} toxic {species}s"`, `"{ingredient} {allergen} derived"`) + 신뢰 도메인 필터, 제품명 있으면 리콜 쿼리 1회(`topic="news"`, 최근 1년). 결과 요약을 Ultra 재판단에 추가. 모달 WARNING/DANGER에 **Sources** (도메인 + 링크). `animal_fat_biscuit.jpg`로 Tavily 호출 로그 + 출처 1개 이상 = **Best Use of Tavily 요건(런타임 호출)** |
+| 8.7 | **(Stretch) Tavily 웹 근거** — [tavily.md](../tavily.md) 검색 규칙 | `services/tavily.py`: 성분마다 키워드 쿼리 ≤ 3개(`"{ingredient} toxic {species}s"`, `"{ingredient} {allergen} derived"`) + 신뢰 도메인 필터, 제품명 있으면 리콜 쿼리 1회(`topic="news"`, 최근 1년). 결과 요약을 Ultra 재판단에 추가. 모달 WARNING/DANGER에 **Sources** (도메인 + 링크). `animal_fat_biscuit.jpg`로 Tavily 호출 로그 + 출처 1개 이상 = **Best Use of Tavily 요건(런타임 호출)** |
 | 8.8 | **(Stretch) 캐나다 리콜 확인** — [Recalls and Safety Alerts 오픈데이터](https://open.canada.ca/data/en/dataset/d38de914-c94c-429b-8ab1-8776c31643e3) (정부 공식 · 무료 · Open Government Licence) | Vision이 읽은 제품명으로 리콜 JSON을 키워드 검색(하루 한 번 받아 DB에 캐시) → 걸리면 모달에 "Recall found" + 링크. **먼저 스파이크:** 샘플 레코드에 사료 · 간식이 들어 있는지, 키워드 필터가 되는지 확인(사료 전용 카테고리는 확인하지 못함). Tavily 리콜 쿼리(8.7)는 이게 안 될 때 보조 |
 
 ### 테스트 샘플 (`backend/tests/fixtures/labels/`, 직접 촬영 or 생성한 라벨 — 상표 가림)

@@ -1,8 +1,8 @@
 # Phase 04 — Cloudinary 미디어 파이프
 
-> **상태 (2026-10-10):** 완료 (2026-10-04, PR #45). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [Phase 목록](README.ko.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+> **상태 (2026-10-10):** 완료 (2026-10-04, PR #45). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.md) 현황표 · [Phase 목록](README.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
 
-> 공통 전제: [architecture.ko.md](architecture.ko.md) — D12–D13, API 계약 §5
+> 공통 전제: [architecture.md](architecture.md) — D12–D13, API 계약 §5
 
 ## Handoff (2026-10-04) — for the next agent session
 

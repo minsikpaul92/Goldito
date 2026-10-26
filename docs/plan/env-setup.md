@@ -1,8 +1,8 @@
 # 환경 변수 (.env) 설정
 
-**변수 이름의 기준:** [phases/architecture.ko.md §4](phases/architecture.ko.md#4-환경-변수-마스터-목록)
+**변수 이름의 기준:** [phases/architecture.md §4](phases/architecture.md#4-환경-변수-마스터-목록)
 
-**Tavily:** [tavily.ko.md](tavily.ko.md) · **모델 역할:** [phases/notes/model-ids.md](phases/notes/model-ids.md) · **온보딩:** [onboarding.ko.md](onboarding.ko.md) · **Devpost:** [../hackathon/devpost-submission.ko.md](../hackathon/devpost-submission.ko.md)
+**Tavily:** [tavily.md](tavily.md) · **모델 역할:** [phases/notes/model-ids.md](phases/notes/model-ids.md) · **온보딩:** [onboarding.md](onboarding.md) · **Devpost:** [../hackathon/devpost-submission.ko.md](../hackathon/devpost-submission.ko.md)
 
 ---
 
@@ -29,7 +29,7 @@
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary 대시보드 Product Environment |
 | `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | API Keys |
 | `NEBIUS_API_KEY` | Nebius Token Factory (추론 API) |
-| `TAVILY_API_KEY` | [Tavily](https://tavily.com) 대시보드 — [tavily.ko.md](tavily.ko.md). Builders & Brews Toronto **8,000 credits** |
+| `TAVILY_API_KEY` | [Tavily](https://tavily.com) 대시보드 — [tavily.md](tavily.md). Builders & Brews Toronto **8,000 credits** |
 
 ### 배포된 백엔드 — Render (U0, 2026-10-09)
 
@@ -76,7 +76,7 @@
 
 ### Vercel (frontend 배포 — 10.4를 2026-10-02에 앞당김)
 
-**Production 주소: https://goldito-petcare.vercel.app** — 수동 테스트는 항상 여기서 `main`으로 합니다 ([test-run.ko.md](test-run.ko.md) §0).
+**Production 주소: https://goldito-petcare.vercel.app** — 수동 테스트는 항상 여기서 `main`으로 합니다 ([test-run.md](test-run.md) §0).
 
 빌드 설정은 [`frontend/vercel.json`](../../frontend/vercel.json)에 있습니다: `npm ci` → `npx expo export -p web` → `dist/`, 모든 경로 → `index.html` (새로고침·딥링크), `Content-Security-Policy: frame-ancestors 'self'` (데스크톱 폰 프레임이 같은 도메인 iframe — `X-Frame-Options: DENY` 금지, D25).
 

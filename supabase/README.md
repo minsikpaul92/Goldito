@@ -2,7 +2,7 @@
 
 SQL migrations for the Goldito demo. Apply in order via the Supabase SQL Editor (or CLI if you use it locally).
 
-**Blueprint:** [docs/plan/phases/architecture.ko.md](../docs/plan/phases/architecture.ko.md) · **Schema source of truth:** [phase-02-db.md](../docs/plan/phases/phase-02-db.md) (columns, RLS, RPC behaviour — change it first, then the SQL)
+**Blueprint:** [docs/plan/phases/architecture.md](../docs/plan/phases/architecture.md) · **Schema source of truth:** [phase-02-db.md](../docs/plan/phases/phase-02-db.md) (columns, RLS, RPC behaviour — change it first, then the SQL)
 
 ## Migration order
 
@@ -66,7 +66,7 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `015h_owner_packing_list.sql` | Profile (#180) | `owner_profiles.packing_list` (up to 20 items, written by the owner); `get_handoff_details` returns it on the drop-off row for both parties, so the sitter ticks it at hand-over. `sitter_profiles.packing_list` is no longer used |
 | `015r_checkin_batch.sql` | Sitter-011 (#397) | `log_care_checkins(pet, picks, memo, photo)`: one check-in with a pick per group (meal, potty, walk, mood), one row per pick and **one** owner notice listing them; the memo and photo ride on the first pick. `log_care_checkin` keeps its contract; its body moves to `care_checkin_write` (not callable by clients) and `care_checkin_title` |
 
-Files after `003` are planned — numbers follow the work order in [phases/README.ko.md](../docs/plan/phases/README.ko.md) (product flow: [full-process.ko.md](../docs/plan/full-process.ko.md)). If the order changes, take the next free number.
+Files after `003` are planned — numbers follow the work order in [phases/README.md](../docs/plan/phases/README.md) (product flow: [full-process.md](../docs/plan/full-process.md)). If the order changes, take the next free number.
 
 ### Naming
 

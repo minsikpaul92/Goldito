@@ -1,4 +1,4 @@
-"""Build the breed needs list for review (11.15 S4, T2 in docs/plan/tavily.ko.md).
+"""Build the breed needs list for review (11.15 S4, T2 in docs/plan/tavily.md).
 
 Runs the same search and quote check the app uses for a new breed, for the breeds below, and writes
 `app/data/breed_needs.json`. Every entry is written with `"reviewed": false`: a person (Seulgi) reads each line against

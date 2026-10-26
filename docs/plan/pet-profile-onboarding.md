@@ -2,8 +2,8 @@
 
 > **한 줄:** 오너가 반려동물을 등록할 때 **사진 한 장 · 말 한마디 · 큰 글씨의 선택 몇 번**만으로 프로필이 채워지고, 시터는 예약 요청에서 **사진 + 5축 차트 + 안전 칩**을 한눈에 본다.
 > **상태:** 명세 (2026-10-10). **구현은 맨 마지막** — P0 큐에서 06B · R2 · 10의 핵심이 끝난 뒤(2026-10-10 민식 결정). **적용 범위: 오너로 가입한 직후의 첫 반려동물 등록**(이후 Add pet도 같은 흐름). 시터 · 데모 계정에는 나오지 않는다. 일정은 근사값이고 밀리면 자르는 순서가 있다(§9).
-> **다른 온보딩 문서와의 관계:** [onboarding.ko.md](onboarding.ko.md)는 **로그인 전** Welcome · Try demo · 데모 가입(OB.1–OB.5). 이 문서는 **로그인한 오너가 반려동물을 등록하는 흐름**(11.15)이다. 서로 겹치지 않는다.
-> **기준:** [full-process.ko.md](full-process.ko.md) · [architecture.ko.md](phases/architecture.ko.md) D38(시터 글쓰기 제로) · D22(종) · D31(출입 정보는 AI에 안 넣음) · D42(재미용 문구 원칙) · [DESIGN.md](../../DESIGN.md) · [tavily.ko.md](tavily.ko.md).
+> **다른 온보딩 문서와의 관계:** [onboarding.md](onboarding.md)는 **로그인 전** Welcome · Try demo · 데모 가입(OB.1–OB.5). 이 문서는 **로그인한 오너가 반려동물을 등록하는 흐름**(11.15)이다. 서로 겹치지 않는다.
+> **기준:** [full-process.md](full-process.md) · [architecture.md](phases/architecture.md) D38(시터 글쓰기 제로) · D22(종) · D31(출입 정보는 AI에 안 넣음) · D42(재미용 문구 원칙) · [DESIGN.md](../../DESIGN.md) · [tavily.md](tavily.md).
 > **UI 문구는 영어**(D1). 아래 영어 문장은 화면 카피 초안이다.
 
 ---
@@ -223,8 +223,8 @@ A로 간다. 마지막 **요약 화면(5단계)**에서 항목을 눌러 고치�
 | T3 | 간식 스캔에서 WARNING · 모르는 성분 (08.7) | 기존 계획 그대로 | 예 |
 | T4 | 숨은 알레르기 출처 확인 ("animal fat → 닭고기 유래?") (08.7) | 기존 계획 그대로 | 예 |
 
-- 크레딧: Tavily 무료 플랜은 **월 1,000 크레딧**, 기본 `search` 1 크레딧 · 고급 2 · `extract` 5 URL당 1 (Tavily 공식 문서). T1은 새 품종당 1회(캐시)라 사실상 몇십 크레딧이다. 행사 8,000 크레딧은 [tavily.ko.md](tavily.ko.md) 기록이고 이번 조사에서 확인하지 못했다.
-- `tavily.ko.md`의 "search 하나만 쓴다" 규칙은 **런타임은 search만, 오프라인 스크립트는 extract 허용**으로 바꾼다.
+- 크레딧: Tavily 무료 플랜은 **월 1,000 크레딧**, 기본 `search` 1 크레딧 · 고급 2 · `extract` 5 URL당 1 (Tavily 공식 문서). T1은 새 품종당 1회(캐시)라 사실상 몇십 크레딧이다. 행사 8,000 크레딧은 [tavily.md](tavily.md) 기록이고 이번 조사에서 확인하지 못했다.
+- `tavily.md`의 "search 하나만 쓴다" 규칙은 **런타임은 search만, 오프라인 스크립트는 extract 허용**으로 바꾼다.
 - 어떤 경우에도 Tavily 결과가 **안전 판정을 낮추지는 않는다**(08의 서버 규칙이 우선, 모델이 SAFE여도 서버가 DANGER로 덮는 규칙 유지).
 
 ## 9. 구현 순서 · 일정(근사) · DoD

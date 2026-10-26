@@ -1,10 +1,10 @@
 # Phase 03C — 견적 · 동의서 · 데모 결제 · 조건부 보안 해제 (Stage 3 Booking)
 
-> **상태 (2026-10-10):** 완료 (2026-10-03). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [Phase 목록](README.ko.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+> **상태 (2026-10-10):** 완료 (2026-10-03). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.md) 현황표 · [Phase 목록](README.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
 
 > **2026-10-19:** 데모 결제를 Stripe 실결제로 바꾸는 일은 [phase-13](phase-13-after-hackathon.md) 13.2 ([#198](https://github.com/minsikpaul92/Goldito/issues/198)). 가격이 비어 있을 때의 문구는 [#189](https://github.com/minsikpaul92/Goldito/issues/189).
-> 공통 전제: [architecture.ko.md](architecture.ko.md) — **D29 견적**, **D30 동의서·데모 결제**, **D31 조건부 보안 해제**, 알림 §7
-> 제품 흐름: [full-process.ko.md — Stage 3](../full-process.ko.md#stage-3--booking-예약-확정--목표-캐나다-맞춤-안전-동의서--조건부-보안-해제)
+> 공통 전제: [architecture.md](architecture.md) — **D29 견적**, **D30 동의서·데모 결제**, **D31 조건부 보안 해제**, 알림 §7
+> 제품 흐름: [full-process.md — Stage 3](../full-process.md#stage-3--booking-예약-확정--목표-캐나다-맞춤-안전-동의서--조건부-보안-해제)
 
 ## Goal
 

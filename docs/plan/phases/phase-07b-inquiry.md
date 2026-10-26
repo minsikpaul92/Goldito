@@ -1,9 +1,9 @@
 # Phase 07B — 문의 AI 자동 답변 + RAG Knowledge Base (Stage 1 Inquiry)
 
-> **상태 (2026-10-10):** 머지됨 (PR #56; 이후 #66 · #67 · #68) — DoD 손 확인 대기(슬기 Q.1). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [Phase 목록](README.ko.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+> **상태 (2026-10-10):** 머지됨 (PR #56; 이후 #66 · #67 · #68) — DoD 손 확인 대기(슬기 Q.1). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.md) 현황표 · [Phase 목록](README.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
 
-> 공통 전제: [architecture.ko.md](architecture.ko.md) — **D29 견적**, **D31 출입 정보 제외**, **D33 임베딩**, **D35 말투 레이어**, **D36 승인·고지**, **D37 사람 속도**, **D38 글쓰기 거의 제로**, **D46 에이전트 설명**, AI 규칙 §9, API §5, 알림 §7
-> 제품 흐름: [full-process.ko.md — Stage 1](../full-process.ko.md#stage-1--inquiry-초기-문의--목표-rag-기반-초고속-맞춤-응대)
+> 공통 전제: [architecture.md](architecture.md) — **D29 견적**, **D31 출입 정보 제외**, **D33 임베딩**, **D35 말투 레이어**, **D36 승인·고지**, **D37 사람 속도**, **D38 글쓰기 거의 제로**, **D46 에이전트 설명**, AI 규칙 §9, API §5, 알림 §7
+> 제품 흐름: [full-process.md — Stage 1](../full-process.md#stage-1--inquiry-초기-문의--목표-rag-기반-초고속-맞춤-응대)
 > 구 P2 11.4 "Q&A 1차 답변"을 이 Phase가 대신한다 (D27).
 
 ## Goal

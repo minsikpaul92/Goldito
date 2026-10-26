@@ -1,12 +1,12 @@
 # Goldito — Phase 가이드 (개발 청사진)
 
 각 Phase는 **Goal → 범위 → 작업 → DoD → 산출물** 순으로 정리되어 있습니다.
-**먼저 [architecture.ko.md](architecture.ko.md)를 읽으세요** — 확정된 결정(D1–D61), 리포 구조, 라우트 맵, env 목록, API 계약, 알림 매트릭스가 있고 모든 phase가 이를 전제로 합니다.
-**제품 흐름은 [full-process.ko.md](../full-process.ko.md)** (5단계: Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion, D27–D47) — 작업 순서와 데모가 이 흐름을 따릅니다. 탭 IA: **D47 / D47b · D61** 양 역할 `Home · Bookings · Feed · Diary · Snap`.
+**먼저 [architecture.md](architecture.md)를 읽으세요** — 확정된 결정(D1–D61), 리포 구조, 라우트 맵, env 목록, API 계약, 알림 매트릭스가 있고 모든 phase가 이를 전제로 합니다.
+**제품 흐름은 [full-process.md](../full-process.md)** (5단계: Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion, D27–D47) — 작업 순서와 데모가 이 흐름을 따릅니다. 탭 IA: **D47 / D47b · D61** 양 역할 `Home · Bookings · Feed · Diary · Snap`.
 
-문서 우선순위 (Source of truth): **architecture.ko.md + phase 문서** (제품 흐름은 [full-process.ko.md](../full-process.ko.md), 스키마는 [phase-02](phase-02-db.md) + 각 phase migration, 모델 ID는 [notes/model-ids.md](notes/model-ids.md)) > [GitHub issues](https://github.com/minsikpaul92/Goldito/issues) (진행 순서) > [P0 playbook](../P0-ai-prompt-playbook.ko.md) (프롬프트 출발점) > [개발 계획](../README.ko.md) (배경·요약). 아래 문서가 위 문서와 다르면 위 문서가 맞고, 아래 문서를 고칩니다.
+문서 우선순위 (Source of truth): **architecture.md + phase 문서** (제품 흐름은 [full-process.md](../full-process.md), 스키마는 [phase-02](phase-02-db.md) + 각 phase migration, 모델 ID는 [notes/model-ids.md](notes/model-ids.md)) > [GitHub issues](https://github.com/minsikpaul92/Goldito/issues) (진행 순서) > [P0 playbook](../P0-ai-prompt-playbook.md) (프롬프트 출발점) > [개발 계획](../README.md) (배경·요약). 아래 문서가 위 문서와 다르면 위 문서가 맞고, 아래 문서를 고칩니다.
 
-**보조 스펙 (phase 번호 밖):** [전체 서비스 흐름 (Full Process)](../full-process.ko.md) · [시터 케어 루프 Plan B](../sitter-care-loop.ko.md) · [8bit Pet status room](../pet-status-room.ko.md) · [펫 프로필 온보딩 (11.15)](../pet-profile-onboarding.ko.md) · [온보딩·데모 UX](../onboarding.ko.md) · [Tavily](../tavily.ko.md) · [로컬 env](../env-setup.ko.md) · [Devpost 제출](../../hackathon/devpost-submission.ko.md) · [CHANGELOG (패치노트 원본)](../../CHANGELOG.md)
+**보조 스펙 (phase 번호 밖):** [전체 서비스 흐름 (Full Process)](../full-process.md) · [시터 케어 루프 Plan B](../sitter-care-loop.md) · [8bit Pet status room](../pet-status-room.md) · [펫 프로필 온보딩 (11.15)](../pet-profile-onboarding.md) · [온보딩·데모 UX](../onboarding.md) · [Tavily](../tavily.md) · [로컬 env](../env-setup.md) · [Devpost 제출](../../hackathon/devpost-submission.ko.md) · [CHANGELOG (패치노트 원본)](../../CHANGELOG.md)
 
 ## 의존 관계 · 실제 진행 순서
 
@@ -54,7 +54,7 @@
 
 ## Stage ↔ Phase 매핑 (데모 장면)
 
-| Stage | 완료 Phase | 데모 장면 ([full-process.ko.md §6](../full-process.ko.md#6-데모-경로-a-stay-with-goldito)) |
+| Stage | 완료 Phase | 데모 장면 ([full-process.md §6](../full-process.md#6-데모-경로-a-stay-with-goldito)) |
 | :--- | :--- | :--- |
 | 1 Inquiry | 07B (+03C 견적, 07C 기록) | ① 문의 → AI 초안(몇 초) → 자동 모드면 약 30초 뒤 답 + 견적 카드 |
 | 2 Meet & Greet | 06 (의뢰서) · 03B (Meet & Greet · 3B.11 Google Meet · 이동 방식) | ② 의뢰서 → 체크리스트 · 첫 만남 Meet & Greet(Google Meet) · Sitter/Owner drives |
@@ -66,6 +66,6 @@
 
 1. 담당 GitHub 이슈의 task ID 확인
 2. 해당 phase 문서의 **작업 상세 행 + DoD**만 구현 (범위 "제외" 칸은 손대지 않음)
-3. 새 파일 위치·이름은 [architecture §2](architecture.ko.md#2-리포-구조-최종-형태), 화면 route는 [§3](architecture.ko.md#3-화면--라우트-맵-최종-형태)
+3. 새 파일 위치·이름은 [architecture §2](architecture.md#2-리포-구조-최종-형태), 화면 route는 [§3](architecture.md#3-화면--라우트-맵-최종-형태)
 4. 끝난 phase 뒤에 생긴 후속 작업(리뷰 · 피드백에서 나온 것)은 그 phase 문서의 **Open items** 절이 명세이고, 순서와 담당은 GitHub 이슈(마일스톤 + 담당자)가 정한다. 끝난 phase 문서의 체크박스는 갱신하지 않는다(상태의 정본 = test-guide 현황표 + 이 문서의 Phase 목록)
 5. 결정이 필요한데 문서에 없으면 → architecture §1에 D## 추가 제안 후 사람에게 확인
