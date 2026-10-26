@@ -27,7 +27,7 @@ const o = (pairs: [string, string][]): Opt[] => pairs.map(([value, label]) => ({
 
 const UP_HEADS = (base: string) => !["floppy", "pug"].includes(PET_BASES[base].head);
 const SWAP = ["dog", "blacklab", "beagle", "dalmatian", "maltese", "shiba", "jindo", "corgi", "husky", "frenchie"];
-const FUR = ["#F6F1EA", "#EBD3B0", "#E8B886", "#E3A94F", "#E58A3C", "#B8622E", "#CDB394", "#8A5A3B", "#5C3A24", "#1E1A1A", "#7C8590", "#A0A4AA", "#C9CCD1", "#F2D2C6"];
+const FUR = ["#F6F1EA", "#EBD3B0", "#E8B886", "#E3A94F", "#E58A3C", "#B8622E", "#CDB394", "#8A5A3B", "#5C3A24", "#1E1A1A", "#7C8590", "#A0A4AA", "#C9CCD1", "#F2D2C6"]; // tokens-ok: pet fur swatches, not UI colors
 const COLOR_NAMES: Partial<Record<ColorKey, string>> = { coat: "Coat", light: "Coat light", muzzle: "Muzzle", ear: "Ears", white: "White markings", dark: "Dark markings", tan: "Tan", patch: "Patch" };
 
 const POSES: { value: string; label: string; pose: (f: number) => Pose }[] = [
