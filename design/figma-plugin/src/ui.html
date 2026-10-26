@@ -1,29 +1,132 @@
 <style>
   body{margin:0;font:13px/1.45 Inter,-apple-system,system-ui,sans-serif;color:#1a1a1a;background:#fff}
-  .wrap{padding:16px;display:flex;flex-direction:column;gap:12px;height:100vh;box-sizing:border-box}
+  .wrap{padding:12px 16px 16px;display:flex;flex-direction:column;gap:12px;height:100vh;box-sizing:border-box}
   h1{font-size:15px;margin:0}
   label{display:flex;gap:8px;align-items:center}
-  button{font:inherit;font-weight:600;border-radius:8px;padding:10px;border:1px solid #2D6A4F;background:#2D6A4F;color:#fff;cursor:pointer}
+  button{font:inherit;font-weight:600;border-radius:8px;padding:9px 10px;border:1px solid #2D6A4F;background:#2D6A4F;color:#fff;cursor:pointer}
+  button.sec{background:#fff;color:#2D6A4F}
   button:disabled{background:#E5E5E0;border-color:#E5E5E0;color:#5C5C5C;cursor:default}
-  #log{flex:1;overflow:auto;background:#F7F7F5;border:1px solid #E5E5E0;border-radius:8px;padding:8px;font:12px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap}
+  #log{flex:1;min-height:70px;overflow:auto;background:#F7F7F5;border:1px solid #E5E5E0;border-radius:8px;padding:8px;font:12px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap}
   .error{color:#B42318}.ok{color:#067647}.warn{color:#B54708}
+  .tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:#ECEAE3;border-radius:12px}
+  .tabs button{background:none;border:0;border-radius:9px;color:#5C5C5C;padding:10px;font-size:14px}
+  .tabs button[aria-selected=true]{background:#fff;color:#1B4332;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+  .tabs .n{display:inline-block;min-width:18px;margin-left:6px;border-radius:9px;background:#2D6A4F;color:#fff;font-size:11px;line-height:18px}
+  .pane{display:flex;flex-direction:column;gap:10px}
+  .pane[hidden]{display:none}
+  .tk{border:1px solid #E5E5E0;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+  .tk .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .tk b{font-size:14px}
+  .tk .meta{color:#5C5C5C;font-size:12px}
+  .pill{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap}
+  .st-none,.st-draft{background:#ECEAE3;color:#5C5C5C}.st-review{background:#FFFAEB;color:#B54708}.st-changes{background:#FEF3F2;color:#B42318}.st-approved{background:#ECFDF3;color:#067647}
+  .row{display:flex;gap:6px;flex-wrap:wrap}
+  .row button{flex:1}
+  textarea,input[type=password],select{font:inherit;border:1px solid #86867F;border-radius:8px;padding:6px 8px;width:100%;box-sizing:border-box}
+  textarea{min-height:44px;resize:vertical}
+  .out{display:flex;flex-direction:column;gap:6px}
+  .out textarea{min-height:120px;font:11px/1.4 ui-monospace,Menlo,monospace;background:#F7F7F5}
+  details{font-size:12px;color:#5C5C5C} summary{cursor:pointer;font-weight:600;color:#1B4332}
+  .hint{font-size:12px;color:#5C5C5C}
 </style>
 <div class="wrap">
   <h1>Goldito Design Sync</h1>
-  <label><input type="checkbox" id="c" checked> Components → page with “Components” in its name</label>
-  <label><input type="checkbox" id="s" checked> Screens (Live · Balanced · Playful) → page with “Screens” in its name</label>
-  <button id="run">Build</button>
+  <div class="tabs" role="tablist"><button role="tab" aria-selected="true" data-p="build">Build library</button><button role="tab" aria-selected="false" data-p="tickets">Tickets<span class="n" id="tkn"></span></button></div>
+  <div class="pane" id="p-build">
+    <label><input type="checkbox" id="c" checked> Components → page with “Components” in its name</label>
+    <label><input type="checkbox" id="s" checked> Screens (Expressive · Live · Balanced) → page with “Screens” in its name</label>
+    <label><input type="checkbox" id="b" checked> Logos as SVG (icon, symbol, Devpost) → the “Brand” page (created if missing)</label>
+    <button id="run">Build</button>
+  </div>
+  <div class="pane" id="p-tickets" hidden>
+    <p class="hint">Each ticket comes from its workbench page. <b>Push to Figma</b> builds or updates its section on the “Tickets” page (created the first time): the decided frames, built from the ticket's own components, and the spec. Edit a component there and every frame follows; a push update keeps your edits. <b>Submit for review</b> marks it In review and writes the comment for the GitHub issue.</p>
+    <div class="row" style="margin:6px 0 10px"><button id="devref">Build the Dev reference page</button></div>
+    <p class="hint" style="margin-top:0">One page for the devs: the app tabs plus every decided or proposed feature (Moments, words, intro, UX calls, pet tone, delights), each marked decided or proposal, with its frames and notes. Run Screens first so the app tabs are there.</p>
+    <div id="tklist"></div>
+    <details><summary>GitHub posting (optional)</summary>
+      <p class="hint">Without a token, copy the comment and paste it on the issue. With a fine-grained token (repo minsikpaul92/Goldito, Issues: read and write), “Post to GitHub” adds it for you. The token stays in this Figma app on your computer.</p>
+      <input type="password" id="tok" placeholder="github_pat_…" autocomplete="off"><div class="row" style="margin-top:6px"><button class="sec" id="tokSave">Save token</button><button class="sec" id="tokClear">Forget token</button></div>
+    </details>
+  </div>
   <div id="log"></div>
-  <button id="close" style="background:#fff;color:#2D6A4F">Close</button>
+  <button id="close" class="sec">Close</button>
 </div>
 <script>
   const DATA = /*DATA*/null;
-  const log = (msg, kind) => { const d = document.createElement("div"); d.className = kind || ""; d.textContent = msg; const l = document.getElementById("log"); l.appendChild(d); l.scrollTop = l.scrollHeight; };
-  log(`Screen data: ${DATA ? DATA.reduce((n, d) => n + d.screens.length, 0) : 0} screens ready.`);
-  onmessage = (e) => { const m = e.data.pluginMessage; if (m && m.type === "log") { log(m.msg, m.kind); if (/^Done|^Error/.test(m.msg)) document.getElementById("run").disabled = false; } };
-  document.getElementById("run").onclick = () => {
-    document.getElementById("run").disabled = true;
-    parent.postMessage({ pluginMessage: { type: "run", data: DATA, components: document.getElementById("c").checked, screens: document.getElementById("s").checked } }, "*");
+  const BRAND = /*BRAND*/null;
+  const TICKETS = /*TICKETS*/null || [];
+  const $ = (id) => document.getElementById(id);
+  const post = (m) => parent.postMessage({ pluginMessage: m }, "*");
+  const log = (msg, kind) => { const d = document.createElement("div"); d.className = kind || ""; d.textContent = msg; const l = $("log"); l.appendChild(d); l.scrollTop = l.scrollHeight; };
+  log(`Screen data: ${DATA ? DATA.reduce((n, d) => n + d.screens.length, 0) : 0} screens ready · ${TICKETS.length} ticket${TICKETS.length === 1 ? "" : "s"}.`);
+  let TOKEN = "", STATUS = {}, COMMENTS = {};
+  const LABEL = { none: "Not in Figma yet", draft: "Draft", review: "In review", changes: "Changes requested", approved: "Approved" };
+  const when = (iso) => { try { return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); } catch (e) { return ""; } };
+
+  function drawTickets() {
+    $("tklist").innerHTML = TICKETS.map((t) => {
+      const s = STATUS[t.id] || { status: "none" }, c = COMMENTS[t.id];
+      return `<div class="tk" data-id="${t.id}">
+        <div class="top"><b>#${t.id} · ${t.title}</b><span class="pill st-${s.status}">${LABEL[s.status]}</span></div>
+        <span class="meta">${s.status === "none" ? `Captured ${when(t.captured)} · ${t.screens.length} frames` : `v${s.version} · pushed ${when(s.pushed)} · ${s.rounds.length} review round${s.rounds.length === 1 ? "" : "s"}`}</span>
+        <div class="row"><button data-a="push">${s.status === "none" ? "Push to Figma" : "Push update"}</button>${t.issue ? `<button class="sec" data-a="open-issue">Issue ↗</button>` : ""}<button class="sec" data-a="open-wb">Workbench ↗</button></div>
+        ${t.issue ? "" : `<span class="hint">No GitHub issue linked yet, so there's nothing to post to. Copy the comment for a PR or Slack, or add the issue link to the workbench page's ticket (issue: "…") and rebuild.</span>`}
+        ${s.status !== "none" ? `<label class="hint"><input type="checkbox" data-f="rebuild"> Rebuild this ticket's components (drops your edits to them)</label>` : ""}
+        <textarea data-f="note" placeholder="Note for the reviewer (optional)"></textarea>
+        <label><input type="checkbox" data-f="mention" checked> Mention Minsik in the comment</label>
+        <div class="row"><button data-a="submit">Submit for review</button></div>
+        ${s.status !== "none" ? `<div class="row"><select data-f="status">${Object.entries(LABEL).filter(([k]) => k !== "none").map(([k, l]) => `<option value="${k}"${k === s.status ? " selected" : ""}>${l}</option>`).join("")}</select><button class="sec" data-a="set-status">Set status</button></div>` : ""}
+        ${c ? `<div class="out"><span class="hint">Comment for the issue:</span><textarea readonly data-f="comment">${c.replace(/</g, "&lt;")}</textarea>
+          <div class="row"><button data-a="copy">Copy comment</button>${t.issue ? `<button class="sec" data-a="open-issue">Open issue ↗</button>${TOKEN ? `<button class="sec" data-a="gh">Post to GitHub</button>` : `<span class="hint">Add a token under “GitHub posting” to post from here.</span>`}` : ""}</div></div>` : ""}
+      </div>`;
+    }).join("") || `<p class="hint">No tickets in the data. Capture one with capture/tickets.spec.ts, then run build.py.</p>`;
+  }
+  $("devref").onclick = () => post({ type: "devref", tickets: TICKETS });
+  $("tklist").addEventListener("click", async (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    const card = b.closest(".tk"), t = TICKETS.find((x) => String(x.id) === card.dataset.id), f = (k) => card.querySelector(`[data-f="${k}"]`);
+    const a = b.dataset.a;
+    if (a === "push") post({ type: "ticket-push", ticket: t, rebuild: !!(f("rebuild") && f("rebuild").checked) });
+    if (a === "submit") post({ type: "ticket-submit", ticket: t, note: f("note").value.trim(), mention: f("mention").checked });
+    if (a === "set-status") post({ type: "ticket-status", id: t.id, status: f("status").value });
+    if (a === "open-issue") { if (t.issue) post({ type: "open", url: t.issue }); else log(`#${t.id} has no GitHub issue linked yet.`, "warn"); }
+    if (a === "open-wb") post({ type: "open", url: t.workbench });
+    if (a === "copy") { const ta = f("comment"); ta.select(); document.execCommand("copy"); b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy comment"), 1400); }
+    if (a === "gh") {
+      // an issue or a pull request: both take comments through the issues API
+      const m = /github\.com\/([^/]+)\/([^/]+)\/(?:issues|pull)\/(\d+)/.exec(t.issue || "");
+      if (!m) { log(`#${t.id} has no GitHub issue linked, so there's nothing to post to. Copy the comment instead.`, "warn"); return; }
+      b.disabled = true; b.textContent = "Posting…";
+      try {
+        const r = await fetch(`https://api.github.com/repos/${m[1]}/${m[2]}/issues/${m[3]}/comments`, { method: "POST",
+          headers: { Authorization: `Bearer ${TOKEN}`, Accept: "application/vnd.github+json", "Content-Type": "application/json" }, body: JSON.stringify({ body: COMMENTS[t.id] }) });
+        if (!r.ok) throw new Error(`${r.status} ${(await r.json().catch(() => ({}))).message || ""}`);
+        const j = await r.json(); log(`✓ Posted on #${t.id}: ${j.html_url}`, "ok"); b.textContent = "Posted";
+      } catch (err) { log(`GitHub didn't take the comment (${err.message}). Copy it and paste it on the issue instead.`, "error"); b.disabled = false; b.textContent = "Post to GitHub"; }
+    }
+  });
+  document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+    document.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+    $("p-build").hidden = b.dataset.p !== "build"; $("p-tickets").hidden = b.dataset.p !== "tickets";
+    if (b.dataset.p === "tickets") post({ type: "tickets-status", ids: TICKETS.map((t) => t.id) });
+  });
+  $("tokSave").onclick = () => post({ type: "token-set", token: $("tok").value.trim() });
+  $("tokClear").onclick = () => { $("tok").value = ""; post({ type: "token-set", token: "" }); };
+
+  onmessage = (e) => {
+    const m = e.data.pluginMessage; if (!m) return;
+    if (m.type === "log") { log(m.msg, m.kind); if (/^Done|^Error/.test(m.msg)) $("run").disabled = false; }
+    if (m.type === "tickets") { for (const s of m.list) STATUS[s.id] = s; drawTickets(); }
+    if (m.type === "ticket-comment") { COMMENTS[m.id] = m.comment; drawTickets(); }
+    if (m.type === "token") { TOKEN = m.token; $("tok").placeholder = TOKEN ? "Token saved · paste a new one to replace" : "github_pat_…"; drawTickets(); }
   };
-  document.getElementById("close").onclick = () => parent.postMessage({ pluginMessage: { type: "close" } }, "*");
+  $("run").onclick = () => {
+    $("run").disabled = true;
+    const c = $("c").checked, s = $("s").checked, b = $("b").checked;
+    post({ type: "run", data: DATA, components: c, screens: s, brand: b ? BRAND : [], brandOnly: b && !c && !s });
+  };
+  $("close").onclick = () => post({ type: "close" });
+  post({ type: "token-get" });
+  $("tkn").textContent = TICKETS.length || ""; if (!TICKETS.length) $("tkn").remove();
+  drawTickets();
 </script>
