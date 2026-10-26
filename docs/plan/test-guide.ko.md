@@ -137,7 +137,7 @@
 | 오너 **케어 체크리스트 / 요청** (칩 → 줄 → 표, 돌보는 중엔 시터 승인 · 거절) | ✅ 🤖 (실제 AI · 두 계정은 👤) | 06 / 6.12–6.13 · 6.20 |
 | 오너 **돌봄 할 일** 등록 · **시간 탭 선택** · 탭해서 **수정**(종류 고정) · 일시중지 · 삭제 | ✅ 🤖 | 06 / 6.1 + 후속 |
 | 시터 **오늘 할 일** — Done → 팝업(메모 + 사진) → Done, 끝낸 건 목록에서 사라짐 | ✅ 🤖 | 06 / 6.2–6.4 · 6.3 + 후속 |
-| 시터 **빠른 체크인** (식사 · 배변 · 산책 · 기분 · 메모 · 사진), 보냄 표시 · 연타 잠금 · 오늘 보낸 것 목록 | ✅ 🤖 | 06 / 6.8–6.10 + 후속 |
+| 시터 **빠른 체크인** (식사 · 배변 · 산책 · 기분 · 메모 · 사진), 보냄 표시 · 연타 잠금 · 오늘 보낸 것 목록 · **그룹마다 하나씩 골라 한 번에 보내기, 오너 알림은 하나 · 사진 썸네일 미리보기 (#397)** | ✅ 🤖 · #397: 🤖 `quick-checkin` · SQL smoke `015r`(CI) · **DB `015r` 호스팅 미적용**(PR 머지 때 적용) | 06 / 6.8–6.10 + 후속 · #397 |
 | 시터 **Home 대시보드** (한 화면) · 할 일 / 체크인 / 내 기록 화면 | ✅ 🤖 | 06 후속 |
 | 오너 **Home 실시간 업데이트 카드** (밀어서 지우기) | ✅ 🤖 | 06 후속 |
 | 오너 **Home Today 면 Figma 정렬** (돌보는 중이면 초록 히어로 "Max is with Chloe" · Day N of M · 오늘 케어 진행바 · 통계 타일(care done · photos today · of walks) · Latest from 시터 · See today's updates → History, 아닐 때는 Your pets만, 펫 타일 2열 · + Add pet). 숫자는 시터가 기록한 값만, 없으면 숨김 · 아이콘은 Lucide 임시(SVG 오면 `components/home/HomeArt.tsx`) | 🟡 타입체크 · 토큰 체크 ✅ · e2e 기대값 수정(`pets` · `live-updates`)은 아직 안 돌림 · 사람 확인 대기 | 오너 Home Figma |
@@ -149,7 +149,7 @@
 | 오너 **History** (오늘 + 최근 7일 기록, 알림을 지워도 남음) | ✅ 🤖 | 06 / 6.11 |
 | 오너 **Diary 탭** = 시터가 보낸 알림장 목록(첫 문장) → 항목 화면(본문 · 그날 사진 · 할 일), 초안은 안 보임, 알림 탭하면 해당 항목 | ✅ 🤖 `report.spec.ts` (실제 두 계정은 👤) | 07 / 7.3 |
 | 시터 **리마인더 배너** (할 일 시간이 되면 Home 맨 위 배너 + 토스트) | ✅ 🤖 | 06 / 6.6 |
-| 시터 **Diary** (펫이 둘 이상이면 먼저 펫 선택 · 오늘 요약 한 줄 · 칩 켜기/끄기 · 기록 값 고치기 · "Anything to add?" 짧은 줄 = 내 칩(× 지우기) · 사진 ≤ 2 → 초안 미리보기 수정 → Send, 새로고침 후 초안 유지, 탭으로 돌아오면 새 기록 칩) | ✅ 🤖 `report.spec.ts` (AI는 mock · 실제 모델 연결은 👤) | 07 / 7.3 |
+| 시터 **Diary** (펫이 둘 이상이면 먼저 펫 선택 · 오늘 요약 한 줄 · 칩 켜기/끄기 · 기록 값 고치기 · "+ Add a line" 짧은 줄 = 내 칩(× 지우기) · 그림 칸을 눌러 사진 → 초안 미리보기 수정 → Send, 새로고침 후 초안 유지, 탭으로 돌아오면 새 기록 칩) · **#398: 컨트롤은 Photos / Diary 한 줄(펫 칩 · Book), Send는 화면 아래 고정, 쓰기 버튼이 칩보다 위** | ✅ 🤖 `report.spec.ts` (AI는 mock · 실제 모델 연결은 👤) · #398 사람 확인 대기 | 07 / 7.3 · #398 |
 | AI 알림장 **초안 API** (`POST /api/ai/daily-report`: 하루 기록 → 시터 1인칭 초안, 같은 날 덮어쓰기, 보낸 뒤엔 409, 기록이 없으면 고정 문장) | ✅ 🤖 pytest (실제 모델로 환각 점검 3회) · 화면은 시터 Diary(7.3) | 07 / 7.2 |
 | **알림장 보내기** (`send_daily_report`: 시터가 고친 **최종 본문**만 게시, 오너는 보낸 것만 보임, 한 번만, 오너 알림) | ✅ SQL `rls_smoke` · 🤖 `report.spec.ts` (Send) | 07 / 7.5 |
 | AI 알림장 **칩 제안 API** (`POST /api/ai/report-chips`: 하루 기록 → 칩(모델 없음), 사진 ≤ 2 → 한 줄 묘사 + 에피소드 칩, 느리거나 실패한 사진은 빼고 기록 칩은 유지, 남의 사진 403) | ✅ 🤖 pytest · 실제 비전 모델로 데모 사진 3장 확인(2026-10-07) · 화면은 시터 Diary(7.3) | 07 / 7.7 |
@@ -274,11 +274,12 @@
 | REM-5 | **실제 시계로**: 오너가 2~3분 뒤 시각의 할 일을 만들고, 시터는 Home을 연 채 기다림 | 30초 안에 Today 목록에 나타나고, 그 시각 정각에 토스트 + 팝업 | **👤만** | ➖ |
 | HOME-5 | (돌보는 중이 아닐 때) 시터 Home | 요청 배너 · 오늘 인계 · 다가오는 예약이 짧게 | 🤖 `today` | ➖ |
 | CHK-1 | 체크인 화면 → Max의 Meal **All** 누르기 (메모 비움) | 버튼이 **"✓ All"** 로 선택만 됨(**아직 전송 안 됨**), "Ready to send: …" 안내, 다시 누르면 선택 해제. **Send**를 눌러야 전송 → 토스트 "Sent ✅", 오너 알림 "Max ate everything 🍽️" | 🤖 `quick-checkin` | ➖ |
+| CHK-8 | (#397, Sitter-011) Meal **All** · Potty **Normal** · Walk **20** · Mood **Calm** 을 차례로 누르고, Mood를 **Happy**로 바꾼 뒤 메모 "Loved the park" → **Send** | 네 그룹이 **동시에** 선택됨(같은 그룹에서 다른 답을 누르면 그 그룹만 바뀜). "Ready to send: Fed · All, Potty · Normal, Walk · 20 min, Mood · Happy". 보내면 체크인 4개가 저장되고 오너 알림은 **하나**("Max ate everything 🍽️ · Potty update for Max: normal 💩 · Max had a 20-minute walk 🦮 · Max seems happy 😊", 본문 = 메모). 메모 · 사진은 첫 선택(Meal)에만 붙음. 오너 History에는 4줄 | 🤖 `quick-checkin` · SQL smoke `015r` · 오너 화면은 👤 | 사람 확인 대기 |
 | CHK-2 | 카드 아래 **"Sent to Robert today"** 목록 | 방금 보낸 것이 시각과 함께 쌓임 (메모는 따옴표로) | 🤖 `quick-checkin` | ➖ |
 | CHK-3 | 메모 칸에 글을 쓰고 Meal **A little** | 오너 알림: **보낸 것(제목) + 메모(본문)**. 전송 후 메모 칸 비워짐 | 🤖 `quick-checkin` | ➖ |
 | CHK-4 | 아무것도 고르지 않고 메모만 쓰기 | 메모가 없으면 **Send 비활성**. 메모를 쓰면 "Ready to send as a note" → Send로 노트 전송 | 🤖 `quick-checkin` | ➖ |
 | CHK-5 | Max에는 Walk 10–60분 있음, Mochi에는 **없음** | 펫마다 체크인 화면이 따로, 고양이는 산책 없음 | 🤖 `quick-checkin` | ➖ |
-| CHK-6 | **📷 Add photo** → 선택 → 미리보기 → Use → Mood **Happy** | "Photo ready ✓", 전송 시 업로드. 오너 Feed에 사진 글 + 체크인 알림 하나 | 🤖 `quick-checkin` · **실제 업로드 👤** | ➖ |
+| CHK-6 | **📷 Add photo** → 선택 → 미리보기 → Use → Mood **Happy** | (#397, Sitter-012) Add photo 자리에 **사진 썸네일**, 누르면 크게 보임(Close로 닫음), 아래 **Remove photo**로 빼기. 전송 시 업로드. 오너 Feed에 사진 글 + 체크인 알림 하나 | 🤖 `quick-checkin` · **실제 업로드 👤** | 사람 확인 대기 |
 | CHK-7 | 전송이 **실패**하면 | 빨간 팝업이 남고 Try again으로 다시 보냄 | 🤖 `quick-checkin` | ➖ |
 
 ### 3.4 Feed · 공개 범위 (FEED / VIS)
@@ -381,10 +382,10 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| REPORT-1 | 시터 → **Diary** 탭 | 펫이 둘 이상이면 맨 위 **펫 선택**(이름 + "Draft" / "Sent ✓") — 고른 펫 카드 하나만 보이고, 바꿔도 각 펫의 칩 · 줄이 남음 (FB-19). 카드 맨 위 **"Today: n tasks done · m missed · k check-ins"**, 그날 기록에서 만든 칩(식사 · 배변 · 산책 · 기분 · 약)이 모두 켜진 상태 | 🤖 `report` · pytest | ➖ |
+| REPORT-1 | 시터 → **Diary** 탭 | (#398) 맨 위는 **한 줄**: Photos · Diary 탭 오른쪽에 펫 칩(펫이 둘 이상일 때, 누르면 메뉴에 이름 + "Draft" / "Sent ✓")과 **Book** 버튼. 고른 펫 카드 하나만 보이고, 바꿔도 각 펫의 칩 · 줄이 남음 (FB-19). 카드 맨 위 **"Today: n tasks done · m missed · k check-ins"**, 그날 기록에서 만든 칩(식사 · 배변 · 산책 · 기분 · 약)이 모두 켜진 상태 | 🤖 `report` · pytest | ➖ |
 | REPORT-2 | 칩을 눌러 **끄기** → **Write the report** | 미리보기에 **끈 칩의 내용이 없음**. 끈 칩은 서버로 `skip`으로 감 | 🤖 `report` · pytest | ➖ |
 | REPORT-3 | **✎ Fix a recorded value** → 식사를 Most로, 산책 30 min으로 | 칩 문구가 "Meal: Most" · "Walk: 30 min"으로 바뀌고 알림장에도 그 값이 쓰임. 그 칩을 끄면 고친 값도 안 감 | 🤖 `report` · pytest | ➖ |
-| REPORT-4 | **Anything to add?** 칸에 짧은 줄("Learned a new trick") → Add(또는 Enter), 몇 줄 더 | 줄마다 내 칩이 생기고 칸은 비워짐. 켜 두면 알림장에 **맨 앞**으로 반영, 끄면 빠짐. 내 칩만 **×**로 지울 수 있음(제안 칩은 끄기만). 칸을 비우면 아무것도 안 생김 (FB-16 · 17 · 18) | 🤖 `report` | ➖ |
+| REPORT-4 | **+ Add a line**(#398, 누르기 전엔 칸이 숨어 있음) → 짧은 줄("Learned a new trick") → Add(또는 Enter), 몇 줄 더 | 줄마다 내 칩이 생기고 칸은 비워짐. 켜 두면 알림장에 **맨 앞**으로 반영, 끄면 빠짐. 내 칩만 **×**로 지울 수 있음(제안 칩은 끄기만). 칸을 비우면 아무것도 안 생김 (FB-16 · 17 · 18) | 🤖 `report` | ➖ |
 | REPORT-5 | **📷 Add photo** (최대 2장) → 사진 추가 | 사진 묘사 한 줄 + 에피소드 칩 1–2개가 생김(📷 표시). 사진을 지우면 그 칩도 사라짐. 사진 칩을 전부 끄면 그 사진 내용은 알림장에 안 들어감 | 🤖 `report` (AI는 mock) · **실제 모델 👤** | ➖ |
 | REPORT-6 | Write the report → 미리보기 **직접 고치기** → **Send to {owner}** | "Sent ✅ … was told". 오너가 받는 글은 **시터가 고친 최종본**. 같은 날 다시 Write하면 덮어쓴 초안(보낸 뒤엔 불가) | 🤖 `report` · SQL | ➖ |
 | REPORT-7 | 초안을 만든 뒤 앱 새로고침 | 초안이 그대로 다시 보임 (오너에게는 보내기 전까지 안 보임) | 🤖 `report` | ➖ |
@@ -394,9 +395,12 @@
 | REPORT-11 | Diary를 연 채로 Home에서 체크인(메모 포함) → Diary로 돌아옴 | 그 메모가 칩으로 바로 보임(새로고침 불필요). 꺼 둔 칩은 꺼진 채 (FB-15 · M-12) | 🤖 `report` | ➖ |
 | REPORT-12 | 알림장 Send 뒤 **✏️ Write another report** → 줄 추가 → Write → Send | 새 칩은 **첫 알림장을 보낸 뒤의 기록**만. 두 번째 알림장이 따로 저장 · 전송되고 오너 Diary에 같은 날 두 장(나중 것이 위) (FB-22) | 🤖 `report` · pytest · SQL 011f | ➖ |
 | REPORT-13 | `in_care`로 리셋하자마자(3분 안) Feed에 사진 1장 + 체크인 1개 → Diary | 체크인이 바로 저장되고, 그 사진 캡션 · 체크인이 칩으로 나옴 — 일찍 Received한 뒤의 기록도 그날 알림장에 들어감 (CW-1) | pytest · SQL 011i (호스팅 DB에 `011i` 적용 뒤) | ➖ |
-| REPORT-14 | (Diary book DB.2) 시터 → Diary — 아무것도 안 했을 때 | **그림일기 표지가 바로** 보임(📅 날짜 · "Max's day 🐾" · 그림 칸 · 줄 공책), 줄 위에 손글씨로 직접 씀("Dear diary, today…"). 쓰기 시작하면 "Draft — only you can see it", **Send to {견주}**가 켜짐. 직접 쓴 글만 Send → AI 호출 없이 오늘 초안이 만들어져(`save_report_draft`, 014b) 바로 보내짐, 견주에게 알림 1개 | 🤖 `report.spec.ts` · SQL `rls_smoke` 014b · 호스팅 DB는 `014b` 적용 뒤 👤 | 사람 확인 대기 |
-| REPORT-15 | (DB.2) 페이지에 몇 줄 쓴 뒤 아래 **Let Goldito write it** → **✨ Rewrite the page from the chips** | "This replaces what's on the page — nothing is sent." 안내, 만든 글이 **종이 위에** 초안으로 들어감(견주에게 안 감). 종이에서 고친 뒤 Send → 그 초안이 보내짐(새 행 없음). 칩 · 사진 · 내 줄은 같은 화면에 그대로 있어 끄고 다시 쓸 수 있음(이전의 Back to chips 없음) | 🤖 `report.spec.ts` | 사람 확인 대기 |
+| REPORT-14 | (Diary book DB.2) 시터 → Diary — 아무것도 안 했을 때 | **그림일기 표지가 바로** 보임(📅 날짜 · "Max's day 🐾" · 그림 칸 · 줄 공책), 줄 위에 손글씨로 직접 씀("Dear diary, today…"). 쓰기 시작하면 "Draft. Only you can see it…", 화면 아래에 고정된 **Send to {견주}**(#398)가 켜짐. 직접 쓴 글만 Send → AI 호출 없이 오늘 초안이 만들어져(`save_report_draft`, 014b) 바로 보내짐, 견주에게 알림 1개 | 🤖 `report.spec.ts` · SQL `rls_smoke` 014b · 호스팅 DB는 `014b` 적용 뒤 👤 | 사람 확인 대기 |
+| REPORT-15 | (DB.2) 페이지에 몇 줄 쓴 뒤 페이지 바로 아래(#398, 칩보다 위) **Rewrite the page from the chips** | "This replaces what's on the page. Nothing is sent." 안내, 만든 글이 **종이 위에** 초안으로 들어감(견주에게 안 감). 종이에서 고친 뒤 Send → 그 초안이 보내짐(새 행 없음). 칩 · 사진 · 내 줄은 같은 화면에 그대로 있어 끄고 다시 쓸 수 있음(이전의 Back to chips 없음) | 🤖 `report.spec.ts` | 사람 확인 대기 |
 | REPORT-16 | (#186) 시터가 40자보다 긴 메모로 체크인(예: "Watched the birds from the window for an hour") → Diary의 칩 | 칩이 **낱말 단위로 잘리고 "…"로 끝남**("Watched the birds from the window for…"), 40자 안. 글 초안에는 원문이 그대로 들어감. 사진 설명 칩 · 피드 캡션 칩도 같음 | 🤖 pytest `test_ai_report_chips`(`_chip`). 2026-10-20 **어시스턴트(사람 아님)**가 Paul 데모 세트로 화면 확인 | 사람 확인 대기 (어시스턴트 실행만, 사람 확인 아님) |
+| REPORT-17 | (#398, Sitter-013) 시터 Diary에 긴 칩(예: "Max looks SO HAPPY on our walk today! …", 200자까지) | 칩이 카드 폭을 넘지 않고 **안에서 여러 줄로 줄바꿈**, 눌러서 끄고 켤 수 있음. 칩 글씨는 작게(small), 높이는 터치 크기(44) 유지. Goldito 칩 · 내가 쓴 줄 모두 같음 | 🤖 `report.spec.ts`(카드 안 위치 · 끄기) | 사람 확인 대기 |
+| REPORT-18 | (#398, Sitter-014) 칩이 많은 날 시터 Diary를 아래로 스크롤 | **Send to {견주}** 버튼이 화면 아래에 고정되어 늘 보임(페이지 · 칩이 뒤로 지나감). 글이 비면 꺼져 있고, 보낸 뒤에는 사라짐(Write another page로 새 페이지) | 🤖 `report.spec.ts` | 사람 확인 대기 |
+| REPORT-19 | (#398) 페이지의 **그림 칸**을 눌러 사진 고르기 → 사진을 다시 누르기 | 사진이 그림 칸에 들어가고 사진 칩이 생김(따로 Add photo 버튼 없음, 사진은 한 장). 다시 누르면 **Replace · Remove**. Remove하면 사진과 그 칩이 빠짐. Send하면 그 사진이 견주가 읽는 페이지에 | 🤖 `report.spec.ts` · 실제 업로드 👤 | 사람 확인 대기 |
 
 ### 3.11 문의 AI (INQ) — Phase 07B · *사전: 백엔드 + `NEBIUS_API_KEY`, Chloe의 일정 · 요금이 있고 Robert에게 Max(+Mochi)가 있음*
 
@@ -1147,7 +1151,7 @@
 | CONTACT-1 | 오너와 시터 각자 Profile → **Phone** 카드에 번호 저장 (#358) | 7~20자(숫자 · 공백 · + ( ) -)만 저장, 이상하면 "Enter a valid phone number…", 비우면 삭제. 번호는 본인만 읽는 `profile_phones` 테이블에 있음 | 🟡 타입체크 ✅ · 기존 profile e2e 통과, 새 입력은 e2e 없음 · `015p` 호스팅 DB 적용 2026-10-25 (RLS · 권한 확인) | 사람 확인 대기 |
 | CONTACT-2 | 시터 채팅 → 헤더의 오너 이름을 누름 (#358) | 오너 화면: 사진 · 이름 · Area(우편번호 앞 3자, 예 M5A) · Phone. Meet & Greet이 합의(agreed) · 완료(done)되거나 예약이 confirmed가 되기 전에는 Phone이 "After the Meet & Greet is set". 집 주소와 출입 정보는 안 나옴(D31 그대로) | 🟡 e2e 없음 · `get_chat_contact` · `015p` 호스팅 DB 적용 2026-10-25 (RLS · 권한 확인) | 사람 확인 대기 |
 | CONTACT-3 | 오너 → 시터 페이지 (#358) | Meet & Greet이 정해진 시터만 카드 아래 Phone 줄이 보임, 아니면 줄 자체가 없음 | 🟡 e2e 없음 · `get_contact_phone` | 사람 확인 대기 |
-| NAV-4 | Feed 탭 | 맨 위 **Photos · Diary** 전환. Photos는 예전 Feed, Diary는 예전 Diary 탭(오너: 다이어리 책, 시터: Today · Diary book). 주소는 `?view=diary` | 🤖 `report` · `diary-book` | 사람 확인 대기 |
+| NAV-4 | Feed 탭 | 맨 위 **Photos · Diary** 전환. Photos는 예전 Feed, Diary는 예전 Diary 탭(오너: 다이어리 책, 시터: 오늘 페이지, 같은 줄 오른쪽의 **Book** 버튼으로 다이어리 책, #398). 주소는 `?view=diary` | 🤖 `report` · `diary-book` | 사람 확인 대기 |
 | NAV-5 | 옛 주소 `/owner/diary` · `/sitter/diary?page=…`, 펫 방 · 반납 시트의 Diary 링크, 리포트 알림 | Feed의 Diary가 열림(시터는 그 페이지로) | 🤖 `pet-room` · `diary-book` | ➖ |
 | NAV-6 | 시터 Home의 **💬 Chats (n)** | Chat 탭으로 감 | **👤** | ➖ |
 
@@ -1174,7 +1178,7 @@
 | FEEDX-17 | Feed에서 Request photo | 버튼 없음(채팅에 있음) | 🤖 `feed` | 사람 확인 대기 |
 | FEEDX-18 | 시터 → Moments 탭(돌보는 펫이 둘 + 끝난 펫 하나) | **돌보는 펫 전부(All pets)**의 사진이 한꺼번에 열리고 사진마다 펫 얼굴이 붙음(끝난 펫은 안 섞임). **Photos / Diary 줄 오른쪽 끝**의 **펫 칩**(겹친 얼굴 + All pets + ⌄)을 누르면 **버튼 바로 밑에** 작은 목록: All pets, In care 펫들, **줄**(All pets 밑이 아니라 그룹 사이에만, 고를 수 없음), Past stay 펫들. 고르면 그 펫만. 돌보는 펫이 하나면 그 펫이 열리고 All pets는 없음. 바깥을 누르면 닫힘 | 🤖 `feed` | 사람 확인 대기 |
 | FEEDX-19 | 오너 → Moments 탭 | 펫이 둘 이상이면 **All pets**로 열려 모든 펫의 사진이 같이 보이고 사진마다 펫 얼굴이 붙음. **Photos / Diary 줄 오른쪽 끝**의 같은 **펫 칩**(Diary 탭에서는 안 보임) 목록에는 **내 펫만**(줄 없음). 한 마리를 고르면 얼굴이 사라짐. 펫이 하나면 펫 칩도 얼굴도 없음. **+ Photo**는 보고 있는 펫의 사진이고, All pets일 때는 시트에서 어느 펫인지 고름 | 🤖 `feed` | 사람 확인 대기 |
-| FEEDX-20 | Photos / Diary | 둘 다 **밑줄 탭**(고른 쪽에 밑줄, 안 고른 쪽은 연하게). 시터 Moments에도 있어서 Diary(Today · Diary book)에 들어갈 수 있음 | 🤖 `feed` | 사람 확인 대기 |
+| FEEDX-20 | Photos / Diary | 둘 다 **밑줄 탭**(고른 쪽에 밑줄, 안 고른 쪽은 연하게). 시터 Moments에도 있어서 Diary(오늘 페이지, 같은 줄의 Book 버튼, #398)에 들어갈 수 있음 | 🤖 `feed` | 사람 확인 대기 |
 | FEEDX-21 | 사진 → **✏️ Edit**(내가 올린 사진만; 오너가 본 시터 사진 · 스티커에는 없음) | 시트에서 **태그를 여러 개**(예: Walks + Potty), **날짜 · 시간**(선택 시트), **메모**를 고쳐 Save → "Photo updated", 사진이 다시 열려 바뀐 내용이 보임. 두 칩에 모두 걸리고, 날짜를 바꾸면 그 날 묶음으로 이동. **보낸 시각은 그대로**(30분 삭제 규칙이 늘어나지 않음). 아직 안 온 시각은 "Pick a time that has already passed." | 🤖 `feed` · SQL `rls_smoke` 015l | 사람 확인 대기 |
 | FEEDX-22 | 전체화면에서 사진 넘기기 | **좌우로 스와이프**(손가락 · 마우스 드래그)하면 다음 · 이전 사진. 화면 **왼쪽 끝 · 오른쪽 끝**을 누르면 넘어감(버튼은 보이지 않음). 키보드 ← → 도 | 🤖 `feed`(마우스) · `feed-phone`(손가락, 실제 터치 이벤트) | 사람 확인 대기 |
 | FEEDX-23 | 전체화면에서 **핀치 줌** | 두 손가락으로 벌리면 확대(최대 4배), 줄이면 원래대로. 확대 중에는 한 손가락으로 사진을 옮기고 스와이프 · 가장자리 누르기로 페이지가 넘어가지 않음. 다음 사진으로 가면 원래 크기. 데스크톱은 트랙패드 핀치(ctrl + 휠), 확대 중 마우스 드래그로 옮김 | 🤖 `feed-phone`(핀치 · 실제 터치 이벤트) · `feed`(ctrl + 휠) | 사람 확인 대기 |

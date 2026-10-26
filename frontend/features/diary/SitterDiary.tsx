@@ -1,17 +1,22 @@
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { FeedPetPicker } from "../../components/FeedPetPicker";
+import { FeedBarRight } from "../../components/FeedSwitch";
+import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { Icon } from "../../components/ui/Icon";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { Screen } from "../../components/ui/Screen";
-import { SegmentedControl } from "../../components/ui/SegmentedControl";
-import { ReportComposer, type ReportStatus } from "../../components/ReportComposer";
+import { ReportComposer, type ReportStatus, type SendBar } from "../../components/ReportComposer";
+import { HOME_TEXT } from "../../components/home/homeType";
 import { useCaringPets } from "../care/useCaringPets";
+import { usePetFaces } from "../feed/usePetFaces";
 import { DiaryBook } from "./DiaryBook";
 import { PageActions } from "./PageActions";
 import { SentReport, listBookPages } from "./reportApi";
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
 const STATUS_LABEL: Record<NonNullable<ReportStatus>, string> = { sent: "Sent ✓", draft: "Draft" };
@@ -20,16 +25,20 @@ type View_ = "today" | "book";
 
 /**
  * Sitter Diary (D47b · Diary book): **Today** — the page for each pet in care, written by hand or by Goldito from the
- * day's chips, checked and sent (phase-07 7.3; with more than one pet the sitter picks the pet first, FB-19, and each
- * composer keeps its page while switching). **Diary book** — every page this sitter sent, all pets they have cared
- * for or one, oldest → newest.
+ * day's chips, checked and sent (phase-07 7.3; each composer keeps its page while switching pets, FB-19). **Book** —
+ * every page this sitter sent, all pets they have cared for or one, oldest → newest.
+ * One row of controls (#398): the pet chip and Book sit at the right of the Photos / Diary tabs, and Send floats at the
+ * bottom of the screen while the page and chips scroll.
  */
 export function SitterDiary() {
   const styles = useThemedStyles(makeStyles);
+  const theme = useTheme();
   const { state, reload } = useCaringPets();
   const [selected, setSelected] = useState<string | null>(null);
   const [statuses, setStatuses] = useState<Record<string, ReportStatus>>({});
+  const [bars, setBars] = useState<Record<string, SendBar | null>>({});
   const caring = state.status === "ready" ? state.pets : [];
+  const faces = usePetFaces(caring.map((p) => p.id));
   // A Feed diary cell opens the book on its page (`?page=`).
   const { page: pageParam } = useLocalSearchParams<{ page?: string }>();
   const [view, setView] = useState<View_ | null>(null);
@@ -46,6 +55,16 @@ export function SitterDiary() {
     (petId: string) => (status: ReportStatus) => setStatuses((prev) => (prev[petId] === status ? prev : { ...prev, [petId]: status })),
     [],
   );
+  // One stable setter per pet: a composer tells which Send it needs, the screen pins it at the bottom.
+  const barSetters = useRef(new Map<string, (bar: SendBar | null) => void>());
+  const onSendBar = (petId: string) => {
+    let set = barSetters.current.get(petId);
+    if (!set) {
+      set = (bar) => setBars((prev) => ({ ...prev, [petId]: bar }));
+      barSetters.current.set(petId, set);
+    }
+    return set;
+  };
 
   const loadBook = useCallback(async () => {
     try {
@@ -82,54 +101,61 @@ export function SitterDiary() {
     );
   }
   const current = caring.find((p) => p.id === selected) ?? caring[0];
-  return (
-    <Screen testID="sitter-diary-screen" contentStyle={{ gap: 12 }} scrollbar>
-      <SegmentedControl
-        options={[
-          { value: "today", label: "Today" },
-          { value: "book", label: "Diary book" },
-        ]}
-        value={shownView}
-        onChange={(v) => {
-          setView(v);
-          if (v === "book") void loadBook();
-        }}
-        testID="sitter-diary-view"
-      />
+  const toBook = shownView === "today";
+  const bar = shownView === "today" && current ? bars[current.id] : null;
+  const hints = Object.fromEntries(
+    Object.entries(statuses).flatMap(([id, s]) => (s ? [[id, STATUS_LABEL[s]]] : [])),
+  ) as Record<string, string>;
 
-      <View style={shownView === "today" ? styles.section : styles.hidden}>
-        {caring.length === 0 ? (
-          <EmptyState emoji="📔" title="Diary" message="When you're caring for a pet, you can write and send the day's page from here." />
+  return (
+    <Screen
+      testID="sitter-diary-screen"
+      contentStyle={{ gap: 12 }}
+      scrollbar
+      footer={
+        bar && current ? (
+          <Button label={bar.label} disabled={bar.disabled} onPress={bar.onPress} testID={`report-send-${current.id}`} />
+        ) : undefined
+      }
+    >
+      <FeedBarRight signature={`${shownView}|${current?.id}|${caring.map((p) => p.id).join(",")}|${JSON.stringify(hints)}|${JSON.stringify(faces)}`}>
+        {shownView === "today" && caring.length > 1 ? (
+          <FeedPetPicker
+            groups={[{ key: "caring", pets: caring }]}
+            allPets={[]}
+            value={current?.id ?? ""}
+            onChange={setSelected}
+            faces={faces}
+            hints={hints}
+            testID="diary-pet"
+          />
         ) : null}
-        {caring.length > 1 ? (
-          <View style={styles.picker} accessibilityLabel="Whose page">
-            {caring.map((pet) => {
-              const on = pet.id === current?.id;
-              const status = statuses[pet.id];
-              return (
-                <Pressable
-                  key={pet.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${pet.name}${status ? `, ${STATUS_LABEL[status]}` : ""}`}
-                  aria-pressed={on}
-                  onPress={() => setSelected(pet.id)}
-                  style={({ pressed }) => [styles.pet, on && styles.petOn, pressed && styles.pressed]}
-                  testID={`diary-pet-${pet.id}`}
-                >
-                  <Text style={[styles.petName, on && styles.petNameOn]}>{pet.name}</Text>
-                  {status ? <Text style={[styles.status, on && styles.petNameOn]}>{STATUS_LABEL[status]}</Text> : null}
-                </Pressable>
-              );
-            })}
-          </View>
+        {caring.length > 0 ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={toBook ? "Diary book" : "Today's page"}
+            onPress={() => {
+              setView(toBook ? "book" : "today");
+              if (toBook) void loadBook();
+            }}
+            style={({ pressed }) => [styles.toggle, pressed && styles.pressed]}
+            testID={toBook ? "sitter-diary-view-book" : "sitter-diary-view-today"}
+          >
+            <Icon name={toBook ? "diary" : "calendar"} size={16} color={theme.color.text} />
+            <Text style={styles.toggleText}>{toBook ? "Book" : "Today"}</Text>
+          </Pressable>
         ) : null}
-        {caring.map((pet) => (
-          // Every pet's composer stays mounted (its chips, lines and page survive switching); only the picked one shows.
-          <View key={pet.id} style={pet.id === current?.id ? undefined : styles.hidden}>
-            <ReportComposer key={deleted} pet={pet} onStatus={onStatus(pet.id)} />
-          </View>
-        ))}
-      </View>
+      </FeedBarRight>
+
+      {shownView === "today" && caring.length === 0 ? (
+        <EmptyState emoji="📔" title="Diary" message="When you're caring for a pet, you can write and send the day's page from here." />
+      ) : null}
+      {caring.map((pet) => (
+        // Every pet's composer stays mounted (its chips, lines and page survive switching); only the picked one shows.
+        <View key={pet.id} style={shownView === "today" && pet.id === current?.id ? undefined : styles.hidden}>
+          <ReportComposer key={deleted} pet={pet} onStatus={onStatus(pet.id)} onSendBar={onSendBar(pet.id)} />
+        </View>
+      ))}
 
       {shownView === "book" ? (
         pages === null && !bookError ? (
@@ -164,23 +190,18 @@ export function SitterDiary() {
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    section: { gap: 12 },
-    picker: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
-    pet: {
-      minHeight: 44,
-      paddingHorizontal: theme.spacing.md,
-      borderRadius: 22,
-      borderWidth: 1,
-      borderColor: theme.color.border,
-      backgroundColor: theme.color.surface,
+    toggle: {
       flexDirection: "row",
       alignItems: "center",
-      gap: theme.spacing.xs,
+      gap: 4,
+      minHeight: 40,
+      paddingHorizontal: 10,
+      borderRadius: theme.radius.pill,
+      borderWidth: 1,
+      borderColor: theme.color.borderStrong,
+      backgroundColor: theme.color.surface,
     },
-    petOn: { borderColor: theme.color.primary, backgroundColor: theme.color.accent },
+    toggleText: { fontSize: HOME_TEXT.chip, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     pressed: { opacity: 0.6 },
-    petName: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
-    petNameOn: { color: theme.color.primary },
-    status: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     hidden: { display: "none" },
   });

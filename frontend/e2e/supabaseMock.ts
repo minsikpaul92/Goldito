@@ -2179,6 +2179,53 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, row);
   }
 
+  if (path === "rpc/log_care_checkins") {
+    // Same rule as the SQL (015r): one row per pick, the memo and photo on the first, ONE notice listing every pick.
+    const { p_pet, p_picks, p_note_text, p_media_id } = request.postDataJSON();
+    const picks = (p_picks ?? []) as { kind: string; value: string }[];
+    const note = typeof p_note_text === "string" && p_note_text.trim() ? p_note_text.trim() : null;
+    const pet = db.pets.find((p) => p.id === p_pet);
+    if (picks.length === 0) return json(route, 400, { code: "P0001", message: "no_picks" });
+    if (new Set(picks.map((p) => p.kind)).size !== picks.length) return json(route, 400, { code: "P0001", message: "one_pick_per_group" });
+    if (picks.some((p) => p.kind === "walk") && pet?.species === "cat") {
+      return json(route, 400, { code: "P0001", message: "checkin_not_allowed_for_species" });
+    }
+    const at = new Date(nowMs()).toISOString();
+    const rows = picks.map((p, i) => ({
+      id: crypto.randomUUID(),
+      pet_id: p_pet,
+      created_by: me,
+      kind: p.kind,
+      value: p.value,
+      note_text: i === 0 ? note : null,
+      media_id: i === 0 ? p_media_id : null,
+      created_at: at,
+    }));
+    db.care_checkins.push(...rows);
+    for (const p of picks) {
+      const settles = (p.kind === "meal" && p.value !== "none") || p.kind === "walk" || (p.kind === "potty" && p.value !== "none");
+      if (!settles) continue;
+      const type = p.kind === "meal" ? "feeding" : p.kind === "walk" ? "walk" : "litter";
+      const open = db.task_logs
+        .filter((l) => l.pet_id === p_pet && l.status === "pending" && db.care_tasks.find((t) => t.id === l.task_id)?.type === type)
+        .sort((a, b) => String(a.due_at).localeCompare(String(b.due_at)))[0];
+      if (open) Object.assign(open, { status: "done", completed_at: at, completed_by: me });
+    }
+    db.notifications.push({
+      id: crypto.randomUUID(),
+      user_id: pet?.owner_id,
+      type: "care_checkin",
+      title: picks.map((p) => `${pet?.name} ${p.kind} ${p.value}`).join(" · "),
+      body: note,
+      pet_id: p_pet,
+      booking_id: null,
+      ref_id: rows[0].id,
+      read_at: null,
+      created_at: at,
+    });
+    return json(route, 200, rows);
+  }
+
   if (path === "rpc/log_care_checkin") {
     const { p_pet, p_kind, p_value, p_note_text, p_media_id } = request.postDataJSON();
     const note = typeof p_note_text === "string" && p_note_text.trim() ? p_note_text.trim() : null;

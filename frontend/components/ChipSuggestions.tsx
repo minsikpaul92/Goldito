@@ -57,13 +57,22 @@ export function ChipSuggestions({ chips, off, onToggle, onRemove, testIDPrefix }
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     wrap: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
-    chip: { ...selectable(theme).chip, paddingHorizontal: 0 },
+    // A chip is never wider than the row and a long line wraps inside it (Sitter-013): the chip, its toggle and its
+    // text may all shrink. Small text keeps more chips on a line; the height stays a full touch target.
+    chip: { ...selectable(theme).chip, paddingHorizontal: 0, maxWidth: "100%", flexShrink: 1 },
     chipOn: selectable(theme).chipOn,
     chipRemovable: { paddingRight: 0 },
-    toggle: { minHeight: 44, paddingHorizontal: theme.spacing.md, alignItems: "center", justifyContent: "center" },
-    remove: { minWidth: 36, minHeight: 44, alignItems: "center", justifyContent: "center", marginLeft: -theme.spacing.sm },
+    toggle: {
+      flexShrink: 1,
+      minWidth: 0,
+      minHeight: theme.layout.touchTarget,
+      paddingHorizontal: theme.spacing.sm + 4,
+      paddingVertical: 6,
+      justifyContent: "center",
+    },
+    remove: { flexShrink: 0, minWidth: 36, minHeight: 44, alignItems: "center", justifyContent: "center", marginLeft: -theme.spacing.sm },
     removeText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
     pressed: { opacity: 0.6 },
-    text: selectable(theme).label,
+    text: { ...selectable(theme).label, flexShrink: 1, fontSize: theme.fontSize.small },
     textOn: selectable(theme).labelOn,
   });

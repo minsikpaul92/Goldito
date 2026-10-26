@@ -7407,4 +7407,87 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 015r (#397): one check-in with a pick per group, one notice to the owner
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  pip uuid;
+  m uuid;
+  n int;
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Pip15q') returning id into pip;
+  perform _t_booking(robert, chloe, array[pip], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/015r/a', 'image', 'task_proof') returning id into m;
+
+  perform _t_as(chloe);
+  select count(*) into n from public.log_care_checkins(pip,
+    '[{"kind": "meal", "value": "all"}, {"kind": "potty", "value": "normal"}, {"kind": "walk", "value": "20"}, {"kind": "mood", "value": "happy"}]',
+    '  Loved the park  ', m);
+  perform _t_as(null);
+  perform _t_ok(n = 4 and (select count(*) from public.care_checkins where pet_id = pip) = 4,
+    '015r: four picks are four check-ins');
+  perform _t_ok((select count(*) from public.notifications where pet_id = pip and type = 'care_checkin') = 1,
+    '015r: the owner gets one notice for the whole check-in');
+  perform _t_ok((select n2.title = 'Pip15q ate everything 🍽️ · Potty update for Pip15q: normal 💩 · Pip15q had a 20-minute walk 🦮 · Pip15q seems happy 😊'
+        and n2.body = 'Loved the park' and n2.user_id = robert
+        and n2.ref_id = (select id from public.care_checkins where pet_id = pip and kind = 'meal')
+      from public.notifications n2 where n2.pet_id = pip and n2.type = 'care_checkin'),
+    '015r: the notice lists every pick, carries the memo and points at the first pick');
+  perform _t_ok((select count(*) from public.care_checkins where pet_id = pip and (note_text is not null or media_id is not null)) = 1
+    and (select note_text = 'Loved the park' and media_id = m from public.care_checkins where pet_id = pip and kind = 'meal'),
+    '015r: the memo and the photo ride on the first pick only');
+  perform _t_ok((select count(*) from public.feed_posts where media_id = m and category = 'meal' and note = 'Loved the park') = 1,
+    '015r: the photo makes one feed post');
+
+  perform _t_as(chloe);
+  begin
+    perform public.log_care_checkins(pip, '[{"kind": "meal", "value": "all"}, {"kind": "meal", "value": "most"}]');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'one_pick_per_group', '015r: one pick per group');
+  begin
+    perform public.log_care_checkins(pip, '[{"kind": "note", "value": null}]');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_pick', '015r: only meal, potty, walk and mood are picks');
+  begin
+    perform public.log_care_checkins(pip, '[]');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'no_picks', '015r: nothing picked is refused');
+  begin
+    perform public.log_care_checkins(pip, '[{"kind": "meal", "value": "all"}, {"kind": "mood", "value": "giddy"}]');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514' and (select count(*) from public.care_checkins where pet_id = pip) = 4,
+    '015r: one bad pick sends nothing');
+
+  perform _t_as(robert);
+  begin
+    perform public.log_care_checkins(pip, '[{"kind": "meal", "value": "all"}]');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_in_care_window', '015r: the owner cannot log a check-in');
+  begin
+    perform public.care_checkin_write(pip, 'meal', 'all', null, null);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '015r: care_checkin_write is not callable by clients');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;

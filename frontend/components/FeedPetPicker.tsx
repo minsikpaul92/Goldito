@@ -24,6 +24,8 @@ type Props = {
   onChange: (value: string) => void;
   /** First photo of each pet, for the faces. */
   faces: Record<string, string | null>;
+  /** A short line under a pet's name in the menu, in place of its group's hint (the Diary: "Draft", "Sent"). */
+  hints?: Record<string, string>;
   testID?: string;
 };
 
@@ -34,7 +36,7 @@ type Anchor = { x: number; y: number; width: number; height: number };
  * to narrow to one pet. A sitter sees the pets in care first, a line, then the pets of stays that are over; an owner
  * sees their own. With one pet there is nothing to pick and the chip is not there.
  */
-export function FeedPetPicker({ groups, allPets, value, onChange, faces, testID = "feed-pet" }: Props) {
+export function FeedPetPicker({ groups, allPets, value, onChange, faces, hints, testID = "feed-pet" }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const pill = useRef<View>(null);
@@ -108,6 +110,7 @@ export function FeedPetPicker({ groups, allPets, value, onChange, faces, testID 
                   {index > 0 ? <View style={styles.line} testID={`${testID}-line`} /> : null}
                   {group.pets.map((pet) => {
                     const on = chosen?.id === pet.id;
+                    const hint = hints?.[pet.id] ?? group.hint;
                     return (
                       <Pressable
                         key={pet.id}
@@ -125,7 +128,7 @@ export function FeedPetPicker({ groups, allPets, value, onChange, faces, testID 
                           <Text style={[styles.rowName, on && styles.rowNameOn]} numberOfLines={1}>
                             {pet.name}
                           </Text>
-                          {group.hint ? <Text style={styles.rowHint}>{group.hint}</Text> : null}
+                          {hint ? <Text style={styles.rowHint}>{hint}</Text> : null}
                         </View>
                         {on ? <Icon name="check" size={18} color={theme.color.primary} /> : null}
                       </Pressable>

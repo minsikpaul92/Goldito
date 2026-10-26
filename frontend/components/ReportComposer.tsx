@@ -1,13 +1,12 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import {
   CUSTOM_CHIP_MAX,
   ChipPhoto,
   REPORT_BODY_MAX,
   REPORT_MAX_HIGHLIGHTS,
-  REPORT_MAX_PHOTOS,
   ReportChip,
   ReportDraft,
   generateReport,
@@ -46,16 +45,28 @@ type Photo = { mediaId: string; thumbUrl: string };
 /** Which highlights go first when more than REPORT_MAX_HIGHLIGHTS are on (by chip source). */
 const HIGHLIGHT_ORDER: Record<string, number> = { custom: 0, checkin: 1, vision: 2, feed: 3 };
 
-/**
- * The sitter's evening note for one pet (phase-07 7.3), as a diary page from the start (Diary book): write on the page
- * by hand, or let Goldito write it from the day's chips (keep or turn off, up to two photos, short lines of their own —
- * FB-18) and edit it there → Send. Nothing reaches the owner before Send; the owner only ever sees the text the sitter
- * sent (D36 · D38).
- */
 /** Where this pet's report stands, for the Diary's pet picker. */
 export type ReportStatus = "sent" | "draft" | null;
 
-export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (status: ReportStatus) => void }) {
+/** The Send button the Diary pins at the bottom of the screen (#398), or null when there is nothing to send. */
+export type SendBar = { label: string; disabled: boolean; onPress: () => void };
+
+/**
+ * The sitter's evening note for one pet (phase-07 7.3), as a diary page from the start (Diary book): write on the page
+ * by hand, or let Goldito write it from the day's chips (keep or turn off, a photo from the page's picture box, short
+ * lines of their own, FB-18) and edit it there, then Send. Nothing reaches the owner before Send; the owner only ever
+ * sees the text the sitter sent (D36 · D38). Layout (#398): the page, then "Write the page from the chips" right
+ * under it, then the chips; Send is pinned by the Diary screen (`onSendBar`).
+ */
+export function ReportComposer({
+  pet,
+  onStatus,
+  onSendBar,
+}: {
+  pet: CaringPet;
+  onStatus?: (status: ReportStatus) => void;
+  onSendBar?: (bar: SendBar | null) => void;
+}) {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const errorDialog = useErrorDialog();
@@ -74,6 +85,10 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
   /** Short lines the sitter typed ("Anything to add?"): each is a chip of their own, like an episode chip. */
   const [custom, setCustom] = useState<ReportChip[]>([]);
   const [customText, setCustomText] = useState("");
+  /** The line box is hidden behind "+ Add a line" until the sitter wants it. */
+  const [customOpen, setCustomOpen] = useState(false);
+  /** Replace and Remove show over the page's photo after a tap on it (#369). */
+  const [photoMenu, setPhotoMenu] = useState(false);
   const customSeq = useRef(0);
   const [draft, setDraft] = useState<ReportDraft | null>(null);
   const [body, setBody] = useState("");
@@ -185,14 +200,16 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
       return next;
     });
 
+  /** The page's photo: picked from the picture box, it replaces the one there (one photo per page). */
   const addPhoto = async () => {
-    if (busy || photos.length >= REPORT_MAX_PHOTOS) return;
+    setPhotoMenu(false);
+    if (busy) return;
     const picked = await pickMedia({ purpose: "report", confirm: true, confirmLabel: "Use this photo" });
     if (!picked) return;
     setBusy("chips");
     try {
       const up = await uploadMedia({ petId: pet.id, purpose: "report", file: picked.file, resourceType: "image" });
-      const next = [...photos, { mediaId: up.mediaId, thumbUrl: up.thumbUrl }];
+      const next = [{ mediaId: up.mediaId, thumbUrl: up.thumbUrl }];
       setPhotos(next);
       await refreshChips(next.map((p) => p.mediaId));
     } catch (e) {
@@ -205,6 +222,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
   };
 
   const removePhoto = (mediaId: string) => {
+    setPhotoMenu(false);
     const next = photos.filter((p) => p.mediaId !== mediaId);
     setPhotos(next);
     void refreshChips(next.map((p) => p.mediaId));
@@ -320,6 +338,17 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
     }
   };
 
+  // The Diary pins this pet's Send at the bottom of the screen; it reads the latest `send` through the ref.
+  const sendRef = useRef(send);
+  sendRef.current = send;
+  const sendLabel = busy === "send" ? "Sending…" : `Send to ${pet.ownerName}`;
+  const sendDisabled = busy != null || !body.trim();
+  const sendable = !loading && !sent;
+  useEffect(() => {
+    onSendBar?.(sendable ? { label: sendLabel, disabled: sendDisabled, onPress: () => void sendRef.current() } : null);
+  }, [onSendBar, sendable, sendLabel, sendDisabled]);
+  useEffect(() => () => onSendBar?.(null), [onSendBar]);
+
   if (loading) {
     return (
       <Card testID={`report-${pet.id}`}>
@@ -340,6 +369,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
     setCustom([]);
     setOverrides({});
     setPhotos([]);
+    setPhotoMenu(false);
     setDescriptions([]);
     setChips([]);
     void refreshChips([]);
@@ -370,16 +400,31 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
     );
   }
 
+  const pagePhoto = photos[0] ?? null;
+  // The picture box is the photo button (#369): empty, it opens the picker; with a photo, Replace and Remove.
+  const picturePress = pagePhoto
+    ? {
+        onPress: () => setPhotoMenu((open) => !open),
+        label: "Change the photo",
+        testID: `report-photo-change-${pet.id}`,
+        actions: photoMenu ? (
+          <>
+            <PhotoAction label="Replace" onPress={() => void addPhoto()} testID={`report-photo-replace-${pet.id}`} />
+            <PhotoAction label="Remove" onPress={() => removePhoto(pagePhoto.mediaId)} testID={`report-photo-remove-${pet.id}`} />
+          </>
+        ) : undefined,
+      }
+    : { onPress: () => void addPhoto(), label: "Add a photo", testID: `report-add-photo-${pet.id}` };
+
   // Not sent yet: the page is there from the start (Diary book). The sitter writes on it by hand, or lets Goldito write
-  // it from the chips below — either way it stays a draft only they can see until they check it and tap Send.
+  // it from the chips below; either way it stays a draft only they can see until they tap Send (pinned by the Diary).
   return (
     <Card style={styles.card} testID={`report-${pet.id}`}>
-      <Text style={styles.title}>{pet.name}</Text>
-      <Text style={styles.muted} testID={`report-state-${pet.id}`}>
-        {draft || body.trim()
-          ? `Draft. Only you can see it until you send it to ${pet.ownerName}.`
-          : `Write ${pet.name}'s day on the page, or let Goldito write it from today's chips below.`}
-      </Text>
+      {draft || body.trim() ? (
+        <Text style={styles.muted} testID={`report-state-${pet.id}`}>
+          {`Draft. Only you can see it until you send it to ${pet.ownerName}.`}
+        </Text>
+      ) : null}
       {draft?.fallback ? (
         <Text style={styles.muted} testID={`report-fallback-${pet.id}`}>
           The writing helper is down. Here's a plain list to edit and send.
@@ -391,8 +436,9 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         petName={pet.name}
         day={day.current}
         body={body}
-        pictureUrl={photos[0]?.thumbUrl || null}
+        pictureUrl={pagePhoto?.thumbUrl || null}
         pending={{ items: stickers, onChange: setStickers }}
+        picturePress={busy != null ? undefined : picturePress}
         writing={{
           onChangeText: setBody,
           placeholder: "Dear diary, today…",
@@ -402,20 +448,24 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         }}
         testID={`report-page-${pet.id}`}
       />
-      <Button
-        label={busy === "send" ? "Sending…" : `Send to ${pet.ownerName}`}
-        disabled={busy != null || !body.trim()}
-        onPress={() => void send()}
-        testID={`report-send-${pet.id}`}
-      />
 
-      <Text style={styles.section}>Let Goldito write it</Text>
-      {summary ? (
-        <Text style={styles.muted} testID={`report-summary-${pet.id}`}>
-          {summaryLine(summary)}
-        </Text>
-      ) : null}
-      <Text style={styles.label}>Today's chips</Text>
+      <Button
+        label={busy === "generate" ? "Writing…" : body.trim() ? "Rewrite the page from the chips" : "Write the page from the chips"}
+        variant="secondary"
+        disabled={busy != null}
+        onPress={() => void generate()}
+        testID={`report-generate-${pet.id}`}
+      />
+      {body.trim() ? <Text style={styles.muted}>This replaces what's on the page. Nothing is sent.</Text> : null}
+
+      <View style={styles.chipsHead}>
+        <Text style={styles.label}>Today's chips</Text>
+        {summary ? (
+          <Text style={styles.summary} numberOfLines={1} testID={`report-summary-${pet.id}`}>
+            {summaryLine(summary)}
+          </Text>
+        ) : null}
+      </View>
       {all.length > 0 ? (
         <>
           <ChipSuggestions chips={all} off={off} onToggle={toggle} onRemove={removeCustom} testIDPrefix={`report-chip-${pet.id}`} />
@@ -427,13 +477,32 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         </>
       ) : (
         <Text style={styles.muted} testID={`report-nochips-${pet.id}`}>
-          {busy === "chips" ? "Looking at today…" : "Nothing recorded yet. Add a photo or a short line below."}
+          {busy === "chips" ? "Looking at today…" : "Nothing recorded yet. Add a photo or a short line."}
         </Text>
       )}
 
-      {editable.length > 0 ? (
-        <TextButton label="Fix a recorded value" onPress={() => setEditing(true)} testID={`report-edit-${pet.id}`} />
+      {customOpen ? (
+        <View style={styles.addRow}>
+          <View style={styles.addField}>
+            <TextField
+              label="One short line"
+              value={customText}
+              maxLength={CUSTOM_CHIP_MAX}
+              placeholder="e.g. Learned a new trick"
+              onChangeText={setCustomText}
+              onSubmitEditing={addCustom}
+              testID={`report-custom-input-${pet.id}`}
+            />
+          </View>
+          <Button label="Add" disabled={!customText.trim()} onPress={addCustom} testID={`report-custom-add-${pet.id}`} />
+        </View>
       ) : null}
+      <View style={styles.links}>
+        {!customOpen ? <TextButton label="+ Add a line" onPress={() => setCustomOpen(true)} testID={`report-custom-open-${pet.id}`} /> : null}
+        {editable.length > 0 ? (
+          <TextButton label="Fix a recorded value" onPress={() => setEditing(true)} testID={`report-edit-${pet.id}`} />
+        ) : null}
+      </View>
       <Sheet visible={editing} title="Fix a recorded value" onClose={() => setEditing(false)} doneOnly testID={`report-edit-sheet-${pet.id}`}>
         {editable.map((chip) => {
           const group = CHECKIN_GROUPS.find((g) => g.kind === chip.check);
@@ -468,46 +537,16 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         })}
         <Button label="Done" onPress={() => setEditing(false)} testID={`report-edit-done-${pet.id}`} />
       </Sheet>
-
-      <View style={styles.photos}>
-        {photos.map((p) => (
-          <View key={p.mediaId} style={styles.photoBox}>
-            <Image source={{ uri: p.thumbUrl }} style={styles.photo} accessibilityIgnoresInvertColors />
-            <TextButton label="Remove" onPress={() => removePhoto(p.mediaId)} testID={`report-photo-remove-${p.mediaId}`} />
-          </View>
-        ))}
-      </View>
-      <Button
-        label={photos.length >= REPORT_MAX_PHOTOS ? "📷 2 photos added" : `📷 Add photo (${photos.length}/${REPORT_MAX_PHOTOS})`}
-        variant="secondary"
-        disabled={busy != null || photos.length >= REPORT_MAX_PHOTOS}
-        onPress={() => void addPhoto()}
-        testID={`report-add-photo-${pet.id}`}
-      />
-
-      <View style={styles.addRow}>
-        <View style={styles.addField}>
-          <TextField
-            label="Anything to add? One short line at a time"
-            value={customText}
-            maxLength={CUSTOM_CHIP_MAX}
-            placeholder="e.g. Learned a new trick"
-            onChangeText={setCustomText}
-            onSubmitEditing={addCustom}
-            testID={`report-custom-input-${pet.id}`}
-          />
-        </View>
-        <Button label="Add" disabled={!customText.trim()} onPress={addCustom} testID={`report-custom-add-${pet.id}`} />
-      </View>
-      <Button
-        label={busy === "generate" ? "Writing…" : body.trim() ? "Rewrite the page from the chips" : "Write the page from the chips"}
-        variant="secondary"
-        disabled={busy != null}
-        onPress={() => void generate()}
-        testID={`report-generate-${pet.id}`}
-      />
-      {body.trim() ? <Text style={styles.muted}>This replaces what's on the page. Nothing is sent.</Text> : null}
     </Card>
+  );
+}
+
+function PhotoAction({ label, onPress, testID }: { label: string; onPress: () => void; testID: string }) {
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} style={styles.action} testID={testID}>
+      <Text style={styles.actionLabel}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -518,12 +557,21 @@ const makeStyles = (theme: Theme) =>
     label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
-    section: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text, marginTop: theme.spacing.sm },
+    chipsHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: theme.spacing.sm, marginTop: theme.spacing.xs },
+    summary: { flexShrink: 1, fontSize: theme.fontSize.caption, color: theme.color.textMuted },
+    links: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: theme.spacing.sm },
     editGroup: { gap: theme.spacing.xs },
     editPills: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
     addRow: { flexDirection: "row", alignItems: "flex-end", gap: theme.spacing.sm },
     addField: { flex: 1 },
-    photos: { flexDirection: "row", gap: theme.spacing.sm },
-    photoBox: { alignItems: "center", gap: 2 },
-    photo: { width: 72, height: 72, borderRadius: theme.radius.sm, backgroundColor: theme.color.border },
+    action: {
+      minHeight: 36,
+      paddingHorizontal: theme.spacing.md,
+      justifyContent: "center",
+      borderRadius: theme.radius.pill,
+      backgroundColor: theme.color.surface,
+      borderWidth: 1,
+      borderColor: theme.color.border,
+    },
+    actionLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
   });
