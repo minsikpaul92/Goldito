@@ -8,6 +8,8 @@ type Props = {
   href: string;
   /** `text` looks like TextButton, for a link that sits next to other text links. */
   look?: "button" | "text";
+  /** Web only: its own small window instead of a tab. */
+  newWindow?: boolean;
   testID?: string;
 };
 
