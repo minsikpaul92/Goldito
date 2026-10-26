@@ -11,6 +11,7 @@ import {
   resolvePresentation,
 } from "./presentation";
 import { FrameAccount, accountLabel, isAccountMessage } from "./accountMessage";
+import { JUDGE_SIGN_IN, JudgeSignInMessage, isJudgeSeatMessage, otherRole, paneWindow } from "./judgeMessages";
 import { installTouchEmulation } from "./TouchEmulation.web";
 import { ShellContext } from "./useShell";
 
@@ -96,6 +97,19 @@ export function AppShell({ children }: Props) {
   // Back in split view, the address bar shows the split link again (a reload keeps both phones).
   useEffect(() => {
     if (presentation === "split") window.history.replaceState(window.history.state, "", "/?view=split");
+  }, [presentation]);
+
+  // Split view: the phone that took a Judge seat has the other phone sign in to the set's other account (#411).
+  useEffect(() => {
+    if (presentation !== "split") return;
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || !isJudgeSeatMessage(event.data)) return;
+      const other = event.data.pane === "pane-left" ? "pane-right" : "pane-left";
+      const message: JudgeSignInMessage = { type: JUDGE_SIGN_IN, set: event.data.set, role: otherRole(event.data.role) };
+      paneWindow(other)?.postMessage(message, window.location.origin);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
   }, [presentation]);
 
   if (presentation === "split") {

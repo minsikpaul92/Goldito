@@ -37,7 +37,7 @@ const FLOW_SPECS = new RegExp(
     "handoff", "rebook", "today", "checkout", "welcome", "media-picker", "feed", "care-tasks", "sitter-tasks",
     "quick-checkin", "diary", "sitter-home", "live-updates", "due-reminder", "care-request", "heads-up", "report",
     "caption", "completion", "demo-tools", "location", "home-location", "transit", "privacy", "snap",
-    "treat-check", "mood", "sticker", "decor", "diary-owner-entry", "photo-request", "split", "settings", "sitter-onboarding", "demo-sets", "profile-photos", "skin", "chat", "chat-trip", "chat-handoff", "owner-onboarding-logic", "owner-onboarding", "pet-glance", "pet-status", "pet-sprite", "pet-scene", "pet-behavior", "pet-wardrobe", "pet-room", "pet-room-sitter", "pet-medal", "sitter-badges",
+    "treat-check", "mood", "sticker", "decor", "diary-owner-entry", "photo-request", "split", "settings", "sitter-onboarding", "demo-sets", "judge-seats", "profile-photos", "skin", "chat", "chat-trip", "chat-handoff", "owner-onboarding-logic", "owner-onboarding", "pet-glance", "pet-status", "pet-sprite", "pet-scene", "pet-behavior", "pet-wardrobe", "pet-room", "pet-room-sitter", "pet-medal", "sitter-badges",
   ].join("|")})\\.spec\\.ts$`,
 );
 const PHONE_SPEC = /phone\.spec\.ts$/;

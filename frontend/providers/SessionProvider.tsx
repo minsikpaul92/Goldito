@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 
+import { HEARTBEAT_MS, heartbeat, judgeSetFor, onSeatReleased, releaseSeat, takeSeat } from "../lib/judgeSeat";
 import { getSupabase, isSupabaseConfigured } from "../lib/supabase";
 
 export type Role = "owner" | "sitter";
@@ -32,6 +33,8 @@ type SessionValue = SessionState & {
   /** Reflect a saved `profiles` change (e.g. display name) without refetching. */
   patchProfile: (changes: Pick<Profile, "displayName">) => void;
   signOut: () => Promise<void>;
+  /** Why a Judge seat signed this browser out (#411), shown on the login screen. */
+  seatNotice: string | null;
 };
 
 const LOADING: SessionState = { status: "loading", session: null, profile: null, error: null };
@@ -47,6 +50,7 @@ function isRole(value: unknown): value is Role {
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<SessionState>(isSupabaseConfigured ? LOADING : SIGNED_OUT);
   const profileUserId = useRef<string | null>(null);
+  const [seatNotice, setSeatNotice] = useState<string | null>(null);
 
   const load = useCallback(async (session: Session | null) => {
     if (!session) {
@@ -107,7 +111,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   // A phone frame around the app names the signed-in account above the phone.
   useEffect(() => {
     if (typeof window === "undefined" || window.parent === window) return;
-    const account = state.status === "signedIn" ? { name: state.profile.displayName, role: state.profile.role } : null;
+    const account =
+      state.status === "signedIn"
+        ? {
+            name: state.profile.displayName,
+            role: state.profile.role,
+            judge: judgeSetFor(state.session.user.email)?.key ?? null,
+          }
+        : null;
     try {
       window.parent.postMessage({ type: "goldito:account", pane: window.name, account }, window.location.origin);
     } catch {
@@ -128,12 +139,46 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     if (!isSupabaseConfigured) return;
-    await getSupabase().auth.signOut();
+    const supabase = getSupabase();
+    // Signing out of a judge set frees its seat at once (#411); the other phone of the split view signs out with it.
+    const judge = judgeSetFor((await supabase.auth.getSession()).data.session?.user.email);
+    if (judge) await releaseSeat(judge.key);
+    await supabase.auth.signOut();
   }, []);
 
+  // A judge set is held by this browser while it is signed in (#411): a heartbeat about every minute keeps the seat.
+  // Signed in by hand (no seat yet), it takes the seat first. A seat that went to another judge signs out.
+  const email = state.status === "signedIn" ? state.session.user.email : null;
+  useEffect(() => {
+    const judge = judgeSetFor(email);
+    if (!judge) return;
+    let active = true;
+    const beat = async () => {
+      if (await heartbeat(judge.key)) return;
+      try {
+        await takeSeat(judge.key);
+      } catch {
+        if (!active) return;
+        setSeatNotice(`${judge.label} is in use. Pick another seat.`);
+        void signOut();
+      }
+    };
+    setSeatNotice(null);
+    void beat();
+    const timer = setInterval(beat, HEARTBEAT_MS);
+    const off = onSeatReleased((set) => {
+      if (set === judge.key && active) void getSupabase().auth.signOut();
+    });
+    return () => {
+      active = false;
+      clearInterval(timer);
+      off();
+    };
+  }, [email, signOut]);
+
   const value = useMemo<SessionValue>(
-    () => ({ ...state, reload, patchProfile, signOut }),
-    [state, reload, patchProfile, signOut],
+    () => ({ ...state, reload, patchProfile, signOut, seatNotice }),
+    [state, reload, patchProfile, signOut, seatNotice],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

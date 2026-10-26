@@ -28,10 +28,18 @@ An AI agent answers, plans, checks, and writes, so the sitter can just care.
 ## Try it in 60 seconds
 
 > [!TIP]
-> No setup: open **[goldito-petcare.vercel.app](https://goldito-petcare.vercel.app)** and tap **Try the demo**, then **Robert, the owner** (or **Chloe, the sitter**). No sign-up and no password. The demo accounts and pets are fictional.
+> No setup: open **[goldito-petcare.vercel.app](https://goldito-petcare.vercel.app)** and tap **Try the demo**, then **Robert, the owner** (or **Chloe, the sitter**). No sign-up and no password: you get a free Judge seat. The demo accounts and pets are fictional.
 
 1. On a computer the app runs inside a phone frame: **click = tap, drag or scroll = swipe**. Sample photos are built in, so no camera is needed.
-2. Open the other role in a private window to watch both sides of one stay.
+2. **Judges:** open **[Show both phones](https://goldito-petcare.vercel.app/?view=split)** and pick a free **Judge seat** (Judge 1 to 4). Your seat is yours alone: it starts from a clean stay, signs in the owner and the sitter side by side, and frees itself when you log out or leave for 10 minutes.
+3. Or sign in by hand to your seat's accounts with the demo password from our Devpost page:
+
+| Seat | Owner (Robert, with Max and Mochi) | Sitter (Chloe) |
+| :--- | :--- | :--- |
+| Judge 1 | `demo-owner-judge1@goldito.test` | `demo-sitter-judge1@goldito.test` |
+| Judge 2 | `demo-owner-judge2@goldito.test` | `demo-sitter-judge2@goldito.test` |
+| Judge 3 | `demo-owner-judge3@goldito.test` | `demo-sitter-judge3@goldito.test` |
+| Judge 4 | `demo-owner-judge4@goldito.test` | `demo-sitter-judge4@goldito.test` |
 
 > [!NOTE]
 > The backend runs on a free plan: the first request after a quiet spell can take 30 to 50 seconds while it wakes up (we ping it every 10 minutes).

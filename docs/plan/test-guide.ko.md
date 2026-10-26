@@ -31,7 +31,7 @@
 | `demo-owner@goldito.test` | Robert (오너) | 강아지 **Max**, 고양이 **Mochi** |
 | `demo-sitter@goldito.test` | Chloe (시터) | Robert의 확정 예약 1건 (아래) |
 
-**팀 QA용 세트(#163):** 사람마다 오너 1 + 시터 1 한 세트. 로그인 화면의 **Whose demo** 드롭다운에서 고르면 그 세트의 Demo owner / Demo sitter로 들어가고, Profile → Demo tools는 **로그인한 그 계정만** 초기화한다(오너는 오너쪽, 시터는 시터쪽, 다른 계정은 그대로). 데모 도구가 켜진 빌드에서만 보이고, 심사용 빌드는 기본 한 쌍(Chloe 세트)만 쓴다.
+**팀 QA용 세트(#163):** 사람마다 오너 1 + 시터 1 한 세트. 로그인 화면의 **Whose demo** 드롭다운에서 고르면 그 세트의 Demo owner / Demo sitter로 들어가고, Profile → Demo tools는 **로그인한 그 계정만** 초기화한다(오너는 오너쪽, 시터는 시터쪽, 다른 계정은 그대로). 데모 도구가 켜진 빌드에서만 보이고, 심사용 빌드는 **Judge 1 to 4** 좌석만 보인다(#411, 3.62): 오너 `demo-owner-judgeN@goldito.test`, 시터 `demo-sitter-judgeN@goldito.test`(이름은 Robert · Chloe, 펫 Max · Mochi), 한 좌석은 한 브라우저만.
 
 | 세트 | 오너 | 시터 |
 | :--- | :--- | :--- |
@@ -178,7 +178,7 @@
 | 다음 시터 요청 카드의 **From Max's Life Record** (접힘) · 문의 AI 근거 칩 · 케어 체크리스트 초안에 지난 Heads-up 자동 제안 | ✅ 🤖 `sitter-bookings.spec.ts` + pytest | 07C / 7C.6 |
 | **Snap 탭** (D61): Treat check(간식 성분표 → 알러지 · 독성 · Tavily 출처, DANGER 빨간 모달) · Mood(펫별 박스 + 감정 %) · Sticker(펫만 오리기 → 다이어리 꾸미기, 견주 + 시터) | 🟡 12.0 탭 · 카드 3개 ✅(🤖 `snap.spec.ts` · `auth.spec.ts`) · 12.1a Treat check **API만** ✅(🤖 pytest `test_ai_safety_check` · `test_safety_rules` · `test_tavily` + SQL `rls_smoke` 013 — `013` 호스팅 DB 적용 · smoke 통과 2026-10-14, 모델 직접 호출 확인 2026-10-14) · 12.1c Treat check **화면** ✅(🤖 `treat-check.spec.ts` — API는 목업, 사람 확인 · 실제 호출은 대기) · 12.2a Mood **API만** ✅(🤖 pytest `test_mood_rules` · `test_ai_pet_mood`; 비전 태그는 우리 사진 8장으로 직접 호출 확인 2026-10-14) · 12.2b Mood **화면** ✅(🤖 `mood.spec.ts` — MediaPipe는 테스트 훅, API 목업; 실제 브라우저 · 모델 확인은 대기) · 12.3a Sticker **만들기** ✅(🤖 `sticker.spec.ts` + SQL `rls_smoke` 013b — `013b` 호스팅 DB 적용 · smoke 통과 2026-10-14, 실제 Magic Touch는 머지 뒤) · 12.3b 다이어리 **꾸미기** ✅(🤖 `decor.spec.ts` — 견주 다이어리 상세 · 시터 보낸 알림장, 마우스 드래그 · 크기 · 회전; `013b` 적용 2026-10-14) · 12.4 **그림일기 · 글 위/아래 스티커 · 다운로드 · 기본 스티커 9장** ✅(🤖 `decor.spec.ts` · `sticker.spec.ts`; 기본 스티커는 임시 그림) · 12.5 **Snap 탭 Recent checks 3개 · README** ✅(🤖 `snap.spec.ts`) · 11.8 **Save image**(꾸민 그림일기 한 장 → PNG) 🟡(🤖 `decor.spec.ts` · 사람 확인 대기) | 12 (08 설계 포함) |
 | **공개 데모 보호** (감사 2026-10-21): 데모 계정(`@goldito.test`)의 비밀번호 · 이메일은 시드만 바꿈(`014z`) · AI 호출(`/api/ai/*` · `/api/rag/*` · `/api/tone/*`)과 업로드 서명(`/api/media/sign` · 펫 · 프로필 사진)은 한 사람당 하루 100번(공유 데모 계정 1000번), 넘으면 429 | 🟡 🤖 SQL `rls_smoke`(014z) · pytest `test_seed_demo` · `test_limits` · 호스팅 DB 적용은 머지 때 (SEC-4 to SEC-6) | 10 |
-| **심사위원 좌석** (#411): Judge 1 to 4 세트(오너 + 시터, 펫 둘), 한 세트는 한 브라우저만. 좌석 잡기는 서버에서 원자적, 1분마다 heartbeat, 로그아웃하면 바로 풀리고 10분 동안 heartbeat가 없어도 풀림 | 🟡 DB(`015t`) 🤖 SQL `rls_smoke`(015t: 잡기 · 두 번 잡기 · heartbeat · 풀기 · 만료) · API(`/api/demo/seat`, 심사위원 리셋) 🤖 pytest `test_demo_reset_api` · 호스팅 DB 적용과 시드는 머지 때 (JUDGE-1 to JUDGE-6) | #411 |
+| **심사위원 좌석** (#411): Judge 1 to 4 세트(오너 + 시터, 펫 둘), 한 세트는 한 브라우저만. 좌석 잡기는 서버에서 원자적, 1분마다 heartbeat, 로그아웃하면 바로 풀리고 10분 동안 heartbeat가 없어도 풀림 | 🟡 DB(`015t`) 🤖 SQL `rls_smoke`(015t: 잡기 · 두 번 잡기 · heartbeat · 풀기 · 만료) · API(`/api/demo/seat`, 심사위원 리셋) 🤖 pytest `test_demo_reset_api` · 앱(좌석 고르기, In use, heartbeat, 로그아웃하면 풀기, split의 다른 폰 로그인) 🤖 `judge-seats` · 호스팅 DB 적용과 시드는 머지 때 (JUDGE-1 to JUDGE-6) | #411 |
 | 로그인 · 회원가입 (Apple · Google 버튼은 "Coming soon" 토스트만, 이메일 가입 위 "or with email" 구분선) · 역할별 화면 · Welcome 투어 | ✅ 🤖 (소셜 버튼 · 구분선은 사람 확인 대기) | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
 | **Profile의 Save 고정** (스크롤해도 화면 맨 아래에 Save와 저장 에러가 보임, 오너 · 시터 같음 · 시터는 Your photos가 Badges 위) | 🟡 기존 `profile` e2e가 `profile-save`로 저장 확인 · 고정 위치 · 순서는 사람 확인 대기 | #292 |
@@ -1273,6 +1273,9 @@
 | JUDGE-2 | (DB) 로그아웃(release) · 10분 넘게 heartbeat 없음 | 풀기는 잡은 브라우저만, 풀면 바로 빈 좌석. 풀린 좌석은 heartbeat로 되살아나지 않음. 만료된 좌석은 다른 브라우저가 `fresh`로 잡고, 예전 브라우저의 heartbeat는 실패 | 🤖 SQL `rls_smoke`(015t) | ➖ |
 | JUDGE-3 | (API) `POST /api/demo/seat` {set: judge1 to judge4, holder} | 빈 좌석이면 잡고, 다른 브라우저가 쓰던 세트면 오너 + 시터 둘 다 `pets`(Max · Mochi, 만난 적 없음)로 초기화. 같은 브라우저가 다시 잡으면 초기화 없음. 쓰는 중이면 409 "Judge 1 is in use.", 팀 세트는 404. 초기화가 실패하면 좌석을 holder 없이 풀어 다음에 다시 깨끗하게 | 🤖 pytest `test_demo_reset_api`(judge) | ➖ |
 | JUDGE-4 | (API) 심사위원 계정으로 `POST /api/demo/reset` | `DEMO_RESET_ENABLED` 없이도 되고 세트 전체(오너 + 시터)를 초기화. 좌석의 holder id가 맞을 때만, 아니면 409 "Your judge seat has timed out." 팀 세트는 예전 그대로(스위치가 꺼지면 404, 자기 쪽만) | 🤖 pytest `test_demo_reset_api` | ➖ |
+| JUDGE-5 | (앱) 심사용 빌드(`EXPO_PUBLIC_DEMO_TOOLS` 없음) 로그인 화면 · 팀 빌드는 **Whose demo** → **Judge seats** | 팀 세트 없이 Judge 1 to 4 칩만. 다른 브라우저가 잡은 좌석은 "Judge 1 · In use"(누를 수 없음), 첫 빈 좌석이 골라져 있음. 넷 다 쓰는 중이면 "All judge seats are busy. Try again in a few minutes." Owner / Sitter를 누르면 좌석을 잡고(새 심사위원이면 세트 초기화) 그 계정으로 로그인. Welcome의 **Try the demo**도 첫 빈 좌석으로 | 🤖 `judge-seats` | 사람 확인 대기 |
+| JUDGE-6 | (앱) 브라우저 A가 Judge 1 → 브라우저 B 로그인 화면 · A에서 Log out · A 탭을 그냥 닫기 | B에 "Judge 1 · In use"(15초 안에 갱신). A가 로그아웃하면 바로 빈 좌석, 닫기만 하면 10분 뒤 빈 좌석. 자리를 잃은 탭(다른 심사위원이 가져감)은 다음 heartbeat에 로그아웃되고 로그인 화면에 "Judge 1 is in use. Pick another seat." | 🤖 `judge-seats`(로그아웃 · 잃은 좌석) · 10분 만료는 SQL만 | 👤 실제 두 브라우저 |
+| JUDGE-7 | (앱) `?view=split` 왼쪽 폰에서 Judge 4 → Owner | 오른쪽 폰이 같은 세트의 시터(Chloe)로 저절로 로그인. 두 폰이 각자 세션을 유지하고, 한쪽에서 Log out하면 좌석이 풀리고 다른 쪽도 로그아웃 | 🤖 `judge-seats`(split) | 👤 |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
