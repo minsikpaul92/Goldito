@@ -19,7 +19,7 @@ type Props = {
   testID?: string;
 };
 
-/** Continue with Apple / Google, the same on Welcome, Sign up and Log in. Renders nothing while it's off. */
+/** Apple and Google side by side, the same on Welcome, Sign up and Log in. Renders nothing while it's off. */
 export function SocialSignIn({ divider, testID = "social" }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -27,23 +27,35 @@ export function SocialSignIn({ divider, testID = "social" }: Props) {
   if (!isSocialSignInShown) return null;
   return (
     <View style={styles.wrap}>
-      <Button
-        label="Continue with Apple"
-        variant="secondary"
-        icon={<AppleLogo size={20} color={theme.color.text} />}
-        onPress={() => toast.show("Coming soon")}
-        testID={`${testID}-apple`}
-      />
-      <Button
-        label="Continue with Google"
-        variant="secondary"
-        icon={<GoogleLogo size={20} />}
-        onPress={() => toast.show("Coming soon")}
-        testID={`${testID}-google`}
-      />
+      <View style={styles.row}>
+        <Button
+          label="Apple"
+          accessibilityLabel="Continue with Apple"
+          variant="secondary"
+          icon={<AppleLogo size={20} color={theme.color.text} />}
+          onPress={() => toast.show("Coming soon")}
+          style={styles.half}
+          testID={`${testID}-apple`}
+        />
+        <Button
+          label="Google"
+          accessibilityLabel="Continue with Google"
+          variant="secondary"
+          icon={<GoogleLogo size={20} />}
+          onPress={() => toast.show("Coming soon")}
+          style={styles.half}
+          testID={`${testID}-google`}
+        />
+      </View>
       {divider ? <OrDivider label={divider} /> : null}
     </View>
   );
 }
 
-const makeStyles = (theme: Theme) => StyleSheet.create({ wrap: { gap: theme.spacing.sm } });
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    wrap: { gap: theme.spacing.sm },
+    // One row of two, so Welcome keeps How it works in view.
+    row: { flexDirection: "row", gap: theme.spacing.sm },
+    half: { flex: 1 },
+  });

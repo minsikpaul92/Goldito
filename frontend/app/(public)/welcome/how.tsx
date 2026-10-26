@@ -15,6 +15,7 @@ import { Theme } from "../../../theme/themes";
 
 const BREAKFAST = require("../../../assets/demo/mumu/mumu_white_table.jpg");
 const WALK = require("../../../assets/demo/mumu/mumu_lake_walk.jpg");
+const COIN = require("../../../assets/brand/goldito-symbol-256.png");
 
 type Story = { title: string; body: string; block: "blockPeach" | "blockMint" | "blockButter"; visual: () => ReactNode };
 
@@ -65,12 +66,13 @@ export default function HowItWorks() {
             ))}
             <Art name="owner/camera" size={34} />
           </View>
-          <View style={styles.trail} aria-hidden>
-            {[0, 1, 2].map((k) => (
-              <View key={k} style={{ transform: [{ translateX: k % 2 ? 10 : -10 }, { rotate: "180deg" }] }}>
-                <Icon name="paw" size={18} color={theme.color.primary} />
-              </View>
-            ))}
+          <View style={styles.relay} aria-hidden>
+            <View style={styles.relayLine} />
+            <View style={styles.relayPill}>
+              <Image source={COIN} style={styles.relayCoin} />
+              <Text style={styles.relayText}>Goldito sends the update</Text>
+            </View>
+            <View style={styles.relayLine} />
           </View>
           <Who initial={owner.name[0]} text={`${owner.name}, the owner: learns without asking`} />
           <FeedCard photo={BREAKFAST} title={`${pet} ate every bite`} meta={`${sitter.name} · 8:12 AM · just now`} />
@@ -263,7 +265,21 @@ const makeStyles = (theme: Theme) => {
     taskDone: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },
     taskText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     taskTextDone: { color: theme.color.primaryText },
-    trail: { alignItems: "center", gap: 2 },
+    relay: { alignItems: "center" },
+    relayLine: { width: 0, height: 10, borderLeftWidth: 2, borderStyle: "dashed", borderColor: theme.color.primary, opacity: 0.5 },
+    relayPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingLeft: 4,
+      paddingRight: 12,
+      paddingVertical: 4,
+      borderRadius: theme.radius.pill,
+      backgroundColor: theme.color.surface,
+    },
+    // The coin fills about 60% of its canvas (see BrandLogo).
+    relayCoin: { width: 28, height: 28, margin: -4 },
+    relayText: { fontSize: theme.fontSize.caption + 1, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     stay: { gap: 0 },
     stage: { flexDirection: "row", gap: theme.spacing.md },
     rail: { alignItems: "center", width: 40 },

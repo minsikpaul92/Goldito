@@ -55,6 +55,8 @@ const makeStyles = (theme: Theme) => {
       alignItems: "center",
       justifyContent: "center",
       gap: theme.spacing.sm,
+      // A little above the middle: the eye reads true centre as low.
+      paddingBottom: "18%",
       backgroundColor: theme.color.cream,
     },
     logo: { alignItems: "center", gap: theme.spacing.sm },

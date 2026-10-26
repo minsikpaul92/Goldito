@@ -2,9 +2,9 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Art } from "../../components/art/Art";
 import { BrandLogo } from "../../components/BrandLogo";
 import { OrDivider } from "../../components/intro/OrDivider";
+import { RoleArt } from "../../components/intro/RoleArt";
 import { SocialSignIn } from "../../components/intro/SocialSignIn";
 import { BackLink } from "../../components/ui/BackLink";
 import { Button } from "../../components/ui/Button";
@@ -165,7 +165,7 @@ export default function LoginScreen() {
                 style={({ pressed }) => [styles.demoTile, styles.demoOwner, pressed && styles.pressed]}
                 testID="demo-owner"
               >
-                <Art name="owner/pet-dog" size={34} />
+                <RoleArt role="owner" size={52} />
                 <Text style={styles.demoLabel}>Owner</Text>
               </Pressable>
               <Pressable
@@ -176,7 +176,7 @@ export default function LoginScreen() {
                 style={({ pressed }) => [styles.demoTile, styles.demoSitter, pressed && styles.pressed]}
                 testID="demo-sitter"
               >
-                <Art name="sitter/five-second" size={34} />
+                <RoleArt role="sitter" size={52} />
                 <Text style={styles.demoLabel}>Sitter</Text>
               </Pressable>
             </View>
@@ -234,7 +234,7 @@ const makeStyles = (theme: Theme) =>
     },
     demoTile: {
       flex: 1,
-      minHeight: 64,
+      minHeight: 72,
       borderRadius: 20,
       flexDirection: "row",
       alignItems: "center",
