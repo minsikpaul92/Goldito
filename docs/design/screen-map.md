@@ -386,8 +386,8 @@ Shows: `RoleArt` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | role ? "Continue" : "Pick one to continue" | `signup-continue` | 146 |
-| Button | Continue | `signup-continue` | 201 |
+| Button | role ? "Next" : "Pick one first" | `signup-next` | 146 |
+| Button | Next | `signup-next` | 201 |
 | Button | submitting ? "Creating account…" : "Create account" | `create-account` | 255 |
 | TextButton | Already have an account? Log in | `go-login` | 271 |
 | Pressable | — | `testID` | 305 |
