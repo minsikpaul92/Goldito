@@ -173,3 +173,147 @@ def test_a_second_reset_of_the_same_set_is_refused_while_one_runs(client: TestCl
     assert client.post("/api/demo/reset", json={"state": "pets"}).status_code == 200
     assert answers == [409]
     demo._running.clear()
+
+
+# Judge seats (#411): a judge set resets without DEMO_RESET_ENABLED, but only for the browser that holds its seat.
+
+JUDGE_OWNER, JUDGE_SITTER = "jo", "js"
+HOLDER = "00000000-0000-4000-8000-0000000000ea"
+
+
+class SeatClient:
+    """Answers the 015t RPCs from a dict of seat holders; records table writes."""
+
+    def __init__(self, held: dict[str, str] | None = None, claim: dict | None = None):
+        self.held = held or {}
+        self.claim = claim or {"ok": True, "fresh": True}
+        self.calls: list[tuple[str, dict]] = []
+        self.updates: list[dict] = []
+
+    def rpc(self, name: str, params: dict):
+        self.calls.append((name, params))
+        if name == "judge_seat_held":
+            data = self.held.get(params["p_set"]) == params["p_holder"]
+        else:
+            data = [self.claim]
+        return _Done(data)
+
+    def table(self, _name: str):
+        client = self
+
+        class Update:
+            def update(self, values):
+                client.updates.append(values)
+                return self
+
+            def eq(self, *_a):
+                return self
+
+            def execute(self):
+                return _Done(None)
+
+        return Update()
+
+
+class _Done:
+    def __init__(self, data):
+        self.data = data
+
+    def execute(self):
+        return self
+
+
+def judge_client(monkeypatch: pytest.MonkeyPatch, seats: SeatClient) -> list:
+    monkeypatch.setattr(demo, "get_service_client", lambda: seats)
+    monkeypatch.setattr(demo.demo_reset, "demo_ids", lambda _c, demo_set=None: (JUDGE_OWNER, JUDGE_SITTER))
+    resets = []
+    monkeypatch.setattr(
+        demo.demo_reset,
+        "reset",
+        lambda _c, owner_id, sitter_id, today, *, state, apply, demo_set, scope: resets.append((demo_set.key, state, scope)) or [],
+    )
+    return resets
+
+
+def test_a_judge_resets_the_whole_set_without_the_team_switch(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    resets = judge_client(monkeypatch, SeatClient(held={"judge2": HOLDER}))
+    sign_in_as(JUDGE_OWNER, "demo-owner-judge2@goldito.test")
+
+    response = client.post("/api/demo/reset", json={"state": "in_care", "holder": HOLDER})
+
+    assert response.status_code == 200
+    assert resets == [("judge2", "in_care", "both")]
+
+
+@pytest.mark.parametrize("holder", [None, "00000000-0000-4000-8000-0000000000eb"])
+def test_a_judge_without_the_seat_cannot_reset(client: TestClient, monkeypatch: pytest.MonkeyPatch, holder):
+    resets = judge_client(monkeypatch, SeatClient(held={"judge2": HOLDER}))
+    sign_in_as(JUDGE_SITTER, "demo-sitter-judge2@goldito.test")
+
+    response = client.post("/api/demo/reset", json={"state": "pets", "holder": holder})
+
+    assert response.status_code == 409
+    assert resets == []
+
+
+def test_taking_a_fresh_seat_resets_the_set_to_a_clean_stay(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    seats = SeatClient(claim={"ok": True, "fresh": True})
+    resets = judge_client(monkeypatch, seats)
+
+    response = client.post("/api/demo/seat", json={"set": "judge3", "holder": HOLDER})
+
+    assert response.json() == {"set": "judge3", "fresh": True}
+    assert seats.calls == [("claim_judge_seat", {"p_set": "judge3", "p_holder": HOLDER})]
+    assert resets == [("judge3", "pets", "both")]
+
+
+def test_the_same_browser_taking_its_seat_again_keeps_the_stay(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    resets = judge_client(monkeypatch, SeatClient(claim={"ok": True, "fresh": False}))
+
+    assert client.post("/api/demo/seat", json={"set": "judge3", "holder": HOLDER}).json()["fresh"] is False
+    assert resets == []
+
+
+def test_a_seat_in_use_is_refused(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    resets = judge_client(monkeypatch, SeatClient(claim={"ok": False, "fresh": False}))
+
+    response = client.post("/api/demo/seat", json={"set": "judge1", "holder": HOLDER})
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Judge 1 is in use."
+    assert resets == []
+
+
+@pytest.mark.parametrize("key", ["chloe", "paul", "nobody"])
+def test_only_judge_sets_have_seats(client: TestClient, monkeypatch: pytest.MonkeyPatch, key: str):
+    judge_client(monkeypatch, SeatClient())
+
+    assert client.post("/api/demo/seat", json={"set": key, "holder": HOLDER}).status_code == 404
+
+
+def test_a_failed_reset_frees_the_seat_with_no_holder(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    seats = SeatClient()
+    judge_client(monkeypatch, seats)
+
+    def boom(*a, **k):
+        raise RuntimeError("down")
+
+    monkeypatch.setattr(demo.demo_reset, "reset", boom)
+
+    assert client.post("/api/demo/seat", json={"set": "judge4", "holder": HOLDER}).status_code == 500
+    assert seats.updates == [{"holder": None, "heartbeat_at": "-infinity"}]
+    demo._running.clear()
+
+
+def test_the_judge_sets_keep_the_story_names():
+    from app.services import demo_accounts
+
+    keys = [s.key for s in demo_accounts.JUDGE_SETS]
+    assert keys == ["judge1", "judge2", "judge3", "judge4"]
+    for judge in demo_accounts.JUDGE_SETS:
+        assert judge.owner.email.endswith("@goldito.test") and judge.sitter.email.endswith("@goldito.test")
+        assert (judge.owner.display_name, judge.sitter.display_name) == ("Robert", "Chloe")
+        assert [p[0] for p in judge.pets] == ["Max", "Mochi"]
+        assert demo_accounts.DEMO_HOMES[judge.owner.email] == demo_accounts.DEMO_HOMES["demo-owner@goldito.test"]
+    # The judges' accounts are seeded with everyone else's.
+    assert {s.owner.email for s in demo_accounts.JUDGE_SETS} <= {u.email for u in demo_accounts.DEMO_USERS}
