@@ -11,6 +11,8 @@
 
 "/" decides where to go: Welcome (OB.1), or the signed-in role's home (phase-03 3.3).
 
+Shows: `BootView`
+
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | error ?? "Something went wrong." | — | 27 |
@@ -39,17 +41,15 @@ Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreement
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
-Shows: `BrandLogo`
+Shows: `Art` · `BrandLogo` · `OrDivider` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | BackLink | — | `login-back` | 88 |
-| Button | submitting ? "Signing in…" : "Sign in" | `sign-in` | 137 |
-| Button | Continue with Apple | `login-apple` | 145 |
-| Button | Continue with Google | `login-google` | 152 |
-| TextButton | New here? Create an account | `go-signup` | 162 |
-| Button | Demo owner | `demo-owner` | 188 |
-| Button | Demo sitter | `demo-sitter` | 196 |
+| Button | submitting ? "Logging in…" : "Log in" | `sign-in` | 136 |
+| Pressable | ``Demo owner, ${demoSet.owner.name}`` | `demo-owner` | 160 |
+| Pressable | ``Demo sitter, ${demoSet.sitter.name}`` | `demo-sitter` | 171 |
+| TextButton | New here? Create an account | `go-signup` | 189 |
 
 ### `/owner` — [app/owner/(tabs)/index.tsx](../../frontend/app/owner/(tabs)/index.tsx)
 
@@ -382,13 +382,17 @@ Menu → Settings (Phase 11.11, D47): the account, What's New, notifications, Pr
 
 ### `/signup` — [app/(auth)/signup.tsx](../../frontend/app/(auth)/signup.tsx)
 
-Shows: `BrandLogo` · `RoleCard`
+Sign up in three short steps (intro trial): who you are, your name and email, a password. One progress bar and one Back; Back on the first step leaves.
+
+Shows: `Art` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `signup-back` | 113 |
-| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 221 |
-| TextButton | Already have an account? Sign in | `go-login` | 251 |
+| Button | role ? "Continue" : "Pick one to continue" | `signup-continue` | 146 |
+| Button | Continue | `signup-continue` | 201 |
+| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 255 |
+| TextButton | Already have an account? Log in | `go-login` | 271 |
+| Pressable | — | `testID` | 305 |
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 
@@ -593,29 +597,40 @@ Shows: `TodayTasks`
 
 ### `/welcome` — [app/(public)/welcome/index.tsx](../../frontend/app/(public)/welcome/index.tsx)
 
-Onboarding landing (OB.1–OB.2): pick a role for a short tour, then Sign in opens the existing login screen (unchanged).
+Welcome (OB.1, intro trial on the design site): Max and Mochi, the tagline, and Try the demo as the main button, then email sign-up and Log in. How it works opens three short pages.
 
-Shows: `BrandLogo`
+Shows: `BrandLogo` · `DemoSheet` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `welcome-choose-owner` | 30 |
-| Pressable | — | `welcome-choose-sitter` | 47 |
-| TextButton | Sign in | `welcome-sign-in` | 66 |
-| TextButton | Create account | `welcome-sign-up` | 67 |
-| TextButton | Privacy | `welcome-privacy` | 72 |
+| Button | Try the demo | `welcome-demo` | 39 |
+| Button | Create account | `welcome-create` | 41 |
+| TextButton | Sign up with email | `welcome-sign-up` | 45 |
+| TextButton | Log in | `welcome-sign-in` | 46 |
+| TextButton | How it works › | `welcome-how` | 77 |
+| TextButton | Privacy | `welcome-privacy` | 78 |
+
+### `/welcome/how` — [app/(public)/welcome/how.tsx](../../frontend/app/(public)/welcome/how.tsx)
+
+How it works (OB.2, intro trial): three pages from the onboarding plan, the problem, the two sides and one stay, drawn with the app's own pictures. It replaces the owner and sitter tours.
+
+Shows: `Art` · `DemoSheet`
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Button | Try the demo | `how-demo` | 126 |
+| Button | Create account | `how-create` | 127 |
+| Button | Next | `how-next` | 135 |
+| BackLink | — | `how-back` | 144 |
+| TextButton | Skip | `how-skip` | 148 |
 
 ### `/welcome/owner` — [app/(public)/welcome/owner.tsx](../../frontend/app/(public)/welcome/owner.tsx)
 
-Owner-only onboarding tour → existing `/login`.
-
-Shows: `OnboardingTour`
+The role tours became one How it works (intro trial); old links land there.
 
 ### `/welcome/sitter` — [app/(public)/welcome/sitter.tsx](../../frontend/app/(public)/welcome/sitter.tsx)
 
-Sitter-only onboarding tour → existing `/login`.
-
-Shows: `OnboardingTour`
+The role tours became one How it works (intro trial); old links land there.
 
 ### `/whats-new` — [app/whats-new.tsx](../../frontend/app/whats-new.tsx)
 
@@ -1046,14 +1061,6 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | `label` | `notification-bell` | 27 |
 
-### OnboardingTour — [components/OnboardingTour.tsx](../../frontend/components/OnboardingTour.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| BackLink | — | ``${testID}-back`` | 40 |
-| Button | Next | ``${testID}-next`` | 76 |
-| Button | Get started | ``${testID}-sign-in`` | 78 |
-
 ### OpenInMapsButton — [components/OpenInMapsButton.tsx](../../frontend/components/OpenInMapsButton.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1394,6 +1401,21 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | ``${stay.sitterName}'s photos`` | `stay-sitter-photo` | 53 |
 
+### DemoSheet — [components/intro/DemoSheet.tsx](../../frontend/components/intro/DemoSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | Try Goldito as… | `demo-sheet` | 28 |
+| Pressable | — | `demo-sheet-owner` | 31 |
+| Pressable | — | `demo-sheet-sitter` | 43 |
+
+### SocialSignIn — [components/intro/SocialSignIn.tsx](../../frontend/components/intro/SocialSignIn.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Button | Continue with Apple | ``${testID}-apple`` | 30 |
+| Button | Continue with Google | ``${testID}-google`` | 37 |
+
 ### BigOption — [components/ownerOnboarding/BigOption.tsx](../../frontend/components/ownerOnboarding/BigOption.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1667,4 +1689,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-497 actions · 495 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+504 actions · 502 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).

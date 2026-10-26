@@ -2,7 +2,7 @@ import { Redirect } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
 import { EmptyState } from "../components/ui/EmptyState";
-import { LoadingView } from "../components/ui/LoadingView";
+import { BootView } from "../components/intro/BootView";
 import { TextButton } from "../components/ui/TextButton";
 import { homeFor, useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
@@ -12,7 +12,7 @@ import { Theme } from "../theme/themes";
 export default function Index() {
   const session = useSession();
 
-  if (session.status === "loading") return <LoadingView />;
+  if (session.status === "loading") return <BootView />;
   if (session.status === "error") return <ProfileError />;
   if (session.status === "signedIn") return <Redirect href={homeFor(session.profile.role)} />;
   return <Redirect href="/welcome" />;
