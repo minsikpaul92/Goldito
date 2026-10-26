@@ -124,7 +124,7 @@ test.describe("pickMedia", () => {
     await app(page).getByTestId("feed-add-more").click();
     await expect(app(page).getByTestId("media-picker")).toBeVisible();
     // Photo + video samples (pet FAB allows both).
-    for (const id of ["play_fetch", "mumu_kitchen", "mumu_party_hat", "mumu_blossom_basket"]) {
+    for (const id of ["play_fetch", "mumu_leather_chair", "mumu_party_hat", "mumu_blossom_basket"]) {
       await expect(app(page).getByTestId(`sample-${id}`)).toBeVisible();
     }
     await app(page).getByTestId("media-picker-close").click();

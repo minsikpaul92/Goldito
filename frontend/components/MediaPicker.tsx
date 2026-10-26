@@ -1,12 +1,20 @@
 import { Asset } from "expo-asset";
-import { createElement, useEffect, useState } from "react";
-import { Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { createElement, useEffect, useMemo, useState } from "react";
+import {
+  Image,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import { DemoSample } from "../lib/demoSamples";
+import { DemoSample, SampleCategory } from "../lib/demoSamples";
 import { MediaKind } from "../lib/media";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 import { Button } from "./ui/Button";
+import { SegmentedControl } from "./ui/SegmentedControl";
 import { Sheet } from "./ui/Sheet";
 
 type Props = {
@@ -21,10 +29,15 @@ type Props = {
   onClose: () => void;
 };
 
+const CATEGORY_META: Record<SampleCategory, { label: string; icon: string }> = {
+  dog: { label: "🐶 Dogs", icon: "🐾 " },
+  cat: { label: "🐱 Cats", icon: "🐱 " },
+  human: { label: "👤 People", icon: "👤 " },
+  treat: { label: "🍖 Treats", icon: "🍖 " },
+};
+
 /**
- * The picker sheet behind `pickMedia()` (DESIGN.md §6 MediaPicker): sample photos for the
- * desktop frame and demo accounts, plus **Choose from library** (file / gallery picker).
- * Everything is a click.
+ * Option 3: Category tabs + Section-grouped scrolling list by subject name (Mumu, Max, Charlie, Bella...)
  */
 export function MediaPicker({
   visible,
@@ -39,49 +52,152 @@ export function MediaPicker({
   const styles = useThemedStyles(makeStyles);
   const withVideo = mediaTypes.includes("video");
   const withImage = mediaTypes.includes("image");
-  const title = withVideo && withImage ? "Add a photo or video" : withVideo ? "Add a video" : "Add a photo";
+  const title =
+    withVideo && withImage
+      ? "Add a photo or video"
+      : withVideo
+        ? "Add a video"
+        : "Add a photo";
   const showSamples = samples.length > 0;
 
+  // Extract available categories
+  const categories = useMemo(() => {
+    const set = new Set<SampleCategory>();
+    for (const s of samples) {
+      if (s.category) set.add(s.category);
+      else set.add("dog");
+    }
+    const order: SampleCategory[] = ["dog", "cat", "human", "treat"];
+    return order.filter((c) => set.has(c));
+  }, [samples]);
+
+  const [activeCategory, setActiveCategory] = useState<SampleCategory>("dog");
+
+  useEffect(() => {
+    if (categories.length > 0 && !categories.includes(activeCategory)) {
+      setActiveCategory(categories[0]);
+    }
+  }, [categories, activeCategory]);
+
+  const categoryOptions = useMemo(() => {
+    return categories.map((cat) => ({
+      value: cat,
+      label: CATEGORY_META[cat]?.label ?? cat,
+    }));
+  }, [categories]);
+
+  // Group samples in current category by subjectName
+  const subjectSections = useMemo(() => {
+    const map = new Map<string, DemoSample[]>();
+    for (const s of samples) {
+      const cat = s.category ?? "dog";
+      if (cat !== activeCategory) continue;
+      const name = s.subjectName ?? "Other";
+      if (!map.has(name)) {
+        map.set(name, []);
+      }
+      map.get(name)!.push(s);
+    }
+    return Array.from(map.entries()).map(([name, items]) => ({
+      name,
+      samples: items,
+    }));
+  }, [samples, activeCategory]);
+
+  const categoryIcon = CATEGORY_META[activeCategory]?.icon ?? "";
+
   return (
-    <Sheet visible={visible} title={title} onClose={onClose} testID="media-picker">
+    <Sheet
+      visible={visible}
+      title={title}
+      onClose={onClose}
+      testID="media-picker"
+    >
       {showSamples ? (
-        <View>
-          <Text style={styles.heading}>{withVideo && !withImage ? "Sample videos" : "Sample photos"}</Text>
-          <View style={styles.grid}>
-            {samples.map((sample) => (
-              <Pressable
-                key={sample.id}
-                accessibilityRole="button"
-                accessibilityLabel={`Use sample: ${sample.label}`}
-                onPress={() => onPickSample(sample)}
-                style={({ pressed }) => [styles.tile, pressed && styles.pressed]}
-                testID={`sample-${sample.id}`}
-              >
-                {/* Fixed square; contain so portrait samples are not cropped/pixel-zoomed. */}
-                <View style={styles.thumb}>
-                  {sample.kind === "video" ? (
-                    <SampleVideoThumb source={sample.source} styles={styles} />
-                  ) : (
-                    <Image
-                      source={sample.source}
-                      style={styles.thumbImage}
-                      resizeMode="contain"
-                      accessibilityIgnoresInvertColors
-                    />
-                  )}
+        <View style={styles.sampleContainer}>
+          {/* Tier 1: Category tabs */}
+          {categories.length > 1 ? (
+            <View style={styles.categoryControl}>
+              <SegmentedControl
+                options={categoryOptions}
+                value={activeCategory}
+                onChange={setActiveCategory}
+                testID="media-category-tabs"
+              />
+            </View>
+          ) : null}
+
+          {/* Tier 2: Section-grouped photo grids by Subject */}
+          {subjectSections.map((section, idx) => (
+            <View
+              key={section.name}
+              style={[styles.section, idx === 0 && styles.firstSection]}
+              testID={`sample-section-${section.name}`}
+            >
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionTitleRow}>
+                  <Text style={styles.sectionTitle}>
+                    {categoryIcon}
+                    {section.name}
+                  </Text>
+                  <View style={styles.sectionBadge}>
+                    <Text style={styles.sectionBadgeText}>
+                      {section.samples.length}{" "}
+                      {section.samples.length === 1 ? "photo" : "photos"}
+                    </Text>
+                  </View>
                 </View>
-                <Text numberOfLines={1} style={styles.tileLabel}>
-                  {sample.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+                <View style={styles.sectionDivider} />
+              </View>
+
+              <View style={styles.grid}>
+                {section.samples.map((sample) => (
+                  <Pressable
+                    key={sample.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Use sample: ${sample.label}`}
+                    onPress={() => onPickSample(sample)}
+                    style={({ pressed }) => [
+                      styles.tile,
+                      pressed && styles.pressed,
+                    ]}
+                    testID={`sample-${sample.id}`}
+                  >
+                    {/* Fixed square; contain so portrait samples are not cropped/pixel-zoomed. */}
+                    <View style={styles.thumb}>
+                      {sample.kind === "video" ? (
+                        <SampleVideoThumb
+                          source={sample.source}
+                          styles={styles}
+                        />
+                      ) : (
+                        <Image
+                          source={sample.source}
+                          style={styles.thumbImage}
+                          resizeMode="contain"
+                          accessibilityIgnoresInvertColors
+                        />
+                      )}
+                    </View>
+                    <Text numberOfLines={1} style={styles.tileLabel}>
+                      {sample.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ))}
         </View>
       ) : null}
 
       <View style={styles.actions}>
         {canTakePhoto && withImage ? (
-          <Button label="Take photo" onPress={onTakePhoto} variant="secondary" testID="media-take-photo" />
+          <Button
+            label="Take photo"
+            onPress={onTakePhoto}
+            variant="secondary"
+            testID="media-take-photo"
+          />
         ) : null}
         <Button
           label="Choose from library"
@@ -164,11 +280,48 @@ function SampleVideoThumb({
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    heading: {
-      fontSize: theme.fontSize.small,
-      fontWeight: theme.fontWeight.semibold,
-      color: theme.color.textMuted,
+    sampleContainer: {
+      gap: theme.spacing.sm,
+      marginBottom: theme.spacing.md,
+    },
+    categoryControl: {
+      marginBottom: theme.spacing.xs,
+    },
+    section: {
+      marginTop: theme.spacing.md,
+    },
+    firstSection: {
+      marginTop: theme.spacing.xs,
+    },
+    sectionHeader: {
       marginBottom: theme.spacing.sm,
+    },
+    sectionTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.xs,
+      marginBottom: 6,
+    },
+    sectionTitle: {
+      fontSize: theme.fontSize.body,
+      fontWeight: theme.fontWeight.bold,
+      color: theme.color.text,
+    },
+    sectionBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: theme.radius.pill,
+      backgroundColor: theme.color.accent,
+    },
+    sectionBadgeText: {
+      fontSize: theme.fontSize.caption,
+      fontWeight: theme.fontWeight.semibold,
+      color: theme.color.primary,
+    },
+    sectionDivider: {
+      height: 1,
+      backgroundColor: theme.color.border,
+      marginTop: 2,
     },
     grid: {
       flexDirection: "row",
@@ -217,5 +370,6 @@ const makeStyles = (theme: Theme) =>
     },
     actions: {
       gap: theme.spacing.sm,
+      marginTop: theme.spacing.xs,
     },
   });
