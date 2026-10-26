@@ -17,9 +17,9 @@ import { test } from "@playwright/test";
 const BASE = "http://localhost:4001";
 const PLUGIN = resolve(__dirname, "..");
 const SNAP = readFileSync(`${PLUGIN}/capture/snap.js`, "utf8");
-// Oct 26: shipped or empty tickets left the list (#147, #120, #117, nav, diary views); their sections stay on the
-// Tickets page and Build keeps their variant sets fitted.
-const PAGES = ["ticket-119.html", "kit.html", "booking-flow.html", "feed-trial.html", "intro-trial.html", "tone-trial.html", "ux-calls.html", "delights.html", "words-trial.html", "onboarding.html", "sitter-home-trial.html"];
+// Oct 26: shipped or empty tickets left the list (#147, #120, #117, nav); their sections stay on the Tickets page and
+// Build keeps their variant sets fitted. Diary views came back the same day so devs have its frames in Figma.
+const PAGES = ["ticket-119.html", "kit.html", "booking-flow.html", "feed-trial.html", "intro-trial.html", "tone-trial.html", "ux-calls.html", "delights.html", "words-trial.html", "onboarding.html", "sitter-home-trial.html", "diary-compare.html"];
 const SETUP = `window.__pawnoteAutoLayout = true;
   window.__pawnoteComps = [{ sel: "[data-comp]", name: (el) => el.dataset.comp, v: (el) => el.dataset.variant || "" }];`;
 
