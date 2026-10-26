@@ -34,7 +34,7 @@ const SECTIONS: LegalSection[] = [
     body: [
       "Goldito drafts replies, care checklists, captions, diary pages and Life Records with AI models (NVIDIA Nemotron and other open models) run on Nebius Token Factory. For each request the text and photos needed for that task are sent there: the question, the booking dates, the pet's care notes, the sitter's policy text, the day's check-ins and photos.",
       "Prices, availability and dates come from our own database, not from the model. Entry codes are never sent to a model.",
-      "A sitter approves every reply and diary page before the owner sees it, unless the sitter turned on auto-send. AI drafts can be wrong and are not veterinary advice or a judgment of a pet's behaviour. The provider's own terms apply to what it receives.",
+      "A sitter approves every reply and diary page before the owner sees it. AI drafts can be wrong and are not veterinary advice or a judgment of a pet's behaviour. The provider's own terms apply to what it receives.",
     ],
   },
   {

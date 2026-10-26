@@ -15,17 +15,12 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { LoadingView } from "../components/ui/LoadingView";
 import { Screen } from "../components/ui/Screen";
 import { TextButton } from "../components/ui/TextButton";
-import { SegmentedControl } from "../components/ui/SegmentedControl";
-import { Sheet } from "../components/ui/Sheet";
 import { TextField } from "../components/ui/TextField";
 import {
-  AiReplyMode,
   RoleProfile,
-  getAiReplyMode,
   loadRoleProfile,
   reindexSitterPolicies,
   saveProfile,
-  setAiReplyMode,
 } from "../features/profile/profileApi";
 import { PHONE_RULE, loadMyPhone, saveMyPhone } from "../features/contact/contactApi";
 import { isDemoAccount, isDemoToolsEnabled } from "../lib/demoReset";
@@ -198,8 +193,6 @@ export default function ProfileScreen() {
   const [opened, setOpened] = useState<Record<string, boolean>>({});
   const [services, setServices] = useState<Service[]>(["boarding"]);
   const [multiOwner, setMultiOwner] = useState(false);
-  const [aiMode, setAiMode] = useState<AiReplyMode>({ mode: "manual", consented: false });
-  const [consenting, setConsenting] = useState(false);
   const [home, setHome] = useState<LatLng | null>(null);
   // The pin came from "Use my current location" this visit: an address typed later must not replace it.
   const [pinFromGps, setPinFromGps] = useState(false);
@@ -248,7 +241,6 @@ export default function ProfileScreen() {
         if (result.role === "sitter") {
           setServices(result.fields.services);
           setMultiOwner(result.fields.accepts_multiple_owners ?? false);
-          void getAiReplyMode().then(setAiMode);
         }
       })
       .catch((error: Error) => setLoadError(error.message));
@@ -654,37 +646,6 @@ export default function ProfileScreen() {
         </Card>
       ) : null}
       {loaded.role === "sitter" ? (
-        <Card style={styles.card} testID="profile-ai-replies">
-          <Text style={styles.groupTitle}>AI replies</Text>
-          <SegmentedControl
-            options={[
-              { value: "manual", label: "Manual approval" },
-              { value: "auto", label: "Auto-send" },
-            ]}
-            value={aiMode.mode}
-            onChange={(mode) => {
-              if (mode === aiMode.mode) return;
-              if (mode === "auto" && !aiMode.consented) {
-                setConsenting(true);
-                return;
-              }
-              setAiReplyMode(mode, false)
-                .then(setAiMode)
-                .catch(() => toast.show("Couldn't change auto-send. Try again.", { tone: "error" }));
-            }}
-            testID="profile-ai-mode"
-          />
-          <Text style={styles.muted}>
-            {aiMode.mode === "auto"
-              ? "Replies that need nothing from you go out in your name after a short delay."
-              : "You tap Send on every reply."}
-          </Text>
-          <Text style={styles.muted} testID="profile-ai-notice">
-            AI drafts your replies and notes. You approve before anything is sent.
-          </Text>
-        </Card>
-      ) : null}
-      {loaded.role === "sitter" ? (
         <View style={styles.group} testID="profile-answers">
           <Text style={styles.groupTitle}>Your answers</Text>
           <SitterAnswersSummary sitterId={profile.id} />
@@ -696,21 +657,6 @@ export default function ProfileScreen() {
           />
         </View>
       ) : null}
-      <Sheet visible={consenting} title="Turn on auto-send?" onClose={() => setConsenting(false)} testID="ai-consent-sheet">
-        <Text style={styles.muted}>Replies go out in your name. You're responsible for what's sent.</Text>
-        <Button
-          label="Turn on auto-send"
-          onPress={() => {
-            setAiReplyMode("auto", true)
-              .then((next) => {
-                setAiMode(next);
-                setConsenting(false);
-              })
-              .catch(() => toast.show("Couldn't change auto-send. Try again.", { tone: "error" }));
-          }}
-          testID="ai-consent-confirm"
-        />
-      </Sheet>
       <View style={styles.privacy}>
         <Text style={styles.hint}>
           {profile.role === "owner"
