@@ -814,14 +814,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | saving ? "Applying…" : "Apply" | `rules-sheet` | 118 |
-| Button | saving ? "Applying…" : "Apply" | `rules-apply` | 124 |
-| Pressable | ``Close ${label.toLowerCase()} on ${WEEKDAY_NAMES[weekday]}s`` | ``rule-${slot}-${weekday}`` | 151 |
-| TextButton | Open everything | `rules-clear` | 167 |
-| Pressable | day === "all" ? "Hours for every day" : `Hours for ${WEEKDAY_NAMES[day]}s` | ``rules-hours-day-${day}`` | 178 |
-| TextButton | Same as every day | `rules-hours-reset` | 200 |
-| Stepper | ``${label} start`` | ``rules-${slot}-start`` | 216 |
-| Stepper | ``${label} end`` | ``rules-${slot}-end`` | 226 |
+| Sheet | saving ? "Applying…" : "Apply" | `rules-sheet` | 120 |
+| Button | saving ? "Applying…" : "Apply" | `rules-apply` | 126 |
+| Pressable | ``Close ${label.toLowerCase()} on ${WEEKDAY_NAMES[weekday]}s`` | ``rule-${slot}-${weekday}`` | 153 |
+| TextButton | Open everything | `rules-clear` | 169 |
+| Pressable | day === "all" ? "Hours for every day" : `Hours for ${WEEKDAY_NAMES[day]}s` | ``rules-hours-day-${day}`` | 180 |
+| TextButton | Same as every day | `rules-hours-reset` | 202 |
+| Stepper | ``${label} start`` | ``rules-${slot}-start`` | 218 |
+| Stepper | ``${label} end`` | ``rules-${slot}-end`` | 230 |
 
 ### ConsentCard — [components/ConsentCard.tsx](../../frontend/components/ConsentCard.tsx)
 
@@ -937,20 +937,20 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | `submitLabel` | `change-sheet` | 186 |
-| Button | `submitLabel` | `change-send` | 192 |
-| SegmentedControl | — | `change-kind` | 200 |
-| Stepper | Day | `change-day` | 211 |
-| Stepper | Time | `change-time` | 218 |
-| CheckRow | type === "other" ? "📍 Somewhere else" : placeLabel(type, null, booking, viewer) | ``change-place-${type}`` | 229 |
+| Sheet | `submitLabel` | `change-sheet` | 189 |
+| Button | `submitLabel` | `change-send` | 195 |
+| SegmentedControl | — | `change-kind` | 203 |
+| Stepper | Day | `change-day` | 214 |
+| Stepper | Time | `change-time` | 223 |
+| CheckRow | type === "other" ? "📍 Somewhere else" : placeLabel(type, null, booking, viewer) | ``change-place-${type}`` | 236 |
 
 ### HandoffPicker — [components/HandoffPicker.tsx](../../frontend/components/HandoffPicker.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Stepper | ``${title} day`` | ``${kind}-day`` | 61 |
-| Stepper | ``${title} time`` | ``${kind}-time`` | 70 |
-| CheckRow | `option.label` | ``${kind}-place-${option.value}`` | 102 |
+| Stepper | ``${title} day`` | ``${kind}-day`` | 63 |
+| Stepper | ``${title} time`` | ``${kind}-time`` | 73 |
+| CheckRow | `option.label` | ``${kind}-place-${option.value}`` | 118 |
 
 ### HeaderMenu — [components/HeaderMenu.tsx](../../frontend/components/HeaderMenu.tsx)
 
@@ -1028,7 +1028,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | SegmentedControl | — | `meet-mode` | 93 |
 | CheckRow | 📍 Somewhere else | `meet-spot-other` | 106 |
 | Stepper | Meet & Greet day | `meet-day` | 128 |
-| Stepper | Meet & Greet time | `meet-time` | 138 |
+| Stepper | Meet & Greet time | `meet-time` | 139 |
 
 ### NoticeDetail — [components/NoticeDetail.tsx](../../frontend/components/NoticeDetail.tsx)
 
@@ -1214,15 +1214,15 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | saving ? "Saving…" : "Save" | `schedule-sheet` | 112 |
-| Button | saving ? "Saving…" : "Save" | `schedule-save` | 118 |
-| SegmentedControl | — | `schedule-mode` | 126 |
-| CheckRow | `label` | ``schedule-${slot}`` | 142 |
-| Stepper | ``${label} start`` | ``schedule-${slot}-start`` | 153 |
-| Stepper | ``${label} end`` | ``schedule-${slot}-end`` | 163 |
-| Stepper | Pets at a time | `schedule-pets` | 178 |
-| CheckRow | `label` | ``schedule-${slot}`` | 194 |
-| TextButton | cancellingId === b.id ? "Cancelling…" : "Cancel booking" | ``cancel-booking-${b.id}`` | 219 |
+| Sheet | saving ? "Saving…" : "Save" | `schedule-sheet` | 114 |
+| Button | saving ? "Saving…" : "Save" | `schedule-save` | 120 |
+| SegmentedControl | — | `schedule-mode` | 128 |
+| CheckRow | `label` | ``schedule-${slot}`` | 144 |
+| Stepper | ``${label} start`` | ``schedule-${slot}-start`` | 155 |
+| Stepper | ``${label} end`` | ``schedule-${slot}-end`` | 167 |
+| Stepper | Pets at a time | `schedule-pets` | 184 |
+| CheckRow | `label` | ``schedule-${slot}`` | 200 |
+| TextButton | cancellingId === b.id ? "Cancelling…" : "Cancel booking" | ``cancel-booking-${b.id}`` | 225 |
 
 ### ShareLocationSheet — [components/ShareLocationSheet.tsx](../../frontend/components/ShareLocationSheet.tsx)
 

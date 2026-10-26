@@ -5,6 +5,7 @@ import { CheckRow } from "./ui/CheckRow";
 import { DayMark, DayPickerSheet } from "./ui/DayPickerSheet";
 import { Stepper } from "./ui/Stepper";
 import { TextField } from "./ui/TextField";
+import { TimePickerSheet } from "./ui/TimePickerSheet";
 import { addDays, formatDay, formatTime, shiftTime } from "../features/schedule/dates";
 import { LocationType } from "../lib/bookings";
 import { useThemedStyles } from "../providers/ThemeProvider";
@@ -50,6 +51,7 @@ export function HandoffPicker({ kind, value, onChange, minDay, sitterName, fixed
   const styles = useThemedStyles(makeStyles);
   const title = kind === "drop_off" ? "Drop-off" : "Pick-up";
   const [calendar, setCalendar] = useState(false);
+  const [clock, setClock] = useState(false);
   const set = (change: Partial<HandoffDraft>) => onChange({ ...value, ...change });
 
   return (
@@ -59,6 +61,7 @@ export function HandoffPicker({ kind, value, onChange, minDay, sitterName, fixed
       </Text>
       <View style={styles.when}>
         <Stepper
+          style={styles.stepper}
           label={`${title} day`}
           value={formatDay(value.day)}
           onDecrease={() => set({ day: addDays(value.day, -1) })}
@@ -68,10 +71,12 @@ export function HandoffPicker({ kind, value, onChange, minDay, sitterName, fixed
           testID={`${kind}-day`}
         />
         <Stepper
+          style={styles.stepper}
           label={`${title} time`}
           value={formatTime(value.time)}
           onDecrease={() => set({ time: shiftTime(value.time, -TIME_STEP) })}
           onIncrease={() => set({ time: shiftTime(value.time, TIME_STEP) })}
+          onPressValue={() => setClock(true)}
           testID={`${kind}-time`}
         />
       </View>
@@ -84,6 +89,17 @@ export function HandoffPicker({ kind, value, onChange, minDay, sitterName, fixed
         onClose={() => setCalendar(false)}
         marks={dayMarks}
         testID={`${kind}-calendar`}
+      />
+      <TimePickerSheet
+        visible={clock}
+        title={`${title} time`}
+        value={value.time}
+        onPick={(time) => {
+          set({ time });
+          setClock(false);
+        }}
+        onClose={() => setClock(false)}
+        testID={`${kind}-clock`}
       />
       {dayMarks && dayMarks.get(value.day) && dayMarks.get(value.day) !== "open" ? (
         <Text style={styles.dayNote} testID={`${kind}-day-note`}>
@@ -136,8 +152,13 @@ const makeStyles = (theme: Theme) =>
     },
     when: {
       flexDirection: "row",
-      flexWrap: "wrap",
-      gap: theme.spacing.md,
+      alignItems: "center",
+      gap: theme.spacing.sm,
+    },
+    stepper: {
+      flex: 1,
+      minWidth: 0,
+      justifyContent: "space-between",
     },
     fixed: {
       fontSize: theme.fontSize.body,
