@@ -1,8 +1,11 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { BrandLogo } from "../../components/BrandLogo";
+import { OrDivider } from "../../components/intro/OrDivider";
+import { RoleArt } from "../../components/intro/RoleArt";
+import { SocialSignIn } from "../../components/intro/SocialSignIn";
 import { BackLink } from "../../components/ui/BackLink";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -25,15 +28,11 @@ import {
   getSupabase,
   isSupabaseConfigured,
 } from "../../lib/supabase";
-import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
-import { useToast } from "../../providers/ToastProvider";
+import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
-import { AppleLogo, GoogleLogo } from "../../components/ui/SocialIcons";
 
 export default function LoginScreen() {
-  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const toast = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +42,7 @@ export default function LoginScreen() {
   // Whose demo accounts the two buttons sign in to. Only the team's build offers the choice.
   const [setKey, setSetKey] = useState(() => demoSetFor(params.set).key);
   const demoTried = useRef(false);
+  const demoSet = demoSetFor(setKey);
 
   const canSubmit =
     isSupabaseConfigured &&
@@ -91,9 +91,7 @@ export default function LoginScreen() {
         <BrandLogo height={32} />
         <View style={styles.header}>
           <Text style={styles.title}>Welcome back</Text>
-          <Text style={styles.subtitle}>
-            Sign in to see today's care updates.
-          </Text>
+          <Text style={styles.subtitle}>Log in to see today with your pet.</Text>
         </View>
 
         {!isSupabaseConfigured ? (
@@ -103,6 +101,7 @@ export default function LoginScreen() {
         ) : null}
 
         <View style={styles.form}>
+          <SocialSignIn divider="or with email" testID="login" />
           <TextField
             label="Email"
             value={email}
@@ -135,43 +134,16 @@ export default function LoginScreen() {
             </Text>
           ) : null}
           <Button
-            label={submitting ? "Signing in…" : "Sign in"}
+            label={submitting ? "Logging in…" : "Log in"}
             onPress={signIn}
             disabled={!canSubmit}
             testID="sign-in"
           />
-          {/* TODO: enable social login */}
-          {/* <View style={styles.social}>
-            <Button
-              label="Continue with Apple"
-              variant="secondary"
-              icon={<AppleLogo size={20} color={theme.color.primary} />}
-              onPress={() => toast.show("Coming soon")}
-              testID="login-apple"
-            />
-            <Button
-              label="Continue with Google"
-              variant="secondary"
-              icon={<GoogleLogo size={20} />}
-              onPress={() => toast.show("Coming soon")}
-              testID="login-google"
-            />
-          </View> */}
         </View>
-
-        <TextButton
-          label="New here? Create an account"
-          onPress={() => router.push("/signup")}
-          testID="go-signup"
-        />
 
         {isDemoEnabled ? (
           <View style={styles.demo} testID="demo-block">
-            <View style={styles.divider}>
-              <View style={styles.line} />
-              <Text style={styles.dividerText}>or try a demo</Text>
-              <View style={styles.line} />
-            </View>
+            <OrDivider label="or try the demo" />
             {isDemoToolsBuild ? (
               <Select
                 label="Whose demo"
@@ -185,25 +157,40 @@ export default function LoginScreen() {
               />
             ) : null}
             <View style={styles.demoButtons}>
-              <Button
-                label="Demo owner"
-                variant="secondary"
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Demo owner, ${demoSet.owner.name}`}
                 onPress={() => tryDemo("owner")}
                 disabled={submitting || !isSupabaseConfigured}
-                style={styles.demoButton}
+                style={({ pressed }) => [styles.demoTile, styles.demoOwner, pressed && styles.pressed]}
                 testID="demo-owner"
-              />
-              <Button
-                label="Demo sitter"
-                variant="secondary"
+              >
+                <RoleArt role="owner" size={52} />
+                <Text style={styles.demoLabel}>Owner</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Demo sitter, ${demoSet.sitter.name}`}
                 onPress={() => tryDemo("sitter")}
                 disabled={submitting || !isSupabaseConfigured}
-                style={styles.demoButton}
+                style={({ pressed }) => [styles.demoTile, styles.demoSitter, pressed && styles.pressed]}
                 testID="demo-sitter"
-              />
+              >
+                <RoleArt role="sitter" size={52} />
+                <Text style={styles.demoLabel}>Sitter</Text>
+              </Pressable>
             </View>
+            <Text style={styles.hint} testID="demo-hint">
+              {`Demo accounts: ${demoSet.owner.name} with ${demoSet.pets[0]} and ${demoSet.pets[1]}, booked with ${demoSet.sitter.name}.`}
+            </Text>
           </View>
         ) : null}
+
+        <TextButton
+          label="New here? Create an account"
+          onPress={() => router.push("/signup")}
+          testID="go-signup"
+        />
       </View>
     </Screen>
   );
@@ -234,9 +221,6 @@ const makeStyles = (theme: Theme) =>
     form: {
       gap: theme.spacing.md,
     },
-    social: {
-      gap: theme.spacing.sm,
-    },
     error: {
       fontSize: theme.fontSize.small,
       color: theme.color.error,
@@ -244,25 +228,30 @@ const makeStyles = (theme: Theme) =>
     demo: {
       gap: theme.spacing.md,
     },
-    divider: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: theme.spacing.sm,
-    },
-    line: {
-      flex: 1,
-      height: 1,
-      backgroundColor: theme.color.border,
-    },
-    dividerText: {
-      fontSize: theme.fontSize.small,
-      color: theme.color.textMuted,
-    },
     demoButtons: {
       flexDirection: "row",
       gap: theme.spacing.sm,
     },
-    demoButton: {
+    demoTile: {
       flex: 1,
+      minHeight: 72,
+      borderRadius: 20,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: theme.spacing.sm,
+    },
+    demoOwner: { backgroundColor: theme.color.blockPeach },
+    demoSitter: { backgroundColor: theme.color.blockMint },
+    pressed: { opacity: 0.85 },
+    demoLabel: {
+      fontSize: theme.fontSize.body,
+      fontWeight: theme.fontWeight.bold,
+      color: theme.color.text,
+    },
+    hint: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.textMuted,
+      textAlign: "center",
     },
   });

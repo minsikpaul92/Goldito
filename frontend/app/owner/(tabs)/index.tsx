@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ActiveTripCard } from "../../../components/ActiveTripCard";
+import { BookingTicket } from "../../../components/BookingTicket";
 import { LatestCard } from "../../../components/home/LatestCard";
 import { PetTile } from "../../../components/home/PetTile";
 import { StatTiles } from "../../../components/home/StatTiles";
@@ -14,6 +15,7 @@ import { Pager } from "../../../components/ui/Pager";
 import { Screen } from "../../../components/ui/Screen";
 import { sectionTitleStyle } from "../../../components/ui/SectionTitle";
 import { TextButton } from "../../../components/ui/TextButton";
+import { useHomeStay } from "../../../features/bookings/useHomeStay";
 import { useStayToday } from "../../../features/care/useStayToday";
 import { useMyPets } from "../../../features/pets/useMyPets";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
@@ -21,13 +23,16 @@ import { tokens } from "../../../theme/tokens";
 import { Theme } from "../../../theme/themes";
 
 /**
- * Owner Home: two sides of a card, flipped with a button (#286). Today: the stay in progress (hero, today's numbers, the latest update) and my pets.
+ * Owner Home: two sides of a card, flipped with a button (#286). Today: the stay in progress (hero, the stay's ticket,
+ * today's numbers, the latest update) and my pets. The ticket moved here from the Bookings tab (Oct 25); with no stay
+ * in care it shows the next paid one.
  * Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
  */
 export default function OwnerHome() {
   const styles = useThemedStyles(makeStyles);
   const { status, pets, error, reload } = useMyPets();
   const stay = useStayToday();
+  const booking = useHomeStay();
   const addPet = () => router.push("/owner/pets/new");
 
   if (status === "loading" && pets.length === 0) return <LoadingView />;
@@ -64,9 +69,12 @@ export default function OwnerHome() {
   const today = (
     <Screen contentStyle={styles.list}>
       <ActiveTripCard role="owner" />
+      {stay ? <StayHero stay={stay} /> : null}
+      {booking ? (
+        <BookingTicket booking={booking} viewer="owner" onPress={() => router.push(`/owner/bookings/${booking.id}`)} testID="home-stay-ticket" />
+      ) : null}
       {stay ? (
         <>
-          <StayHero stay={stay} />
           <StatTiles stay={stay} />
           <LatestCard stay={stay} />
         </>

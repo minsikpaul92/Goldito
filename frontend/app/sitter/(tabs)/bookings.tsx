@@ -3,7 +3,6 @@ import { useCallback, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { BookingCard } from "../../../components/BookingCard";
-import { BookingTicket } from "../../../components/BookingTicket";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
@@ -131,13 +130,10 @@ export default function SitterBookings() {
         <EmptyState {...EMPTY[open]} />
       ) : (
         <View style={styles.list}>
-          {shown.map((booking) =>
-            open === "past" ? (
-              <BookingCard key={booking.id} booking={booking} viewer="sitter" onPress={() => router.push(`/sitter/bookings/${booking.id}`)} />
-            ) : (
-              <BookingTicket key={booking.id} booking={booking} viewer="sitter" onPress={() => router.push(`/sitter/bookings/${booking.id}`)} />
-            ),
-          )}
+          {/* A plain list: the big ticket for the stay that's on is on Home (Oct 25). */}
+          {shown.map((booking) => (
+            <BookingCard key={booking.id} booking={booking} viewer="sitter" onPress={() => router.push(`/sitter/bookings/${booking.id}`)} />
+          ))}
         </View>
       )}
     </Screen>

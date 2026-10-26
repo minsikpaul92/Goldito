@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
 
 import { Icon } from "./Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
@@ -17,6 +17,7 @@ type Props = {
   /** Makes the value itself tappable (e.g. opens a calendar). */
   onPressValue?: () => void;
   testID?: string;
+  style?: StyleProp<ViewStyle>;
 };
 
 /** − value + for times and counts: the web-safe stand-in for native pickers (DESIGN.md §7.7). */
@@ -30,6 +31,7 @@ export function Stepper({
   actions = ["earlier", "later"],
   onPressValue,
   testID,
+  style,
 }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -48,7 +50,7 @@ export function Stepper({
   );
 
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, style]}>
       {button("remove", onDecrease, canDecrease, actions[0], "minus")}
       {onPressValue ? (
         <Pressable
@@ -98,7 +100,7 @@ const makeStyles = (theme: Theme) =>
     valueButton: { minHeight: 44, justifyContent: "center" },
     valueLink: { textDecorationLine: "underline", textDecorationColor: theme.color.primary },
     value: {
-      minWidth: 84,
+      minWidth: 56,
       textAlign: "center",
       fontSize: theme.fontSize.body,
       fontWeight: theme.fontWeight.semibold,

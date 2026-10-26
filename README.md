@@ -28,7 +28,7 @@ An AI agent answers, plans, checks, and writes, so the sitter can just care.
 ## Try it in 60 seconds
 
 > [!TIP]
-> No setup: open **[goldito-petcare.vercel.app](https://goldito-petcare.vercel.app)** and tap **Try demo → Owner** (or **Sitter**). No sign-up and no password. The demo accounts and pets are fictional.
+> No setup: open **[goldito-petcare.vercel.app](https://goldito-petcare.vercel.app)** and tap **Try the demo**, then **Robert, the owner** (or **Chloe, the sitter**). No sign-up and no password. The demo accounts and pets are fictional.
 
 1. On a computer the app runs inside a phone frame: **click = tap, drag or scroll = swipe**. Sample photos are built in, so no camera is needed.
 2. Open the other role in a private window to watch both sides of one stay.
@@ -437,7 +437,7 @@ cd frontend && cp .env.example .env            # EXPO_PUBLIC_API_URL=http://loca
 npm install && npx expo start --web --port 8081
 ```
 
-Open `http://localhost:8081` and use **Try demo**. Tests: `pytest -q` in `backend/`, Playwright in `frontend/` (see its README).
+Open `http://localhost:8081` and use **Try the demo**. Tests: `pytest -q` in `backend/`, Playwright in `frontend/` (see its README).
 
 | Path | Doc |
 | :--- | :--- |

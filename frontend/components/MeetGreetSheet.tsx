@@ -136,6 +136,7 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
       )}
       <View style={styles.row}>
         <Stepper
+          style={styles.stepper}
           label="Meet & Greet day"
           value={formatDay(day)}
           onDecrease={() => setDay(addDays(day, -1))}
@@ -146,6 +147,7 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
           testID="meet-day"
         />
         <Stepper
+          style={styles.stepper}
           label="Meet & Greet time"
           value={formatTime(time)}
           onDecrease={() => setTime(shiftTime(time, -TIME_STEP))}
@@ -198,8 +200,13 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     row: {
       flexDirection: "row",
-      flexWrap: "wrap",
-      gap: theme.spacing.md,
+      alignItems: "center",
+      gap: theme.spacing.sm,
+    },
+    stepper: {
+      flex: 1,
+      minWidth: 0,
+      justifyContent: "space-between",
     },
     hint: {
       fontSize: theme.fontSize.small,

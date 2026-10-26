@@ -134,6 +134,10 @@ test.describe("find a sitter", () => {
     await expect(screen.getByTestId("toast")).toContainText("Added to favorites");
     const searches = db.nearbySearches.length;
     await page.goBack();
+    // #371: back on a tab, the toast still showing sits just above the tab bar, not on it.
+    const toast = await box(screen.getByTestId("toast"));
+    const tab = await box(screen.getByRole("tab").first());
+    expect(toast.y + toast.height).toBeLessThanOrEqual(tab.y);
     await expect(page).toHaveURL(/\/owner\/bookings$/);
     await expect(screen.getByTestId("sitter-favorites").getByTestId("sitter-tile-Paul")).toBeVisible();
     await expect(screen.getByTestId("sitter-nearby").getByTestId("sitter-tile-Paul")).toHaveCount(0);

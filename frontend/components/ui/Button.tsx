@@ -19,12 +19,14 @@ type Props = {
   dimmed?: boolean;
   /** Optional icon (or logo) placed before the label. */
   icon?: ReactNode;
+  /** What a screen reader says when the visible label is shorter ("Apple" → "Continue with Apple"). */
+  accessibilityLabel?: string;
   style?: ViewStyle;
   testID?: string;
 };
 
 /** Figma: Goldito-Design → Components → Button (Style × State). */
-export function Button({ label, onPress, disabled, variant = "primary", size = "default", loading, dimmed, icon, style, testID }: Props) {
+export function Button({ label, onPress, disabled, variant = "primary", size = "default", loading, dimmed, icon, accessibilityLabel, style, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const secondary = variant === "secondary";
@@ -36,6 +38,7 @@ export function Button({ label, onPress, disabled, variant = "primary", size = "
 
   return (
     <Pressable
+      accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       disabled={disabled || loading}
       aria-busy={loading || undefined}

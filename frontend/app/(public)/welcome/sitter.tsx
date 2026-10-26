@@ -1,39 +1,6 @@
-import { OnboardingTour, type TourStep } from "../../../components/OnboardingTour";
+import { Redirect } from "expo-router";
 
-const STEPS: TourStep[] = [
-  {
-    title: "Focus on the pets. We handle the paperwork",
-    body: "Care needs, allergies, reports, and bookings live in the app. Spend your energy on the animals, not typing the same update five times.",
-    media: {
-      kind: "image",
-      title: "Sitter Home: pets in care",
-      brief:
-        "Still of Chloe’s Home: Max & Mochi “Now caring,” Heads-up allergy chip (chicken), today’s drop-off/pick-up row. No real phone numbers.",
-    },
-  },
-  {
-    title: "Checklists and five-second updates",
-    body: "Owner care requests become a checklist. Complete with a photo, pick AI chips for the daily note, add a short optional note. Near-zero typing.",
-    media: {
-      kind: "video",
-      title: "Task → photo → report chips (10 to 15 s)",
-      brief:
-        "Screen recording: Complete with photo → sample tray → chips on/off → Send. Optional short note once.",
-    },
-  },
-  {
-    title: "Bookings and entry info when you need them",
-    body: "Accept requests, agree times, and unlock home entry codes only in the 2-hour window before you arrive. Codes never sit in chat.",
-    media: {
-      kind: "image",
-      title: "Booking detail + Show code",
-      brief:
-        "Still: EntryInfoCard locked, then Show code (blur digits in the final asset).",
-    },
-  },
-];
-
-/** Sitter-only onboarding tour → existing `/login`. */
-export default function SitterOnboarding() {
-  return <OnboardingTour role="sitter" steps={STEPS} testID="onboarding-sitter" />;
+/** The role tours became one How it works (intro trial); old links land there. */
+export default function TourRedirect() {
+  return <Redirect href="/welcome/how" />;
 }

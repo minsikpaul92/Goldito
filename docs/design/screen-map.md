@@ -11,6 +11,8 @@
 
 "/" decides where to go: Welcome (OB.1), or the signed-in role's home (phase-03 3.3).
 
+Shows: `BootView`
+
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | error ?? "Something went wrong." | — | 27 |
@@ -41,30 +43,28 @@ Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreement
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
-Shows: `BrandLogo`
+Shows: `BrandLogo` · `OrDivider` · `RoleArt` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | BackLink | — | `login-back` | 88 |
-| Button | submitting ? "Signing in…" : "Sign in" | `sign-in` | 137 |
-| Button | Continue with Apple | `login-apple` | 145 |
-| Button | Continue with Google | `login-google` | 152 |
-| TextButton | New here? Create an account | `go-signup` | 162 |
-| Button | Demo owner | `demo-owner` | 188 |
-| Button | Demo sitter | `demo-sitter` | 196 |
+| Button | submitting ? "Logging in…" : "Log in" | `sign-in` | 136 |
+| Pressable | ``Demo owner, ${demoSet.owner.name}`` | `demo-owner` | 160 |
+| Pressable | ``Demo sitter, ${demoSet.sitter.name}`` | `demo-sitter` | 171 |
+| TextButton | New here? Create an account | `go-signup` | 189 |
 
 ### `/owner` — [app/owner/(tabs)/index.tsx](../../frontend/app/owner/(tabs)/index.tsx)
 
-Owner Home: two sides of a card, flipped with a button (#286). Today: the stay in progress (hero, today's numbers, the latest update) and my pets. Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
+Owner Home: two sides of a card, flipped with a button (#286). Today: the stay in progress (hero, the stay's ticket, today's numbers, the latest update) and my pets. The ticket moved here from the Bookings tab (Oct 25); with no stay in care it shows the next paid one. Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
 
-Shows: `ActiveTripCard` · `LatestCard` · `PetTile` · `StatTiles` · `StayHero` · `PetPage`
+Shows: `ActiveTripCard` · `BookingTicket` · `LatestCard` · `PetTile` · `StatTiles` · `StayHero` · `PetPage`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 38 |
-| EmptyState | No pets yet | — | 51 |
-| TextButton | + Add pet | `add-pet` | 78 |
-| Button | See today's updates | `see-updates` | 90 |
+| EmptyState | Couldn't load your pets | — | 43 |
+| EmptyState | No pets yet | — | 56 |
+| TextButton | + Add pet | `add-pet` | 86 |
+| Button | See today's updates | `see-updates` | 98 |
 
 ### `/owner-onboarding` — [app/owner-onboarding.tsx](../../frontend/app/owner-onboarding.tsx)
 
@@ -72,42 +72,45 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Next | `own-next` | 178 |
-| Sheet | Sign out | `own-leave-sheet` | 208 |
-| Button | Sign out | `own-leave-confirm` | 214 |
-| Stepper | `plural` | ``own-count-${kind}`` | 262 |
-| Button | Next | `own-next` | 283 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 284 |
-| Banner | `error` | — | 296 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 336 |
-| Stepper | Age | `own-age` | 429 |
-| Button | Next | `own-next` | 441 |
-| SegmentedControl | — | `own-weight-unit` | 460 |
-| LinkButton | `source.label` | ``own-source-${i + 1}`` | 510 |
-| Button | Start | `own-next` | 515 |
-| TextButton | Skip questions | `own-skip-questions` | 516 |
-| Button | Add | `own-food-other-add` | 647 |
-| Button | Next | `own-next` | 655 |
-| Button | locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location" | `own-use-location` | 717 |
-| Banner | `error` | `own-error` | 773 |
-| Button | Save and finish later | `own-save-later` | 775 |
-| Button | saving ? "Saving…" : draft.pending.length > 0 ? "Save, add next" : `Save ${petName}` | `own-save` | 786 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 808 |
+| Button | Next | `own-next` | 185 |
+| Sheet | Sign out | `own-leave-sheet` | 215 |
+| Button | Sign out | `own-leave-confirm` | 221 |
+| Stepper | `plural` | ``own-count-${kind}`` | 269 |
+| Button | Next | `own-next` | 290 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 291 |
+| Banner | `error` | — | 303 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 343 |
+| Stepper | Age | `own-age` | 436 |
+| Button | Next | `own-next` | 448 |
+| SegmentedControl | — | `own-weight-unit` | 467 |
+| LinkButton | `source.label` | ``own-source-${i + 1}`` | 517 |
+| Button | Start | `own-next` | 522 |
+| TextButton | Skip questions | `own-skip-questions` | 523 |
+| Button | Add | `own-food-other-add` | 651 |
+| Sheet | Yes, that's right | `own-foods-sheet` | 655 |
+| Button | Yes, that's right | `own-foods-confirm` | 662 |
+| TextButton | Change | `own-foods-change` | 671 |
+| Button | Next | `own-next` | 683 |
+| Button | locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location" | `own-use-location` | 744 |
+| Banner | `error` | `own-error` | 800 |
+| Button | Save and finish later | `own-save-later` | 802 |
+| Button | saving ? "Saving…" : draft.pending.length > 0 ? "Save, add next" : `Save ${petName}` | `own-save` | 813 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 835 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
 Owner Bookings tab (Figma 1730:103907). While a booking is under way, Your bookings come first (Upcoming · Requests · Past, each stay a ticket) and **Book care** takes you down to the search. With nothing under way the bookings are hidden and the search leads: a hotel-style line (place, dates, pets), the favorite sitters free for those dates, and everyone nearby (3B.3). Past stays are one tap away either way.
 
-Shows: `BookingCard` · `BookingTicket` · `PhotoViewerSheet` · `SitterResultCard` · `SitterSearchBar`
+Shows: `BookingCard` · `PhotoViewerSheet` · `SitterResultCard` · `SitterSearchBar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 112 |
-| SegmentedControl | — | `owner-bookings-tabs` | 157 |
-| Button | Book care | `book-care` | 181 |
-| TextButton | Open Profile | `search-open-profile` | 195 |
-| TextButton | Try again | `search-retry` | 203 |
-| TextButton | pastOpen ? "Hide past bookings" : `Past bookings (${past.length})` | `past-toggle` | 244 |
+| EmptyState | Couldn't load your bookings | — | 111 |
+| SegmentedControl | — | `owner-bookings-tabs` | 156 |
+| Button | Book care | `book-care` | 177 |
+| TextButton | Open Profile | `search-open-profile` | 191 |
+| TextButton | Try again | `search-retry` | 199 |
+| TextButton | pastOpen ? "Hide past bookings" : `Past bookings (${past.length})` | `past-toggle` | 240 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -139,10 +142,10 @@ Shows: `ConsentCard` · `QuoteCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Can't open checkout | — | 173 |
-| Button | Add entry info | `checkout-entry-add` | 201 |
-| CheckRow | Select all | `checkout-agree-all` | 212 |
-| Button | `totalLabel` | `checkout-pay` | 272 |
+| EmptyState | Can't open checkout | — | 174 |
+| Button | Add entry info | `checkout-entry-add` | 202 |
+| CheckRow | Select all | `checkout-agree-all` | 213 |
+| Button | `totalLabel` | `checkout-pay` | 273 |
 
 ### `/owner/bookings/[bookingId]/review` — [app/owner/bookings/[bookingId]/review.tsx](../../frontend/app/owner/bookings/[bookingId]/review.tsx)
 
@@ -340,11 +343,9 @@ Shows: `TreatCheckScreen`
 
 ### `/privacy` — [app/privacy.tsx](../../frontend/app/privacy.tsx)
 
-Public privacy page (10.11): reachable signed out — the Google OAuth consent screen (Branding) and the Welcome screen link here. Sections open one at a time; closed ones stay in the DOM (hidden) so the text is still there for crawlers and tests. `/privacy?open=google-calendar-and-meet` opens that section, for the consent-screen reviewer.
+Public privacy page (10.11): reachable signed out — the Google OAuth consent screen (Branding) and the Welcome screen link here. `/privacy?open=google-calendar-and-meet` opens that section, for the consent-screen reviewer.
 
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Pressable | — | ``privacy-${id}-toggle`` | 132 |
+Shows: `LegalPage`
 
 ### `/profile` — [app/profile.tsx](../../frontend/app/profile.tsx)
 
@@ -382,29 +383,33 @@ Menu → Settings (Phase 11.11, D47): the account, What's New, notifications, Pr
 
 ### `/signup` — [app/(auth)/signup.tsx](../../frontend/app/(auth)/signup.tsx)
 
-Shows: `BrandLogo` · `RoleCard`
+Sign up in three short steps (intro trial): who you are, your name and email, a password. One progress bar and one Back; Back on the first step leaves.
+
+Shows: `RoleArt` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `signup-back` | 113 |
-| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 221 |
-| TextButton | Already have an account? Sign in | `go-login` | 251 |
+| Button | role ? "Continue" : "Pick one to continue" | `signup-continue` | 146 |
+| Button | Continue | `signup-continue` | 201 |
+| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 255 |
+| TextButton | Already have an account? Log in | `go-login` | 271 |
+| Pressable | — | `testID` | 305 |
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 
 Sitter Home dashboard (D47b; was Today / 3B.8): **Now caring** when on duty, else **Requests** · **Today** (drop/pick due today) · **Upcoming** by time. Pets in care show as pixel pets with feed / walk / poop / nap taps (11.12).
 
-Shows: `ActiveTripCard` · `SitterToday` · `SitterPetRoom`
+Shows: `ActiveTripCard` · `BookingTicket` · `SitterToday` · `SitterPetRoom`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load today | — | 84 |
-| EmptyState | No pets in your care today | — | 116 |
-| Pressable | — | `home-photo-request` | 136 |
-| Pressable | — | `today-requests` | 148 |
-| Pressable | — | `today-chats` | 158 |
-| Pressable | — | ``handoff-row-${b.id}-${kind}`` | 181 |
-| Pressable | — | ``request-row-${b.id}`` | 201 |
+| EmptyState | Couldn't load today | — | 85 |
+| EmptyState | No pets in your care today | — | 117 |
+| Pressable | — | `home-photo-request` | 139 |
+| Pressable | — | `today-requests` | 151 |
+| Pressable | — | `today-chats` | 161 |
+| Pressable | — | ``handoff-row-${b.id}-${kind}`` | 184 |
+| Pressable | — | ``request-row-${b.id}`` | 204 |
 
 ### `/sitter-onboarding` — [app/sitter-onboarding.tsx](../../frontend/app/sitter-onboarding.tsx)
 
@@ -420,13 +425,13 @@ Shows: `SitterAnswersForm`
 
 Sitter Bookings tab (phase-03b 3B.4): Requests · In progress · Upcoming · Past → booking detail. Chats have their own tab (#329). A number on a chip = something to answer; the tab opens on that chip by itself. In progress is only there while something is in progress.
 
-Shows: `BookingCard` · `BookingTicket`
+Shows: `BookingCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 94 |
-| SegmentedControl | — | `sitter-bookings-tabs` | 115 |
-| EmptyState | — | — | 131 |
+| EmptyState | Couldn't load your bookings | — | 93 |
+| SegmentedControl | — | `sitter-bookings-tabs` | 114 |
+| EmptyState | — | — | 130 |
 
 ### `/sitter/bookings/[bookingId]` — [app/sitter/bookings/[bookingId]/index.tsx](../../frontend/app/sitter/bookings/[bookingId]/index.tsx)
 
@@ -587,35 +592,47 @@ Shows: `TodayTasks`
 
 ### `/terms` — [app/terms.tsx](../../frontend/app/terms.tsx)
 
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Pressable | — | ``terms-${id}-toggle`` | 100 |
+Terms of Service (#375): reachable signed out from sign-up, and from Settings.
+
+Shows: `LegalPage`
 
 ### `/welcome` — [app/(public)/welcome/index.tsx](../../frontend/app/(public)/welcome/index.tsx)
 
-Onboarding landing (OB.1–OB.2): pick a role for a short tour, then Sign in opens the existing login screen (unchanged).
+Welcome (OB.1, intro trial on the design site): Max and Mochi, the tagline, and Try the demo as the main button, then email sign-up and Log in. How it works opens three short pages.
 
-Shows: `BrandLogo`
+Shows: `Art` · `BrandLogo` · `DemoSheet` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `welcome-choose-owner` | 30 |
-| Pressable | — | `welcome-choose-sitter` | 47 |
-| TextButton | Sign in | `welcome-sign-in` | 66 |
-| TextButton | Create account | `welcome-sign-up` | 67 |
-| TextButton | Privacy | `welcome-privacy` | 72 |
+| Button | Try the demo | `welcome-demo` | 40 |
+| Button | Create account | `welcome-create` | 42 |
+| TextButton | Sign up with email | `welcome-sign-up` | 46 |
+| TextButton | Log in | `welcome-sign-in` | 48 |
+| Pressable | — | `welcome-privacy` | 51 |
+| Pressable | — | `welcome-terms` | 57 |
+| Pressable | How it works, three short pages | `welcome-how` | 89 |
+
+### `/welcome/how` — [app/(public)/welcome/how.tsx](../../frontend/app/(public)/welcome/how.tsx)
+
+How it works (OB.2, intro trial): three pages from the onboarding plan, the problem, the two sides and one stay, drawn with the app's own pictures. It replaces the owner and sitter tours.
+
+Shows: `Art` · `DemoSheet`
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Button | Try the demo | `how-demo` | 128 |
+| Button | Create account | `how-create` | 129 |
+| Button | Next | `how-next` | 137 |
+| BackLink | — | `how-back` | 146 |
+| TextButton | Skip | `how-skip` | 150 |
 
 ### `/welcome/owner` — [app/(public)/welcome/owner.tsx](../../frontend/app/(public)/welcome/owner.tsx)
 
-Owner-only onboarding tour → existing `/login`.
-
-Shows: `OnboardingTour`
+The role tours became one How it works (intro trial); old links land there.
 
 ### `/welcome/sitter` — [app/(public)/welcome/sitter.tsx](../../frontend/app/(public)/welcome/sitter.tsx)
 
-Sitter-only onboarding tour → existing `/login`.
-
-Shows: `OnboardingTour`
+The role tours became one How it works (intro trial); old links land there.
 
 ### `/whats-new` — [app/whats-new.tsx](../../frontend/app/whats-new.tsx)
 
@@ -674,7 +691,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | ``booking-card-${booking.id}`` | 77 |
+| Pressable | — | `testID ?? `booking-card-${booking.id}`` | 77 |
 | Tag | `badge.label` | — | 118 |
 
 ### CareLineBuilder — [components/CareLineBuilder.tsx](../../frontend/components/CareLineBuilder.tsx)
@@ -817,14 +834,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | saving ? "Applying…" : "Apply" | `rules-sheet` | 118 |
-| Button | saving ? "Applying…" : "Apply" | `rules-apply` | 124 |
-| Pressable | ``Close ${label.toLowerCase()} on ${WEEKDAY_NAMES[weekday]}s`` | ``rule-${slot}-${weekday}`` | 151 |
-| TextButton | Open everything | `rules-clear` | 167 |
-| Pressable | day === "all" ? "Hours for every day" : `Hours for ${WEEKDAY_NAMES[day]}s` | ``rules-hours-day-${day}`` | 178 |
-| TextButton | Same as every day | `rules-hours-reset` | 200 |
-| Stepper | ``${label} start`` | ``rules-${slot}-start`` | 216 |
-| Stepper | ``${label} end`` | ``rules-${slot}-end`` | 226 |
+| Sheet | saving ? "Applying…" : "Apply" | `rules-sheet` | 120 |
+| Button | saving ? "Applying…" : "Apply" | `rules-apply` | 126 |
+| Pressable | ``Close ${label.toLowerCase()} on ${WEEKDAY_NAMES[weekday]}s`` | ``rule-${slot}-${weekday}`` | 153 |
+| TextButton | Open everything | `rules-clear` | 169 |
+| Pressable | day === "all" ? "Hours for every day" : `Hours for ${WEEKDAY_NAMES[day]}s` | ``rules-hours-day-${day}`` | 180 |
+| TextButton | Same as every day | `rules-hours-reset` | 202 |
+| Stepper | ``${label} start`` | ``rules-${slot}-start`` | 218 |
+| Stepper | ``${label} end`` | ``rules-${slot}-end`` | 230 |
 
 ### ConsentCard — [components/ConsentCard.tsx](../../frontend/components/ConsentCard.tsx)
 
@@ -940,38 +957,45 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | `submitLabel` | `change-sheet` | 186 |
-| Button | `submitLabel` | `change-send` | 192 |
-| SegmentedControl | — | `change-kind` | 200 |
-| Stepper | Day | `change-day` | 211 |
-| Stepper | Time | `change-time` | 218 |
-| CheckRow | type === "other" ? "📍 Somewhere else" : placeLabel(type, null, booking, viewer) | ``change-place-${type}`` | 229 |
+| Sheet | `submitLabel` | `change-sheet` | 189 |
+| Button | `submitLabel` | `change-send` | 195 |
+| SegmentedControl | — | `change-kind` | 203 |
+| Stepper | Day | `change-day` | 214 |
+| Stepper | Time | `change-time` | 223 |
+| CheckRow | type === "other" ? "📍 Somewhere else" : placeLabel(type, null, booking, viewer) | ``change-place-${type}`` | 236 |
 
 ### HandoffPicker — [components/HandoffPicker.tsx](../../frontend/components/HandoffPicker.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Stepper | ``${title} day`` | ``${kind}-day`` | 61 |
-| Stepper | ``${title} time`` | ``${kind}-time`` | 70 |
-| CheckRow | `option.label` | ``${kind}-place-${option.value}`` | 102 |
+| Stepper | ``${title} day`` | ``${kind}-day`` | 63 |
+| Stepper | ``${title} time`` | ``${kind}-time`` | 73 |
+| CheckRow | `option.label` | ``${kind}-place-${option.value}`` | 118 |
 
 ### HeaderMenu — [components/HeaderMenu.tsx](../../frontend/components/HeaderMenu.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `label` | `testID` | 53 |
-| Pressable | ``${name}, ${role.toLowerCase()} account. Menu`` | `open-menu` | 68 |
-| Pressable | Close menu | `header-menu-close` | 95 |
-| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 106 |
-| Button | Sign out | `log-out-confirm` | 128 |
-| Button | Cancel | `log-out-cancel` | 129 |
-| Pressable | — | `log-out` | 149 |
+| Pressable | `label` | `testID` | 138 |
+| Pressable | ``${name}, ${role.toLowerCase()} account. Menu`` | `open-menu` | 153 |
+| Pressable | Close menu | `header-menu-close` | 208 |
+| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 219 |
+| Pressable | — | `log-out` | 281 |
+| Pressable | Cancel sign out | `log-out-scrim` | 299 |
+| Button | Sign out | `log-out-confirm` | 333 |
+| Button | Cancel | `log-out-cancel` | 339 |
 
 ### HeadsUpSection — [components/HeadsUpSection.tsx](../../frontend/components/HeadsUpSection.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Button | Add Heads-up | `heads-up-add` | 105 |
+
+### LegalPage — [components/LegalPage.tsx](../../frontend/components/LegalPage.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| BackLink | — | ``${testID}-back`` | 61 |
 
 ### MediaConfirm — [components/MediaConfirm.tsx](../../frontend/components/MediaConfirm.tsx)
 
@@ -985,10 +1009,11 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | `title` | `media-picker` | 46 |
-| Pressable | ``Use sample: ${sample.label}`` | ``sample-${sample.id}`` | 52 |
-| Button | Take photo | `media-take-photo` | 84 |
-| Button | Choose from library | `media-choose-library` | 86 |
+| Sheet | `title` | `media-picker` | 110 |
+| SegmentedControl | — | `media-category-tabs` | 121 |
+| Pressable | ``Use sample: ${sample.label}`` | ``sample-${sample.id}`` | 155 |
+| Button | Take photo | `media-take-photo` | 195 |
+| Button | Choose from library | `media-choose-library` | 202 |
 
 ### MeetGreetCard — [components/MeetGreetCard.tsx](../../frontend/components/MeetGreetCard.tsx)
 
@@ -1027,7 +1052,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | CheckRow | ``🌳 ${spots.nearby}`` | `meet-spot-nearby` | 107 |
 | CheckRow | 📍 Somewhere else | `meet-spot-other` | 116 |
 | Stepper | Meet & Greet day | `meet-day` | 138 |
-| Stepper | Meet & Greet time | `meet-time` | 148 |
+| Stepper | Meet & Greet time | `meet-time` | 149 |
 
 ### NoticeDetail — [components/NoticeDetail.tsx](../../frontend/components/NoticeDetail.tsx)
 
@@ -1041,14 +1066,6 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Pressable | `label` | `notification-bell` | 27 |
-
-### OnboardingTour — [components/OnboardingTour.tsx](../../frontend/components/OnboardingTour.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| BackLink | — | ``${testID}-back`` | 40 |
-| Button | Next | ``${testID}-next`` | 76 |
-| Button | Get started | ``${testID}-sign-in`` | 78 |
 
 ### OpenInMapsButton — [components/OpenInMapsButton.tsx](../../frontend/components/OpenInMapsButton.tsx)
 
@@ -1207,21 +1224,21 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | aria["aria-label"] | `testID` | 61 |
+| Pressable | aria["aria-label"] | `testID` | 62 |
 
 ### ScheduleSheet — [components/ScheduleSheet.tsx](../../frontend/components/ScheduleSheet.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | saving ? "Saving…" : "Save" | `schedule-sheet` | 112 |
-| Button | saving ? "Saving…" : "Save" | `schedule-save` | 118 |
-| SegmentedControl | — | `schedule-mode` | 126 |
-| CheckRow | `label` | ``schedule-${slot}`` | 142 |
-| Stepper | ``${label} start`` | ``schedule-${slot}-start`` | 153 |
-| Stepper | ``${label} end`` | ``schedule-${slot}-end`` | 163 |
-| Stepper | Pets at a time | `schedule-pets` | 178 |
-| CheckRow | `label` | ``schedule-${slot}`` | 194 |
-| TextButton | cancellingId === b.id ? "Cancelling…" : "Cancel booking" | ``cancel-booking-${b.id}`` | 219 |
+| Sheet | saving ? "Saving…" : "Save" | `schedule-sheet` | 114 |
+| Button | saving ? "Saving…" : "Save" | `schedule-save` | 120 |
+| SegmentedControl | — | `schedule-mode` | 128 |
+| CheckRow | `label` | ``schedule-${slot}`` | 144 |
+| Stepper | ``${label} start`` | ``schedule-${slot}-start`` | 155 |
+| Stepper | ``${label} end`` | ``schedule-${slot}-end`` | 167 |
+| Stepper | Pets at a time | `schedule-pets` | 184 |
+| CheckRow | `label` | ``schedule-${slot}`` | 200 |
+| TextButton | cancellingId === b.id ? "Cancelling…" : "Cancel booking" | ``cancel-booking-${b.id}`` | 225 |
 
 ### ShareLocationSheet — [components/ShareLocationSheet.tsx](../../frontend/components/ShareLocationSheet.tsx)
 
@@ -1390,6 +1407,21 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | ``${stay.sitterName}'s photos`` | `stay-sitter-photo` | 53 |
 
+### DemoSheet — [components/intro/DemoSheet.tsx](../../frontend/components/intro/DemoSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | Try Goldito as… | `demo-sheet` | 28 |
+| Pressable | — | `demo-sheet-owner` | 31 |
+| Pressable | — | `demo-sheet-sitter` | 43 |
+
+### SocialSignIn — [components/intro/SocialSignIn.tsx](../../frontend/components/intro/SocialSignIn.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Button | Apple | ``${testID}-apple`` | 31 |
+| Button | Google | ``${testID}-google`` | 40 |
+
 ### BigOption — [components/ownerOnboarding/BigOption.tsx](../../frontend/components/ownerOnboarding/BigOption.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1506,11 +1538,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | saving ? "Saving…" : "Save page" | `diary-write-sheet` | 114 |
-| Button | saving ? "Saving…" : "Save page" | `diary-write-save` | 120 |
-| SegmentedControl | — | `diary-write-pet` | 123 |
-| TextButton | Remove | `diary-write-photo-remove` | 150 |
-| TextButton | + Photo | `diary-write-photo` | 153 |
+| Sheet | saving ? "Saving…" : "Save page" | `diary-write-sheet` | 139 |
+| Button | saving ? "Saving…" : "Save page" | `diary-write-save` | 145 |
+| SegmentedControl | — | `diary-write-pet` | 148 |
+| Pressable | — | `testID` | 177 |
 
 ### PageActions — [features/diary/PageActions.tsx](../../frontend/features/diary/PageActions.tsx)
 
@@ -1570,14 +1601,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 330 |
-| TextButton | Make a sticker | `decor-make` | 350 |
-| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 355 |
-| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 389 |
-| TextButton | Cancel | `decor-cancel` | 390 |
-| TextButton | Decorate | `decor-start` | 401 |
-| TextButton | ↗ Share | `decor-share` | 402 |
-| Pressable | `hint` | `testID` | 423 |
+| Pressable | `picturePress.label` | `picturePress.testID` | 292 |
+| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 350 |
+| TextButton | Make a sticker | `decor-make` | 370 |
+| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 375 |
+| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 394 |
+| TextButton | Cancel | `decor-cancel` | 395 |
+| TextButton | Decorate | `decor-start` | 406 |
+| TextButton | ↗ Share | `decor-share` | 407 |
 
 ### MoodScreen — [features/snap/MoodScreen.tsx](../../frontend/features/snap/MoodScreen.tsx)
 
@@ -1663,4 +1694,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-494 actions · 492 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+504 actions · 502 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
