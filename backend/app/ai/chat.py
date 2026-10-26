@@ -24,7 +24,7 @@ ACTION_MIN_CONFIDENCE = 0.7  # below this the model is guessing: no action chip 
 # at one when the other person's last message leads to it, and a person always presses it. `label` is what the chip says,
 # `meaning` is what the model reads (it never writes a label).
 ACTIONS: dict[str, dict[str, str]] = {
-    "request_booking": {"label": "Request booking", "meaning": "I ask the sitter to take the stay (a first step, not a promise)."},
+    "request_booking": {"label": "Meet & Greet", "meaning": "I start the booking for these dates and move on to the Meet & Greet (a first step, not a promise)."},
     "send_quote": {"label": "Send quote", "meaning": "I price the stay for the owner with my saved rates."},
     "interest": {"label": "Yes, let's meet", "meaning": "I say yes to meeting first; my dates are held for this owner."},
     "meet_time": {"label": "Pick a time", "meaning": "I choose a time and place for the Meet & Greet."},
@@ -390,7 +390,7 @@ def available_actions(
     live = booking is not None and stage not in (None, "completed", "declined", "cancelled")
     out: list[str] = []
     if not live:
-        return ["request_booking"] if owner else (["send_quote"] if has_stay and not priced else [])
+        return ["request_booking"] if owner else []
     me_agreed = booking.get("owner_agreed_at") if owner else booking.get("sitter_accepted_at")
     mg_status = booking.get("meet_greet_status")
     mine = booking.get("owner_id") if owner else booking.get("sitter_id")
@@ -413,8 +413,6 @@ def available_actions(
             out.append("confirm_quote")
         if owner and final and final["status"] == "confirmed":
             out.append("pay")
-    if not owner and has_stay and not priced and stage in ("requested", "meet_greet", "confirm"):
-        out.append("send_quote")
     return out
 
 

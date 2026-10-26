@@ -70,7 +70,7 @@ export function ChatStayCard({ booking, viewer, onChanged, receiveSignal = 0, re
   if (returned) {
     return (
       <View style={styles.wrap}>
-        <Card style={styles.card} testID="chat-stay-home">
+        <Card tone="blush" style={styles.card} testID="chat-stay-home">
           <Text style={styles.title}>Home safe 🏠</Text>
           <Text style={styles.muted}>{`${pets} ${sitter ? `went home with ${booking.ownerName}` : `${are} back with you`}`}</Text>
         </Card>
@@ -82,7 +82,7 @@ export function ChatStayCard({ booking, viewer, onChanged, receiveSignal = 0, re
   if (received) {
     return (
       <View style={styles.wrap}>
-        <Card style={styles.card} testID="chat-stay-incare">
+        <Card tone="blush" style={styles.card} testID="chat-stay-incare">
           <Text style={styles.title}>{sitter ? `${pets} ${are} with you 🐾` : `${pets} ${are} with ${booking.sitterName} 🐾`}</Text>
           <Text style={styles.muted}>{`Received ${formatInstant(received)}`}</Text>
           {sitter ? (
@@ -117,6 +117,6 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     wrap: { width: "100%", alignItems: "center", gap: theme.spacing.sm },
     card: { gap: theme.spacing.sm, maxWidth: "92%", width: "92%" },
-    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text, textAlign: "center" },
+    muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center" },
   });

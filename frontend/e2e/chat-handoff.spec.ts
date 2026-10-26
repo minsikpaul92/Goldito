@@ -150,29 +150,24 @@ test.describe("handoff in the chat", () => {
     db.chat_messages.push({ id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: STAY, created_at: "2026-10-10T09:59:00.000Z" });
   }
 
-  test("a request opens on the sitter's one preference, the owner's own default wins over it, and the last request is remembered", async ({ page }) => {
+  test("the booking made from the chat's stay opens on the sitter's one preference, and the owner's own default wins over it", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedChat(db);
     db.sitter_profile_answers.push(answer("sitter_picks_up"));
     const screen = await openChatAs(page, OWNER);
 
-    await screen.getByTestId("chat-request-booking").click();
-    await expect(screen.getByTestId("request-drop-place")).toHaveText("At my place, 9 Oak Ave");
-    await expect(screen.getByTestId("request-pick-place")).toHaveText("At my place, 9 Oak Ave");
-    // I choose the sitter's place instead; the send remembers it as my default.
-    await screen.getByTestId("request-drop-change").click();
-    await screen.getByTestId("request-drop-type").getByText("Chloe's").click();
-    await screen.getByTestId("request-pick-change").click();
-    await screen.getByTestId("request-pick-type").getByText("Chloe's").click();
-    await screen.getByTestId("request-send").click();
-    await expect(screen.getByTestId("request-sheet")).toBeHidden();
-    expect(db.owner_profiles[0].default_handoff).toBe("sitter_home");
+    // Request makes the booking from the stay: both places are the sitter's one way (she comes to the owner).
+    await screen.getByTestId("chat-next-meet_start").click();
+    await expect.poll(() => db.requests.length).toBe(1);
+    expect(db.requests[0]).toMatchObject({ p_drop_off_location_type: "owner_home", p_pick_up_location_type: "owner_home" });
 
     // The next request (after the first ended) opens on my default, not on her preference.
+    db.owner_profiles[0].default_handoff = "sitter_home";
     db.bookings[0].status = "declined";
     await page.reload();
-    await expect(screen.getByTestId("chat-request-booking")).toBeVisible();
-    await screen.getByTestId("chat-request-booking").click();
-    await expect(screen.getByTestId("request-drop-place")).toHaveText("At Chloe's place, Toronto M4W");
+    await expect(screen.getByTestId("chat-next-meet_start")).toBeVisible();
+    await screen.getByTestId("chat-next-meet_start").click();
+    await expect.poll(() => db.requests.length).toBe(2);
+    expect(db.requests[1]).toMatchObject({ p_drop_off_location_type: "sitter_home", p_pick_up_location_type: "sitter_home" });
   });
 });

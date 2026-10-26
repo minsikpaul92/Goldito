@@ -8,7 +8,7 @@ export type Role = "owner" | "sitter";
 
 /** The one thing that is this person's turn (3D.7). The chat footer shows it; the cards show what happened. */
 export type Primary =
-  | { kind: "request"; label: string }
+  | { kind: "meet_start"; label: string }
   | { kind: "interest"; label: string }
   | { kind: "meet"; label: string }
   | { kind: "agree"; label: string }
@@ -66,9 +66,9 @@ export function actionPossible(id: string, step: NextStep, booking: BookingSumma
   const meet = booking ? meetGreetPrimary(booking, role, now)?.key : undefined;
   switch (id) {
     case "request_booking":
-      return kind === "request";
+      return kind === "meet_start";
     case "send_quote":
-      return step.quote;
+      return false;
     case "interest":
       return kind === "interest";
     case "meet_time":
@@ -100,25 +100,21 @@ export function actionPossible(id: string, step: NextStep, booking: BookingSumma
 export function nextStep(i: Input): NextStep {
   const { role, booking, messages, hasStay, priced, otherName } = i;
   const waiting = `Waiting for ${otherName}`;
-  const quote = role === "sitter" && hasStay && !priced;
+  // The first quote is gone: the price is the sitter's own rate plus the extra pet, worked out by the server.
+  const quote = false;
   const none: NextStep = { primary: null, quote: false, wait: null };
 
   if (!booking || ["completed", "declined", "cancelled"].includes(booking.stage)) {
-    if (role === "owner") return { primary: { kind: "request", label: "Request booking" }, quote: false, wait: null };
-    return { ...none, quote };
+    if (role === "owner") return { primary: { kind: "meet_start", label: "Meet & Greet" }, quote: false, wait: null };
+    return none;
   }
 
   switch (booking.stage) {
+    // The sitter's yes in their own words (judged by the model) brings up the Meet & Greet card; from then on both sides
+    // answer on that card (Skip, Request, Accept). Nothing waits in the footer.
     case "requested":
-      // A first-time request: the owner picks Request or Skip Meet & Greet on the card (015f, #236); the sitter can
-      // still give the first yes before that.
-      return role === "sitter" ? { primary: { kind: "interest", label: "Next" }, quote, wait: null } : none;
-
-    case "meet_greet": {
-      const step = meetGreetPrimary(booking, role, i.now);
-      if (step) return { primary: { kind: "meet", label: step.label }, quote, wait: null };
-      return { primary: null, quote, wait: booking.nextActor === role || booking.nextActor === "both" ? null : waiting };
-    }
+    case "meet_greet":
+      return none;
 
     case "confirm":
       if (role === "owner" && !booking.ownerAgreedAt) return { primary: { kind: "agree", label: "Accept" }, quote: false, wait: null };

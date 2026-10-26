@@ -11,7 +11,7 @@ type Update = Extract<ChatCard, { type: "meet_greet_update" }>;
 export function meetGreetUpdateText(card: Update, who: string): string {
   switch (card.event) {
     case "proposed":
-      return `${who} suggested a Meet & Greet`;
+      return who === "You" ? "You sent a Meet & Greet Request" : `${who} sent a Meet & Greet Request`;
     case "agreed":
       return `${who} accepted the Meet & Greet`;
     case "time_declined":
@@ -36,15 +36,18 @@ export function ChatMeetGreetUpdate({ card, mine, otherName, at }: { card: Updat
   const plan =
     (card.event === "proposed" || card.event === "agreed") && card.at
       ? card.mode === "video"
-        ? `Video · ${formatInstant(card.at)}`
+        ? `Online · ${formatInstant(card.at)}`
         : `In person${card.place ? ` · ${card.place}` : ""} · ${formatInstant(card.at)}`
       : null;
+  // "Done" is both people's: a system line in the middle.
+  const shared = card.event === "done";
+  mine = mine && !shared;
   return (
-    <View style={styles.row} testID="chat-mg-update">
-      <View style={styles.pill}>
-        <Text style={styles.title}>{meetGreetUpdateText(card, mine ? "You" : otherName)}</Text>
-        {plan ? <Text style={styles.line}>{plan}</Text> : null}
-        <Text style={styles.stamp}>{formatStamp(at)}</Text>
+    <View style={[styles.row, shared ? styles.rowShared : mine ? styles.rowMe : styles.rowThem]} testID="chat-mg-update">
+      <View style={[styles.pill, shared ? styles.pillShared : mine ? styles.pillMe : styles.pillThem]}>
+        <Text style={[styles.title, mine && styles.onGreen, shared && styles.centered]}>{meetGreetUpdateText(card, mine ? "You" : otherName)}</Text>
+        {plan ? <Text style={[styles.line, mine && styles.onGreen]}>{plan}</Text> : null}
+        <Text style={[styles.stamp, mine && styles.onGreen, shared && styles.centered]}>{formatStamp(at)}</Text>
       </View>
     </View>
   );
@@ -52,19 +55,25 @@ export function ChatMeetGreetUpdate({ card, mine, otherName, at }: { card: Updat
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    row: { alignItems: "center" },
+    // A person's own step: mine green on the right, theirs white on the left, like the bubbles.
+    row: {},
+    rowMe: { alignItems: "flex-end" },
+    rowThem: { alignItems: "flex-start" },
+    rowShared: { alignItems: "center" },
+    pillShared: { backgroundColor: theme.color.blockBlush, alignItems: "center" },
+    centered: { textAlign: "center" },
+    pillMe: { backgroundColor: theme.color.primary },
+    pillThem: { backgroundColor: theme.color.surface, borderWidth: 1, borderColor: theme.color.border },
+    onGreen: { color: theme.color.primaryText },
     pill: {
       maxWidth: "88%",
-      alignItems: "center",
+      alignItems: "flex-start",
       gap: 2,
       paddingVertical: theme.spacing.sm,
       paddingHorizontal: theme.spacing.md,
       borderRadius: theme.radius.lg,
-      backgroundColor: theme.color.surface,
-      borderWidth: 1,
-      borderColor: theme.color.border,
     },
-    title: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text, textAlign: "center" },
-    line: { fontSize: theme.fontSize.small, color: theme.color.text, textAlign: "center" },
+    title: { fontSize: theme.fontSize.body, color: theme.color.text, },
+    line: { fontSize: theme.fontSize.body, color: theme.color.text },
     stamp: { fontSize: theme.fontSize.caption, color: theme.color.textMuted },
   });

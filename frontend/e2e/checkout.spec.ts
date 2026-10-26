@@ -63,7 +63,7 @@ test.describe("checkout", () => {
 
     await expect(screen.getByTestId("checkout-banner")).toContainText("Chloe accepted");
     await screen.getByTestId("open-checkout").click();
-    await expect(screen.getByTestId("checkout-title")).toContainText("Finish booking with Chloe");
+    await expect(screen.getByTestId("checkout-title")).toContainText("Chloe accepted. Finish booking");
     await expect(screen.getByTestId("quote-total")).toContainText(`$${DEMO_QUOTE.total.toFixed(2)}`);
 
     await expect(screen.getByTestId("checkout-pay-why")).toBeVisible(); // Pay is gray and says why (#282)

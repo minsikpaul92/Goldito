@@ -40,7 +40,7 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
   const dropAt = booking.dropOff ? Date.parse(booking.dropOff.at) : null;
   const lastDay = booking.dropOff ? isoToZoned(booking.dropOff.at).day : undefined;
   const start = current.at ? isoToZoned(current.at) : firstGuess(dropAt);
-  const known = [...spots.ownerSpots, ...spots.sitterSpots];
+  const known = [...spots.ownerSpots, ...spots.sitterSpots, ...(spots.nearby ? [spots.nearby] : [])];
 
   const [mode, setMode] = useState<MeetGreetMode>(current.mode ?? "in_person");
   const [day, setDay] = useState(start.day);
@@ -95,7 +95,7 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
       <SegmentedControl
         options={[
           { value: "in_person", label: "In person" },
-          { value: "video", label: "Video" },
+          { value: "video", label: "Online" },
         ]}
         value={mode}
         onChange={setMode}
@@ -105,6 +105,16 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
         <View accessibilityRole="radiogroup">
           {spots.ownerSpots.map((s) => spotRow(s, spots.ownerName))}
           {spots.sitterSpots.map((s) => spotRow(s, spots.sitterName))}
+          {spots.nearby ? (
+            <CheckRow
+              radio
+              label={spots.nearby}
+              hint={`A park near ${spots.ownerName}'s home`}
+              checked={spot === spots.nearby}
+              onChange={() => setSpot(spots.nearby as string)}
+              testID="meet-spot-nearby"
+            />
+          ) : null}
           <CheckRow
             radio
             label="📍 Somewhere else"

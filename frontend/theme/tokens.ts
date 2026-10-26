@@ -42,6 +42,9 @@ export const tokens = {
     goldOnLight: "#C9962E",
     /** Warm expressive ground for brand moments (welcome, celebration). */
     cream: "#FBF6EA",
+    // Consent cards in checkout (Figma "D" screens). Never skinned.
+    cardLine: "#E3EADF",
+    cardTextMuted: "#4F5B53",
     // Color blocks (Expressive): tinted card grounds. Text on them uses `text`.
     blockMint: "#D8F3DC",
     blockPeach: "#FDE2CC",

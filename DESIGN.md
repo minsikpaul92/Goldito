@@ -18,7 +18,7 @@ This file is written for both people and AI coding agents (including the designe
 | Look (colors, sizes, type, components, screens) | Figma [Goldito-Design](https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Goldito-Design) — pages **Components** and **Screens** | Muk |
 | Design values in code | [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts) (Figma Color mode `Default` + Size + Motion) · [`frontend/theme/themes.ts`](frontend/theme/themes.ts) (one preset per other Color mode) | whoever syncs Figma → code |
 | Base components | [`frontend/components/ui/`](frontend/components/ui/) — one file per Figma base component (§0.4) | same |
-| Every screen and every button | [`docs/design/screen-map.md`](docs/design/screen-map.md) — **generated**: route → file → each action's label, ID and line (§0.6) | regenerated, never hand-edited |
+| Every screen and every button | `docs/design/screen-map.md` — **generated, not committed** (git-ignored): route → file → each action's label, ID and line (§0.6). Build it with `cd frontend && node scripts/screen-map.mjs`; CI builds it too and attaches it to the run | never hand-edited |
 
 **The Figma file since Oct 19:** Expressive is the look. The **Screens** page holds the Expressive sections plus "In the app · Oct 19" (what PRs #177, #178 and #183 built); the older Balanced and Live screens are on the **Archive** page. The logo is the pixel coin (**Brand** › `Logo/Pixel coin/Gold/Symbol master`, code `frontend/assets/brand/goldito-symbol.svg`). Most components and screens are built by the Goldito plugin from the HTML prototypes, so a fix goes into the prototype or the plugin's capture rules (`design/figma-plugin/README.md`), never only into the Figma output. Those rules: a label alone in a button or pill fills it; one-line labels hug; stacked text blocks and form fields are auto-layout (one-line fields cut long text with "…"); icons in circles are centred; steppers stack first on top.
 
@@ -45,7 +45,7 @@ Every Figma variable carries its code name as **code syntax** (Figma uses kebab-
 3. Update `tokens.ts` / `themes.ts` (values only — keep the keys; a new key gets added to both Figma and code in the same change).
 4. Update the matching file in `components/ui/` (§0.4) — never restyle a screen to fake a component change.
 5. Screens last, one at a time, against the Figma frame (§0.5).
-6. `cd frontend && npx tsc --noEmit && node scripts/screen-map.mjs`: commit the regenerated map with the change. A pre-commit hook (`.githooks/pre-commit`, installed by `npm install` in `frontend/`) does the map step for you when a staged screen file changes.
+6. `cd frontend && npx tsc --noEmit`. The screen map is not committed: run `node scripts/screen-map.mjs` when you want to look something up (it writes the git-ignored `docs/design/screen-map.md`); CI builds it on every run.
 7. Check on the running app (`npx expo start --web`, sign in with **Demo owner** / **Demo sitter**; `/?view=split` shows both phones).
 
 ### 0.4 Components (Figma → code)
@@ -108,7 +108,7 @@ When a 🟡 or ❌ component is built, give it **one** file in `components/ui/` 
 
 ### 0.5 Screens (Figma Screens page → routes)
 
-Routes follow `expo-router` files (`frontend/app/`): `app/owner/(tabs)/bookings.tsx` is `/owner/bookings`. The full list with every button is in [`docs/design/screen-map.md`](docs/design/screen-map.md).
+Routes follow `expo-router` files (`frontend/app/`): `app/owner/(tabs)/bookings.tsx` is `/owner/bookings`. The full list with every button is the generated screen map (`node scripts/screen-map.mjs` in `frontend/` writes `docs/design/screen-map.md`; it is not committed).
 
 | Figma frame (Screens page) | Route(s) |
 | :--- | :--- |
@@ -141,7 +141,7 @@ Routes follow `expo-router` files (`frontend/app/`): `app/owner/(tabs)/bookings.
 UX can change, not only the look: a button moves to another screen, two actions merge, a section disappears. The code is set up so this is safe to plan and quick to find:
 
 - **Every action has a stable ID** (`testID`), e.g. `book-care`, `cancel-confirm`, `demo-owner` — 321 of 321 today. The ID names *what the action does*, not where it sits, so it stays the same when the button moves.
-- **[`docs/design/screen-map.md`](docs/design/screen-map.md)** lists, per screen, the components it shows and every action with its label, ID and line. Search it for a label from a Figma frame ("Book care") or an ID to land on the file and line.
+- **The screen map** (`docs/design/screen-map.md`, generated and git-ignored: run `node scripts/screen-map.mjs`) lists, per screen, the components it shows and every action with its label, ID and line. Search it for a label from a Figma frame ("Book care") or an ID to land on the file and line.
 - The e2e tests (`frontend/e2e/`) find actions by these IDs, so `grep -rn "<id>" frontend/e2e` shows which tests depend on an action before you move or remove it.
 - **Screens are thin**: data and logic live in hooks and API files (`features/<domain>/use*.ts`, `*Api.ts`); the route file mostly arranges components. Moving a button = moving its JSX and calling the same hook in the new place.
 
@@ -153,7 +153,7 @@ UX can change, not only the look: a button moves to another screen, two actions 
 | Rename a label only | Change the `label`; the `testID` stays |
 | New action | Add a `testID` named for what it does (`<thing>-<verb>`, kebab-case) |
 
-After any of these: `node scripts/screen-map.mjs` (CI fails if the map is stale).
+After any of these there is nothing to regenerate in git: the screen map is built fresh when you run `node scripts/screen-map.mjs` and by CI.
 
 ### 0.7 Not decided yet
 
@@ -459,7 +459,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | `ConsentCard` (built: `components/ConsentCard.tsx`) | One consent: title, 3-line summary, **Read full text**, checkbox. Footer note "Demo template — not legal advice" |
 | `EntryInfoCard` (built: `components/EntryInfoCard.tsx`) | Owner's entry info for the sitter (03C). Locked: 🔒 + "Unlocks Oct 9, 5:30 AM". Unlocked: **Show code** button, code hides again after 10 s. Never on a toast or notification |
 | `ChecklistCard` (built: `components/ChecklistCard.tsx`) | AI checklist preview from a care request (06): editable rows (time · title · dose), delete, Heads-up chips |
-| `TripMap` (web) | View-only Leaflet + OpenStreetMap map (06B): auto-fits traveler + destination, **±** buttons only, no drag-pan (drags scroll the screen, §7.7). Shows OSM attribution. A "Sharing your location until you arrive" banner sits above it while sharing |
+| `TripMap` (web) | Leaflet + OpenStreetMap map (06B): auto-fits traveler + destination until the person drags it, **±** buttons and drag-pan (no wheel or pinch, so the screen still scrolls; on arrival the car sits on the pin). Shows OSM attribution. A "Sharing your location until you arrive" banner sits above it while sharing |
 | `StarRating` | Five tappable stars (07C), large hit areas, keyboard and mouse |
 | `LifeRecordCard` | Pet Life Record (07C): Eats · Meds · Potty · Behavior · Heads-up · Sitter tips, each line with its source ("From Chloe · Oct 9–12") |
 | `Skeleton` | Gray blocks while loading; matches the final layout. After 10 s add "Still loading…" + **Retry** |
@@ -818,7 +818,7 @@ Proposed for later (not in P0): a sitter **Heads-up** quick action with preset r
 7. The UI must work inside the desktop phone frame with a mouse (§2.1, §7.7): no gesture-only actions, no pull-to-refresh-only updates, no native-only libraries (date/time pickers, swipeable rows).
 8. Branch layout only with `useLayoutMode()` — no `Platform.OS` or width numbers in screens. Pick photos only through `pickMedia()`.
 9. **Working from Figma:** read §0 first. Status labels use `Tag`, edge-state notices `Banner`, round pictures `Avatar` — never a local look-alike. One Figma component = one code file, named like Figma.
-10. **Every action has a `testID`** named for what it does (`book-care`, `cancel-confirm`). Keep it when a button moves or its label changes; when you remove one, `grep` it in `frontend/e2e` and fix those tests. After changing a screen run `node scripts/screen-map.mjs` in `frontend/` and commit `docs/design/screen-map.md` (CI checks it).
+10. **Every action has a `testID`** named for what it does (`book-care`, `cancel-confirm`). Keep it when a button moves or its label changes; when you remove one, `grep` it in `frontend/e2e` and fix those tests. The screen map (`node scripts/screen-map.mjs` in `frontend/`) is generated and not committed.
 
 ---
 

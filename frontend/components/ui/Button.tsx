@@ -10,7 +10,7 @@ type Props = {
   disabled?: boolean;
   /** `secondary` = white + strong border, for a second button next to the one primary (DESIGN.md §6).
    * `danger` = `error` fill, white text — only for a destructive confirm that can't be undone. */
-  variant?: "primary" | "secondary" | "danger";
+  variant?: "primary" | "secondary" | "danger" | "dangerOutline";
   /** `large` = the full-width 60 px Next of one-question screens (design site: steps.html). */
   size?: "default" | "large";
   /** Working (saving, sending): keeps its colour with a spinner, never the gray disabled look (audit F46). Taps are ignored. */
@@ -31,9 +31,10 @@ export function Button({ label, onPress, disabled, variant = "primary", size = "
   const styles = useThemedStyles(makeStyles);
   const secondary = variant === "secondary";
   const danger = variant === "danger";
+  const dangerOutline = variant === "dangerOutline";
 
   const off = disabled || dimmed;
-  const labelStyle = [styles.label, size === "large" && styles.largeLabel, secondary && styles.secondaryLabel, off && styles.disabledLabel];
+  const labelStyle = [styles.label, size === "large" && styles.largeLabel, secondary && styles.secondaryLabel, dangerOutline && styles.dangerOutlineLabel, off && styles.disabledLabel];
 
   return (
     <Pressable
@@ -48,6 +49,7 @@ export function Button({ label, onPress, disabled, variant = "primary", size = "
         size === "large" && styles.large,
         secondary && styles.secondary,
         danger && styles.danger,
+        dangerOutline && styles.dangerOutline,
         off && styles.disabled,
         pressed && !off && !loading && styles.pressed,
         style,
@@ -88,6 +90,8 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.error,
       borderColor: theme.color.error,
     },
+    dangerOutline: { backgroundColor: theme.color.surface, borderColor: theme.color.error },
+    dangerOutlineLabel: { color: theme.color.error },
     large: { minHeight: 60, alignSelf: "stretch" },
     row: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: theme.spacing.sm },
     secondary: {

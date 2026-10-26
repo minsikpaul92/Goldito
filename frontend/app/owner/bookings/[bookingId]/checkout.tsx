@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { ConsentCard } from "../../../../components/ConsentCard";
 import { Card } from "../../../../components/ui/Card";
+import { CheckRow } from "../../../../components/ui/CheckRow";
 import { QuoteCard } from "../../../../components/QuoteCard";
 import { Button } from "../../../../components/ui/Button";
 import { EmptyState } from "../../../../components/ui/EmptyState";
@@ -117,6 +118,8 @@ export default function CheckoutScreen() {
     [ready?.signed],
   );
 
+  const unsigned = (ready?.required ?? []).filter((k) => !signedKinds.has(k));
+  const allOn = unsigned.length > 0 && unsigned.every((k) => checks[k]);
   const missing = (ready?.required ?? []).filter((k) => !signedKinds.has(k) && !checks[k]);
   // The signature is the owner's own name, as on their profile (#282): any other text does not sign.
   const profileName = session.profile?.displayName ?? "";
@@ -187,9 +190,9 @@ export default function CheckoutScreen() {
     <View style={styles.root}>
       <Screen ref={scroller} contentStyle={styles.content}>
         <Text accessibilityRole="header" style={styles.heading} testID="checkout-title">
-          {`Finish booking with ${booking.sitterName}`}
+          {`✓ ${booking.sitterName} accepted. Finish booking`}
         </Text>
-        <QuoteCard quote={quote} testID="checkout-quote" />
+        <QuoteCard quote={quote} plain testID="checkout-quote" />
 
         {entryMissing ? (
           <Card style={styles.entryCard} testID="checkout-entry-missing">
@@ -205,6 +208,21 @@ export default function CheckoutScreen() {
             />
           </Card>
         ) : null}
+
+        <View style={styles.consentsHead}>
+          {unsigned.length > 0 ? (
+            <CheckRow
+              label="Select all"
+              checked={allOn}
+              onChange={(on) => setChecks((c) => ({ ...c, ...Object.fromEntries(unsigned.map((k) => [k, on])) }))}
+              disabled={busy}
+              testID="checkout-agree-all"
+            />
+          ) : (
+            <View />
+          )}
+          <Text style={styles.consentsLabel} testID="checkout-consents-count">{`Consents (${required.length - missing.length}/${required.length})`}</Text>
+        </View>
 
         {required.map((kind) => {
           const existing = signed.find((s) => s.kind === kind);
@@ -269,7 +287,9 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: { flex: 1 },
     content: { gap: theme.spacing.md, paddingBottom: theme.spacing.xl },
-    heading: sectionTitleStyle(theme),
+    heading: { ...sectionTitleStyle(theme), color: theme.color.success },
+    consentsHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    consentsLabel: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     footer: { fontSize: theme.fontSize.caption, color: theme.color.textMuted, fontStyle: "italic" },
     footerBar: {
       padding: theme.spacing.md,

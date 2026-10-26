@@ -48,7 +48,7 @@ Every feature must pass:
 - Plan & data model: `docs/plan/README.ko.md`
 - **Active task queue:** [GitHub issues](https://github.com/minsikpaul92/Goldito/issues): milestone = priority (P0 hackathon, P1, P2 after hackathon), assignee = owner. There is no TODO file: do not create or update one, read the assigned issue and update the issue (comment, checklist, PR `Closes #N`).
 - **Blueprint (decisions, repo layout, routes, env, API contract):** `docs/plan/phases/architecture.ko.md`
-- **Design guide (tokens, components, UI patterns):** `DESIGN.md` — §0 maps Muk's Figma (source of truth) to the code; every screen and button: `docs/design/screen-map.md` (generated)
+- **Design guide (tokens, components, UI patterns):** `DESIGN.md` — §0 maps Muk's Figma (source of truth) to the code; every screen and button: the screen map (`node frontend/scripts/screen-map.mjs` writes `docs/design/screen-map.md`; generated, not committed)
 - Phase goals & DoD: `docs/plan/phases/` (see `README.ko.md` index)
 - AI prompt snippets: `docs/plan/P0-ai-prompt-playbook.ko.md`
 - Hackathon rules: `docs/hackathon/README.md`

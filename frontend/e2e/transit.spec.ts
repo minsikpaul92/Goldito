@@ -430,7 +430,7 @@ test.describe("pet transit", () => {
     await ownerCtx.close();
   });
 
-  test("the map is view only: dragging over it scrolls the screen, and ± are buttons", async ({ page }) => {
+  test("the map can be dragged to look around, and ± are buttons", async ({ page }) => {
     await stubTiles(page);
     await page.goto("/dev/gestures");
     const screen = app(page);
@@ -444,8 +444,8 @@ test.describe("pet transit", () => {
 
     const middle = center(await box(map));
     await drag(page, middle, { x: middle.x, y: middle.y - 150 });
-    expect(await scrollOffset(scroller)).toBeGreaterThan(startScroll);
-    expect(await pane.evaluate((el) => (el as HTMLElement).style.transform)).toBe(before); // the map did not pan
+    expect(await pane.evaluate((el) => (el as HTMLElement).style.transform)).not.toBe(before); // the map panned
+    expect(await scrollOffset(scroller)).toBe(startScroll); // and the screen did not scroll
 
     const zoomBefore = await screen.locator(".leaflet-zoom-animated").first().evaluate((el) => (el as HTMLElement).style.transform);
     await screen.getByTestId("lab-map-zoom-in").click();
