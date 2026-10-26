@@ -7,13 +7,17 @@ const TODAY_GROUP = "Redesign · live app tabs (D47)";
 const UPCOMING_GROUPS = { booking: "Upcoming · Booking", care: "Upcoming · Pick-up & care", done: "Upcoming · Home & review" };
 const ONBOARDING_GROUPS = { owner: "Onboarding (exploration) · Owner sign-up", sitter: "Onboarding (exploration) · Sitter setup", login: "Onboarding (exploration) · Log in" };
 const EDGE_GROUPS = { before: "Edge states · Before the stay (①–③)", during: "Edge states · During the stay (④)", after: "Edge states · After the stay (⑤) and any screen" };
-const SECTION_ORDER = () => [TODAY_GROUP, ...Object.values(UPCOMING_GROUPS), ...Object.values(EDGE_GROUPS), ...Object.values(ONBOARDING_GROUPS)];
+const EXPRESSIVE_GROUPS = ["Expressive · App tabs", "Expressive · The stay ① – ⑤", "Expressive · Onboarding",
+  // Oct 25: the screens the app had and Figma didn't (redesign/fragments/)
+  "Expressive · Chat", "Expressive · Care and history", "Expressive · Bookings", "Expressive · Snap", "Expressive · Pets, people, schedule", "Expressive · Pet setup"];
+const SECTION_ORDER = () => [...EXPRESSIVE_GROUPS, TODAY_GROUP, ...Object.values(UPCOMING_GROUPS), ...Object.values(EDGE_GROUPS), ...Object.values(ONBOARDING_GROUPS)];
 const edgeGroup = (id) => /^e[123]-/.test(id) ? EDGE_GROUPS.before : /^e4-/.test(id) ? EDGE_GROUPS.during : EDGE_GROUPS.after;
 const upGroup = (id) => /inquiry|care-request|meet|checkout|entry/.test(id) ? UPCOMING_GROUPS.booking : /review$|record/.test(id) && !/check-review/.test(id) ? UPCOMING_GROUPS.done : UPCOMING_GROUPS.care;
 const obGroup = (id) => id.startsWith("sit-") ? ONBOARDING_GROUPS.sitter : id === "ob-login" ? ONBOARDING_GROUPS.login : ONBOARDING_GROUPS.owner;
 async function loadLibrary(componentsPage) {
   await componentsPage.loadAsync();
   LIB = new Map();
+  await componentsPage.loadAsync();
   for (const n of componentsPage.children) if (n.type === "COMPONENT" || n.type === "COMPONENT_SET") LIB.set(n.name, n);
 }
 // inst("Button", { Style: "Primary", State: "Default" }, { Label: "Book care" })
@@ -368,7 +372,8 @@ const COMPOSED = [
 async function buildComposedScreens(log) {
   const color = (await figma.variables.getLocalVariableCollectionsAsync()).find((c) => c.name === "Color");
   // Default mode ≈ Balanced, so only the named looks are built (Default only when there are no looks).
-  const looks = color && color.modes.length > 1 ? color.modes.slice(1).map((m) => [m.name, m.modeId]) : [["Default", null]];
+  // Expressive screens come from the prototype (built from the Expressive components), so these stay Balanced only.
+  const looks = color && color.modes.length > 1 ? color.modes.slice(1).filter((m) => m.name !== "Expressive").map((m) => [m.name, m.modeId]) : [["Default", null]];
   const out = [];
   const all = [...COMPOSED.map((x) => [TODAY_GROUP, ...x]), ...UPCOMING.map((x) => [upGroup(x[0]), ...x]), ...EDGE.map((x) => [edgeGroup(x[0]), ...x]), ...ONBOARDING.map((x) => [obGroup(x[0]), ...x])];
   for (const [group, id, title, tab, ava, body, pinned] of all) {
@@ -376,6 +381,7 @@ async function buildComposedScreens(log) {
       try {
         const f = await screenFrame(`${title} · ${look}`, tab, ava, body, pinned ? pinned() : null);
         if (modeId) f.setExplicitVariableModeForCollection(color, modeId);
+        f.setPluginData("pawnote", "composed");
         out.push({ group, id, title, look, frame: f });
       } catch (e) { log.push(`Composed ${id} (${look}): ${e.message || e}`); }
     }

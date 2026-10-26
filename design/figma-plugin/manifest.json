@@ -9,8 +9,9 @@
   "documentAccess": "dynamic-page",
   "networkAccess": {
     "allowedDomains": [
-      "none"
-    ]
+      "https://api.github.com"
+    ],
+    "reasoning": "Optional: posts a design-review comment on the ticket's GitHub issue when you add your own token in the Tickets tab."
   },
   "ui": "ui.html"
 }
