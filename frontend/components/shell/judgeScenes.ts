@@ -43,11 +43,11 @@ export const SCENES: Scene[] = [
   {
     key: "meet",
     title: "Meet the pet",
-    hint: "Add a new pet.",
+    hint: "Add a pet by voice and a photo.",
     state: "pets",
     lead: "owner",
-    // The current Add pet entry; it asks the sign-up questions (voice, photo, breed needs) once #367 lands.
-    owner: { path: "/owner/pets/new", highlight: "pet-name" },
+    // Add pet is the sign-up questions for one pet (#367): voice, photo, breed and coat, then breed needs.
+    owner: { path: "/owner-onboarding?add=1", highlight: "own-species-dog" },
     sitter: SITTER_HOME,
     tags: [{ label: "Groq Whisper" }, NANO, MINICPM, TAVILY],
   },
