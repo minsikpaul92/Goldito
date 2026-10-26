@@ -81,6 +81,9 @@ test.describe("handoff check", () => {
     await expect(screen.getByTestId("toast")).toContainText("Max home safe. Robert gets a notice");
     await expect(screen.getByTestId("handoff-pick_up")).toContainText("✓ Returned");
     await expect(screen.getByTestId("stay-complete")).toBeVisible();
+    // A finished stay scrolls as one page: nothing stays pinned at the bottom (#382).
+    await expect(screen.getByTestId("handoff-check")).toHaveCount(0);
+    await expect(screen.getByTestId("stay-done")).toContainText("Stay complete");
     await expect(screen.getByTestId("received-review")).toContainText("Robert hasn't left a review yet."); // FB-29
     // Returned also asks the backend to write the stay's Life Record (once).
     await expect.poll(() => lifeRecordAsked).toEqual([{ booking_id: BOOKING }]);
@@ -192,6 +195,7 @@ test.describe("handoff check", () => {
     await expect(card).toContainText("Only you can see this. Robert is never told.");
     const notices = db.notifications.length;
 
+    await expect(screen.getByTestId("owner-note-done")).toHaveCount(0);
     await screen.getByTestId("owner-note-start").click();
     await screen.getByTestId("owner-note-rating-5").click();
     await screen.getByTestId("owner-note-preset-Happy to host again").click();
@@ -210,6 +214,10 @@ test.describe("handoff check", () => {
     await expect(screen.getByTestId("owner-note-stars")).toBeVisible();
     expect(db.sitter_owner_notes).toHaveLength(1);
     expect(db.sitter_owner_notes[0].rating).toBe(4);
+
+    // Done takes the sitter Home (#382).
+    await screen.getByTestId("owner-note-done").click();
+    await expect(page).toHaveURL(/\/sitter$/);
   });
 
   test("when the same owner asks again, the sitter sees their earlier private notes (FB-29)", async ({ page }) => {

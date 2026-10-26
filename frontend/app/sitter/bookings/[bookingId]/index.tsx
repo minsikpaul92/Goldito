@@ -413,6 +413,17 @@ export default function SitterBookingDetail() {
           </Card>
         ))}
 
+        {booking.status === "confirmed" && booking.pickUp?.completedAt ? (
+          <View style={styles.content} testID="stay-done">
+            <Text style={styles.muted} testID="stay-complete">
+              Stay complete 🐾
+            </Text>
+            <MedalButtons bookingId={booking.id} pets={booking.pets} ownerName={owner} />
+            <ReceivedReview bookingId={booking.id} ownerName={owner} />
+            <OwnerNoteCard bookingId={booking.id} ownerName={owner} onDone={() => router.replace("/sitter")} />
+          </View>
+        ) : null}
+
         {error ? (
           <Text accessibilityRole="alert" style={styles.error} testID="booking-action-error">
             {error}
@@ -451,7 +462,8 @@ export default function SitterBookingDetail() {
         </View>
       ) : null}
 
-      {booking.status === "confirmed" ? (
+      {/* Pinned only while a handoff is left (Received, Returned); a finished stay scrolls as one page (#382). */}
+      {booking.status === "confirmed" && !booking.pickUp?.completedAt ? (
         <View style={styles.footer} testID="handoff-check">
           {!booking.dropOff?.completedAt ? (
             <>
@@ -467,7 +479,7 @@ export default function SitterBookingDetail() {
                 testID="handoff-received"
               />
             </>
-          ) : !booking.pickUp?.completedAt ? (
+          ) : (
             <Button
               label={busy ? "Saving…" : "Returned"}
               onPress={() => {
@@ -476,15 +488,6 @@ export default function SitterBookingDetail() {
               disabled={busy}
               testID="handoff-returned"
             />
-          ) : (
-            <>
-              <Text style={styles.muted} testID="stay-complete">
-                Stay complete 🐾
-              </Text>
-              <MedalButtons bookingId={booking.id} pets={booking.pets} ownerName={owner} />
-              <ReceivedReview bookingId={booking.id} ownerName={owner} />
-              <OwnerNoteCard bookingId={booking.id} ownerName={owner} />
-            </>
           )}
           {!booking.dropOff?.completedAt ? (
             <TextButton label="Cancel booking" danger onPress={() => setConfirmCancel(true)} testID="cancel-booking" />

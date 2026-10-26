@@ -23,8 +23,9 @@ const privateLine = (owner: string) => `🔒 Only you can see this. ${owner} is 
 /**
  * The sitter rates the owner after a stay (FB-25): stars, one-tap phrases per star, own words — private to the sitter.
  * On a finished booking (right after Returned, or later from Past). Saving again edits it.
+ * With `onDone`, a saved note shows one Done that leaves the page (#382).
  */
-export function OwnerNoteCard({ bookingId, ownerName }: { bookingId: string; ownerName: string }) {
+export function OwnerNoteCard({ bookingId, ownerName, onDone }: { bookingId: string; ownerName: string; onDone?: () => void }) {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const [note, setNote] = useState<OwnerNote | null | undefined>(undefined);
@@ -84,6 +85,7 @@ export function OwnerNoteCard({ bookingId, ownerName }: { bookingId: string; own
         {note.comment ? <Text style={styles.body}>{note.comment}</Text> : null}
         <Text style={styles.muted}>{privateLine(ownerName)}</Text>
         <TextButton label="Edit" onPress={startEditing} testID="owner-note-edit" />
+        {onDone ? <Button label="Done" onPress={onDone} testID="owner-note-done" /> : null}
       </Card>
     );
   }
