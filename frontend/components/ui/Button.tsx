@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View, ViewStyle } from 
 
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+import { Icon } from "./Icon";
 
 type Props = {
   label: string;
@@ -19,6 +20,8 @@ type Props = {
   dimmed?: boolean;
   /** Optional icon (or logo) placed before the label. */
   icon?: ReactNode;
+  /** Asks the AI to write or check: the sparkles mark before the label, one size everywhere. */
+  ai?: boolean;
   /** What a screen reader says when the visible label is shorter ("Apple" → "Continue with Apple"). */
   accessibilityLabel?: string;
   style?: ViewStyle;
@@ -26,7 +29,7 @@ type Props = {
 };
 
 /** Figma: Goldito-Design → Components → Button (Style × State). */
-export function Button({ label, onPress, disabled, variant = "primary", size = "default", loading, dimmed, icon, accessibilityLabel, style, testID }: Props) {
+export function Button({ label, onPress, disabled, variant = "primary", size = "default", loading, dimmed, icon, ai, accessibilityLabel, style, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const secondary = variant === "secondary";
@@ -60,9 +63,9 @@ export function Button({ label, onPress, disabled, variant = "primary", size = "
           <ActivityIndicator size="small" color={secondary ? theme.color.primary : theme.color.primaryText} />
           <Text style={labelStyle}>{label}</Text>
         </View>
-      ) : icon ? (
+      ) : icon || ai ? (
         <View style={styles.row}>
-          {icon}
+          {icon ?? <Icon name="ai" size={18} color={secondary ? theme.color.primary : dangerOutline ? theme.color.error : theme.color.primaryText} />}
           <Text style={labelStyle}>{label}</Text>
         </View>
       ) : (

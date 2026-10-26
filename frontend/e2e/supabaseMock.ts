@@ -238,6 +238,8 @@ export type MockDb = {
   pet_life_records: Row[];
   /** Pet medals (015b): given by the sitter after a stay, read by the owner. */
   pet_medals: Row[];
+  /** Per-pet reviews (015u): written by the stay's sitter after Returned, read by the owner and every sitter. */
+  pet_reviews: Row[];
   /** Prices a sitter set (006). Empty = nobody has any, like a fresh sitter. */
   sitter_rates: Row[];
   /** Treat checks (12.1, 013): written by the backend (tests push the row the API would insert); clients set acknowledged_at. */
@@ -321,6 +323,7 @@ function createMockDb(): MockDb {
     owner_favorite_sitters: [],
     pet_life_records: [],
     pet_medals: [],
+    pet_reviews: [],
     sitter_rates: [],
     safety_checks: [],
     photo_requests: [],
@@ -627,7 +630,7 @@ function matches(row: Row, params: URLSearchParams): boolean {
   return true;
 }
 
-/** start_trip / update_trip_position / end_trip (012): the same rules as the SQL, in the order it checks them. */
+/** start_trip / update_trip_position / end_trip (012, 015q): the same rules as the SQL, in the order it checks them. */
 function handleTrip(route: Route, name: string, args: Record<string, unknown>, me: string | null, db: MockDb) {
   const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
   const iso = () => new Date(nowMs()).toISOString();
@@ -674,6 +677,7 @@ function handleTrip(route: Route, name: string, args: Record<string, unknown>, m
       last_at: first ? iso() : null,
       eta_at: distance != null ? eta(distance) : null,
       distance_m: distance != null ? Math.round(distance) : null,
+      close_readings: 0,
       simulated: !!args.p_simulated,
       sharing: share,
       started_at: iso(),
@@ -690,17 +694,22 @@ function handleTrip(route: Route, name: string, args: Record<string, unknown>, m
   if (name === "update_trip_position") {
     if (!["en_route", "arrived"].includes(String(trip.status))) return fail("trip_not_active");
     if (trip.sharing === false) return fail("not_sharing");
+    if (args.p_accuracy != null && Number(args.p_accuracy) < 0) return fail("invalid_position");
     if (trip.status === "arrived" || (trip.last_at && nowMs() - Date.parse(String(trip.last_at)) < 1000)) return json(route, 200, trip);
     const at = { lat: Number(args.p_lat), lng: Number(args.p_lng) };
     const distance = trip.dest_lat != null ? distanceMeters(at, { lat: Number(trip.dest_lat), lng: Number(trip.dest_lng) }) : null;
+    // 015q: a reading worse than 100 m never counts; two good ones in a row within 150 m make the arrival.
+    const good = args.p_accuracy == null || Number(args.p_accuracy) <= 100;
+    const close = Number(trip.close_readings ?? 0);
     Object.assign(trip, {
       last_lat: at.lat,
       last_lng: at.lng,
       last_at: iso(),
       distance_m: distance != null ? Math.round(distance) : null,
       eta_at: distance != null ? eta(distance) : null,
+      close_readings: distance != null && good ? (distance <= 150 ? Math.min(close + 1, 2) : 0) : close,
     });
-    if (distance != null && distance <= 150) Object.assign(trip, { status: "arrived", arrived_at: iso() });
+    if (Number(trip.close_readings) >= 2) Object.assign(trip, { status: "arrived", arrived_at: iso() });
     return json(route, 200, trip);
   }
 
@@ -2106,6 +2115,21 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, row);
   }
 
+  if (path === "rpc/owner_rating_summary") {
+    // 015s: the owner and any sitter see every review sitters left about the owner, first names only.
+    const { p_owner } = request.postDataJSON();
+    if (me !== p_owner && users.find((u) => u.id === me)?.role !== "sitter") return json(route, 200, null);
+    const about = db.sitter_owner_notes
+      .filter((n) => n.owner_id === p_owner)
+      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+    const avg = about.length ? Math.round((about.reduce((n, r) => n + Number(r.rating), 0) / about.length) * 10) / 10 : null;
+    const reviews = about.map((n) => ({
+      booking_id: n.booking_id, rating: n.rating, comment: n.comment, created_at: n.created_at, mine: n.sitter_id === me,
+      reviewer: (users.find((u) => u.id === n.sitter_id)?.displayName ?? "A sitter").split(" ")[0],
+    }));
+    return json(route, 200, { avg, count: about.length, reviews });
+  }
+
   if (path === "rpc/sitter_rating_summary") {
     const { p_sitter } = request.postDataJSON();
     const mine = db.reviews.filter((r) => r.sitter_id === p_sitter);
@@ -2113,7 +2137,6 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const recent = mine
       .filter((r) => r.comment)
       .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
-      .slice(0, 3)
       .map((r) => ({
         rating: r.rating, comment: r.comment, created_at: r.created_at,
         reviewer: (users.find((u) => u.id === r.owner_id)?.displayName ?? "An owner").split(" ")[0],
@@ -2381,8 +2404,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
             !db.diary_page_hidden.some((h) => h.report_id === row.id && h.user_id === me))) &&
         // RLS: a review is private to the owner who wrote it and the sitter it is about (011).
         (path !== "reviews" || row.owner_id === me || row.sitter_id === me) &&
-        // RLS (011g): the sitter's note about an owner is the sitter's alone.
-        (path !== "sitter_owner_notes" || row.sitter_id === me) &&
+        // RLS (011g, 015s): the sitter's review of an owner, for its sitter and that owner (other sitters use the summary RPC).
+        (path !== "sitter_owner_notes" || row.sitter_id === me || row.owner_id === me) &&
         // RLS (011h): an owner's favorites are theirs alone.
         (path !== "owner_favorite_sitters" || row.owner_id === me) &&
         // RLS (014j): a chat is for its two people.
@@ -2390,6 +2413,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         (path !== "chat_threads" || row.owner_id === me || row.sitter_id === me) &&
         // RLS (015b): the pet's owner and the sitter who gave the medal.
         (path !== "pet_medals" || row.sitter_id === me || db.pets.some((p) => p.id === row.pet_id && p.owner_id === me)) &&
+        // RLS (015u): the pet's owner and every sitter.
+        (path !== "pet_reviews" || users.find((u) => u.id === me)?.role === "sitter" || db.pets.some((p) => p.id === row.pet_id && p.owner_id === me)) &&
         // RLS (011): an owner reads their pets' records; the raw source_snapshot is never selectable.
         // …and a sitter with a pending / confirmed booking that includes the pet (can_view_pet_profile).
         (path !== "pet_life_records" ||
@@ -2483,6 +2508,9 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (path === "pet_life_records" && select.includes("sitter:profiles")) {
       rows = rows.map((r) => ({ ...r, sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null } }));
     }
+    if (path === "pet_reviews" && select.includes("sitter:profiles")) {
+      rows = rows.map((r) => ({ ...r, sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null } }));
+    }
     if (path === "pet_medals" && select.includes("sitter:profiles")) {
       rows = rows.map((r) => ({ ...r, sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null } }));
     }
@@ -2531,7 +2559,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
       // Feed + notifications are read newest first (`order=created_at.desc`).
-      if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "pet_stickers" || path === "safety_checks") && params.get("order")!.endsWith(".desc")) {
+      if ((path === "pet_life_records" || path === "pet_reviews" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "pet_stickers" || path === "safety_checks") && params.get("order")!.endsWith(".desc")) {
         rows.reverse();
       }
     }
@@ -2626,6 +2654,21 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
           (a) => a.pet_id === row.pet_id && String(a.allergen).toLowerCase() === String(row.allergen).toLowerCase(),
         );
         if (dupe) return json(route, 409, { code: "23505", message: "duplicate key value" });
+      }
+    }
+    if (path === "pet_reviews") {
+      // upsert on (booking_id, pet_id); RLS (015u): the stay's sitter, a pet of the stay, after Returned.
+      for (const row of inserted) {
+        const booking = db.bookings.find((b) => b.id === row.booking_id && b.sitter_id === me && b.status === "confirmed");
+        const done = db.booking_handoffs.some((h) => h.booking_id === row.booking_id && h.kind === "pick_up" && h.completed_at);
+        const inStay = db.booking_pets.some((bp) => bp.booking_id === row.booking_id && bp.pet_id === row.pet_id);
+        if (row.sitter_id !== me || !booking || !done || !inStay) {
+          return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
+        }
+        const old = db.pet_reviews.find((r) => r.booking_id === row.booking_id && r.pet_id === row.pet_id);
+        if (old) row.created_at = old.created_at;
+        const keep = db.pet_reviews.filter((r) => r !== old);
+        db.pet_reviews.splice(0, db.pet_reviews.length, ...keep);
       }
     }
     if (path === "report_decor") {

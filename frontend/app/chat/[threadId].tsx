@@ -99,6 +99,8 @@ export default function Chat() {
   const [error, setError] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  // The arrival hello the trip card offers right now (ChatTripCard), shown first in the chip row.
+  const [tripGreeting, setTripGreeting] = useState<string | null>(null);
   const [photos, setPhotos] = useState<ProfilePhoto[]>([]);
   const [viewing, setViewing] = useState(false);
   const [requesting, setRequesting] = useState(false);
@@ -340,7 +342,8 @@ export default function Chat() {
 
   /** Owner: the booking is made from the stay on the chat's card (the sitter's place unless the owner's usual is another); no dates yet opens the sheet. */
   const startMeetGreet = async (choice: "request" | "skip") => {
-    if (!stay || !profile) return setRequesting(true);
+    // A stay whose drop-off has passed opens the sheet, which moves it to the next slot (#364).
+    if (!stay || !profile || Date.parse(stay.dropOffAt) <= Date.now()) return setRequesting(true);
     setStepBusy(true);
     try {
       const bookingId = await createBookingFromStay({ threadId, ownerId: profile.id, sitterId: header.otherId, sitterName: header.otherName, stay });
@@ -476,6 +479,20 @@ export default function Chat() {
       : []),
   ];
 
+  /** The arrival hello (#250): one tap sends it as it is, like before; it sits first in the chip row above the box. */
+  const sendGreeting = async (body: string) => {
+    if (sending) return;
+    setSending(true);
+    try {
+      await sendChatMessage(threadId, body);
+      await load();
+    } catch (e) {
+      errorDialog.show({ title: "Not sent", message: (e as Error).message });
+    } finally {
+      setSending(false);
+    }
+  };
+
   const send = async () => {
     const body = text.trim();
     if (sending || !body) return;
@@ -558,6 +575,21 @@ export default function Chat() {
   // Once the pets are back, the stay (and its review) sits where it happened: newer messages go below it.
   const returnedAt = Date.parse(stayBooking?.pickUp?.completedAt ?? "");
   const stayAfter = Number.isNaN(returnedAt) ? messages.length : messages.filter((m) => Date.parse(m.at) <= returnedAt).length;
+  // The booking's own cards (Meet & Greet, handoffs, diary, trips) happened before the return: on a finished stay they
+  // sit above "Home safe" and the review, not under them.
+  const stayOver = !Number.isNaN(returnedAt) && booking?.id === stayBooking?.id;
+  const bookingCards = (
+    <>
+      {booking && booking.meetGreetStatus !== "not_needed" && messages.some((m) => m.card?.type === "meet_greet" && m.card.bookingId === booking.id) && !(booking.meetGreetStatus === "required" && !booking.sitterInterestAt) ? (
+        <View style={styles.cardWide}>
+          <MeetGreetCard ref={meetCard} booking={booking} viewer={header.myRole} onChanged={load} inChat />
+        </View>
+      ) : null}
+      {booking && !["requested", "meet_greet"].includes(booking.stage) ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
+      {booking ? <ChatCareCards booking={booking} viewer={header.myRole} askSignal={signals.photo} /> : null}
+      {booking ? <ChatTripCard booking={booking} viewer={header.myRole} messages={messages} onSent={() => void load()} onGreeting={setTripGreeting} startSignal={signals.trip} /> : null}
+    </>
+  );
   const renderMessage = (m: (typeof messages)[number]) =>
           m.kind === "card" && m.card?.type === "stay" ? (
             <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
@@ -629,16 +661,10 @@ export default function Chat() {
           <Text style={styles.hint} testID="chat-empty">{`Say hi to ${header.otherName}.`}</Text>
         ) : null}
         {messages.slice(0, stayAfter).map(renderMessage)}
+        {stayOver ? bookingCards : null}
         {stayCardEl}
         {messages.slice(stayAfter).map(renderMessage)}
-        {booking && booking.meetGreetStatus !== "not_needed" && messages.some((m) => m.card?.type === "meet_greet" && m.card.bookingId === booking.id) && !(booking.meetGreetStatus === "required" && !booking.sitterInterestAt) ? (
-          <View style={styles.cardWide}>
-            <MeetGreetCard ref={meetCard} booking={booking} viewer={header.myRole} onChanged={load} inChat />
-          </View>
-        ) : null}
-        {booking && !["requested", "meet_greet"].includes(booking.stage) ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
-        {booking ? <ChatCareCards booking={booking} viewer={header.myRole} askSignal={signals.photo} /> : null}
-        {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} startSignal={signals.trip} /> : null}
+        {stayOver ? null : bookingCards}
       </Screen>
       {/* A final quote carries Confirm and Decline on its card: the footer does not repeat them (#289). */}
       {footerPrimary || step.quote ? (
@@ -672,7 +698,7 @@ export default function Chat() {
           ) : null}
         </View>
       ) : null}
-      {typingChips || (!typing && (drafting || chips.length > 0 || shownAction || (key !== null && !chipsReady))) ? (
+      {typingChips || (!typing && (tripGreeting || drafting || chips.length > 0 || shownAction || (key !== null && !chipsReady))) ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled" testID="chat-chips">
           {typing ? (
             <>
@@ -691,6 +717,7 @@ export default function Chat() {
                       style={styles.chip}
                       testID={`chat-chip-${i + 1}`}
                     >
+                      <Icon name="ai" size={14} color={theme.color.primary} />
                       <Text style={styles.chipText}>{chip.label}</Text>
                     </Pressable>
                   ))
@@ -698,6 +725,18 @@ export default function Chat() {
             </>
           ) : (
             <>
+          {tripGreeting ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Send: ${tripGreeting}`}
+              disabled={sending}
+              onPress={() => void sendGreeting(tripGreeting)}
+              style={styles.chip}
+              testID="trip-greet"
+            >
+              <Text style={styles.chipText}>{tripGreeting}</Text>
+            </Pressable>
+          ) : null}
           {drafting || !chipsReady ? (
             <View style={styles.chipsBusy} testID="chat-chips-loading">
               <ActivityIndicator color={theme.color.primary} accessibilityLabel={drafting ? "Writing a draft" : "Writing replies"} />
@@ -724,6 +763,7 @@ export default function Chat() {
               style={[styles.chip, drafting && styles.sendOff]}
               testID={`chat-chip-${i + 1}`}
             >
+              <Icon name="ai" size={14} color={theme.color.primary} />
               <Text style={styles.chipText}>{chip.label}</Text>
             </Pressable>
           ))}
@@ -777,7 +817,7 @@ export default function Chat() {
         </Pressable>
       </View>
       {owner && booking ? (
-        <AgreeSheet visible={agreeing} booking={booking} onClose={() => setAgreeing(false)} onAgreed={() => void load()} />
+        <AgreeSheet visible={agreeing} booking={booking} onClose={() => setAgreeing(false)} onAgreed={() => void load()} onChanged={() => void load()} />
       ) : null}
       {booking && declining ? (
         <ChatDeclineSheet

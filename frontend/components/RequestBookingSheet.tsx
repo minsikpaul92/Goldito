@@ -19,7 +19,7 @@ import { loadRoleProfile } from "../features/profile/profileApi";
 import { addDays, appToday, formatDay, formatTime, isoToZoned, zonedToIso } from "../features/schedule/dates";
 import { SERVICE_LABEL, ServiceType, getSitterProfile } from "../features/sitters/sitterApi";
 import { BookingError, LocationType, requestBooking } from "../lib/bookings";
-import { tripProblem } from "../lib/trip";
+import { earliestTime, freshStay, nextSlot, tripProblem } from "../lib/trip";
 import { useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -78,6 +78,8 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
   const [changing, setChanging] = useState<Record<Kind, boolean>>({ drop: false, pick: false });
   const [note, setNote] = useState("");
   const [datesOpen, setDatesOpen] = useState(false);
+  /** The chat's drop-off had passed, so the sheet opened on the next slot (#364). */
+  const [moved, setMoved] = useState(false);
   const [services, setServices] = useState<ServiceType[]>(["boarding"]);
   const [picker, setPicker] = useState<Picker>(null);
   const [service, setService] = useState<ServiceType>("boarding");
@@ -90,12 +92,17 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
     setError(null);
     setNote("");
     setDatesOpen(false);
+    setMoved(false);
     setChanging({ drop: false, pick: false });
     setPlaces({ drop: { type: "sitter_home", note: "", placed: null }, pick: { type: "sitter_home", note: "", placed: null } });
     if (stay) {
       setPetIds(stay.pets.map((p) => p.id));
-      setDropOff(isoToZoned(stay.dropOffAt));
-      setPickUp(isoToZoned(stay.pickUpAt));
+      // Never open on a drop-off that has passed: move it to the next slot and show the dates.
+      const fresh = freshStay(isoToZoned(stay.dropOffAt), isoToZoned(stay.pickUpAt));
+      setDropOff(fresh.drop);
+      setPickUp(fresh.pick);
+      setMoved(fresh.moved);
+      setDatesOpen(fresh.moved);
     } else {
       setPetIds(pets.map((p) => p.id));
       setDropOff({ day: addDays(today, 1), time: "09:00" });
@@ -147,7 +154,9 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
 
   const setWhen = (kind: Kind, change: Partial<When>) => {
     if (kind === "drop") {
-      const next = { ...dropOff, ...change };
+      let next = { ...dropOff, ...change };
+      // Today picked while the time has passed: the next slot instead.
+      if (Date.parse(zonedToIso(next.day, next.time)) <= Date.now()) next = nextSlot();
       setDropOff(next);
       if (next.day > pickUp.day) setPickUp({ ...pickUp, day: next.day });
     } else setPickUp({ ...pickUp, ...change });
@@ -278,6 +287,11 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
           <Text style={styles.dateText} numberOfLines={1}>{datesLine(dropOff.day, pickUp.day)}</Text>
           <Text style={styles.link}>{datesOpen ? "Done" : "Change"}</Text>
         </Pressable>
+        {moved ? (
+          <Text style={styles.hint} testID="request-moved">
+            The chat's drop-off had passed, so it moved.
+          </Text>
+        ) : null}
         {datesOpen ? (
           <View style={styles.card}>
             {row("drop", "Drop-off", dropOff)}
@@ -321,6 +335,7 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
         visible={picker?.part === "time"}
         title={picker?.kind === "pick" ? "Pick-up time" : "Drop-off time"}
         value={picker?.kind === "pick" ? pickUp.time : dropOff.time}
+        minTime={picker ? earliestTime(picker.kind === "pick" ? pickUp.day : dropOff.day) : null}
         onPick={(time) => {
           if (picker) setWhen(picker.kind, { time });
           setPicker(null);

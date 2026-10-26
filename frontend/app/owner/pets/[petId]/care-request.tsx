@@ -314,6 +314,7 @@ export default function CareRequestScreen() {
       <CareLineBuilder species={pet.species} lines={lines} onLines={setLines} disabled={busy !== null} />
       <Button
         label={busy === "making" ? "Making your checklist…" : draft ? "Add to the checklist" : "Make a checklist"}
+        ai
         disabled={busy !== null || lines.length === 0}
         onPress={() => void make()}
         testID="care-request-make"

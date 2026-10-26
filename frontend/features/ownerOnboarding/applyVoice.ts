@@ -1,5 +1,5 @@
 import { normalizeAllergen } from "../pets/petValidation";
-import { type OwnerOnboardingDraft, weightText } from "./draft";
+import { type OwnerOnboardingDraft, readWeight } from "./draft";
 import { NO_FACTS, type VoiceFacts } from "./voiceApi";
 import type { Species } from "../../types/db";
 import type { InterviewItem } from "../../components/ownerOnboarding/VoiceInterview";
@@ -44,13 +44,13 @@ export function voiceItems(name: string, unit: OwnerOnboardingDraft["weightUnit"
   ];
 }
 
-/** The answers read from the words said, one text per question, for the owner to fix. */
-export function formFromFacts(facts: VoiceFacts, unit: OwnerOnboardingDraft["weightUnit"]): Record<string, string> {
+/** The answers read from the words said, one text per question, for the owner to fix. The weight keeps the unit said. */
+export function formFromFacts(facts: VoiceFacts): Record<string, string> {
   const note = (key: string) => facts.notes?.[key]?.value ?? "";
   return {
     breed: facts.breed?.value ?? "",
     age: facts.age_years ? String(facts.age_years.value) : "",
-    weight: facts.weight_kg ? weightText(facts.weight_kg.value, unit) : "",
+    weight: facts.weight ? `${facts.weight.value} ${facts.weight.unit}` : "",
     personality: note("personality"),
     loves: note("loves"),
     scares: note("scares"),
@@ -101,7 +101,8 @@ export function applyVoiceForm(
   if (age && Number(age[0]) <= 30) patch.ageYears = Number(age[0]);
 
   const weight = (values.weight ?? "").trim();
-  if (weight) patch.weight = weight;
+  // "20 lbs" picks lbs on the weight screen; a bare number keeps the unit already chosen.
+  if (weight) Object.assign(patch, readWeight(weight));
 
   const allergies = (values.allergies ?? "")
     .split(/[,\n]/)

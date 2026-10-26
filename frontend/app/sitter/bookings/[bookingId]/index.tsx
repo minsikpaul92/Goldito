@@ -55,9 +55,12 @@ import {
 import { PetGlance } from "../../../../components/PetGlance";
 import { PetRecordFold } from "../../../../components/PetRecordFold";
 import { MedalButtons } from "../../../../components/pet/MedalButtons";
+import { PetReviews } from "../../../../components/pet/PetReviews";
+import { StayPetReviews } from "../../../../components/pet/StayPetReviews";
 import { ReceivedReview } from "../../../../components/ReceivedReview";
 import { ReturnSheet } from "../../../../components/ReturnSheet";
-import { OwnerNoteCard, PastOwnerNotes } from "../../../../components/OwnerNote";
+import { OwnerNoteCard } from "../../../../components/OwnerNote";
+import { OwnerReviews } from "../../../../components/Reviews";
 import { requestLifeRecord } from "../../../../features/completion/completionApi";
 import { useTheme, useThemedStyles } from "../../../../providers/ThemeProvider";
 import { useOnBookingChange } from "../../../../providers/NotificationsProvider";
@@ -289,7 +292,7 @@ export default function SitterBookingDetail() {
           </Card>
         ) : null}
 
-        <PastOwnerNotes ownerId={booking.ownerId} ownerName={owner} bookingId={booking.id} />
+        <OwnerReviews ownerId={booking.ownerId} title={`Reviews of ${owner}`} exceptBookingId={booking.id} />
 
         <MeetGreetCard booking={booking} viewer="sitter" onChanged={load} />
 
@@ -410,8 +413,21 @@ export default function SitterBookingDetail() {
             {pet.notes ? <Text style={styles.muted}>{pet.notes}</Text> : null}
             <PetGlance petId={pet.id} bare />
             <PetRecordFold petId={pet.id} petName={pet.name} />
+            <PetReviews petId={pet.id} excludeBookingId={booking.id} />
           </Card>
         ))}
+
+        {booking.status === "confirmed" && booking.pickUp?.completedAt ? (
+          <View style={styles.content} testID="stay-done">
+            <Text style={styles.muted} testID="stay-complete">
+              Stay complete 🐾
+            </Text>
+            <MedalButtons bookingId={booking.id} pets={booking.pets} ownerName={owner} />
+            <StayPetReviews bookingId={booking.id} pets={booking.pets} ownerName={owner} />
+            <ReceivedReview bookingId={booking.id} ownerName={owner} />
+            <OwnerNoteCard bookingId={booking.id} ownerName={owner} onDone={() => router.replace("/sitter")} />
+          </View>
+        ) : null}
 
         {error ? (
           <Text accessibilityRole="alert" style={styles.error} testID="booking-action-error">
@@ -451,7 +467,8 @@ export default function SitterBookingDetail() {
         </View>
       ) : null}
 
-      {booking.status === "confirmed" ? (
+      {/* Pinned only while a handoff is left (Received, Returned); a finished stay scrolls as one page (#382). */}
+      {booking.status === "confirmed" && !booking.pickUp?.completedAt ? (
         <View style={styles.footer} testID="handoff-check">
           {!booking.dropOff?.completedAt ? (
             <>
@@ -467,7 +484,7 @@ export default function SitterBookingDetail() {
                 testID="handoff-received"
               />
             </>
-          ) : !booking.pickUp?.completedAt ? (
+          ) : (
             <Button
               label={busy ? "Saving…" : "Returned"}
               onPress={() => {
@@ -476,15 +493,6 @@ export default function SitterBookingDetail() {
               disabled={busy}
               testID="handoff-returned"
             />
-          ) : (
-            <>
-              <Text style={styles.muted} testID="stay-complete">
-                Stay complete 🐾
-              </Text>
-              <MedalButtons bookingId={booking.id} pets={booking.pets} ownerName={owner} />
-              <ReceivedReview bookingId={booking.id} ownerName={owner} />
-              <OwnerNoteCard bookingId={booking.id} ownerName={owner} />
-            </>
           )}
           {!booking.dropOff?.completedAt ? (
             <TextButton label="Cancel booking" danger onPress={() => setConfirmCancel(true)} testID="cancel-booking" />

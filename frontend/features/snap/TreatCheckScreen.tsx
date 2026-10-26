@@ -174,7 +174,7 @@ function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
               emoji="🏷️"
               title="Add a pet first"
               message="Treat check reads a label against your pet's allergies and foods unsafe for their species."
-              action={{ label: "Add pet", onPress: () => router.push("/owner/pets/new") }}
+              action={{ label: "Add pet", onPress: () => router.push("/owner-onboarding?add=1") }}
             />
           )}
         </View>
@@ -232,6 +232,7 @@ function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
 
       <Button
         label={!pet ? "Pick a pet first" : unreadable || result?.partial_label ? "Retake photo" : result ? "Check another treat" : "Snap a label"}
+        ai
         onPress={() => void snapLabel()}
         disabled={!pet || !!step}
         testID="treat-snap"

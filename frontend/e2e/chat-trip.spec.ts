@@ -131,11 +131,13 @@ test.describe("trip in the chat", () => {
     // #250: the sitter answers the owner's hello, so hers waits until Robert has said his.
     await expect(screen.getByTestId("trip-greet")).toHaveCount(0);
 
-    // Robert's hello is a small quick reply, "Please take care of them".
+    // Robert's hello is a quick reply in the chip row above the box (not on the trip card), "Please take care of them".
     await page.evaluate(() => localStorage.clear());
     screen = await openChatAs(page, OWNER);
     await expect(screen.getByTestId("chat-trip-live")).toContainText("You've arrived");
     await expect(screen.getByTestId("trip-greet")).toHaveText("Please take care of them");
+    await expect(screen.getByTestId("chat-chips").getByTestId("trip-greet")).toBeVisible();
+    await expect(screen.getByTestId("chat-trip-live").getByTestId("trip-greet")).toHaveCount(0);
     await screen.getByTestId("trip-greet").click();
     await expect(screen.getByTestId("chat-bubble-me").filter({ hasText: "Please take care of them" })).toBeVisible();
     await expect(screen.getByTestId("trip-greet")).toHaveCount(0);
@@ -452,6 +454,25 @@ test.describe("reviews in the chat", () => {
     });
   }
 
+  test("a finished stay reads in order: the stay's cards, then Home safe and the review, then newer messages", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    finished(db);
+    db.booking_handoffs.find((h) => h.kind === "drop_off")!.completed_at = new Date(Date.now() - 3 * HOUR).toISOString();
+    db.daily_reports.push({
+      id: "report-1", pet_id: MAX, sitter_id: SITTER.id, report_date: "2026-10-21", body: "Max had a lovely day.", status: "sent",
+      source_snapshot: null, sent_at: new Date(Date.now() - 2 * HOUR).toISOString(), created_at: new Date(Date.now() - 2 * HOUR).toISOString(),
+    });
+    db.chat_messages.push({ id: "after", thread_id: THREAD, sender_id: OWNER.id, kind: "text", body: "Thanks again!", card: null, created_at: new Date().toISOString() });
+
+    const screen = await openChatAs(page, OWNER);
+    const top = async (testId: string) => (await screen.getByTestId(testId).first().boundingBox())!.y;
+    await expect(screen.getByTestId("chat-review")).toBeVisible();
+    await expect(screen.getByTestId("chat-diary-card")).toBeVisible();
+    expect(await top("chat-diary-card")).toBeLessThan(await top("chat-stay-home"));
+    expect(await top("chat-stay-home")).toBeLessThan(await top("chat-review"));
+    expect(await top("chat-review")).toBeLessThan((await screen.getByText("Thanks again!").boundingBox())!.y);
+  });
+
   test("after Returned the owner reviews the sitter right in the chat and hearts her; the sitter reads it and keeps a private note", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     finished(db);
@@ -483,7 +504,7 @@ test.describe("reviews in the chat", () => {
     await expect(screen.getByTestId("chat-review")).toContainText("Your review");
     await expect(screen.getByTestId("review-send")).toHaveCount(0);
 
-    // The sitter reads Robert's review in her chat and writes her own private note about him.
+    // The sitter reads Robert's review in her chat and writes her own review of him.
     screen = await openChatAs(page, SITTER);
     await expect(screen.getByTestId("received-review")).toContainText("Max came home happy and tired!");
     await expect(screen.getByTestId("chat-send-quote")).toHaveCount(0);
@@ -492,10 +513,10 @@ test.describe("reviews in the chat", () => {
     await screen.getByTestId("owner-note-rating-5").click();
     await screen.getByTestId("owner-note-comment").fill("Easy handoff.");
     await screen.getByTestId("owner-note-save").click();
-    await expect(screen.getByTestId("owner-note")).toContainText("Only you can see this");
+    await expect(screen.getByTestId("owner-note")).toContainText("Robert and other sitters can see this");
     expect(db.sitter_owner_notes).toHaveLength(1);
 
-    // The owner never sees the sitter's note.
+    // The owner's chat has no card for it (they read it in Profile).
     screen = await openChatAs(page, OWNER);
     await expect(screen.getByTestId("owner-note")).toHaveCount(0);
   });

@@ -14,6 +14,7 @@ import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import type { Pet } from "../../types/db";
 import { PetMedals } from "./PetMedals";
+import { PetReviews } from "./PetReviews";
 import { PetRoom } from "./PetRoom";
 
 
@@ -94,6 +95,7 @@ export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => vo
         ) : null}
       </View>
       <PetMedals petId={pet.id} />
+      <PetReviews petId={pet.id} />
     </Screen>
   );
 }

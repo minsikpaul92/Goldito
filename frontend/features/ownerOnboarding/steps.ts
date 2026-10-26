@@ -5,10 +5,10 @@ import { SAFETY_QUESTIONS, chartQuestions } from "./questions";
  * The screens of the flow, one question each (11.15 §3). Ids are stored in the draft: "species", "name", "photos", "voice", "breed", "coat",
  * "age", "weight", "petIntro", "about", "q:<chart key>", "s:<safety key>", "foods", "ownerIntro", "location", "summary".
  * An owner with more than one pet goes through the list once per pet. The kind of pet and the questions about the owner
- * are asked on the first run only (`ownerDone` is true from the second pet on).
+ * are asked on the first run only (`ownerDone` is true from the second pet on). Add pet (`askKind`) asks the kind again.
  */
-export function stepIds(species: Species | null, ownerDone = false): string[] {
-  const ids = ownerDone ? [] : ["species"];
+export function stepIds(species: Species | null, ownerDone = false, askKind = !ownerDone): string[] {
+  const ids = askKind ? ["species"] : [];
   if (!species) return ids;
   ids.push("name", "photos", "voice", "breed", "coat", "age", "weight", "petIntro", "about");
   for (const q of chartQuestions(species)) ids.push(`q:${q.key}`);

@@ -64,7 +64,7 @@
 | D50 | 문의 사이 공개 범위 (RV-4 · RV-5, `011e`) | 문의를 받은 시터는 오너의 표시 이름과 문의한 펫을 본다(예약 요청과 같은 수준). 펫의 Life Record · 알레르기는 `has_open_inquiry_about`이 참인 동안만 — 문의가 `open`이고, 문의한 stay가 아직 안 끝났고(`pick_up_at > now()`), 문의한 지 30일 안일 때. 하나라도 어긋나면 닫힘 | `open` 문의가 영원히 펫 기록을 열어 두던 문제 |
 | D51 | "Ask before booking" (FB-33) | 시터 프로필에 **[Ask before booking] [Book]** 나란히(Book이 주 버튼), "예약이 되는 건 요청을 보낼 때뿐"이라고 적는다. 문의 날짜는 필수(가능 여부 · 견적이 날짜에 달림). 시트 달력에 시터가 연 날 · 꽉 찬 날(펫 수 기준)을 표시, 꽉 찬 날은 보낼 때 **Ask anyway / Pick other dates** | 예약 전 질문과 예약 요청을 구분 |
 | D52 | 문의 스레드의 오너 · 시터 행동 (FB-34, `011j` · `011k`) | 오너는 시터 답장이 마지막일 때 **Write back**(AI가 다시 초안 → 시터 승인, 자동 발송 규칙 그대로)으로 이어 쓴다. **Change dates**는 새 문의가 아니라 **같은 문의**의 날짜를 바꾼다(`change_inquiry_dates`, 오너만 · 열린 문의만 · 31일 이하 · 옛 날짜의 예약된 자동 답장은 거둠). 시터의 Accept / Decline / Suggest는 팝업에 답장이 써져 있고 **Send**가 곧 발송이며, Decline · Suggest는 `can_host=false` + 견적 없음으로 나간다(`send_inquiry_reply(…, p_outcome)`) | 거절 답장 아래 견적 카드 · Request booking이 붙던 문제, 대화가 끊기던 문제 |
-| D53 | 시터가 쓰는 오너 노트 (FB-25 · FB-29, `011g`) | 시터는 끝난 stay의 오너에 대해 별점 + 문구(별마다 프리셋)를 남긴다. **본인만** 읽고(`save_owner_note`, 다시 저장하면 수정), 오너에게 알림이 가지 않으며 오너는 그 사실을 모른다. 같은 오너가 다시 요청하면 시터의 요청 · 예약 화면에 "Your notes from earlier stays" | 시터가 안전하게 솔직할 수 있어야 함 |
+| D53 | 시터가 쓰는 오너 리뷰 (FB-25 · FB-29, `011g`, 2026-10-26 `015s`로 공개) | 시터는 끝난 stay의 오너에 대해 별점 + 문구(별마다 프리셋)를 남긴다(`save_owner_note`, 다시 저장하면 수정, 알림 없음). 처음에는 본인만 읽었지만 이제 **그 오너와 모든 시터**가 읽는다(`owner_rating_summary`, 시터 이름은 첫 단어만). 시터는 오너의 요청 · 예약 화면에서 다른 시터들의 리뷰를 본다. 반대로 오너의 시터 리뷰도 시터 프로필에 **전부** 보이고(`sitter_rating_summary`), 시터는 Profile에서 자기 리뷰를 모아 본다 | 공익: 서로의 평가를 보고 판단하고, 받은 리뷰를 피드백으로 삼는다 |
 | D54 | 즐겨찾기 시터를 앞당김 (FB-28, `011h`) | 11.5를 P0로 당겼다: 리뷰 뒤 "Add Chloe to your favorites?", 프로필 ☆ / ★, Your sitters · 검색에서 즐겨찾기 먼저. 시터는 모른다 | 첫 손 테스트에서 단골 재예약 경로가 필요했음 |
 | D55 | 돌봄 구간은 이른 쪽부터 (CW-1, `011i`) | 체크인 · 할 일 · 알림장 칩 · 초안의 시터 구간은 **합의한 드롭오프와 Received 중 이른 쪽**부터, 끝은 그대로. Received는 드롭오프 2시간 전부터 되므로 | 일찍 받은 뒤 체크인이 `not_in_care_window`로 막히고 사진이 칩이 안 되던 문제 |
 | D56 | 알림장 규칙 (FB-22 · RV-6 – RV-8, `011f`) | 같은 날 같은 펫 · 시터가 알림장을 **여러 개** 보낼 수 있다(초안은 한 번에 하나, 다음 알림장의 칩 · 스냅샷은 마지막으로 보낸 알림장 이후 것만). **끈 칩은 알림장에 안 들어간다**(`off`로 서버에 전달). 하이라이트는 8개까지만 글에 쓰고 더 켜면 안내. 쓰기 모델이 내려가면 plain-list 초안(`template-fallback`)으로 200 | D38 "시터가 끈 것은 쓰지 않는다"를 서버가 지킴 |
@@ -149,6 +149,7 @@ Goldito/
 │  │  │  ├─ ai_handoff_check.py # POST /api/ai/handoff-check (06B)
 │  │  │  ├─ ai_inquiry.py     # POST /api/ai/inquiry-reply (07B)
 │  │  │  ├─ ai_life_record.py # POST /api/ai/life-record (07C)
+│  │  │  ├─ ai_pet_review.py  # POST /api/ai/pet-review-chips (#407, D38)
 │  │  │  ├─ ai_pet_mood.py    # POST /api/ai/pet-mood (12.2 Mood — 태그 → 규칙 %)
 │  │  │  └─ ai_safety_check.py # POST /api/ai/safety-check (12.1 Treat check — 08 설계)
 │  │  ├─ schemas/             # pydantic request/response 모델 (라우터별 파일)
@@ -296,7 +297,7 @@ Goldito/
 - Base: `/health`(무인증), 나머지 `/api/*`는 **`Authorization: Bearer <supabase access_token>` 필수**.
 - 인가: service-role로 DB에 접근하는 라우터는 반드시 `services/authz.py`의 `assert_on_duty_for`(시터 — 오늘이 확정 예약 기간 안) / `assert_owner_of`를 먼저 호출 (service role은 RLS를 우회하므로).
 - 에러 형식: `{"detail": "<human message>", "code": "<snake_case>"}` — 코드 예: `unauthorized`(401), `forbidden`(403), `not_found`(404), `invalid_input`(422), `ai_timeout`(504), `ai_invalid_output`(502), `upstream_error`(502).
-- 타임아웃 (서버→Nebius): caption 20s, handoff-check 20s, inquiry-reply 45s (초안 생성 기준 — 목표 p50 < 10s, 사람 속도 지연 D37은 이 타임아웃과 별개), care-plan 45s, report-chips 30s, daily-report 60s, life-record 60s, safety 90s (vision 30 + reasoning 60). 서버→Google Calendar(meet video-link) 15s. 프론트 fetch 타임아웃은 여기에 +5s.
+- 타임아웃 (서버→Nebius): caption 20s, handoff-check 20s, inquiry-reply 45s (초안 생성 기준: 목표 p50 < 10s, 사람 속도 지연 D37은 이 타임아웃과 별개), care-plan 45s, report-chips 30s, daily-report 60s, life-record 60s, pet-review-chips 20s, safety 90s (vision 30 + reasoning 60). 서버→Google Calendar(meet video-link) 15s. 프론트 fetch 타임아웃은 여기에 +5s.
 - 예약 단위 권한: `services/authz.py`에 `assert_booking_party(booking_id)`(견주 또는 시터) / `assert_booked_sitter(booking_id, from_hours_before=2)`(인수인계 사진 — 맡기기 2시간 전부터)를 둔다.
 - 모든 AI 응답에 `model`(사용한 model id)과 `latency_ms` 포함 → 피드백 로그·데모 설명에 사용.
 

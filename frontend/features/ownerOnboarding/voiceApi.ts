@@ -8,7 +8,8 @@ export type Fact<T> = { value: T; quote: string };
 export type VoiceFacts = {
   breed: Fact<string> | null;
   age_years: Fact<number> | null;
-  weight_kg: Fact<number> | null;
+  /** The weight as said: "20 pounds" is 20 in "lbs" (the form keeps that unit, saving turns it into kg). */
+  weight: (Fact<number> & { unit: "kg" | "lbs" }) | null;
   foods: Fact<string>[];
   /** Safety keys ("s1") with the option value. The personality chart is tapped, never spoken. */
   answers: Record<string, Fact<string>>;
@@ -16,7 +17,7 @@ export type VoiceFacts = {
   notes: Record<string, Fact<string>>;
 };
 
-export const NO_FACTS: VoiceFacts = { breed: null, age_years: null, weight_kg: null, foods: [], answers: {}, notes: {} };
+export const NO_FACTS: VoiceFacts = { breed: null, age_years: null, weight: null, foods: [], answers: {}, notes: {} };
 
 /** The recording to text. The text is shown to the owner, who can fix it. */
 export async function transcribeRecording(recording: Blob): Promise<string> {
@@ -44,7 +45,7 @@ export async function extractFacts(
   return {
     breed: facts.breed ?? null,
     age_years: facts.age_years ?? null,
-    weight_kg: facts.weight_kg ?? null,
+    weight: facts.weight ?? null,
     foods: facts.foods ?? [],
     answers: facts.answers ?? {},
     notes: facts.notes ?? {},
