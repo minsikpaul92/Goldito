@@ -528,7 +528,7 @@ export default function Chat() {
           m.kind === "card" && m.card?.type === "stay" ? (
             <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
               <Card style={StyleSheet.flatten([styles.stay, m.senderId === me ? styles.mine : styles.theirs])} testID="chat-stay-card">
-                <Text style={[styles.requestLine, m.senderId === me && styles.onGreen]} testID="chat-stay-line">
+                <Text style={[styles.stayLine, m.senderId === me && styles.onGreen]} testID="chat-stay-line">
                   {stayLine(m.card)}
                 </Text>
               </Card>
@@ -801,6 +801,8 @@ const makeStyles = (theme: Theme) =>
     mine: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },
     theirs: {},
     onGreen: { color: theme.color.primaryText },
+    // The first message of a chat reads like the bubbles: body size.
+    stayLine: { fontSize: theme.fontSize.body, color: theme.color.text },
     requestTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     requestLine: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     requestNote: { fontSize: theme.fontSize.small, color: theme.color.text, fontStyle: "italic", marginTop: 2 },
