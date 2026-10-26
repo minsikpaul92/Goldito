@@ -63,7 +63,7 @@ export function ProfilePhotoGallery({ profileId }: Props) {
         setCropFile(picked.file);
       }
     } catch (e) {
-      toast.show((e as Error).message);
+      toast.show((e as Error).message, { tone: "error" });
     }
   };
 
@@ -87,7 +87,7 @@ export function ProfilePhotoGallery({ profileId }: Props) {
       await reorderProfilePhotos(ids);
       setPhotos((current) => ids.map((id) => (current ?? []).find((p) => p.id === id)!));
     } catch (e) {
-      toast.show((e as Error).message);
+      toast.show((e as Error).message, { tone: "error" });
     } finally {
       setWorking(false);
     }
@@ -101,7 +101,7 @@ export function ProfilePhotoGallery({ profileId }: Props) {
       setSelected(null);
       setConfirmRemove(false);
     } catch (e) {
-      toast.show((e as Error).message);
+      toast.show((e as Error).message, { tone: "error" });
     } finally {
       setWorking(false);
     }

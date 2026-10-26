@@ -60,7 +60,7 @@ function RootStack() {
     >
       <Stack.Screen name="profile" options={{ headerShown: true, title: "Profile" }} />
       <Stack.Screen name="settings" options={{ headerShown: false }} />
-      <Stack.Screen name="sitter-onboarding" options={{ headerShown: true, title: "Your answers" }} />
+      <Stack.Screen name="sitter-onboarding" options={{ headerShown: false }} />
       <Stack.Screen name="whats-new" options={{ headerShown: false }} />
       <Stack.Screen name="chat/[threadId]" options={{ headerShown: true, title: "Chat" }} />
       <Stack.Screen name="privacy" options={{ headerShown: false }} />

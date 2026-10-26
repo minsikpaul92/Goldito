@@ -40,7 +40,7 @@ export function PetPhotosStep({ photos, onChange, onBusy }: Props) {
         setCropFile(picked.file);
       }
     } catch (e) {
-      toast.show((e as Error).message);
+      toast.show((e as Error).message, { tone: "error" });
     }
   };
 

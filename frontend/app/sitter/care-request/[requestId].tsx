@@ -144,12 +144,12 @@ export default function SitterCareRequest() {
 
       {open ? (
         <View style={styles.actions}>
-          <Button label={busy ? "Working…" : "Approve"} onPress={() => void answer(true)} disabled={busy} testID="request-approve" />
+          <Button label={busy ? "Working…" : "Accept"} onPress={() => void answer(true)} disabled={busy} testID="request-approve" />
           <Button label="Decline or reply…" variant="secondary" onPress={() => setDeclining(true)} disabled={busy} testID="request-decline" />
         </View>
       ) : null}
 
-      <Sheet visible={declining} title="Reply to this request" onClose={() => setDeclining(false)} testID="decline-sheet">
+      <Sheet dirty={note.trim() !== "" || fee.trim() !== ""} discardTitle="Discard your reply?" visible={declining} title="Reply to this request" onClose={() => setDeclining(false)} testID="decline-sheet">
         <Text style={styles.muted}>Pick a reason or leave a note. The owner sees both.</Text>
         <View style={styles.reasons}>
           {DECLINE_REASONS.map((r, i) => (

@@ -224,6 +224,8 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
 
   return (
     <Sheet
+      dirty={note.trim() !== "" || places.drop.note.trim() !== "" || places.pick.note.trim() !== ""}
+      discardTitle="Discard your request?"
       visible={visible}
       title="Request booking"
       onClose={onClose}

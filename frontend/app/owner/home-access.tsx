@@ -82,7 +82,7 @@ export default function HomeAccessScreen() {
       toast.show("Entry info saved");
       router.back();
     } catch (err) {
-      toast.show((err as Error).message);
+      toast.show((err as Error).message, { tone: "error" });
     } finally {
       setSaving(false);
     }

@@ -102,7 +102,7 @@ export function AddPhotoSheet({
       onPicked({ file: await sampleToFile(sample) });
       setSampleId(sample.id);
     } catch {
-      toast.show("Could not load that sample. Try again.");
+      toast.show("Could not load that sample. Try again.", { tone: "error" });
     }
   };
   const more = async () => {
@@ -117,6 +117,8 @@ export function AddPhotoSheet({
   const sharing = canShare && share;
   return (
     <Sheet
+      dirty={note.trim() !== ""}
+      discardTitle="Discard your note?"
       visible={visible}
       title="Add a photo"
       onClose={() => {

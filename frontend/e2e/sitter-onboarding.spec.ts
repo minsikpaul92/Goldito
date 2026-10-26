@@ -69,15 +69,10 @@ test.describe("sitter onboarding", () => {
     await expect(screen.getByTestId("own-title")).toHaveText(
       "Do you take pets from multiple families?",
     );
-    // Back on the left and Skip on the right, in one row of buttons.
-    const backBox = (await screen
-      .getByTestId("own-back-bottom")
-      .boundingBox())!;
-    const skipBox = (await screen
-      .getByTestId("onboarding-skip")
-      .boundingBox())!;
-    expect(Math.abs(backBox.y - skipBox.y)).toBeLessThan(2);
-    expect(backBox.x).toBeLessThan(skipBox.x);
+    // One Back, the ← arrow at the top, and Skip at the bottom (#383, U1).
+    await expect(screen.getByTestId("own-back")).toHaveAttribute("aria-label", "Back");
+    await expect(screen.getByTestId("own-back-bottom")).toHaveCount(0);
+    await expect(screen.getByTestId("onboarding-skip")).toBeVisible();
     await screen.getByTestId("onboarding-choice-multiple_owners-yes").click();
     await expect(screen.getByTestId("onboarding-q-max_pets")).toBeVisible();
     await expect(

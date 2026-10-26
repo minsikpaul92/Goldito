@@ -49,7 +49,7 @@ export function PetAvatarEditor({ pet, onChanged }: { pet: Pet; onChanged: () =>
         setCropFile(picked.file);
       }
     } catch (e) {
-      toast.show((e as Error).message);
+      toast.show((e as Error).message, { tone: "error" });
     }
   };
 
@@ -75,7 +75,7 @@ export function PetAvatarEditor({ pet, onChanged }: { pet: Pet; onChanged: () =>
       await deletePetPhoto(photo.id);
       onChanged();
     } catch (e) {
-      toast.show((e as Error).message);
+      toast.show((e as Error).message, { tone: "error" });
       await load();
     }
   };

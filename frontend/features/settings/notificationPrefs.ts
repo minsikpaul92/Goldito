@@ -45,7 +45,7 @@ export function useNotificationPrefs() {
       const { error } = await getSupabase().rpc("set_notification_pref", { p_key: key, p_on: on });
       if (error) {
         setPrefs((cur) => ({ ...cur, [key]: !on }));
-        toast.show("Couldn't save that. Try again.");
+        toast.show("Couldn't save that. Try again.", { tone: "error" });
       }
     },
     [toast],

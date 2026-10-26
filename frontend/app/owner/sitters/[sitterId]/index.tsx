@@ -69,7 +69,7 @@ export default function SitterProfileScreen() {
       toast.show(next ? "Added to favorites" : "Removed from favorites");
     } catch {
       setFavorite(!next);
-      toast.show("Couldn't save. Try again.");
+      toast.show("Couldn't save. Try again.", { tone: "error" });
     }
   };
 

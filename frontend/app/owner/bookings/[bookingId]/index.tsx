@@ -246,7 +246,7 @@ export default function OwnerBookingDetail() {
             ) : (
               <>
                 <Text style={styles.label}>{booking.sitterAcceptedAt ? `${sitter} accepted. Your turn` : "Ready to book?"}</Text>
-                <Button label="I'd like to book" onPress={() => setAgreeing(true)} testID="agree-booking" />
+                <Button label="Accept" onPress={() => setAgreeing(true)} testID="agree-booking" />
               </>
             )}
           </Card>
@@ -370,6 +370,7 @@ export default function OwnerBookingDetail() {
           {booking.status === "confirmed" && !booking.pickUp?.completedAt ? (
             <Button
               label="Change time or place"
+              variant="secondary"
               onPress={() => setSheet({ key: Date.now(), kind: "pick_up", mode: "change" })}
               disabled={busy || !open}
               testID="change-booking"
@@ -389,6 +390,8 @@ export default function OwnerBookingDetail() {
       <AgreeSheet visible={agreeing} booking={booking} onClose={() => setAgreeing(false)} onAgreed={() => void load()} />
 
       <Sheet
+        dirty={passNote.trim() !== ""}
+        discardTitle="Discard your note?"
         visible={confirmCancel}
         title={passing ? "Not this sitter?" : "Cancel this booking?"}
         onClose={() => setConfirmCancel(false)}
