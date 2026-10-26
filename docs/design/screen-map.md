@@ -750,7 +750,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${chat.otherName}${chat.unread > 0 ? `, ${chat.unread} unread` : ""}`` | ``chat-row-${chat.otherName}`` | 45 |
+| Pressable | ``${chat.otherName}${chat.unread > 0 ? `, ${chat.unread} unread` : ""}`` | ``chat-row-${chat.otherName}`` | 44 |
 
 ### ChatPetAvatars — [components/ChatPetAvatars.tsx](../../frontend/components/ChatPetAvatars.tsx)
 

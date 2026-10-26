@@ -7,7 +7,6 @@ import { ProfilePhoto, loadCoverPhotos, photoThumb } from "../features/profile/p
 import { formatStamp } from "../features/schedule/dates";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
-import { ChatPetStack } from "./ChatPetAvatars";
 import { Avatar } from "./ui/Avatar";
 import { SwipeToDelete } from "./ui/SwipeToDelete";
 
@@ -16,7 +15,7 @@ type Props = {
   onLeave: (threadId: string) => void;
   /** The chat to point at (the newest one with something new for me, #228): an accent bar and a tinted row. */
   highlightId?: string | null;
-  /** The sitter's list shows the owner's pets of the stay; the owner's does not. */
+  /** The sitter's list names the owner's pets of the stay ("Biscuit, Luna's owner Peter"); the owner's does not. */
   showPets?: boolean;
 };
 
@@ -57,13 +56,12 @@ export function ChatList({ items, onLeave, highlightId, showPets }: Props) {
             )}
             <View style={styles.body}>
               <Text style={[styles.name, chat.unread > 0 && styles.bold]} numberOfLines={1}>
-                {chat.otherName}
+                {showPets && chat.pets.length > 0 ? `${chat.pets.map((p) => p.name).join(", ")}'s owner ${chat.otherName}` : chat.otherName}
               </Text>
               <Text style={[styles.preview, chat.unread > 0 && styles.bold]} numberOfLines={1}>
                 {previewOf(chat)}
               </Text>
             </View>
-            {showPets ? <ChatPetStack pets={chat.pets} size={36} testID={`chat-row-${chat.otherName}-pets`} /> : null}
             <View style={styles.side}>
               <Text style={styles.time}>{shortStamp(chat.lastAt)}</Text>
               {chat.unread > 0 ? (
