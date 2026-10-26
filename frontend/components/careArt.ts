@@ -21,7 +21,7 @@ const ART: Record<CareArtKey, { art: ArtName; tint: Tint }> = {
   mood: { art: "snap/mood-heart", tint: "blockMint" },
   note: { art: "sitter/mood", tint: "blockMint" },
   photo: { art: "owner/camera", tint: "blockButter" },
-  report: { art: "sitter/five-second", tint: "blockPeach" },
+  report: { art: "feed/diary", tint: "blockPeach" },
 };
 
 /** The drawing and the tile color for a care row (the Oct 25 design: one tinted square per kind). */
