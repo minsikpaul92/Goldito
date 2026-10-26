@@ -100,6 +100,7 @@
 | 시터 스케줄 열기 / 막기 | ✅ 🤖 | 03B.1 |
 | 내 시터 목록 · 시터 프로필 | ✅ 🤖 | 03B.2 |
 | 예약 요청 (펫 · 시간 · 장소 · 서비스) | ✅ 🤖 | 03B.3 · 03B.10 |
+| **지난 시간 안내 (#364)**: 지난 드롭오프와 순서가 틀린 픽업은 다른 메시지, 지난 채팅 스테이는 다음 정각으로, 오늘 지난 시간은 못 고름, 시간이 지난 요청은 Accept 대신 **Pick new times** | ✅ 🤖 `booking` · `chat-handoff` · `chat` · 사람 확인 대기 | #364 |
 | **예약 단계 (D60)**: 시터의 첫 동의 "Next" → 날짜 홀드 · 진행 막대 · 2일 알림 / 3일 뒤 자동 취소 · 한 번에 한 오너 설정 · 오너 "Not this sitter" | ✅ 🤖 (사람 확인 대기, 호스팅 DB에 `011l` + 백엔드 `CRON_SECRET` 필요) · 단계 조회(`get_booking_stages`)가 실패해도 앱이 같은 규칙으로 단계를 계산해 결제된 예약이 "Request"로 보이지 않음 (CR-8, 🤖 `negotiation.spec.ts`) | 03B Booking steps |
 | 시터 요청 함 (수락 · 시간 제안 · 거절 — 거절 시트에 사유 칩 · 짧은 메모 · Suggest another time instead, 오너 알림 · 예약 상세에 사유 표시) | ✅ 🤖 (FB-35 부분은 사람 확인 대기) | 03B.4 · FB-35 |
 | 협상 · 확정 후 변경 | ✅ 🤖 | 03B.5 |
@@ -1245,6 +1246,16 @@
 | DIARYTAP-3 | ✨ Decorate → 스티커 고르기 → 오른쪽 아래 **동그란 손잡이**를 마우스로 끌기 | 가운데에서 멀어지면 커지고 가까워지면 작아짐, 돌리면 같이 돎. 크기는 0.4~2.5에서 멈춤. − + ↺ ↻ · Remove 버튼은 없고, 지우기는 스티커 **왼쪽 위 ×**. ⬇ Behind text 버튼도 없음. Save stickers 뒤 다시 열어도 그대로 | 🤖 `decor` | 사람 확인 대기 |
 | DIARYTAP-4 | 폰에서 스티커 위에 **두 손가락**으로 벌리기 · 오므리기 | 크기와 각도가 바뀌고, 자리는 그대로 | 🤖 `decor`(Chromium 터치) | **👤** 실제 폰 |
 | DIARYTAP-5 | 시터 Diary에서 리포트 쓰기 · 보낸 쪽 꾸미기 | 그림 칸은 누를 수 없는 그대로(시터 사진은 📷 Add photo), 손잡이와 두 손가락은 똑같이 됨 | 🤖 `decor` · `report` | ➖ |
+
+### 3.61 예약 시간이 지났을 때 (PASTTIME) · #364
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| PASTTIME-1 | Book care(`/owner/bookings/new`)에서 드롭오프를 지난 시간으로 · 픽업을 드롭오프보다 앞으로 | 메시지가 둘로 나뉨: **Drop-off time has passed.** / **Pick-up must be after drop-off.** | 🤖 `booking`(trip times) | ➖ |
+| PASTTIME-2 | 채팅 첫 카드의 맡기는 시간이 오늘 이미 지난 상태(예: 오늘 9 AM, 지금 2:44 PM)에서 오너가 **Request** | 바로 보내지지 않고 Request booking 시트가 열림. 맡기는 시간이 **다음 정각(3:00 PM)** 으로 옮겨져 있고 날짜 칸이 펼쳐진 채 "The chat's drop-off had passed, so it moved." 한 줄. 데려가는 시간이 새 맡기는 시간보다 앞이면 머무는 길이를 그대로 두고 함께 옮겨짐 | 🤖 `chat-handoff` · `booking`(trip times) | 사람 확인 대기 |
+| PASTTIME-3 | 그 시트(또는 Book care · Change time)에서 오늘 날짜의 시간 고르기 | 지금보다 앞선 시간은 흐리게 줄이 그어져 눌리지 않음(오후면 AM 전체, 지난 시 · 분). 바퀴를 굴려 지난 시간에 멈추면 **Set**이 꺼짐. 내일 이후 날짜는 모든 시간이 열림 | 🤖 `chat-handoff` | ➖ |
+| PASTTIME-4 | 시터가 이미 수락했고 맡기는 시간이 지난 요청 → 예약 화면(또는 채팅)에서 **Accept** | 시트의 Times 아래 빨간 줄 **Drop-off time has passed.**(픽업만 지났으면 Pick-up), 버튼은 Accept 대신 **Pick new times**. 누르면 "Pick new times" 시트(시간만, 드롭오프 먼저) → **Send to Chloe** → 토스트 "Sent to Chloe", 예약 화면에 그대로 머묾. 새 시간이 반영되면 빨간 줄이 사라지고 Accept가 돌아옴 | 🤖 `chat` | 사람 확인 대기 |
+| PASTTIME-5 | 앱에서는 아직 안 지났지만 서버가 `proposal_expired` · `request_expired`로 거절(누르는 사이에 시간이 지남) | "Not saved" 창과 Try again이 뜨지 않고 시트에 **That time has passed.** + **Pick new times** | 🤖 `chat`(서버 응답을 흉내) | ➖ |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 

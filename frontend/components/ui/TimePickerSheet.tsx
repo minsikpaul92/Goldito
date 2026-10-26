@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { formatTime } from "../../features/schedule/dates";
+import { formatTime, timeToMinutes } from "../../features/schedule/dates";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { Button } from "./Button";
@@ -11,6 +11,8 @@ type Props = {
   visible: boolean;
   /** "HH:MM", 24 h. */
   value: string;
+  /** "HH:MM": nothing earlier can be picked (today's hours that have passed, #364). */
+  minTime?: string | null;
   title?: string;
   onClose: () => void;
   onPick: (time: string) => void;
@@ -40,13 +42,35 @@ function join(hour12: number, minute: number, pm: boolean) {
   return `${pad((hour12 % 12) + (pm ? 12 : 0))}:${pad(minute)}`;
 }
 
+/** The value, or the first quarter hour from `minTime` when the value is earlier. */
+function opening(value: string, minTime: string | null | undefined) {
+  if (!minTime || timeToMinutes(value) >= timeToMinutes(minTime)) return split(value);
+  const min = timeToMinutes(minTime);
+  const quarter = Math.ceil(min / 15) * 15;
+  const at = quarter < 24 * 60 ? quarter : min;
+  return split(`${pad(Math.floor(at / 60))}:${pad(at % 60)}`);
+}
+
 type WheelItem = { value: number; label: string; id: string };
 
 /**
  * One drum of the picker: scroll (finger, mouse drag or mouse wheel) and it settles on a row,
  * or just tap a row. The row in the highlighted band is the choice.
  */
-function Wheel({ items, selected, onSelect, flex = 1 }: { items: WheelItem[]; selected: number; onSelect: (v: number) => void; flex?: number }) {
+function Wheel({
+  items,
+  selected,
+  onSelect,
+  off,
+  flex = 1,
+}: {
+  items: WheelItem[];
+  selected: number;
+  onSelect: (v: number) => void;
+  /** Rows that can't be picked (shown faint). */
+  off?: (v: number) => boolean;
+  flex?: number;
+}) {
   const styles = useThemedStyles(makeStyles);
   const ref = useRef<ScrollView>(null);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -102,12 +126,15 @@ function Wheel({ items, selected, onSelect, flex = 1 }: { items: WheelItem[]; se
     >
       {items.map((item, i) => {
         const distance = Math.abs(i - index);
+        const disabled = !!off?.(item.value);
         return (
           <Pressable
             key={item.id}
             accessibilityRole="radio"
             // react-native-web ignores accessibilityState.checked; aria-checked reaches the DOM.
             aria-checked={i === index}
+            disabled={disabled}
+            aria-disabled={disabled || undefined}
             onPress={() => {
               lockedUntil.current = Date.now() + TAP_SCROLL_LOCK_MS;
               onSelect(item.value);
@@ -116,7 +143,7 @@ function Wheel({ items, selected, onSelect, flex = 1 }: { items: WheelItem[]; se
             style={styles.item}
             testID={item.id}
           >
-            <Text style={[styles.itemText, i === index ? styles.itemOn : { opacity: distance === 1 ? 0.55 : 0.3 }]}>{item.label}</Text>
+            <Text style={[styles.itemText, i === index ? styles.itemOn : { opacity: distance === 1 ? 0.55 : 0.3 }, disabled && styles.itemOff]}>{item.label}</Text>
           </Pressable>
         );
       })}
@@ -128,13 +155,18 @@ function Wheel({ items, selected, onSelect, flex = 1 }: { items: WheelItem[]; se
  * Time picker like the iPhone's: three drums — hour, minute, AM/PM — with a highlighted band in
  * the middle. Works with a finger, a mouse drag, the mouse wheel, or taps (DESIGN.md §7.7).
  */
-export function TimePickerSheet({ visible, value, title = "Pick a time", onClose, onPick, testID = "time-picker" }: Props) {
+export function TimePickerSheet({ visible, value, minTime, title = "Pick a time", onClose, onPick, testID = "time-picker" }: Props) {
   const styles = useThemedStyles(makeStyles);
-  const [draft, setDraft] = useState(split(value));
+  const [draft, setDraft] = useState(opening(value, minTime));
 
   useEffect(() => {
-    if (visible) setDraft(split(value));
-  }, [visible, value]);
+    if (visible) setDraft(opening(value, minTime));
+  }, [visible, value, minTime]);
+
+  // Today's past hours: a row is off when every time it stands for is before minTime.
+  const min = minTime ? timeToMinutes(minTime) : null;
+  const h24 = (hour12: number, pm: boolean) => (hour12 % 12) + (pm ? 12 : 0);
+  const early = min != null && timeToMinutes(join(draft.hour12, draft.minute, draft.pm)) < min;
 
   return (
     <Sheet
@@ -146,6 +178,7 @@ export function TimePickerSheet({ visible, value, title = "Pick a time", onClose
         <Button
           label={`Set ${formatTime(join(draft.hour12, draft.minute, draft.pm))}`}
           onPress={() => onPick(join(draft.hour12, draft.minute, draft.pm))}
+          disabled={early}
           testID={`${testID}-set`}
         />
       }
@@ -153,10 +186,25 @@ export function TimePickerSheet({ visible, value, title = "Pick a time", onClose
       <View style={styles.frame}>
         <View style={styles.band} pointerEvents="none" />
         <View style={styles.wheels}>
-          <Wheel items={HOURS} selected={draft.hour12} onSelect={(hour12) => setDraft((d) => ({ ...d, hour12 }))} />
+          <Wheel
+            items={HOURS}
+            selected={draft.hour12}
+            onSelect={(hour12) => setDraft((d) => ({ ...d, hour12 }))}
+            off={min == null ? undefined : (hour12) => h24(hour12, draft.pm) * 60 + 59 < min}
+          />
           <Text style={styles.colon}>:</Text>
-          <Wheel items={MINUTES} selected={draft.minute} onSelect={(minute) => setDraft((d) => ({ ...d, minute }))} />
-          <Wheel items={MERIDIEM} selected={draft.pm ? 1 : 0} onSelect={(v) => setDraft((d) => ({ ...d, pm: v === 1 }))} />
+          <Wheel
+            items={MINUTES}
+            selected={draft.minute}
+            onSelect={(minute) => setDraft((d) => ({ ...d, minute }))}
+            off={min == null ? undefined : (minute) => h24(draft.hour12, draft.pm) * 60 + minute < min}
+          />
+          <Wheel
+            items={MERIDIEM}
+            selected={draft.pm ? 1 : 0}
+            onSelect={(v) => setDraft((d) => ({ ...d, pm: v === 1 }))}
+            off={min == null ? undefined : (v) => v === 0 && 11 * 60 + 59 < min}
+          />
         </View>
       </View>
     </Sheet>
@@ -181,4 +229,5 @@ const makeStyles = (theme: Theme) =>
     item: { height: ITEM, alignItems: "center", justifyContent: "center" },
     itemText: { fontSize: theme.fontSize.title, color: theme.color.text },
     itemOn: { fontWeight: theme.fontWeight.bold },
+    itemOff: { opacity: 0.15, textDecorationLine: "line-through" },
   });

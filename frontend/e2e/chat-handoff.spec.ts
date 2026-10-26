@@ -170,4 +170,53 @@ test.describe("handoff in the chat", () => {
     await expect.poll(() => db.requests.length).toBe(2);
     expect(db.requests[1]).toMatchObject({ p_drop_off_location_type: "sitter_home", p_pick_up_location_type: "sitter_home" });
   });
+
+  // #364 (Owner-020): the chat's stay starts earlier today. Request opens the sheet on the next hour, not on the past time.
+  test("a stay whose drop-off has passed opens Request booking on the next hour, and today's past hours can't be picked", async ({ page }) => {
+    const NOW = new Date("2026-10-25T18:44:00Z"); // Oct 25, 2:44 PM in Toronto
+    await page.clock.setFixedTime(NOW);
+    const { db } = await mockSupabase(page, [OWNER, SITTER], { now: NOW });
+    seedChat(db);
+    db.chat_messages[0].card = { ...STAY, drop_off_at: "2026-10-25T13:00:00.000Z", pick_up_at: "2026-10-26T21:00:00.000Z" };
+    const screen = await openChatAs(page, OWNER);
+
+    // Request does not send the stale stay: the sheet opens with the drop-off moved to 3 PM, and says so.
+    await screen.getByTestId("chat-next-meet_start").click();
+    await expect(screen.getByTestId("request-sheet")).toBeVisible();
+    expect(db.requests).toHaveLength(0);
+    await expect(screen.getByTestId("request-moved")).toBeVisible();
+    await expect(screen.getByTestId("request-drop-time")).toHaveText("3:00 PM");
+    await expect(screen.getByTestId("request-pick-time")).toHaveText("5:00 PM");
+    await expect(screen.getByTestId("request-problem")).toHaveCount(0);
+
+    // Today's hours before now are off: all of AM, 1 PM; 2 PM only from :45.
+    await screen.getByTestId("request-drop-time").click();
+    const clock = screen.getByTestId("request-clock");
+    await expect(clock.getByTestId("time-ampm-am")).toHaveAttribute("aria-disabled", "true");
+    await expect(clock.getByTestId("time-hour-1")).toHaveAttribute("aria-disabled", "true");
+    await expect(clock.getByTestId("time-hour-2")).not.toHaveAttribute("aria-disabled", "true");
+    await clock.getByTestId("time-hour-2").click();
+    await expect(clock.getByTestId("time-min-30")).toHaveAttribute("aria-disabled", "true");
+    await expect(screen.getByTestId("request-clock-set")).toBeDisabled(); // 2:00 PM has passed
+    await clock.getByTestId("time-hour-4").click();
+    await screen.getByTestId("request-clock-set").click();
+    await expect(screen.getByTestId("request-drop-time")).toHaveText("4:00 PM");
+
+    // A pick-up before the drop-off says that, not that the drop-off has passed.
+    await screen.getByTestId("request-pick-day").click();
+    await screen.getByTestId("request-calendar-2026-10-25").click();
+    await screen.getByTestId("request-pick-time").click();
+    await clock.getByTestId("time-hour-3").click();
+    await screen.getByTestId("request-clock-set").click();
+    await expect(screen.getByTestId("request-problem")).toHaveText("Pick-up must be after drop-off.");
+    await expect(screen.getByTestId("request-send")).toBeDisabled();
+
+    await screen.getByTestId("request-pick-time").click();
+    await clock.getByTestId("time-hour-6").click();
+    await screen.getByTestId("request-clock-set").click();
+    await expect(screen.getByTestId("request-problem")).toHaveCount(0);
+    await screen.getByTestId("request-send").click();
+    await expect.poll(() => db.requests.length).toBe(1);
+    expect(db.requests[0]).toMatchObject({ p_drop_off_at: "2026-10-25T20:00:00.000Z", p_pick_up_at: "2026-10-25T22:00:00.000Z" });
+  });
 });
