@@ -40,11 +40,11 @@ export function ChatMeetGreetUpdate({ card, mine, otherName, at }: { card: Updat
         : `In person${card.place ? ` · ${card.place}` : ""} · ${formatInstant(card.at)}`
       : null;
   return (
-    <View style={styles.row} testID="chat-mg-update">
-      <View style={styles.pill}>
-        <Text style={styles.title}>{meetGreetUpdateText(card, mine ? "You" : otherName)}</Text>
-        {plan ? <Text style={styles.line}>{plan}</Text> : null}
-        <Text style={styles.stamp}>{formatStamp(at)}</Text>
+    <View style={[styles.row, mine ? styles.rowMe : styles.rowThem]} testID="chat-mg-update">
+      <View style={[styles.pill, mine ? styles.pillMe : styles.pillThem]}>
+        <Text style={[styles.title, mine && styles.onGreen]}>{meetGreetUpdateText(card, mine ? "You" : otherName)}</Text>
+        {plan ? <Text style={[styles.line, mine && styles.onGreen]}>{plan}</Text> : null}
+        <Text style={[styles.stamp, mine && styles.onGreen]}>{formatStamp(at)}</Text>
       </View>
     </View>
   );
@@ -52,17 +52,22 @@ export function ChatMeetGreetUpdate({ card, mine, otherName, at }: { card: Updat
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    row: { alignItems: "center" },
+    // A person's own step: mine green on the right, theirs white on the left, like the bubbles.
+    row: {},
+    rowMe: { alignItems: "flex-end" },
+    rowThem: { alignItems: "flex-start" },
+    pillMe: { backgroundColor: theme.color.primary },
+    pillThem: { backgroundColor: theme.color.surface, borderWidth: 1, borderColor: theme.color.border },
+    onGreen: { color: theme.color.primaryText },
     pill: {
       maxWidth: "88%",
-      alignItems: "center",
+      alignItems: "flex-start",
       gap: 2,
       paddingVertical: theme.spacing.sm,
       paddingHorizontal: theme.spacing.md,
       borderRadius: theme.radius.lg,
-      backgroundColor: theme.color.blockBlush,
     },
-    title: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
-    line: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
+    title: { fontSize: theme.fontSize.body, color: theme.color.text, },
+    line: { fontSize: theme.fontSize.body, color: theme.color.text },
     stamp: { fontSize: theme.fontSize.caption, color: theme.color.textMuted },
   });
