@@ -366,7 +366,11 @@ export default function Chat() {
     if (!booking) return undefined;
     setStepBusy(true);
     try {
-      if (p.kind === "interest") await expressInterest(booking.id);
+      if (p.kind === "interest") {
+        await expressInterest(booking.id);
+        const names = booking.pets.map((x) => x.name).filter(Boolean);
+        await sendChatMessage(threadId, `Yes, I can take ${names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : (names[0] ?? "your pet")} for these dates.`).catch(() => undefined);
+      }
       else if (p.kind === "accept") await respondBooking(booking.id, true);
       else if (p.kind === "confirm_quote") await confirmQuote(p.messageId);
       await load();
@@ -513,6 +517,10 @@ export default function Chat() {
   const stepCard = (m: ChatMessage, c: Extract<ChatCard, { type: "meet_greet" | "agreement" | "payment" }>): ReactNode => {
     const b = pairBookings.find((x) => x.id === c.bookingId);
     if (!b) return null;
+    // The Meet & Greet card comes up with the sitter's Yes, not before.
+    if (c.type === "meet_greet" && b.meetGreetStatus === "required" && !b.sitterInterestAt) return null;
+    // The current booking's Meet & Greet card is drawn after the last message (below), so it follows the Yes.
+    if (c.type === "meet_greet" && booking?.id === b.id) return null;
     const current = booking?.id === b.id;
     const final = finalQuote(messages, b.id);
     const total = b.paidAt ? (b.priceSnapshot?.total ?? null) : final?.card.status === "confirmed" ? final.card.total : null;
@@ -614,6 +622,11 @@ export default function Chat() {
         {messages.slice(0, stayAfter).map(renderMessage)}
         {stayCardEl}
         {messages.slice(stayAfter).map(renderMessage)}
+        {booking && booking.meetGreetStatus !== "not_needed" && messages.some((m) => m.card?.type === "meet_greet" && m.card.bookingId === booking.id) && !(booking.meetGreetStatus === "required" && !booking.sitterInterestAt) ? (
+          <View style={styles.cardWide}>
+            <MeetGreetCard ref={meetCard} booking={booking} viewer={header.myRole} onChanged={load} />
+          </View>
+        ) : null}
         {booking && !["requested", "meet_greet"].includes(booking.stage) ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
         {booking ? <ChatCareCards booking={booking} viewer={header.myRole} askSignal={signals.photo} /> : null}
         {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} startSignal={signals.trip} /> : null}

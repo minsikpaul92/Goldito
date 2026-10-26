@@ -110,8 +110,10 @@ export function nextStep(i: Input): NextStep {
   }
 
   switch (booking.stage) {
-    // Both sides answer on the Meet & Greet card in the chat (Skip, Request, Accept): nothing waits in the footer.
+    // The sitter's Yes (the first yes, which holds the dates) brings up the Meet & Greet card; from then on both sides
+    // answer on that card (Skip, Request, Accept) and nothing waits in the footer.
     case "requested":
+      return role === "sitter" ? { primary: { kind: "interest", label: "Yes" }, quote: false, wait: null } : { ...none, wait: waiting };
     case "meet_greet":
       return none;
 
