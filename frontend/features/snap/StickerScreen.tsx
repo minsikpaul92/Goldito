@@ -219,7 +219,7 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
               emoji="✂️"
               title="Add a pet first"
               message="Pick a photo of your pet and we'll cut them out as a sticker for the diary."
-              action={{ label: "Add pet", onPress: () => router.push("/owner/pets/new") }}
+              action={{ label: "Add pet", onPress: () => router.push("/owner-onboarding?add=1") }}
             />
           )}
         </View>

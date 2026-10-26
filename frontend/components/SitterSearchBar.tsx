@@ -91,7 +91,7 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
       <View style={styles.divider} />
       {segment("calendar", dateText, () => setOpen("stay"), "bar-dates", 0)}
       <View style={styles.divider} />
-      {segment("paw", petText, () => (pets.length === 0 ? router.push("/owner/pets/new") : setOpen("pets")), "bar-pets", 0)}
+      {segment("paw", petText, () => (pets.length === 0 ? router.push("/owner-onboarding?add=1") : setOpen("pets")), "bar-pets", 0)}
 
       <Sheet
         visible={open === "place"}
