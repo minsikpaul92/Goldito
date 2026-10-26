@@ -33,7 +33,7 @@ export default function OwnerHome() {
   const { status, pets, error, reload } = useMyPets();
   const stay = useStayToday();
   const booking = useHomeStay();
-  const addPet = () => router.push("/owner/pets/new");
+  const addPet = () => router.push("/owner-onboarding?add=1");
 
   if (status === "loading" && pets.length === 0) return <LoadingView />;
 

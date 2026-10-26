@@ -149,6 +149,7 @@ Goldito/
 │  │  │  ├─ ai_handoff_check.py # POST /api/ai/handoff-check (06B)
 │  │  │  ├─ ai_inquiry.py     # POST /api/ai/inquiry-reply (07B)
 │  │  │  ├─ ai_life_record.py # POST /api/ai/life-record (07C)
+│  │  │  ├─ ai_pet_review.py  # POST /api/ai/pet-review-chips (#407, D38)
 │  │  │  ├─ ai_pet_mood.py    # POST /api/ai/pet-mood (12.2 Mood — 태그 → 규칙 %)
 │  │  │  └─ ai_safety_check.py # POST /api/ai/safety-check (12.1 Treat check — 08 설계)
 │  │  ├─ schemas/             # pydantic request/response 모델 (라우터별 파일)
@@ -296,7 +297,7 @@ Goldito/
 - Base: `/health`(무인증), 나머지 `/api/*`는 **`Authorization: Bearer <supabase access_token>` 필수**.
 - 인가: service-role로 DB에 접근하는 라우터는 반드시 `services/authz.py`의 `assert_on_duty_for`(시터 — 오늘이 확정 예약 기간 안) / `assert_owner_of`를 먼저 호출 (service role은 RLS를 우회하므로).
 - 에러 형식: `{"detail": "<human message>", "code": "<snake_case>"}` — 코드 예: `unauthorized`(401), `forbidden`(403), `not_found`(404), `invalid_input`(422), `ai_timeout`(504), `ai_invalid_output`(502), `upstream_error`(502).
-- 타임아웃 (서버→Nebius): caption 20s, handoff-check 20s, inquiry-reply 45s (초안 생성 기준 — 목표 p50 < 10s, 사람 속도 지연 D37은 이 타임아웃과 별개), care-plan 45s, report-chips 30s, daily-report 60s, life-record 60s, safety 90s (vision 30 + reasoning 60). 서버→Google Calendar(meet video-link) 15s. 프론트 fetch 타임아웃은 여기에 +5s.
+- 타임아웃 (서버→Nebius): caption 20s, handoff-check 20s, inquiry-reply 45s (초안 생성 기준: 목표 p50 < 10s, 사람 속도 지연 D37은 이 타임아웃과 별개), care-plan 45s, report-chips 30s, daily-report 60s, life-record 60s, pet-review-chips 20s, safety 90s (vision 30 + reasoning 60). 서버→Google Calendar(meet video-link) 15s. 프론트 fetch 타임아웃은 여기에 +5s.
 - 예약 단위 권한: `services/authz.py`에 `assert_booking_party(booking_id)`(견주 또는 시터) / `assert_booked_sitter(booking_id, from_hours_before=2)`(인수인계 사진 — 맡기기 2시간 전부터)를 둔다.
 - 모든 AI 응답에 `model`(사용한 model id)과 `latency_ms` 포함 → 피드백 로그·데모 설명에 사용.
 

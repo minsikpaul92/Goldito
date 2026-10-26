@@ -93,7 +93,7 @@ async function pinGap(page: Page): Promise<number> {
 }
 
 async function stubTiles(page: Page) {
-  await page.route("**/tile.openstreetmap.org/**", (route) => route.fulfill({ status: 200, contentType: "image/png", body: TILE }));
+  await page.route("**/server.arcgisonline.com/**", (route) => route.fulfill({ status: 200, contentType: "image/png", body: TILE }));
 }
 
 /** Opening Google Maps opens a new tab; the test answers it locally and returns the URL it was sent to. */
@@ -149,7 +149,7 @@ test.describe("pet transit", () => {
     await expect(screen.getByTestId("trip-sharing-banner")).toContainText("Sharing your location with Chloe until you arrive");
     await expect(screen.getByTestId("trip-eta")).toContainText("ETA");
     await expect(screen.getByTestId("trip-map")).toBeVisible();
-    await expect(screen.getByText("© OpenStreetMap contributors")).toBeVisible();
+    await expect(screen.getByText("Tiles © Esri")).toBeVisible();
 
     await expect(screen.getByTestId("trip-eta")).toContainText("You've arrived", { timeout: 70_000 });
     // 015q: the drive parks for one more step, so two readings in a row land inside the 150 m circle.

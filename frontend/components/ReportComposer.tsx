@@ -452,6 +452,7 @@ export function ReportComposer({
       <Button
         label={busy === "generate" ? "Writing…" : body.trim() ? "Rewrite the page from the chips" : "Write the page from the chips"}
         variant="secondary"
+        ai
         disabled={busy != null}
         onPress={() => void generate()}
         testID={`report-generate-${pet.id}`}

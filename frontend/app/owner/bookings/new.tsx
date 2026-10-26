@@ -254,7 +254,7 @@ export default function BookCare() {
           emoji="🐶"
           title="Add a pet first"
           message="Tell us about your dog or cat, then book a sitter for them."
-          action={{ label: "Add pet", onPress: () => router.push("/owner/pets/new") }}
+          action={{ label: "Add pet", onPress: () => router.push("/owner-onboarding?add=1") }}
         />
       </Screen>
     );

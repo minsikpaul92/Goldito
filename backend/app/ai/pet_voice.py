@@ -5,7 +5,7 @@ quote is really in the text and that the value fits it. A fact that fails any ch
 """
 
 import re
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, field_validator
 
@@ -23,10 +23,14 @@ class RawFact(BaseModel):
         return "" if value is None else value
 
 
+class RawWeight(RawFact):
+    unit: Any = None
+
+
 class RawFacts(BaseModel):
     breed: RawFact | None = None
     age_years: RawFact | None = None
-    weight_kg: RawFact | None = None
+    weight: RawWeight | None = None
     foods: list[RawFact] = []
     answers: dict[str, RawFact] = {}
     notes: dict[str, RawFact] = {}
@@ -53,10 +57,16 @@ class Fact(BaseModel):
     quote: str
 
 
+class Weight(Fact):
+    """The weight as the owner said it: 20 pounds stays 20 "lbs" (the app saves kg)."""
+
+    unit: Literal["kg", "lbs"]
+
+
 class Facts(BaseModel):
     breed: Fact | None = None
     age_years: Fact | None = None
-    weight_kg: Fact | None = None
+    weight: Weight | None = None
     foods: list[Fact] = []
     answers: dict[str, Fact] = {}
     # What the owner said for the free-text items of the numbered list, in their own words (the key says which item).
@@ -72,7 +82,8 @@ EMPTY_NOTES = {"nothing", "nothing special", "nothing in particular", "none", "n
 MAX_FOODS = 8
 MAX_BREED = 60
 MAX_FOOD = 40
-LB_TO_KG = 0.45359237
+POUND_WORDS = {"pound", "pounds", "lb", "lbs"}
+KILO_WORDS = {"kg", "kgs", "kilo", "kilos", "kilogram", "kilograms"}
 
 _WORDS = re.compile(r"[a-z0-9]+(?:\.[0-9]+)?")
 _NUMBER_WORDS = {
@@ -149,16 +160,16 @@ def validate_facts(raw: RawFacts, text: str, options: dict[str, set[str]]) -> Fa
             if small or years in numbers_in(quote):
                 facts.age_years = Fact(value=int(years), quote=quote.strip())
 
-    if raw.weight_kg:
-        kg = _as_float(raw.weight_kg.value)
-        quote = raw.weight_kg.quote
-        if kg is not None and 0 < kg < 200 and quote_in(quote, text):
-            kg = round(kg, 1)
-            said = numbers_in(quote)
-            pounds = any(w in _tokens(quote) for w in ("pound", "pounds", "lb", "lbs"))
-            # Said in pounds, the value must be the converted one: 13 pounds is 5.9 kg, never 13.
-            if any(abs(kg - (round(n * LB_TO_KG, 1) if pounds else n)) <= 0.15 for n in said):
-                facts.weight_kg = Fact(value=kg, quote=quote.strip())
+    if raw.weight and raw.weight.unit in ("kg", "lbs"):
+        amount = _as_float(raw.weight.value)
+        quote = raw.weight.quote
+        if amount is not None and 0 < amount < 400 and quote_in(quote, text):
+            amount = round(amount, 1)
+            words = set(_tokens(quote))
+            # The number is the one said, and the unit is the one in the quote when it names one: 20 pounds is never 20 kg.
+            said_unit = "lbs" if words & POUND_WORDS else "kg" if words & KILO_WORDS else None
+            if said_unit in (None, raw.weight.unit) and any(abs(amount - n) <= 0.15 for n in numbers_in(quote)):
+                facts.weight = Weight(value=amount, unit=raw.weight.unit, quote=quote.strip())
 
     seen: set[str] = set()
     for food in raw.foods[:MAX_FOODS * 2]:

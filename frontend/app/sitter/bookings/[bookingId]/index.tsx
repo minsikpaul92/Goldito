@@ -55,6 +55,8 @@ import {
 import { PetGlance } from "../../../../components/PetGlance";
 import { PetRecordFold } from "../../../../components/PetRecordFold";
 import { MedalButtons } from "../../../../components/pet/MedalButtons";
+import { PetReviews } from "../../../../components/pet/PetReviews";
+import { StayPetReviews } from "../../../../components/pet/StayPetReviews";
 import { ReceivedReview } from "../../../../components/ReceivedReview";
 import { ReturnSheet } from "../../../../components/ReturnSheet";
 import { OwnerNoteCard } from "../../../../components/OwnerNote";
@@ -411,6 +413,7 @@ export default function SitterBookingDetail() {
             {pet.notes ? <Text style={styles.muted}>{pet.notes}</Text> : null}
             <PetGlance petId={pet.id} bare />
             <PetRecordFold petId={pet.id} petName={pet.name} />
+            <PetReviews petId={pet.id} excludeBookingId={booking.id} />
           </Card>
         ))}
 
@@ -420,6 +423,7 @@ export default function SitterBookingDetail() {
               Stay complete 🐾
             </Text>
             <MedalButtons bookingId={booking.id} pets={booking.pets} ownerName={owner} />
+            <StayPetReviews bookingId={booking.id} pets={booking.pets} ownerName={owner} />
             <ReceivedReview bookingId={booking.id} ownerName={owner} />
             <OwnerNoteCard bookingId={booking.id} ownerName={owner} onDone={() => router.replace("/sitter")} />
           </View>
