@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect } from "expo-router";
-import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useReduceMotion } from "../components/ui/useReduceMotion";
@@ -17,6 +17,8 @@ type ToastOptions = {
   /** Shows an Undo button; the toast stays a little longer. */
   undo?: () => void;
   tone?: Tone;
+  /** Something the person didn't do (a notification): waits while an Undo toast is up instead of replacing it (U9). */
+  passive?: boolean;
 };
 
 type ToastValue = {
@@ -38,13 +40,30 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [tabBarInset, setTabBarInset] = useState(0);
   const [toast, setToast] = useState<{ id: number; message: string; options: ToastOptions } | null>(null);
 
+  // Passive toasts that arrived while an Undo toast was up; shown in turn once it goes.
+  const waiting = useRef<{ id: number; message: string; options: ToastOptions }[]>([]);
+
   useEffect(() => {
-    if (!toast) return;
+    if (!toast) {
+      const next = waiting.current.shift();
+      if (next) setToast(next);
+      return;
+    }
     const timer = setTimeout(() => setToast(null), toast.options.undo ? UNDO_MS : TOAST_MS);
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const show = useCallback((message: string, options: ToastOptions = {}) => setToast({ id: Date.now(), message, options }), []);
+  const show = useCallback((message: string, options: ToastOptions = {}) => {
+    const next = { id: Date.now(), message, options };
+    setToast((current) => {
+      // Never take the person's Undo away: a notification waits its turn (the bell has it already).
+      if (options.passive && current?.options.undo) {
+        waiting.current.push(next);
+        return current;
+      }
+      return next;
+    });
+  }, []);
   const value = useMemo(() => ({ show, setBottomInset, setTabBarInset }), [show]);
   // Just above what is really at the bottom (#371): the tab bar on a tab screen, plus a pinned footer when one reports
   // itself. A screen that reports neither keeps the old height, which clears a bar of buttons it draws itself.

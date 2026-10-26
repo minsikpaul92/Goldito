@@ -32,6 +32,8 @@ type Props = {
   onChange: (draft: OnboardingDraft) => void;
   /** Leaving every question empty and finishing. Only offered the first time. */
   onSkipAll?: () => void;
+  /** Back on the first question: leaves (editing from Profile). Without it the first question has no Back. */
+  onLeave?: () => void;
   onFinish: () => void;
   saving: boolean;
 };
@@ -45,7 +47,7 @@ const STEPS = ["voice", ...QUESTIONS.map((q) => `q:${q.key}`), "custom", "availa
  * takes several picks, or has a note open, waits for Next. Every question has Skip and a "+" for a note. The first
  * screen takes the answers by voice (or typing): what the sitter says is suggested on the questions, never final.
  */
-export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving }: Props) {
+export function SitterAnswersForm({ draft, onChange, onSkipAll, onLeave, onFinish, saving }: Props) {
   const styles = useThemedStyles(makeStyles);
   const [step, setStep] = useState("voice");
   const [rulesOpen, setRulesOpen] = useState(false);
@@ -68,7 +70,7 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
   const index = STEPS.indexOf(step);
   const go = (id: string) => setStep(id);
   const next = () => go(STEPS[Math.min(STEPS.length - 1, STEPS.indexOf(step) + 1)]);
-  const back = index > 0 ? () => go(STEPS[index - 1]) : undefined;
+  const back = index > 0 ? () => go(STEPS[index - 1]) : onLeave;
   const progress = index / (STEPS.length - 1);
 
   const setAnswer = (key: string, patch: Partial<AnswerDraft>) => {

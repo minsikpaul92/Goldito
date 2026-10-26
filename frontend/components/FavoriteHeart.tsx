@@ -36,7 +36,7 @@ export function FavoriteHeart({ sitterId, sitterName }: { sitterId: string; sitt
       toast.show(next ? `${sitterName} is a favorite` : `${sitterName} removed from favorites`);
     } catch (e) {
       setFavorite(!next);
-      toast.show((e as Error).message);
+      toast.show((e as Error).message, { tone: "error" });
     }
   };
   return (

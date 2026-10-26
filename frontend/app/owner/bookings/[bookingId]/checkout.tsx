@@ -183,7 +183,8 @@ export default function CheckoutScreen() {
   if (!ready) return <LoadingView />;
 
   const { booking, quote, required, signed, entryMissing } = ready;
-  const totalLabel = `Pay $${quote.total.toFixed(2)} (demo)`;
+  // The one place that says more than Accept: money moves (U12).
+  const totalLabel = `Confirm and pay $${quote.total.toFixed(2)} (demo)`;
 
   return (
     <View style={styles.root}>

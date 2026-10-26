@@ -50,6 +50,8 @@ export function FeedEditSheet({ post, saving, onClose, onSave }: Props) {
   return (
     <>
       <Sheet
+        dirty={post != null && note.trim() !== (post.note ?? "").trim()}
+        discardTitle="Discard your changes?"
         visible={post != null}
         title="Edit photo"
         onClose={() => {

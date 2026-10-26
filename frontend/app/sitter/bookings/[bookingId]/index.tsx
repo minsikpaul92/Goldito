@@ -440,7 +440,7 @@ export default function SitterBookingDetail() {
                 </Text>
               ) : null}
               <Button
-                label={busy ? "Saving…" : "I accept"}
+                label={busy ? "Saving…" : "Accept"}
                 onPress={() => void run(() => respondBooking(booking.id, true), `Accepted. ${owner} gets a notice`)}
                 disabled={!canAccept}
                 testID="accept-booking"
@@ -551,6 +551,8 @@ export default function SitterBookingDetail() {
       ) : null}
 
       <Sheet
+        dirty={declineNote.trim() !== ""}
+        discardTitle="Discard your note?"
         visible={confirmDecline}
         title={`Decline ${owner}'s request?`}
         onClose={closeDecline}

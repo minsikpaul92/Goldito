@@ -137,6 +137,8 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
 
   return (
     <Sheet
+      dirty={body.trim() !== ""}
+      discardTitle="Discard your page?"
       visible={visible}
       title="New page"
       onClose={onClose}

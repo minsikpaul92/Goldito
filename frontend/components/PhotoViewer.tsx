@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { deliveryUrl } from "../lib/cloudinary";
 import type { ProfilePhoto } from "../features/profile/profilePhotosApi";
-import { useThemedStyles } from "../providers/ThemeProvider";
+import { Icon } from "./ui/Icon";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
 type Props = {
@@ -22,6 +23,7 @@ const SWIPE_DISTANCE = 50;
  * through them, Escape or ✕ closes. Same pattern as FeedViewer, without video or captions.
  */
 export function PhotoViewer({ visible, photos, initialIndex = 0, onClose }: Props) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(initialIndex);
@@ -109,7 +111,7 @@ export function PhotoViewer({ visible, photos, initialIndex = 0, onClose }: Prop
           style={[styles.round, styles.close, { top: Math.max(insets.top, 12) }]}
           testID="photo-viewer-close"
         >
-          <Text style={styles.icon}>✕</Text>
+          <Icon name="close" size={24} color={theme.color.onMedia} />
         </Pressable>
 
         {photos.length > 1 ? (
@@ -135,9 +137,9 @@ const makeStyles = (theme: Theme) =>
     },
     round: {
       position: "absolute",
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       backgroundColor: "rgba(0,0,0,0.45)",
       alignItems: "center",
       justifyContent: "center",
@@ -145,7 +147,8 @@ const makeStyles = (theme: Theme) =>
     },
     arrowLeft: { top: "50%", left: theme.spacing.sm },
     arrowRight: { top: "50%", right: theme.spacing.sm },
-    close: { right: theme.spacing.md },
+    // ✕ top left, labelled Close, like the feed viewer (U4).
+    close: { left: theme.spacing.md },
     icon: {
       color: theme.color.onMedia,
       fontSize: 18,

@@ -84,6 +84,8 @@ export function TaskDoneSheet({ item, onClose, onDone }: Props) {
 
   return (
     <Sheet
+      dirty={memo.trim() !== ""}
+      discardTitle="Discard your memo?"
       visible={item != null}
       title={item ? `Done: ${item.task.title}` : ""}
       onClose={() => {

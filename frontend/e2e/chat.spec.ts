@@ -741,7 +741,7 @@ test.describe("chat hub", () => {
     expect(db.bookings[0].status).toBe("requested");
 
     screen = await openChatAs(page, SITTER);
-    await expect(screen.getByTestId("chat-next-accept")).toHaveText("I accept");
+    await expect(screen.getByTestId("chat-next-accept")).toHaveText("Accept");
     await screen.getByTestId("chat-next-accept").click();
     await expect(screen.getByTestId("chat-agreement-card")).toContainText("Booked, you both agreed");
     expect(db.bookings[0].status).toBe("confirmed");
@@ -768,7 +768,7 @@ test.describe("chat hub", () => {
     await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}/checkout$`));
     await expect(screen.getByTestId("quote-extra-0")).toHaveCount(0);
     await expect(screen.getByTestId("checkout-quote").getByTestId("quote-total")).toHaveText("$268.13 CAD");
-    await expect(screen.getByTestId("checkout-pay")).toContainText("Pay $268.13");
+    await expect(screen.getByTestId("checkout-pay")).toContainText("Confirm and pay $268.13");
     for (const kind of ["emergency_vet", "safe_return", "handoff_rules", "cohabitation"]) {
       await screen.getByTestId(`consent-${kind}-check`).click();
     }
@@ -1018,7 +1018,7 @@ test.describe("chat hub", () => {
     await screen.getByTestId("meet-skip-accept").click();
     await expect(screen.getByTestId("meet-greet")).toContainText("Meet & Greet skipped");
     expect(db.bookings[0].sitter_interest_at).toBeTruthy();
-    await expect(screen.getByTestId("chat-next-accept")).toHaveText("I accept");
+    await expect(screen.getByTestId("chat-next-accept")).toHaveText("Accept");
   });
 
   test("a Meet & Greet answer arrives as a new line at the bottom for both sides; the list follows it (#264)", async ({ page }) => {

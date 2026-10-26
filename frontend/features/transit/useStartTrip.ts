@@ -29,7 +29,7 @@ export function useStartTrip(booking: BookingSummary, role: Role): (kind: Handof
               ? `Location is off in this browser, so ${otherName} sees the meeting place instead`
               : `Trip started. ${otherName} sees the meeting place`,
         );
-      } else if (result.reason === "error" && result.message) toast.show(result.message);
+      } else if (result.reason === "error" && result.message) toast.show(result.message, { tone: "error" });
       return result;
     },
     [booking.id, otherName, profile, requestStart, role, toast],

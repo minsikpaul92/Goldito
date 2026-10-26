@@ -117,8 +117,8 @@ export function nextStep(i: Input): NextStep {
       return none;
 
     case "confirm":
-      if (role === "owner" && !booking.ownerAgreedAt) return { primary: { kind: "agree", label: "I'd like to book" }, quote: false, wait: null };
-      if (role === "sitter" && !booking.sitterAcceptedAt) return { primary: { kind: "accept", label: "I accept" }, quote, wait: null };
+      if (role === "owner" && !booking.ownerAgreedAt) return { primary: { kind: "agree", label: "Accept" }, quote: false, wait: null };
+      if (role === "sitter" && !booking.sitterAcceptedAt) return { primary: { kind: "accept", label: "Accept" }, quote, wait: null };
       return { primary: null, quote: false, wait: waiting };
 
     case "awaiting_payment": {
@@ -139,7 +139,7 @@ export function nextStep(i: Input): NextStep {
           ? {
               primary: {
                 kind: "confirm_quote",
-                label: "Confirm",
+                label: "Accept",
                 messageId: final.id,
                 disabled: final.card.extras.some((e) => e.status === "offered"),
               },

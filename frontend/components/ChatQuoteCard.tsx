@@ -102,7 +102,7 @@ export function ChatQuoteCard({ card, role, final, side, from, busy, onConfirm, 
       ) : null}
       {open && role === "owner" ? (
         <View style={styles.actions}>
-          <Button label="Confirm" disabled={busy || pending} onPress={onConfirm} testID="quote-confirm" />
+          <Button label="Accept" disabled={busy || pending} onPress={onConfirm} testID="quote-confirm" />
           {final && onDecline ? <Button label="Decline" variant="dangerOutline" disabled={busy} onPress={onDecline} testID="quote-decline" /> : null}
         </View>
       ) : null}

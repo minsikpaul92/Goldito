@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 
 import { Icon } from "./Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
@@ -9,7 +9,7 @@ type Props = {
   testID?: string;
 };
 
-/** Chevron + “Back” — same control on signup, login, and onboarding (DESIGN.md §7). */
+/** The ← arrow, top left, 44 px, read aloud as Back: the one Back control everywhere (U1, DESIGN.md §7.8). */
 export function BackLink({ onPress, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -23,8 +23,7 @@ export function BackLink({ onPress, testID }: Props) {
       style={({ pressed }) => [styles.back, pressed && styles.pressed]}
       testID={testID}
     >
-      <Icon name="back" size={theme.icon.sm} color={theme.color.primary} />
-      <Text style={styles.label}>Back</Text>
+      <Icon name="arrowBack" size={theme.icon.md} color={theme.color.text} />
     </Pressable>
   );
 }
@@ -32,16 +31,12 @@ export function BackLink({ onPress, testID }: Props) {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     back: {
-      flexDirection: "row",
       alignItems: "center",
+      justifyContent: "center",
       alignSelf: "flex-start",
-      minHeight: 44,
-      gap: theme.spacing.xs,
+      width: 44,
+      height: 44,
+      marginLeft: -10,
     },
     pressed: { opacity: theme.opacity.pressed },
-    label: {
-      fontSize: theme.fontSize.body,
-      fontWeight: theme.fontWeight.semibold,
-      color: theme.color.primary,
-    },
   });

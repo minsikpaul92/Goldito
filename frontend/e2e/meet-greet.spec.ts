@@ -319,7 +319,7 @@ test.describe("meet & greet", () => {
     expect(db.notifications.find((n) => n.type === "booking_interest")).toMatchObject({ user_id: OWNER.id });
     await expect(screen.getByTestId("meet-greet")).toContainText("These dates are on hold for Robert");
     await expect(screen.getByTestId("stage-caption")).toContainText("Day 1");
-    await expect(screen.getByTestId("accept-booking")).toHaveText("I accept");
+    await expect(screen.getByTestId("accept-booking")).toHaveText("Accept");
     await expect(screen.getByTestId("accept-booking")).toBeDisabled();
     await expect(screen.getByTestId("accept-reason")).toHaveText("Meet Robert first, or agree to skip the Meet & Greet.");
   });

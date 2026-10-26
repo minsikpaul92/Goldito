@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { sectionTitleStyle } from "./SectionTitle";
+import { Button } from "./Button";
 import { TextButton } from "./TextButton";
 import { useReduceMotion } from "./useReduceMotion";
 
@@ -18,6 +19,12 @@ type Props = {
   footer?: ReactNode;
   /** Keep a thin visible scrollbar on the desktop frame (a long page inside the sheet). */
   scrollbar?: boolean;
+  /** The sheet applies each tap as it goes, so its footer's Done is the only way out: no Close in the header (U10). The backdrop and a pull down still close it. */
+  doneOnly?: boolean;
+  /** Something typed is in the sheet: closing it (Close, the backdrop, a pull down, Escape) asks before dropping it (U2). */
+  dirty?: boolean;
+  /** The question when `dirty`: "Discard your note?". */
+  discardTitle?: string;
   testID?: string;
 };
 
@@ -30,11 +37,11 @@ const FULL_CLOSE_VELOCITY = 1.6;
 const OFF_SCREEN = 700;
 
 /**
- * Bottom sheet with a visible Close; tapping the backdrop closes it too. Grab the handle or the title bar:
+ * Bottom sheet with a visible Close; tapping the backdrop closes it too. With `dirty`, any close asks Discard? first (U2). Grab the handle or the title bar:
  * pull down to close (from full screen a short pull goes back to the normal height, a long one closes), pull up for full screen.
  * Inside the desktop frame it stays in the phone, because the app runs in the frame's iframe.
  */
-export function Sheet({ visible, title, onClose, children, footer, scrollbar, testID }: Props) {
+export function Sheet({ visible, title, onClose, children, footer, scrollbar, doneOnly, dirty, discardTitle, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const reduce = useReduceMotion();
@@ -45,11 +52,17 @@ export function Sheet({ visible, title, onClose, children, footer, scrollbar, te
   fullRef.current = full;
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
+  // Typed text is never dropped silently (U2): a close while `dirty` asks first, in the sheet itself.
+  const [asking, setAsking] = useState(false);
+  const dirtyRef = useRef(dirty);
+  dirtyRef.current = dirty;
+  const requestClose = () => (dirtyRef.current ? setAsking(true) : onClose());
   // Reset when the sheet opens, not when it closes: a sheet pulled down stays off screen while its backdrop fades,
   // instead of jumping back for a moment.
   useLayoutEffect(() => {
     if (visible) {
       setFull(false);
+      setAsking(false);
       dragY.setValue(0);
     }
   }, [visible, dragY]);
@@ -66,6 +79,9 @@ export function Sheet({ visible, title, onClose, children, footer, scrollbar, te
             if (fullRef.current && g.dy < FULL_CLOSE_DISTANCE && g.vy < FULL_CLOSE_VELOCITY) {
               setFull(false);
               back();
+            } else if (dirtyRef.current) {
+              back();
+              setAsking(true);
             } else {
               Animated.timing(dragY, { toValue: OFF_SCREEN, duration: 160, useNativeDriver: false }).start(() => closeRef.current());
             }
@@ -105,14 +121,14 @@ export function Sheet({ visible, title, onClose, children, footer, scrollbar, te
       : { transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [0, 48] }) }] };
 
   return (
-    <Modal visible={visible} transparent animationType={reduce ? "none" : "fade"} onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType={reduce ? "none" : "fade"} onRequestClose={requestClose}>
       <View style={styles.root}>
         {/* The backdrop closes on tap but is not a focus stop: keyboard and screen readers use the named Close (audit F53). */}
         <Pressable
           aria-hidden
           focusable={false}
           importantForAccessibility="no"
-          onPress={onClose}
+          onPress={requestClose}
           style={StyleSheet.absoluteFill}
           testID={testID ? `${testID}-backdrop` : undefined}
         />
@@ -137,7 +153,7 @@ export function Sheet({ visible, title, onClose, children, footer, scrollbar, te
               <Text accessibilityRole="header" style={styles.title}>
                 {title}
               </Text>
-              <TextButton label="Close" onPress={onClose} testID={testID ? `${testID}-close` : undefined} />
+              {doneOnly ? null : <TextButton label="Close" onPress={requestClose} testID={testID ? `${testID}-close` : undefined} />}
             </View>
           </View>
           <ScrollView
@@ -147,7 +163,26 @@ export function Sheet({ visible, title, onClose, children, footer, scrollbar, te
           >
             {children}
           </ScrollView>
-          {footer ? <View style={styles.footer}>{footer}</View> : null}
+          {asking ? (
+            <View style={styles.footer} accessibilityRole="alert" testID={testID ? `${testID}-discard` : undefined}>
+              <Text style={styles.askTitle}>{discardTitle ?? "Discard what you wrote?"}</Text>
+              <Text style={styles.askBody}>It will be gone.</Text>
+              <View style={styles.askButtons}>
+                <Button label="Keep editing" onPress={() => setAsking(false)} testID={testID ? `${testID}-keep` : undefined} />
+                <Button
+                  label="Discard"
+                  variant="danger"
+                  onPress={() => {
+                    setAsking(false);
+                    onClose();
+                  }}
+                  testID={testID ? `${testID}-discard-confirm` : undefined}
+                />
+              </View>
+            </View>
+          ) : footer ? (
+            <View style={styles.footer}>{footer}</View>
+          ) : null}
         </Animated.View>
         </Animated.View>
       </View>
@@ -196,4 +231,8 @@ const makeStyles = (theme: Theme) =>
       borderTopWidth: 1,
       borderTopColor: theme.color.border,
     },
+    askTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    askBody: { fontSize: theme.fontSize.small, color: theme.color.textMuted, marginBottom: theme.spacing.sm },
+    // One per row: "Keep editing" doesn't fit half a phone (Mook, U2).
+    askButtons: { gap: theme.spacing.sm },
   });

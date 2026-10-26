@@ -125,14 +125,14 @@ Shows: `AgreeSheet` · `BookingStageBar` · `ChipSuggestions` · `FinishedStay` 
 | Tag | `b.label` | — | 221 |
 | Tag | Refunded | `refunded-chip` | 225 |
 | Tag | Paid | `paid-chip` | 227 |
-| Button | I'd like to book | `agree-booking` | 249 |
+| Button | Accept | `agree-booking` | 249 |
 | Button | Finish booking | `open-checkout` | 277 |
 | CheckRow | `item` | ``pack-${item}`` | 303 |
 | Button | Find a new sitter | `find-new-sitter` | 364 |
 | Button | Change time or place | `change-booking` | 371 |
-| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 379 |
-| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 391 |
-| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 397 |
+| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 380 |
+| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 392 |
+| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 400 |
 
 ### `/owner/bookings/[bookingId]/checkout` — [app/owner/bookings/[bookingId]/checkout.tsx](../../frontend/app/owner/bookings/[bookingId]/checkout.tsx)
 
@@ -143,9 +143,9 @@ Shows: `ConsentCard` · `QuoteCard`
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Can't open checkout | — | 174 |
-| Button | Add entry info | `checkout-entry-add` | 202 |
-| CheckRow | Select all | `checkout-agree-all` | 213 |
-| Button | `totalLabel` | `checkout-pay` | 273 |
+| Button | Add entry info | `checkout-entry-add` | 203 |
+| CheckRow | Select all | `checkout-agree-all` | 214 |
+| Button | `totalLabel` | `checkout-pay` | 274 |
 
 ### `/owner/bookings/[bookingId]/review` — [app/owner/bookings/[bookingId]/review.tsx](../../frontend/app/owner/bookings/[bookingId]/review.tsx)
 
@@ -253,12 +253,12 @@ Shows: `CareLineBuilder` · `ChecklistCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Pet not found | — | 179 |
-| Banner | ``Your last request is still waiting for ${stay?.sitterName ?? "your sitter"}. You can send another once it is answered.`` | `request-pending` | 286 |
-| Button | busy === "making" ? "Making your checklist…" : draft ? "Add to the checklist" : "Make a checklist" | `care-request-make` | 290 |
-| Button | busy === "sending" ? "Sending…" : `Send request to ${stay.sitterName}` | `care-request-send` | 314 |
-| Button | Done | `care-request-done` | 322 |
-| Pressable | — | `undo-restore` | 330 |
+| EmptyState | Pet not found | — | 203 |
+| Banner | ``Your last request is still waiting for ${stay?.sitterName ?? "your sitter"}. You can send another once it is answered.`` | `request-pending` | 311 |
+| Button | busy === "making" ? "Making your checklist…" : draft ? "Add to the checklist" : "Make a checklist" | `care-request-make` | 315 |
+| Button | busy === "sending" ? "Sending…" : `Send request to ${stay.sitterName}` | `care-request-send` | 339 |
+| Button | Done | `care-request-done` | 347 |
+| Pressable | — | `undo-restore` | 355 |
 
 ### `/owner/pets/[petId]/personality` — [app/owner/pets/[petId]/personality.tsx](../../frontend/app/owner/pets/[petId]/personality.tsx)
 
@@ -389,8 +389,8 @@ Shows: `RoleArt` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | role ? "Continue" : "Pick one to continue" | `signup-continue` | 146 |
-| Button | Continue | `signup-continue` | 201 |
+| Button | role ? "Next" : "Pick one first" | `signup-next` | 146 |
+| Button | Next | `signup-next` | 201 |
 | Button | submitting ? "Creating account…" : "Create account" | `create-account` | 255 |
 | TextButton | Already have an account? Log in | `go-login` | 271 |
 | Pressable | — | `testID` | 305 |
@@ -419,7 +419,7 @@ Shows: `SitterAnswersForm`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your answers | — | 44 |
+| EmptyState | Couldn't load your answers | — | 51 |
 
 ### `/sitter/bookings` — [app/sitter/(tabs)/bookings.tsx](../../frontend/app/sitter/(tabs)/bookings.tsx)
 
@@ -450,7 +450,7 @@ Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChange
 | CheckRow | `item` | ``pack-${item}`` | 361 |
 | Tag | `a` | — | 399 |
 | Button | busy ? "Saving…" : "Next" | `interest-booking` | 427 |
-| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 442 |
+| Button | busy ? "Saving…" : "Accept" | `accept-booking` | 442 |
 | TextButton | Decline | `decline-booking` | 450 |
 | Button | busy ? "Saving…" : "Received" | `handoff-received` | 461 |
 | Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 471 |
@@ -458,8 +458,8 @@ Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChange
 | Sheet | Cancel booking | `cancel-sheet` | 509 |
 | Button | Cancel booking | `cancel-confirm` | 515 |
 | Sheet | Decline request | `decline-sheet` | 553 |
-| Button | Decline request | `decline-confirm` | 559 |
-| TextButton | Suggest another time instead | `decline-suggest` | 598 |
+| Button | Decline request | `decline-confirm` | 561 |
+| TextButton | Suggest another time instead | `decline-suggest` | 600 |
 
 ### `/sitter/bookings/[bookingId]/trip` — [app/sitter/bookings/[bookingId]/trip.tsx](../../frontend/app/sitter/bookings/[bookingId]/trip.tsx)
 
@@ -472,7 +472,7 @@ The sitter reads an owner's care request while a stay is on, then approves or de
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Request not found | — | 55 |
-| Button | busy ? "Working…" : "Approve" | `request-approve` | 147 |
+| Button | busy ? "Working…" : "Accept" | `request-approve` | 147 |
 | Button | Decline or reply… | `request-decline` | 148 |
 | Sheet | Reply to this request | `decline-sheet` | 152 |
 | Pressable | — | ``decline-reason-${i}`` | 156 |
@@ -658,13 +658,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Sheet | sharing ? `Save and share with ${shareWith}` : "Save, only you" | `feed-add-sheet` | 119 |
-| Button | sharing ? `Save and share with ${shareWith}` : "Save, only you" | `feed-add-save` | 127 |
-| Pressable | ``Use sample: ${sample.label}`` | ``sample-${sample.id}`` | 154 |
-| Pressable | More photos | `feed-add-more` | 166 |
-| Pressable | — | ``feed-add-pet-${p.id}`` | 182 |
-| Pressable | — | ``feed-add-tag-${t.key}`` | 202 |
-| Pressable | noteOpen ? "Hide note" : "Add a note" | `feed-add-note-toggle` | 218 |
-| Pressable | — | `feed-add-share` | 242 |
+| Button | sharing ? `Save and share with ${shareWith}` : "Save, only you" | `feed-add-save` | 129 |
+| Pressable | ``Use sample: ${sample.label}`` | ``sample-${sample.id}`` | 156 |
+| Pressable | More photos | `feed-add-more` | 168 |
+| Pressable | — | ``feed-add-pet-${p.id}`` | 184 |
+| Pressable | — | ``feed-add-tag-${t.key}`` | 204 |
+| Pressable | noteOpen ? "Hide note" : "Add a note" | `feed-add-note-toggle` | 220 |
+| Pressable | — | `feed-add-share` | 244 |
 
 ### AddressInput — [components/AddressInput.tsx](../../frontend/components/AddressInput.tsx)
 
@@ -677,8 +677,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | I'd like to book | `agree-sheet` | 68 |
-| Button | I'd like to book | `agree-submit` | 73 |
+| Sheet | Accept | `agree-sheet` | 68 |
+| Button | Accept | `agree-submit` | 73 |
 
 ### BookingCard — [components/BookingCard.tsx](../../frontend/components/BookingCard.tsx)
 
@@ -725,9 +725,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Sheet | busy ? "Deleting…" : "Delete task" | `care-delete-sheet` | 276 |
 | Button | busy ? "Deleting…" : "Delete task" | `care-delete-confirm` | 284 |
 | Sheet | saving ? "Saving…" : task ? "Save changes" : "Save task" | `care-sheet` | 369 |
-| Button | saving ? "Saving…" : task ? "Save changes" : "Save task" | `care-save` | 377 |
-| Pressable | — | ``care-type-${t.type}`` | 392 |
-| Pressable | ``Task time ${formatTime(time)}, tap to change`` | `care-time` | 430 |
+| Button | saving ? "Saving…" : task ? "Save changes" : "Save task" | `care-save` | 379 |
+| Pressable | — | ``care-type-${t.type}`` | 394 |
+| Pressable | ``Task time ${formatTime(time)}, tap to change`` | `care-time` | 432 |
 
 ### ChatBookingCards — [components/ChatBookingCards.tsx](../../frontend/components/ChatBookingCards.tsx)
 
@@ -748,7 +748,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Sheet | busy ? "Declining…" : "Decline and end the request" | `chat-decline-sheet` | 74 |
-| Button | busy ? "Declining…" : "Decline and end the request" | `chat-decline-confirm` | 80 |
+| Button | busy ? "Declining…" : "Decline and end the request" | `chat-decline-confirm` | 82 |
 
 ### ChatHandoffCard — [components/ChatHandoffCard.tsx](../../frontend/components/ChatHandoffCard.tsx)
 
@@ -788,7 +788,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Confirm | `quote-confirm` | 105 |
+| Button | Accept | `quote-confirm` | 105 |
 | Button | Decline | `quote-decline` | 106 |
 
 ### ChatQuoteSheets — [components/ChatQuoteSheets.tsx](../../frontend/components/ChatQuoteSheets.tsx)
@@ -912,10 +912,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Sheet | Save | `feed-edit-sheet` | 52 |
-| Button | Save | `feed-edit-save` | 60 |
-| Pressable | — | ``feed-edit-tag-${tag.key}`` | 74 |
-| Pressable | — | `feed-edit-date` | 90 |
-| Pressable | — | `feed-edit-time` | 94 |
+| Button | Save | `feed-edit-save` | 62 |
+| Pressable | — | ``feed-edit-tag-${tag.key}`` | 76 |
+| Pressable | — | `feed-edit-date` | 92 |
+| Pressable | — | `feed-edit-time` | 96 |
 
 ### FeedFilterChips — [components/FeedFilterChips.tsx](../../frontend/components/FeedFilterChips.tsx)
 
@@ -937,14 +937,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `feed-viewer-sticker` | 198 |
-| Pressable | — | `feed-viewer-hide` | 212 |
-| Pressable | Edit | `feed-viewer-edit` | 222 |
-| Pressable | — | `feed-viewer-delete` | 233 |
-| Pressable | Previous | `feed-viewer-prev` | 249 |
-| Pressable | Next | `feed-viewer-next` | 258 |
-| Pressable | Close | `feed-viewer-close` | 269 |
-| Pressable | isVideo ? (paused ? "Play" : "Pause") : bare ? "Show details" : "Hide details" | `feed-viewer-media` | 460 |
+| Pressable | — | `feed-viewer-sticker` | 199 |
+| Pressable | — | `feed-viewer-hide` | 213 |
+| Pressable | Edit | `feed-viewer-edit` | 223 |
+| Pressable | — | `feed-viewer-delete` | 234 |
+| Pressable | Previous | `feed-viewer-prev` | 250 |
+| Pressable | Next | `feed-viewer-next` | 259 |
+| Pressable | Close | `feed-viewer-close` | 270 |
+| Pressable | isVideo ? (paused ? "Play" : "Pause") : bare ? "Show details" : "Hide details" | `feed-viewer-media` | 461 |
 
 ### FinishedStay — [components/FinishedStay.tsx](../../frontend/components/FinishedStay.tsx)
 
@@ -958,11 +958,11 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Sheet | `submitLabel` | `change-sheet` | 189 |
-| Button | `submitLabel` | `change-send` | 195 |
-| SegmentedControl | — | `change-kind` | 203 |
-| Stepper | Day | `change-day` | 214 |
-| Stepper | Time | `change-time` | 223 |
-| CheckRow | type === "other" ? "📍 Somewhere else" : placeLabel(type, null, booking, viewer) | ``change-place-${type}`` | 236 |
+| Button | `submitLabel` | `change-send` | 197 |
+| SegmentedControl | — | `change-kind` | 205 |
+| Stepper | Day | `change-day` | 216 |
+| Stepper | Time | `change-time` | 225 |
+| CheckRow | type === "other" ? "📍 Somewhere else" : placeLabel(type, null, booking, viewer) | ``change-place-${type}`` | 238 |
 
 ### HandoffPicker — [components/HandoffPicker.tsx](../../frontend/components/HandoffPicker.tsx)
 
@@ -1066,12 +1066,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | CheckRow | `label` | ``meet-spot-${label}`` | 67 |
 | Sheet | ``Send to ${otherName}`` | `meet-sheet` | 79 |
-| Button | ``Send to ${otherName}`` | `meet-send` | 85 |
-| SegmentedControl | — | `meet-mode` | 93 |
-| CheckRow | `spots.nearby` | `meet-spot-nearby` | 107 |
-| CheckRow | 📍 Somewhere else | `meet-spot-other` | 116 |
-| Stepper | Meet & Greet day | `meet-day` | 138 |
-| Stepper | Meet & Greet time | `meet-time` | 149 |
+| Button | ``Send to ${otherName}`` | `meet-send` | 87 |
+| SegmentedControl | — | `meet-mode` | 95 |
+| CheckRow | `spots.nearby` | `meet-spot-nearby` | 109 |
+| CheckRow | 📍 Somewhere else | `meet-spot-other` | 118 |
+| Stepper | Meet & Greet day | `meet-day` | 140 |
+| Stepper | Meet & Greet time | `meet-time` | 151 |
 
 ### NoticeDetail — [components/NoticeDetail.tsx](../../frontend/components/NoticeDetail.tsx)
 
@@ -1154,9 +1154,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Previous photo | `photo-viewer-prev` | 83 |
-| Pressable | Next photo | `photo-viewer-next` | 94 |
-| Pressable | Close | `photo-viewer-close` | 105 |
+| Pressable | Previous photo | `photo-viewer-prev` | 85 |
+| Pressable | Next photo | `photo-viewer-next` | 96 |
+| Pressable | Close | `photo-viewer-close` | 107 |
 
 ### PhotoViewerSheet — [components/PhotoViewerSheet.tsx](../../frontend/components/PhotoViewerSheet.tsx)
 
@@ -1221,8 +1221,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | TextButton | changing[kind] ? "Done" : "Change place" | ``request-${kind}-change`` | 209 |
 | SegmentedControl | — | ``request-${kind}-type`` | 214 |
 | Sheet | sending ? "Sending…" : "Send" | `request-error` | 241 |
-| Button | sending ? "Sending…" : "Send" | `request-send` | 256 |
-| Pressable | — | `request-dates` | 275 |
+| Button | sending ? "Sending…" : "Send" | `request-send` | 258 |
+| Pressable | — | `request-dates` | 277 |
 
 ### ReturnSheet — [components/ReturnSheet.tsx](../../frontend/components/ReturnSheet.tsx)
 
@@ -1279,15 +1279,15 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Next | `onboarding-next` | 86 |
-| TextButton | Skip all for now | `onboarding-skip-all` | 119 |
-| TextButton | noteOpen ? "Hide note" : "+ Add a note" | ``onboarding-note-toggle-${q.key}`` | 187 |
-| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 233 |
-| Button | Add a question | `onboarding-custom-add` | 241 |
-| Button | Set weekly availability | `onboarding-availability-open` | 259 |
-| Button | Review | `onboarding-review` | 293 |
-| Button | Finish | `onboarding-finish` | 367 |
-| Button | Back to edit | `onboarding-back` | 368 |
+| Button | Next | `onboarding-next` | 88 |
+| TextButton | Skip all for now | `onboarding-skip-all` | 121 |
+| TextButton | noteOpen ? "Hide note" : "+ Add a note" | ``onboarding-note-toggle-${q.key}`` | 189 |
+| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 235 |
+| Button | Add a question | `onboarding-custom-add` | 243 |
+| Button | Set weekly availability | `onboarding-availability-open` | 261 |
+| Button | Review | `onboarding-review` | 295 |
+| Button | Finish | `onboarding-finish` | 369 |
+| Button | Back to edit | `onboarding-back` | 370 |
 
 ### SitterCard — [components/SitterCard.tsx](../../frontend/components/SitterCard.tsx)
 
@@ -1309,17 +1309,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | `text` | `id` | 66 |
 | Sheet | Done | `place-done` | 96 |
 | Button | Done | `place-done` | 100 |
-| Button | Use this place | `place-use-address` | 114 |
-| CheckRow | 🏠 My home | `place-home` | 121 |
-| CheckRow | 📍 Current location | `place-here` | 128 |
-| TextButton | Open Profile | `place-open-profile` | 150 |
-| Sheet | Done | `stay-done` | 155 |
-| Button | Done | `stay-done` | 159 |
-| Stepper | Drop-off time | `search-drop_off-time` | 186 |
-| Stepper | Pick-up time | `search-pick_up-time` | 195 |
-| Sheet | Done | `pets-done` | 227 |
-| Button | Done | `pets-done` | 231 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 235 |
+| Button | Use this place | `place-use-address` | 115 |
+| CheckRow | 🏠 My home | `place-home` | 122 |
+| CheckRow | 📍 Current location | `place-here` | 129 |
+| TextButton | Open Profile | `place-open-profile` | 151 |
+| Sheet | Done | `stay-done` | 156 |
+| Button | Done | `stay-done` | 160 |
+| Stepper | Drop-off time | `search-drop_off-time` | 188 |
+| Stepper | Pick-up time | `search-pick_up-time` | 197 |
+| Sheet | Done | `pets-done` | 229 |
+| Button | Done | `pets-done` | 233 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 238 |
 
 ### SlotCalendar — [components/SlotCalendar.tsx](../../frontend/components/SlotCalendar.tsx)
 
@@ -1346,9 +1346,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Sheet | step === "uploading" ? "Uploading photo…" : step === "sending" ? "Sending…" : "Done" | `task-done-sheet` | 86 |
-| Button | step === "uploading" ? "Uploading photo…" : step === "sending" ? "Sending…" : "Done" | `task-done-confirm` | 94 |
-| Pressable | — | `task-done-photo` | 116 |
-| TextButton | Remove | `task-done-photo-remove` | 125 |
+| Button | step === "uploading" ? "Uploading photo…" : step === "sending" ? "Sending…" : "Done" | `task-done-confirm` | 96 |
+| Pressable | — | `task-done-photo` | 118 |
+| TextButton | Remove | `task-done-photo-remove` | 127 |
 
 ### TodayTasks — [components/TodayTasks.tsx](../../frontend/components/TodayTasks.tsx)
 
@@ -1388,7 +1388,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | — | ``tile-option-${open}-${option.value ?? option.kind}`` | 113 |
 | Pressable | ``${HOME_TILES[key].label} ${pet.name}`` | ``tile-${key}`` | 129 |
 | Sheet | Send | `tile-memo-send` | 146 |
-| Button | Send | `tile-memo-send` | 151 |
+| Button | Send | `tile-memo-send` | 153 |
 
 ### LatestCard — [components/home/LatestCard.tsx](../../frontend/components/home/LatestCard.tsx)
 
@@ -1461,10 +1461,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Back | `own-back-bottom` | 43 |
-| Button | Skip | `skipTestID` | 46 |
-| TextButton | Skip all | `own-skip-all` | 57 |
-| Pressable | Back | `own-back` | 61 |
+| Button | Skip | `skipTestID` | 44 |
+| TextButton | Skip all | `own-skip-all` | 55 |
+| Pressable | Back | `own-back` | 59 |
 
 ### VoiceInterview — [components/ownerOnboarding/VoiceInterview.tsx](../../frontend/components/ownerOnboarding/VoiceInterview.tsx)
 
@@ -1558,9 +1557,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Sheet | saving ? "Saving…" : "Save page" | `diary-write-sheet` | 139 |
-| Button | saving ? "Saving…" : "Save page" | `diary-write-save` | 145 |
-| SegmentedControl | — | `diary-write-pet` | 148 |
-| Pressable | — | `testID` | 177 |
+| Button | saving ? "Saving…" : "Save page" | `diary-write-save` | 147 |
+| SegmentedControl | — | `diary-write-pet` | 150 |
+| Pressable | — | `testID` | 179 |
 
 ### PageActions — [features/diary/PageActions.tsx](../../frontend/features/diary/PageActions.tsx)
 
@@ -1713,4 +1712,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-523 actions · 521 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+522 actions · 520 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).

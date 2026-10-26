@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -33,7 +34,8 @@ type Sync = "idle" | "saving" | "saved";
 
 const TASKS_MAX = 12;
 const CAUTIONS_MAX = 8;
-const UNDO_MS = 8000;
+// Undo stays 6 s everywhere, like the toast's Undo (U3, DESIGN.md §10).
+const UNDO_MS = 6000;
 
 const snapshot = (t: DraftTask) => JSON.stringify([t.title.trim(), t.dose.trim(), t.time, t.notes.trim()]);
 
@@ -78,6 +80,28 @@ export default function CareRequestScreen() {
   );
 
   const stay = stayState.status === "ready" ? stayState.stay : null;
+
+  // During a stay this screen writes a request, which only goes out on Send: keep it on this device meanwhile, so
+  // leaving and coming back picks up where it was (U2: long flows keep a draft). Checklist mode already saves itself.
+  const requestKey = `goldito.careRequest.${petId}`;
+  const restored = useRef(false);
+  useEffect(() => {
+    if (!stay || restored.current) return;
+    restored.current = true;
+    AsyncStorage.getItem(requestKey)
+      .then((raw) => {
+        if (!raw) return;
+        const saved = JSON.parse(raw) as { lines: Line[]; draft: Draft | null };
+        setLines((l) => (l.length ? l : saved.lines));
+        setDraft((d) => d ?? saved.draft);
+      })
+      .catch(() => undefined);
+  }, [stay, requestKey]);
+  useEffect(() => {
+    if (!stay || !restored.current) return;
+    const empty = lines.length === 0 && !draft;
+    (empty ? AsyncStorage.removeItem(requestKey) : AsyncStorage.setItem(requestKey, JSON.stringify({ lines, draft }))).catch(() => undefined);
+  }, [stay, lines, draft, requestKey]);
   const requestMode = stay != null;
 
   const runSync = useCallback(
@@ -258,6 +282,7 @@ export default function CareRequestScreen() {
     setBusy("sending");
     try {
       await sendCareChangeRequest(pet.id, draft.tasks, draft.cautions);
+      await AsyncStorage.removeItem(requestKey).catch(() => undefined);
       toast.show(`Request sent to ${stay.sitterName}`);
       router.back();
     } catch (error) {

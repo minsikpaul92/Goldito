@@ -670,7 +670,7 @@ export default function ProfileScreen() {
               }
               setAiReplyMode(mode, false)
                 .then(setAiMode)
-                .catch((e: Error) => toast.show(e.message));
+                .catch((e: Error) => toast.show(e.message, { tone: "error" }));
             }}
             testID="profile-ai-mode"
           />
@@ -706,7 +706,7 @@ export default function ProfileScreen() {
                 setAiMode(next);
                 setConsenting(false);
               })
-              .catch((e: Error) => toast.show(e.message));
+              .catch((e: Error) => toast.show(e.message, { tone: "error" }));
           }}
           testID="ai-consent-confirm"
         />
