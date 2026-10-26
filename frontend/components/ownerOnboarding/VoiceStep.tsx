@@ -136,6 +136,7 @@ export function VoiceStep({ placeholder, onUse, error, busy }: Props) {
       {typing ? (
         <Button
           label={busy ? "Looking…" : "Use this"}
+          ai
           onPress={() => void onUse(text.trim())}
           disabled={busy || phase !== "idle" || text.trim() === ""}
           testID="own-voice-use"
