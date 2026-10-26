@@ -22,6 +22,9 @@ const DEVREF = [
   { kind: "ticket", id: "intro", status: "ship" },
   { kind: "ticket", id: "feed", status: "ship" },
   { kind: "ticket", id: "words", status: "ship" },
+  { kind: "ticket", id: "diary-views", status: "app" },
+  { kind: "stickers", key: "diary-stickers", title: "Diary stickers (Oct 26)", status: "ship",
+    decisions: ["Decorate on a Diary page opens a tray: Goldito's own stickers, then the stickers made from the pet's photos (Minsik, Oct 25)", "Goldito's set: Heart, Star, Sun, Paw, Bone, Ball, Sleepy, Best day! (256 × 256 PNG, shown at 128)", "Photo stickers are cut out of a photo with Make a sticker; only their maker sees them in the tray", "Each sticker is a component: place an instance on a Diary page frame. Re-running the plugin updates the art and keeps the instances", "Files: design/concept-prototypes/assets/feed-trial/stickers"] },
   // Oct 25: every design that lived only in our files gets into Figma through the Dev reference too
   { kind: "screens", key: "pet-setup-expressive", title: "Pet setup in the Expressive look (Oct 26)", status: "proposal",
     decisions: ["The owner's pet setup redrawn in today's style: Start, photo with a breed guess, name and kind, breed, age and weight, safety, Ready to book, a personality question, voice, Meet Max, the paw-walk finish and the Home reminder", "Shorter than the app's flow: kind and name, age and weight, and the safety questions each share a screen", "The old page (onboarding.html, below) stays as the full question list"],
@@ -153,6 +156,50 @@ async function devSprites(page, entry, log) {
   return PETS360.pets.length;
 }
 
+// Diary stickers (STICKERS from build.py): one component per sticker, kept across runs so placed instances survive.
+async function devStickers(page, entry, log) {
+  if (!STICKERS) { log.push("Dev reference: no sticker files; check concept-prototypes/assets/feed-trial/stickers, then build.py."); return 0; }
+  let sec = page.children.find((n) => n.getPluginData("pawnote") === "devref-screens" && n.getPluginData("key") === entry.key);
+  if (!sec) {
+    sec = figma.createSection(); page.appendChild(sec);
+    sec.setPluginData("pawnote", "devref-screens"); sec.setPluginData("key", entry.key);
+  }
+  for (const c of [...sec.children]) if (c.getPluginData("pawnote") === "devref-part") c.remove();
+  sec.name = entry.title;
+  const head = tCard(entry.title, sec); head.setPluginData("pawnote", "devref-part"); head.x = 40; head.y = 40;
+  await tText(entry.title, 32, true, T_INK, head);
+  await devPill(entry.status, head);
+  for (const d of entry.decisions) await tText(d, 14, false, { r: 0.1, g: 0.1, b: 0.1 }, head);
+  // A sticker component at most `box` on its long side, keeping the art's proportions (size read from the PNG header).
+  const comp = (group, s, box, x, y) => {
+    const bytes = figma.base64Decode(s.img.slice(s.img.indexOf(",") + 1)), img = figma.createImage(bytes);
+    const w = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19], h = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23];
+    const k = box / Math.max(w, h), name = `Sticker / ${group} / ${s.name}`;
+    let c = sec.children.find((n) => n.type === "COMPONENT" && n.getPluginData("sticker") === name);
+    if (!c) { c = figma.createComponent(); sec.appendChild(c); c.setPluginData("sticker", name); }
+    c.name = name; c.resize(Math.round(w * k), Math.round(h * k)); c.x = x; c.y = y; c.clipsContent = false;
+    c.fills = [{ type: "IMAGE", imageHash: img.hash, scaleMode: "FIT", filters: {} }];
+    return c;
+  };
+  let y = head.y + head.height + 48, n = 0;
+  for (const [group, label, list, box] of [["Goldito", "Goldito's stickers", STICKERS.goldito, 128], ["Photo", "Made from Mumu's photos (examples)", STICKERS.photos, 160]]) {
+    const t = await tText(label, 20, true, T_INK, sec); t.setPluginData("pawnote", "devref-part"); t.x = 40; t.y = y;
+    y += 44;
+    // Seven per row, a caption under each.
+    for (let i = 0; i < list.length; i++) {
+      const x = 40 + (i % 7) * (box + 48), cy = y + Math.floor(i / 7) * (box + 64);
+      comp(group, list[i], box, x, cy);
+      const cap = await tText(list[i].name, 13, false, T_MUTED, sec); cap.setPluginData("pawnote", "devref-part"); cap.x = x; cap.y = cy + box + 8;
+      n++;
+    }
+    y += Math.ceil(list.length / 7) * (box + 64) + 40;
+  }
+  let w = 0, h = 0;
+  for (const c of sec.children) { w = Math.max(w, c.x + c.width); h = Math.max(h, c.y + c.height); }
+  sec.resizeWithoutConstraints(w + 40, h + 40);
+  return n;
+}
+
 async function buildDevRef(tickets, log) {
   await figma.loadFontAsync({ family: "Inter", style: "Regular" });
   await figma.loadFontAsync({ family: "Inter", style: "Bold" });
@@ -163,6 +210,7 @@ async function buildDevRef(tickets, log) {
   for (const e of DEVREF) {
     if (e.kind === "screens") { const n = await devScreens(page, e, log); done.push(`${e.title}: ${n} screens`); continue; }
     if (e.kind === "sprites") { const n = await devSprites(page, e, log); done.push(`${e.title}: ${n} pets`); continue; }
+    if (e.kind === "stickers") { const n = await devStickers(page, e, log); done.push(`${e.title}: ${n} stickers`); continue; }
     const t = (tickets || []).find((x) => String(x.id) === e.id);
     if (!t) { log.push(`Dev reference: ticket "${e.id}" isn't in the capture; run the tickets capture.`); continue; }
     const info = await pushTicket(t, log, { page, dev: e.status });
@@ -172,7 +220,7 @@ async function buildDevRef(tickets, log) {
   const head = page.children.find((n) => n.getPluginData("pawnote") === "devref-head");
   let y = head ? head.y + head.height + 120 : 0;
   for (const e of DEVREF) {
-    const sec = e.kind === "screens" || e.kind === "sprites"
+    const sec = e.kind === "screens" || e.kind === "sprites" || e.kind === "stickers"
       ? page.children.find((n) => n.getPluginData("pawnote") === "devref-screens" && n.getPluginData("key") === e.key)
       : page.children.find((n) => n.getPluginData("pawnote") === "ticket" && n.getPluginData("ticket") === e.id);
     if (!sec) continue;
