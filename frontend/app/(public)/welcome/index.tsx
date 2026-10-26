@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Animated, Easing, Image, ImageSourcePropType, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Art } from "../../../components/art/Art";
 import { BrandLogo } from "../../../components/BrandLogo";
 import { DemoSheet } from "../../../components/intro/DemoSheet";
 import { SocialSignIn } from "../../../components/intro/SocialSignIn";
@@ -18,9 +19,9 @@ const MAX = require("../../../assets/welcome/max.png");
 const MOCHI = require("../../../assets/welcome/mochi.png");
 const STICKERS: { src: ImageSourcePropType; size: number; at: object; delay: number; tilt?: string }[] = [
   { src: require("../../../assets/stickers/star.png"), size: 26, at: { left: 12, top: 10 }, delay: 0, tilt: "-12deg" },
-  { src: require("../../../assets/stickers/heart.png"), size: 26, at: { left: 104, top: 52 }, delay: 600 },
-  { src: require("../../../assets/stickers/ball.png"), size: 24, at: { right: 150, bottom: 14 }, delay: 1200 },
-  { src: require("../../../assets/stickers/sun.png"), size: 30, at: { right: 124, top: 40 }, delay: 300 },
+  { src: require("../../../assets/stickers/heart.png"), size: 24, at: { left: 96, top: 44 }, delay: 600 },
+  { src: require("../../../assets/stickers/ball.png"), size: 22, at: { right: 140, bottom: 12 }, delay: 1200 },
+  { src: require("../../../assets/stickers/sun.png"), size: 28, at: { right: 124, top: 36 }, delay: 300 },
 ];
 
 /**
@@ -85,13 +86,18 @@ export default function WelcomeLanding() {
         </Text>
         <Text style={styles.lead}>Updates from your sitter without asking. Care notes for sitters without typing.</Text>
         <Pressable
-          accessibilityRole="link"
+          accessibilityRole="button"
+          accessibilityLabel="How it works, three short pages"
           onPress={() => router.push("/welcome/how")}
           style={({ pressed }) => [styles.how, pressed && styles.pressed]}
           testID="welcome-how"
         >
-          <Text style={styles.howText}>How it works</Text>
-          <Icon name="forward" size={18} color={theme.color.primary} />
+          <Art name="snap/sticker-paw" size={36} />
+          <View style={styles.howText}>
+            <Text style={styles.howTitle}>How it works</Text>
+            <Text style={styles.howSub}>Three short pages, about a minute</Text>
+          </View>
+          <Icon name="forward" size={22} color={theme.color.text} />
         </Pressable>
       </Screen>
       <DemoSheet visible={demoOpen} onClose={() => setDemoOpen(false)} />
@@ -128,7 +134,7 @@ const makeStyles = (theme: Theme) => {
     root: { flex: 1 },
     content: { gap: theme.spacing.sm + 4 },
     hero: {
-      height: 136,
+      height: 120,
       borderRadius: theme.radius.xl,
       backgroundColor: theme.color.blockMint,
       overflow: "hidden",
@@ -166,8 +172,8 @@ const makeStyles = (theme: Theme) => {
     },
     tagText: { fontSize: theme.fontSize.caption + 1, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     sticker: { position: "absolute" },
-    max: { position: "absolute", left: 14, bottom: 10, width: 70, height: 96 },
-    mochi: { position: "absolute", right: 10, bottom: 12, width: 112, height: 58 },
+    max: { position: "absolute", left: 16, bottom: 8, width: 64, height: 88 },
+    mochi: { position: "absolute", right: 10, bottom: 10, width: 104, height: 54 },
     title: {
       fontSize: theme.fontSize.title + 4,
       lineHeight: theme.fontSize.title + 10,
@@ -175,8 +181,19 @@ const makeStyles = (theme: Theme) => {
       ...(display ? { fontFamily: display } : { fontWeight: theme.fontWeight.bold }),
     },
     lead: { fontSize: theme.fontSize.body, color: theme.color.textMuted, lineHeight: 22 },
-    how: { flexDirection: "row", alignItems: "center", gap: 2, alignSelf: "flex-start", minHeight: 44 },
-    howText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
+    how: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.md,
+      minHeight: 64,
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.sm,
+      borderRadius: theme.radius.xl,
+      backgroundColor: theme.color.blockButter,
+    },
+    howText: { flex: 1, gap: 2 },
+    howTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    howSub: { fontSize: theme.fontSize.small, color: theme.color.text },
     pressed: { opacity: 0.6 },
     footer: { gap: theme.spacing.sm },
     links: { flexDirection: "row", justifyContent: "space-between" },

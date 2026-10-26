@@ -597,17 +597,17 @@ Shows: `LegalPage`
 
 Welcome (OB.1, intro trial on the design site): Max and Mochi, the tagline, and Try the demo as the main button, then email sign-up and Log in. How it works opens three short pages.
 
-Shows: `BrandLogo` · `DemoSheet` · `SocialSignIn`
+Shows: `Art` · `BrandLogo` · `DemoSheet` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Try the demo | `welcome-demo` | 39 |
-| Button | Create account | `welcome-create` | 41 |
-| TextButton | Sign up with email | `welcome-sign-up` | 45 |
-| TextButton | Log in | `welcome-sign-in` | 46 |
-| Pressable | — | `welcome-privacy` | 49 |
-| Pressable | — | `welcome-terms` | 55 |
-| Pressable | — | `welcome-how` | 87 |
+| Button | Try the demo | `welcome-demo` | 40 |
+| Button | Create account | `welcome-create` | 42 |
+| TextButton | Sign up with email | `welcome-sign-up` | 46 |
+| TextButton | Log in | `welcome-sign-in` | 47 |
+| Pressable | — | `welcome-privacy` | 50 |
+| Pressable | — | `welcome-terms` | 56 |
+| Pressable | How it works, three short pages | `welcome-how` | 88 |
 
 ### `/welcome/how` — [app/(public)/welcome/how.tsx](../../frontend/app/(public)/welcome/how.tsx)
 
