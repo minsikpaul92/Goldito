@@ -57,5 +57,9 @@ export type StickerCanvasProps = {
   selected: number | null;
   onSelect: (index: number | null) => void;
   onMove: (index: number, x: number, y: number) => void;
+  /** The corner handle or a two-finger pinch: the new size and turn (the parent keeps them in range). */
+  onTransform: (index: number, scale: number, rotate: number) => void;
+  /** The × on the picked sticker. */
+  onRemove: (index: number) => void;
   urlFor: (publicId: string) => string;
 };

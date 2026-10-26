@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Image, LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { Button } from "../../components/ui/Button";
@@ -22,8 +22,6 @@ import { PetSticker, listStickers } from "./stickerApi";
 
 const SCALE_MIN = 0.4;
 const SCALE_MAX = 2.5;
-const SCALE_STEP = 0.2;
-const ROTATE_STEP = 15;
 /** One ruled line of the diary (px): the text's line height, so the writing sits on the lines. */
 const LINE = 30;
 const MIN_LINES = 6;
@@ -73,6 +71,11 @@ type Props = {
    * page once it exists. Without it a page being written has no Decorate.
    */
   pending?: { items: DecorItem[]; onChange: (items: DecorItem[]) => void };
+  /**
+   * The picture box is a button (the owner's new page, #369): it adds a photo, or with one in, shows `actions` (Replace,
+   * Remove) over it. Off while decorating.
+   */
+  picturePress?: { onPress: () => void; label: string; testID?: string; actions?: ReactNode };
   /** Told when Decorate opens or closes (the diary book holds still meanwhile). */
   onEditingChange?: (editing: boolean) => void;
   testID?: string;
@@ -83,12 +86,12 @@ type Props = {
  * top, the day's photo in the picture box, the sitter's words on ruled lines in a handwriting font. The owner (diary
  * entry) and the sitter (their sent report) see the same page — same text, same size — so a sticker sits in the same
  * spot for both. Each person's stickers are their own layer: "✨ Decorate" edits mine (Goldito stickers or the pet's
- * own, drag to move, size, turn, over or behind the writing, remove — all by mouse). "↗ Share" sends the page as
+ * own; drag to move, the corners to size, turn and remove, all by mouse or touch). "↗ Share" sends the page as
  * shown, both layers included (11.8 · DB.5): the image, a download, or a public link. Web only for now.
  *
  * Page layers, bottom to top: paper → picture + ruled lines → stickers behind the text → the text → stickers over it.
  */
-export function DecoratedReport({ reportId, petId, petName, day, body, writing, ownPage, pictureUrl, pending, onEditingChange, testID }: Props) {
+export function DecoratedReport({ reportId, petId, petName, day, body, writing, ownPage, pictureUrl, pending, picturePress, onEditingChange, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const [writtenHeight, setWrittenHeight] = useState(0);
@@ -186,14 +189,17 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
     setSelected(draft.length);
   };
 
-  const change = (patch: (item: DecorItem) => Partial<DecorItem>) => {
-    if (selected === null) return;
-    setDraft((items) => items.map((item, i) => (i === selected ? { ...item, ...patch(item) } : item)));
-  };
+  // The corner handle or a pinch (#369).
+  const transform = (index: number, scale: number, rotate: number) =>
+    setDraft((items) =>
+      items.map((item, i) =>
+        i === index ? { ...item, scale: Math.min(SCALE_MAX, Math.max(SCALE_MIN, +scale.toFixed(2))), rotate: Math.round(rotate) % 360 } : item,
+      ),
+    );
 
-  const remove = () => {
-    if (selected === null) return;
-    setDraft((items) => items.filter((_, i) => i !== selected));
+  // The × on the picked sticker's corner (#369).
+  const remove = (index: number) => {
+    setDraft((items) => items.filter((_, i) => i !== index));
     setSelected(null);
   };
 
@@ -268,6 +274,8 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
           selected={selected}
           onSelect={select}
           onMove={(index, x, y) => setDraft((items) => items.map((item, i) => (i === index ? { ...item, x, y } : item)))}
+          onTransform={transform}
+          onRemove={remove}
           urlFor={stickerUrl}
         />
         <View ref={headerRef} pointerEvents={passThrough} style={styles.header} testID={id("header")}>
@@ -280,6 +288,16 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
           ) : (
             <Text style={styles.pictureEmpty}>🖍️</Text>
           )}
+          {picturePress && !editing ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={picturePress.label}
+              onPress={picturePress.onPress}
+              style={StyleSheet.absoluteFill}
+              testID={picturePress.testID}
+            />
+          ) : null}
+          {picturePress?.actions && !editing ? <View style={styles.pictureActions}>{picturePress.actions}</View> : null}
         </View>
         <View ref={textRef} pointerEvents={passThrough} style={[styles.textArea, { minHeight: MIN_LINES * LINE }]} onLayout={onTextLayout}>
           {writing ? (
@@ -314,6 +332,8 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
           selected={selected}
           onSelect={select}
           onMove={(index, x, y) => setDraft((items) => items.map((item, i) => (i === index ? { ...item, x, y } : item)))}
+          onTransform={transform}
+          onRemove={remove}
           urlFor={stickerUrl}
         />
       </View>
@@ -321,7 +341,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
       {Platform.OS !== "web" || !me || (!reportId && !pending) ? null : editing ? (
         <View style={styles.tools} testID="decor-tools">
           <Text style={styles.hint}>
-            {current ? "Drag to move · size, turn, or tuck it behind the writing below." : "Add a sticker, then drag it anywhere on the page."}
+            {current ? "Drag to move. Drag the corner to size and turn." : "Add a sticker, then drag it anywhere on the page."}
           </Text>
 
           <Text style={styles.group}>Goldito stickers</Text>
@@ -371,21 +391,6 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
             </View>
           )}
 
-          {current ? (
-            <View style={styles.row}>
-              <Tool label="−" hint="Smaller" onPress={() => change((i) => ({ scale: Math.max(SCALE_MIN, +(i.scale - SCALE_STEP).toFixed(2)) }))} testID="decor-smaller" />
-              <Tool label="+" hint="Bigger" onPress={() => change((i) => ({ scale: Math.min(SCALE_MAX, +(i.scale + SCALE_STEP).toFixed(2)) }))} testID="decor-bigger" />
-              <Tool label="↺" hint="Turn left" onPress={() => change((i) => ({ rotate: (i.rotate - ROTATE_STEP) % 360 }))} testID="decor-rotate-left" />
-              <Tool label="↻" hint="Turn right" onPress={() => change((i) => ({ rotate: (i.rotate + ROTATE_STEP) % 360 }))} testID="decor-rotate-right" />
-              <Tool
-                label={current.layer === "back" ? "⬆ Over text" : "⬇ Behind text"}
-                hint={current.layer === "back" ? "Put it over the writing" : "Tuck it behind the writing"}
-                onPress={() => change((i) => ({ layer: i.layer === "back" ? "front" : "back" }))}
-                testID="decor-layer"
-              />
-              <Tool label="Remove" hint="Remove this sticker" onPress={remove} testID="decor-remove" />
-            </View>
-          ) : null}
           <Button label={saving ? "Saving…" : "Save stickers"} onPress={() => void save()} disabled={saving} testID="decor-save" />
           <TextButton
             label="Cancel"
@@ -414,15 +419,6 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
         />
       ) : null}
     </View>
-  );
-}
-
-function Tool({ label, hint, onPress, testID }: { label: string; hint: string; onPress: () => void; testID: string }) {
-  const styles = useThemedStyles(makeStyles);
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel={hint} onPress={onPress} style={styles.tool} testID={testID}>
-      <Text style={styles.toolLabel}>{label}</Text>
-    </Pressable>
   );
 }
 
@@ -455,6 +451,7 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.accent,
     },
     pictureEmpty: { fontSize: theme.icon.hero },
+    pictureActions: { position: "absolute", bottom: theme.spacing.sm, flexDirection: "row", gap: theme.spacing.sm },
     lines: { position: "absolute", left: theme.spacing.md, right: theme.spacing.md, zIndex: 0 },
     rule: { position: "absolute", left: 0, right: 0, height: 1, backgroundColor: theme.color.border },
     textArea: { zIndex: 2 },
@@ -476,16 +473,4 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.accent,
     },
     thumbImage: { width: 48, height: 48 },
-    tool: {
-      minWidth: 44,
-      height: 36,
-      paddingHorizontal: theme.spacing.sm,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: theme.radius.sm,
-      borderWidth: 1,
-      borderColor: theme.color.border,
-      backgroundColor: theme.color.surface,
-    },
-    toolLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
   });

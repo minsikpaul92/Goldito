@@ -1532,11 +1532,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | saving ? "Saving…" : "Save page" | `diary-write-sheet` | 114 |
-| Button | saving ? "Saving…" : "Save page" | `diary-write-save` | 120 |
-| SegmentedControl | — | `diary-write-pet` | 123 |
-| TextButton | Remove | `diary-write-photo-remove` | 150 |
-| TextButton | + Photo | `diary-write-photo` | 153 |
+| Sheet | saving ? "Saving…" : "Save page" | `diary-write-sheet` | 139 |
+| Button | saving ? "Saving…" : "Save page" | `diary-write-save` | 145 |
+| SegmentedControl | — | `diary-write-pet` | 148 |
+| Pressable | — | `testID` | 177 |
 
 ### PageActions — [features/diary/PageActions.tsx](../../frontend/features/diary/PageActions.tsx)
 
@@ -1596,14 +1595,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 330 |
-| TextButton | Make a sticker | `decor-make` | 350 |
-| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 355 |
-| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 389 |
-| TextButton | Cancel | `decor-cancel` | 390 |
-| TextButton | Decorate | `decor-start` | 401 |
-| TextButton | ↗ Share | `decor-share` | 402 |
-| Pressable | `hint` | `testID` | 423 |
+| Pressable | `picturePress.label` | `picturePress.testID` | 292 |
+| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 350 |
+| TextButton | Make a sticker | `decor-make` | 370 |
+| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 375 |
+| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 394 |
+| TextButton | Cancel | `decor-cancel` | 395 |
+| TextButton | Decorate | `decor-start` | 406 |
+| TextButton | ↗ Share | `decor-share` | 407 |
 
 ### MoodScreen — [features/snap/MoodScreen.tsx](../../frontend/features/snap/MoodScreen.tsx)
 
@@ -1689,4 +1688,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-504 actions · 502 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+503 actions · 501 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
