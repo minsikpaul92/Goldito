@@ -2,6 +2,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { OwnerReviews } from "../../../components/Reviews";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { Avatar } from "../../../components/ui/Avatar";
 import { LoadingView } from "../../../components/ui/LoadingView";
@@ -14,7 +15,7 @@ import { Theme } from "../../../theme/themes";
 
 /**
  * The owner as the sitter sees them from a chat: name, photo, the area of the home (first three characters of the
- * postal code) and the phone once it may be shared. The street address and the entry info stay behind payment (D31).
+ * postal code), the phone once it may be shared, and what sitters said about them (015s). The street address and the entry info stay behind payment (D31).
  */
 export default function OwnerForSitterScreen() {
   const { ownerId, thread } = useLocalSearchParams<{ ownerId: string; thread: string }>();
@@ -53,6 +54,7 @@ export default function OwnerForSitterScreen() {
         <SummaryRow label="Area" value={contact.area ?? "Not set"} testID="owner-view-area" />
         <SummaryRow label="Phone" value={contact.phone ?? "After the Meet & Greet is set"} testID="owner-view-phone" />
       </View>
+      <OwnerReviews ownerId={ownerId} title="Reviews from sitters" />
     </Screen>
   );
 }

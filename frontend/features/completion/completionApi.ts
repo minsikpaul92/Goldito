@@ -34,7 +34,7 @@ export async function getReview(bookingId: string): Promise<Review | null> {
   return { rating: row.rating, comment: row.comment, createdAt: row.created_at };
 }
 
-/** The sitter's private note about the owner of a stay (011g): only the sitter can read it; the owner is never told. */
+/** The sitter's review of the owner of a stay (011g): the owner and every sitter can read it (015s). */
 export type OwnerNote = { bookingId: string; rating: number; comment: string | null; createdAt: string };
 
 function toOwnerNote(row: { booking_id: string; rating: number; comment: string | null; created_at: string }): OwnerNote {
@@ -51,26 +51,42 @@ export async function getOwnerNote(bookingId: string): Promise<OwnerNote | null>
   return data ? toOwnerNote(data as never) : null;
 }
 
-/** My earlier notes about this owner (other stays), newest first — shown when they ask again. */
-export async function listOwnerNotes(ownerId: string, exceptBookingId: string): Promise<OwnerNote[]> {
-  const { data, error } = await getSupabase()
-    .from("sitter_owner_notes")
-    .select("booking_id, rating, comment, created_at")
-    .eq("owner_id", ownerId);
-  if (error) fail("load your notes");
-  return ((data ?? []) as never[])
-    .map(toOwnerNote)
-    .filter((n) => n.bookingId !== exceptBookingId)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+/** What sitters said about an owner (015s): the owner and every sitter can read it, newest first. */
+export type OwnerReviewSummary = {
+  avg: number | null;
+  count: number;
+  reviews: { bookingId: string; rating: number; comment: string | null; reviewer: string; mine: boolean; createdAt: string }[];
+};
+
+export async function getOwnerRatingSummary(ownerId: string): Promise<OwnerReviewSummary> {
+  const { data, error } = await getSupabase().rpc("owner_rating_summary", { p_owner: ownerId });
+  if (error || !data) return { avg: null, count: 0, reviews: [] };
+  const row = data as {
+    avg: number | null;
+    count: number;
+    reviews: { booking_id: string; rating: number; comment: string | null; reviewer: string; mine: boolean; created_at: string }[];
+  };
+  return {
+    avg: row.avg == null ? null : Number(row.avg),
+    count: Number(row.count),
+    reviews: (row.reviews ?? []).map((r) => ({
+      bookingId: r.booking_id,
+      rating: r.rating,
+      comment: r.comment,
+      reviewer: r.reviewer,
+      mine: r.mine,
+      createdAt: r.created_at,
+    })),
+  };
 }
 
 export async function saveOwnerNote(bookingId: string, rating: number, comment: string): Promise<void> {
   const { error } = await getSupabase().rpc("save_owner_note", { p_booking: bookingId, p_rating: rating, p_comment: comment });
   if (!error) return;
   if (error.message.includes("stay_not_finished")) throw new Error("You can rate the owner once the pets are back home.");
-  if (error.message.includes("comment_too_long")) throw new Error("Keep the note under 500 characters.");
+  if (error.message.includes("comment_too_long")) throw new Error("Keep the review under 500 characters.");
   if (error.message.includes("invalid_rating")) throw new Error("Pick 1 to 5 stars.");
-  fail("save your note");
+  fail("save your review");
 }
 
 /** Bookings I already reviewed (RLS: my own reviews) — Home stops asking for those (FB-24). */
@@ -134,7 +150,7 @@ export async function getStaySummary(petIds: string[], fromIso: string, toIso: s
   };
 }
 
-/** A sitter's average, review count and a few recent comments (public, signed-in only). */
+/** A sitter's average, review count and every comment, newest first (public, signed-in only; 015s). */
 export async function getRatingSummary(sitterId: string): Promise<RatingSummary> {
   const { data, error } = await getSupabase().rpc("sitter_rating_summary", { p_sitter: sitterId });
   if (error || !data) return { avg: null, count: 0, recent: [] };

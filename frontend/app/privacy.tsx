@@ -26,6 +26,7 @@ const SECTIONS: LegalSection[] = [
     title: "Who can see it",
     body: [
       "A sitter sees an owner's pets and care notes for the booking. An owner's home address, emergency contact and vet are shown to a sitter only once their booking is paid, and only until a day after the pick-up. Entry codes open only after payment and close to the hand-off.",
+      "Reviews are shared. An owner's review of a sitter shows on the sitter's profile. A sitter's review of an owner is seen by that owner and by other sitters. Reviewers are shown by first name.",
       "While a trip is running, the person travelling shares their position with the other person in that booking, and only then. On the web it works only while the screen stays on.",
     ],
   },
@@ -34,7 +35,7 @@ const SECTIONS: LegalSection[] = [
     body: [
       "Goldito drafts replies, care checklists, captions, diary pages and Life Records with AI models (NVIDIA Nemotron and other open models) run on Nebius Token Factory. For each request the text and photos needed for that task are sent there: the question, the booking dates, the pet's care notes, the sitter's policy text, the day's check-ins and photos.",
       "Prices, availability and dates come from our own database, not from the model. Entry codes are never sent to a model.",
-      "A sitter approves every reply and diary page before the owner sees it, unless the sitter turned on auto-send. AI drafts can be wrong and are not veterinary advice or a judgment of a pet's behaviour. The provider's own terms apply to what it receives.",
+      "A sitter approves every reply and diary page before the owner sees it. AI drafts can be wrong and are not veterinary advice or a judgment of a pet's behaviour. The provider's own terms apply to what it receives.",
     ],
   },
   {
