@@ -314,7 +314,7 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.accent,
     },
     sectionBadgeText: {
-      fontSize: 11,
+      fontSize: theme.fontSize.caption,
       fontWeight: theme.fontWeight.semibold,
       color: theme.color.primary,
     },
