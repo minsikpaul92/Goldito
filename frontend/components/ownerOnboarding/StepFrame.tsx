@@ -27,21 +27,19 @@ type Props = {
   testID?: string;
 };
 
-/** One question per screen, large text (11.15 §7.1): logo, progress bar, Back, a 28 px question, the answers, the footer. */
+/** One question per screen, large text (11.15 §7.1): logo, Back and the progress bar, a 28 px question, the answers, the footer. */
 export function StepFrame({ progress, title, hint, onBack, onSkipAll, onSkip, skipTestID = "own-skip", children, footer, rowNext, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
 
-  // Pinned to the bottom of the screen, so Back and Skip sit in the same place on every question.
+  // Pinned to the bottom of the screen, so Skip sits in the same place on every question. Back is only at the top (#383).
   const pinned =
-    footer || onBack || onSkip || rowNext ? (
+    footer || onSkip || rowNext ? (
       <View style={styles.footer}>
         {footer}
-        {onBack || onSkip || rowNext ? (
+        {onSkip || rowNext ? (
           <View style={styles.navRow}>
-            <View style={styles.navSlot}>
-              {onBack ? <Button label="Back" variant="secondary" onPress={onBack} testID="own-back-bottom" /> : null}
-            </View>
+            <View style={styles.navSlot} />
             <View style={styles.navSlot}>
               {rowNext ?? (onSkip ? <Button label="Skip" variant="secondary" onPress={onSkip} testID={skipTestID} /> : null)}
             </View>
@@ -59,7 +57,8 @@ export function StepFrame({ progress, title, hint, onBack, onSkipAll, onSkip, sk
       <View style={styles.top}>
         {onBack ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={styles.back} testID="own-back">
-            <Icon name="back" size={theme.icon.md} color={theme.color.text} />
+            <Icon name="back" size={22} color={theme.color.primary} />
+            <Text style={styles.backText}>Back</Text>
           </Pressable>
         ) : (
           <View style={styles.back} />
@@ -82,7 +81,8 @@ const makeStyles = (theme: Theme) =>
     content: { gap: theme.spacing.md, paddingBottom: theme.spacing.xl },
     header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: theme.layout.touchTarget },
     top: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
-    back: { width: theme.layout.touchTarget, height: theme.layout.touchTarget, justifyContent: "center" },
+    back: { minWidth: theme.layout.touchTarget, height: theme.layout.touchTarget, flexDirection: "row", alignItems: "center", gap: 2 },
+    backText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     track: { flex: 1, height: 8, borderRadius: theme.radius.pill, backgroundColor: theme.color.track, overflow: "hidden" },
     bar: { height: 8, borderRadius: theme.radius.pill, backgroundColor: theme.color.primary },
     title: {

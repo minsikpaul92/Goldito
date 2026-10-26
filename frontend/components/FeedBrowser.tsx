@@ -144,7 +144,7 @@ export function FeedBrowser({
     } catch (err) {
       setViewerId(null);
       const message = err instanceof Error ? err.message : "";
-      toast.show(message === NO_PET_FOUND ? message : "Couldn't make a sticker. Try again.");
+      toast.show(message === NO_PET_FOUND ? message : "Couldn't make a sticker. Try again.", { tone: "error" });
     } finally {
       setMaking(false);
     }
@@ -157,7 +157,7 @@ export function FeedBrowser({
       setViewerId(null);
       toast.show(hidden ? "Photo hidden" : "Photo is back in your Feed");
     } catch (err) {
-      toast.show(err instanceof Error ? err.message : "Couldn't do that. Try again.");
+      toast.show(err instanceof Error ? err.message : "Couldn't do that. Try again.", { tone: "error" });
     }
   };
 
@@ -176,7 +176,7 @@ export function FeedBrowser({
       setEditId(null);
       toast.show("Photo updated");
     } catch (err) {
-      toast.show(err instanceof Error ? err.message : "Couldn't save this photo. Try again.");
+      toast.show(err instanceof Error ? err.message : "Couldn't save this photo. Try again.", { tone: "error" });
     } finally {
       setSaving(false);
     }
@@ -193,7 +193,7 @@ export function FeedBrowser({
       onRemoved(id);
       toast.show(scope === "everyone" ? "Photo deleted for both" : "Photo deleted");
     } catch (err) {
-      toast.show(err instanceof Error ? err.message : "Couldn't delete this photo. Try again.");
+      toast.show(err instanceof Error ? err.message : "Couldn't delete this photo. Try again.", { tone: "error" });
     } finally {
       setDeleting(false);
     }

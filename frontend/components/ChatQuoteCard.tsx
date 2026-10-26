@@ -97,7 +97,7 @@ export function ChatQuoteCard({ card, role, final, side, busy, onConfirm, onDecl
         </Text>
       ) : null}
       {open && role === "owner" ? (
-        <Button label="Confirm quote" disabled={busy || pending} onPress={onConfirm} testID="quote-confirm" />
+        <Button label="Accept" disabled={busy || pending} onPress={onConfirm} testID="quote-confirm" />
       ) : null}
       {open && role === "owner" && final && onDecline ? (
         <TextButton label="Decline" danger disabled={busy} onPress={onDecline} style={styles.left} testID="quote-decline" />

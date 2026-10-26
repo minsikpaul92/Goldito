@@ -144,7 +144,7 @@ export default function SitterCareRequest() {
 
       {open ? (
         <View style={styles.actions}>
-          <Button label={busy ? "Working…" : "Approve"} onPress={() => void answer(true)} disabled={busy} testID="request-approve" />
+          <Button label={busy ? "Working…" : "Accept"} onPress={() => void answer(true)} disabled={busy} testID="request-approve" />
           <Button label="Decline or reply…" variant="secondary" onPress={() => setDeclining(true)} disabled={busy} testID="request-decline" />
         </View>
       ) : null}

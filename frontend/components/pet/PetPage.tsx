@@ -42,7 +42,7 @@ export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => vo
       onChanged?.();
     } catch (e) {
       setHats((prev) => ({ ...prev, [pet.id]: hat }));
-      toast.show((e as Error).message);
+      toast.show((e as Error).message, { tone: "error" });
     }
   };
 

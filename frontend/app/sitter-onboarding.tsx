@@ -56,7 +56,7 @@ export default function SitterOnboarding() {
       toast.show("Saved");
       done();
     } catch (e) {
-      toast.show((e as Error).message);
+      toast.show((e as Error).message, { tone: "error" });
     } finally {
       setSaving(false);
     }
@@ -68,6 +68,7 @@ export default function SitterOnboarding() {
         draft={draft}
         onChange={setDraft}
         onSkipAll={edit ? undefined : () => void save(emptyDraft())}
+        onLeave={edit ? () => (router.canGoBack() ? router.back() : router.replace("/profile")) : undefined}
         onFinish={() => void save(draft)}
         saving={saving}
       />

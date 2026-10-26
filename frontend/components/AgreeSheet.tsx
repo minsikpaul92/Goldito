@@ -30,7 +30,7 @@ function where(h: Handoff | null, sitter: string): string {
 }
 
 /**
- * The owner's "I'd like to book" (3D.7): the checklist, pets, times and price once more, then one tap. The sitter's own
+ * The owner's Accept (3D.7; Accept is the one yes word, U12): the checklist, pets, times and price once more, then one tap. The sitter's own
  * yes is on the card; the booking is confirmed when both are in.
  */
 export function AgreeSheet({ visible, booking, onClose, onAgreed }: Props) {
@@ -70,7 +70,7 @@ export function AgreeSheet({ visible, booking, onClose, onAgreed }: Props) {
       title={`Book ${booking.sitterName}`}
       onClose={onClose}
       testID="agree-sheet"
-      footer={<Button label="I'd like to book" disabled={saving} onPress={() => void agree()} testID="agree-submit" />}
+      footer={<Button label="Accept" disabled={saving} onPress={() => void agree()} testID="agree-submit" />}
     >
       <View style={styles.block}>
         <Text style={styles.label}>Pets</Text>

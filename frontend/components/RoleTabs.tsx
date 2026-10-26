@@ -81,9 +81,9 @@ export function headerOptions(theme: Theme) {
     headerShadowVisible: false,
     headerStyle: { backgroundColor: theme.ui.chrome },
     headerTintColor: theme.color.primary,
-    // Screen readers say "Go back", not the route segment ("(tabs), back"); minimal mode keeps the label hidden.
+    // The chevron and the word Back on every header (U1, DESIGN.md §7.8); never the route segment ("(tabs), back").
     headerBackTitle: "Back",
-    headerBackButtonDisplayMode: "minimal" as const,
+    headerBackButtonDisplayMode: "generic" as const,
     headerTitleStyle: {
       color: theme.color.text,
       fontSize: display ? theme.fontSize.title : theme.fontSize.body,

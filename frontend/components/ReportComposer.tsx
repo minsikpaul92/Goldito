@@ -95,7 +95,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         setSummary(res.summary);
         setDescriptions(res.photos);
       } catch (e) {
-        toast.show((e as Error).message);
+        toast.show((e as Error).message, { tone: "error" });
       } finally {
         setBusy(null);
       }
@@ -434,7 +434,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
       {editable.length > 0 ? (
         <TextButton label="Fix a recorded value" onPress={() => setEditing(true)} testID={`report-edit-${pet.id}`} />
       ) : null}
-      <Sheet visible={editing} title="Fix a recorded value" onClose={() => setEditing(false)} testID={`report-edit-sheet-${pet.id}`}>
+      <Sheet visible={editing} title="Fix a recorded value" onClose={() => setEditing(false)} doneOnly testID={`report-edit-sheet-${pet.id}`}>
         {editable.map((chip) => {
           const group = CHECKIN_GROUPS.find((g) => g.kind === chip.check);
           if (!group) return null;

@@ -150,7 +150,7 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
     try {
       await settle(await sampleToFile(sample));
     } catch {
-      toast.show("Could not load that sample. Try again.");
+      toast.show("Could not load that sample. Try again.", { tone: "error" });
     }
   };
 

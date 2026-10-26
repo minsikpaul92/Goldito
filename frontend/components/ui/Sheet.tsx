@@ -18,6 +18,8 @@ type Props = {
   footer?: ReactNode;
   /** Keep a thin visible scrollbar on the desktop frame (a long page inside the sheet). */
   scrollbar?: boolean;
+  /** The sheet applies each tap as it goes, so its footer's Done is the only way out: no Close in the header (U10). The backdrop and a pull down still close it. */
+  doneOnly?: boolean;
   testID?: string;
 };
 
@@ -34,7 +36,7 @@ const OFF_SCREEN = 700;
  * pull down to close (from full screen a short pull goes back to the normal height, a long one closes), pull up for full screen.
  * Inside the desktop frame it stays in the phone, because the app runs in the frame's iframe.
  */
-export function Sheet({ visible, title, onClose, children, footer, scrollbar, testID }: Props) {
+export function Sheet({ visible, title, onClose, children, footer, scrollbar, doneOnly, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const reduce = useReduceMotion();
@@ -137,7 +139,7 @@ export function Sheet({ visible, title, onClose, children, footer, scrollbar, te
               <Text accessibilityRole="header" style={styles.title}>
                 {title}
               </Text>
-              <TextButton label="Close" onPress={onClose} testID={testID ? `${testID}-close` : undefined} />
+              {doneOnly ? null : <TextButton label="Close" onPress={onClose} testID={testID ? `${testID}-close` : undefined} />}
             </View>
           </View>
           <ScrollView

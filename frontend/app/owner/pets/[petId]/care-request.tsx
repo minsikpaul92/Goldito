@@ -33,7 +33,8 @@ type Sync = "idle" | "saving" | "saved";
 
 const TASKS_MAX = 12;
 const CAUTIONS_MAX = 8;
-const UNDO_MS = 8000;
+// Undo stays 6 s everywhere, like the toast's Undo (U3, DESIGN.md §10).
+const UNDO_MS = 6000;
 
 const snapshot = (t: DraftTask) => JSON.stringify([t.title.trim(), t.dose.trim(), t.time, t.notes.trim()]);
 

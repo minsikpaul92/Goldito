@@ -102,7 +102,7 @@ export function AddPhotoSheet({
       onPicked({ file: await sampleToFile(sample) });
       setSampleId(sample.id);
     } catch {
-      toast.show("Could not load that sample. Try again.");
+      toast.show("Could not load that sample. Try again.", { tone: "error" });
     }
   };
   const more = async () => {

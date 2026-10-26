@@ -98,7 +98,7 @@ export function CareTasksSection({ pet, userId }: Props) {
       toast.show(task.active ? `Paused ${task.title}` : `${task.title} is back on`);
       await load();
     } catch (error) {
-      toast.show((error as Error).message);
+      toast.show((error as Error).message, { tone: "error" });
     } finally {
       setBusy(false);
     }
@@ -113,7 +113,7 @@ export function CareTasksSection({ pet, userId }: Props) {
       setPendingDelete(null);
       await load();
     } catch (error) {
-      toast.show((error as Error).message);
+      toast.show((error as Error).message, { tone: "error" });
     } finally {
       setBusy(false);
     }
@@ -127,7 +127,7 @@ export function CareTasksSection({ pet, userId }: Props) {
       toast.show(accept ? "Accepted, added to the tasks" : "Declined");
       await Promise.all([reloadStay(), load()]);
     } catch (error) {
-      toast.show((error as Error).message);
+      toast.show((error as Error).message, { tone: "error" });
     } finally {
       setBusy(false);
     }
