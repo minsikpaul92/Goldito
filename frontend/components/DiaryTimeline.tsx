@@ -4,8 +4,11 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { DiaryEntry } from "../features/diary/diaryApi";
 import { addDays, appToday, formatDay, formatTime, isoToZoned } from "../features/schedule/dates";
 import { deliveryUrl, thumbUrl, videoPosterUrl } from "../lib/cloudinary";
-import { useThemedStyles } from "../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { Art } from "./art/Art";
+import { careArt } from "./careArt";
+import { sectionTitleStyle } from "./ui/SectionTitle";
 import { Sheet } from "./ui/Sheet";
 
 function dayTitle(day: string): string {
@@ -23,10 +26,12 @@ function thumbOf(entry: DiaryEntry, size: number): string | null {
 }
 
 /**
- * What happened, newest first, grouped Today / Yesterday / date. A row with a photo or memo opens a
- * detail sheet. Shared by the owner's History and the sitter's "what I sent".
+ * What happened, newest first, grouped Today / Yesterday / date (the Oct 25 design: a tinted drawing, the words, the
+ * photo on the right; a missed task sits on gold). A row opens a detail sheet. Shared by the owner's History and the
+ * sitter's "what I sent".
  */
 export function DiaryTimeline({ entries, openId }: { entries: DiaryEntry[]; openId?: string | null }) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [open, setOpen] = useState<DiaryEntry | null>(null);
   // `openId` (a link from Home) opens that entry once, as soon as it is in the list.
@@ -54,11 +59,15 @@ export function DiaryTimeline({ entries, openId }: { entries: DiaryEntry[]; open
     <>
       {days.map(([day, list]) => (
         <View key={day} style={styles.day} testID={`diary-day-${day}`}>
-          <Text accessibilityRole="header" style={styles.dayTitle}>
-            {dayTitle(day)}
-          </Text>
+          <View style={styles.dayHead}>
+            <Text accessibilityRole="header" style={styles.dayTitle}>
+              {dayTitle(day)}
+            </Text>
+            {dayTitle(day) !== formatDay(day) ? <Text style={styles.date}>{formatDay(day)}</Text> : null}
+          </View>
           {list.map((entry) => {
             const thumb = thumbOf(entry, 160);
+            const { art, tint } = careArt(entry.what, theme);
             return (
               <Pressable
                 key={entry.id}
@@ -67,9 +76,9 @@ export function DiaryTimeline({ entries, openId }: { entries: DiaryEntry[]; open
                 style={({ pressed }) => [styles.row, entry.missed && styles.missed, pressed && styles.pressed]}
                 testID={`diary-entry-${entry.id}`}
               >
-                <Text style={styles.emoji} accessibilityElementsHidden>
-                  {entry.emoji}
-                </Text>
+                <View style={[styles.tile, { backgroundColor: entry.missed ? theme.color.surface : tint }]}>
+                  <Art name={art} size={40} />
+                </View>
                 <View style={styles.body}>
                   <Text style={styles.label}>{entry.label}</Text>
                   {entry.memo ? (
@@ -114,26 +123,29 @@ export function DiaryTimeline({ entries, openId }: { entries: DiaryEntry[]; open
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    day: { gap: theme.spacing.xs },
-    dayTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    day: { gap: theme.spacing.sm },
+    dayHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: theme.spacing.sm },
+    dayTitle: sectionTitleStyle(theme),
+    date: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
     row: {
       flexDirection: "row",
       alignItems: "center",
-      gap: theme.spacing.sm,
-      padding: theme.spacing.sm,
-      borderRadius: theme.radius.md,
-      borderWidth: 1,
-      borderColor: theme.color.border,
+      gap: theme.spacing.sm + 4,
+      paddingVertical: theme.spacing.sm,
+      paddingLeft: theme.spacing.sm,
+      paddingRight: theme.spacing.sm + 2,
+      borderRadius: theme.ui.radius.block,
       backgroundColor: theme.color.surface,
     },
-    missed: { borderColor: theme.color.warning },
-    pressed: { opacity: 0.8 },
-    emoji: { fontSize: 24 },
-    body: { flex: 1, gap: 2 },
-    label: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
-    memo: { fontSize: theme.fontSize.body, color: theme.color.text },
-    meta: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    thumb: { width: 56, height: 56, borderRadius: theme.radius.sm, backgroundColor: theme.color.border },
+    // Late is gold, never red (D9).
+    missed: { backgroundColor: theme.color.warningSurface },
+    pressed: { opacity: theme.motion.pressOpacity },
+    tile: { width: 52, height: 52, borderRadius: theme.radius.lg, alignItems: "center", justifyContent: "center" },
+    body: { flex: 1, minWidth: 0, gap: 2 },
+    label: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    memo: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.text },
+    meta: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
+    thumb: { width: 52, height: 52, borderRadius: 14, backgroundColor: theme.color.border },
     detail: { gap: theme.spacing.sm },
     photo: { width: "100%", aspectRatio: 1, borderRadius: theme.radius.md, backgroundColor: theme.color.border },
   });

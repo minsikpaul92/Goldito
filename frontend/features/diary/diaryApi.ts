@@ -14,6 +14,8 @@ export type DiaryEntry = {
   /** When it happened (task: completed time, or the due time when missed). */
   at: string;
   kind: "task" | "checkin" | "feed" | "report";
+  /** The task type or check-in kind, for the row's drawing. */
+  what: CareTaskType | CareCheckinKind | "photo" | "report";
   emoji: string;
   label: string;
   /** Sitter's memo / caption, shown under the label. */
@@ -125,6 +127,7 @@ export function buildDiary(
       id: `task-${log.id}`,
       at: log.status === "done" ? (log.completed_at ?? log.due_at) : log.due_at,
       kind: "task",
+      what: task.type,
       emoji: missed ? "✗" : meta.emoji,
       label: `${task.title} · ${missed ? "Missed" : "Done"}`,
       memo: null,
@@ -141,6 +144,7 @@ export function buildDiary(
       id: `checkin-${c.id}`,
       at: c.created_at,
       kind: "checkin",
+      what: c.kind,
       emoji,
       label,
       memo: c.note_text,
@@ -156,6 +160,7 @@ export function buildDiary(
       id: `feed-${post.id}`,
       at: post.created_at,
       kind: "feed",
+      what: "photo",
       emoji: "📸",
       label: "Photo",
       memo: post.caption,
@@ -184,6 +189,7 @@ export async function listMySentReports(petId: string, sitterId: string): Promis
       id: `report-${r.id}`,
       at: r.sent_at as string,
       kind: "report" as const,
+      what: "report" as const,
       emoji: "📓",
       label: "Diary page · Sent",
       memo: r.body,

@@ -36,12 +36,13 @@ test.describe("sitter today's tasks", () => {
     const screen = app(page);
 
     await expect(screen.getByTestId("today-tasks")).toBeVisible();
-    // exact: the "Next up: … · Joint pill" line may repeat the title (depends on the time of day).
+    // exact: the Next up block may repeat the title (depends on the time of day).
     await expect(screen.getByText("Joint pill", { exact: true })).toBeVisible();
     expect(db.task_logs).toHaveLength(2);
     await expect(screen.getByText("Paused play")).toHaveCount(0);
-    await expect(screen.getByTestId("tasks-next")).toContainText("Next up: Max");
-    await expect(screen.getByTestId("tasks-count")).toHaveText("2 left · 0 done");
+    await expect(screen.getByTestId("tasks-next")).toContainText("Next up");
+    await expect(screen.getByTestId("tasks-next")).toContainText("Max · ");
+    await expect(screen.getByTestId("tasks-count")).toContainText("Max · 2 left · 0 done");
   });
 
   test("Done opens a popup; a second Done sends it, the task leaves the list, nothing goes to the feed", async ({ page }) => {
