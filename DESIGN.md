@@ -71,6 +71,7 @@ Every Figma variable carries its code name as **code syntax** (Figma uses kebab-
 | Toast | `providers/ToastProvider.tsx` (`useToast()`) | ✅ |
 | Logo (brand site) | `components/BrandLogo.tsx` + `assets/brand/` · favicon in `app.json` | ✅ |
 | Booking Card / Stage Card | `components/BookingCard.tsx`, `components/BookingStageBar.tsx` (steps Request · M&G · Confirm · Pay · Care; a small word under a step: Scheduled, Trip, Skipped, #237) | ✅ |
+| Booking Ticket | `components/BookingTicket.tsx`: the stay's big card (dates, the five steps, drop-off and pick-up, paid). It lives on **Home** for owners and sitters (the stay in care, else the next paid one, `homeStay`); the Bookings tab lists every booking as a `BookingCard` row (Oct 25) | ✅ |
 | Stay Summary Card | `components/StaySummaryCard.tsx` | ✅ |
 | Latest Update Row | `components/home/LatestCard.tsx` | ✅ |
 | Pet Mini Card | `components/PetCard.tsx` | ✅ |
