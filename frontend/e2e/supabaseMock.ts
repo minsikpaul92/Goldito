@@ -2166,7 +2166,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   }
 
   if (path === "rpc/log_care_checkins") {
-    // Same rule as the SQL (015q): one row per pick, the memo and photo on the first, ONE notice listing every pick.
+    // Same rule as the SQL (015r): one row per pick, the memo and photo on the first, ONE notice listing every pick.
     const { p_pet, p_picks, p_note_text, p_media_id } = request.postDataJSON();
     const picks = (p_picks ?? []) as { kind: string; value: string }[];
     const note = typeof p_note_text === "string" && p_note_text.trim() ? p_note_text.trim() : null;

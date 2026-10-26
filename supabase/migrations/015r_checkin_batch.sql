@@ -1,4 +1,4 @@
--- 015q: one check-in, several picks (#397, Sitter-011).
+-- 015r: one check-in, several picks (#397, Sitter-011).
 --   The sitter's check-in screen keeps one pick per group (Meal, Potty, Walk, Mood) and sends them together.
 --   log_care_checkins writes one care_checkins row per pick with the same rules as log_care_checkin, and the owner
 --   gets ONE notice for all of them: the picks' lines joined with " · ", the memo as the body. The memo and the photo

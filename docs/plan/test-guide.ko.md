@@ -137,7 +137,7 @@
 | 오너 **케어 체크리스트 / 요청** (칩 → 줄 → 표, 돌보는 중엔 시터 승인 · 거절) | ✅ 🤖 (실제 AI · 두 계정은 👤) | 06 / 6.12–6.13 · 6.20 |
 | 오너 **돌봄 할 일** 등록 · **시간 탭 선택** · 탭해서 **수정**(종류 고정) · 일시중지 · 삭제 | ✅ 🤖 | 06 / 6.1 + 후속 |
 | 시터 **오늘 할 일** — Done → 팝업(메모 + 사진) → Done, 끝낸 건 목록에서 사라짐 | ✅ 🤖 | 06 / 6.2–6.4 · 6.3 + 후속 |
-| 시터 **빠른 체크인** (식사 · 배변 · 산책 · 기분 · 메모 · 사진), 보냄 표시 · 연타 잠금 · 오늘 보낸 것 목록 · **그룹마다 하나씩 골라 한 번에 보내기, 오너 알림은 하나 · 사진 썸네일 미리보기 (#397)** | ✅ 🤖 · #397: 🤖 `quick-checkin` · SQL smoke `015q`(CI) · **DB `015q` 호스팅 미적용**(PR 머지 때 적용) | 06 / 6.8–6.10 + 후속 · #397 |
+| 시터 **빠른 체크인** (식사 · 배변 · 산책 · 기분 · 메모 · 사진), 보냄 표시 · 연타 잠금 · 오늘 보낸 것 목록 · **그룹마다 하나씩 골라 한 번에 보내기, 오너 알림은 하나 · 사진 썸네일 미리보기 (#397)** | ✅ 🤖 · #397: 🤖 `quick-checkin` · SQL smoke `015r`(CI) · **DB `015r` 호스팅 미적용**(PR 머지 때 적용) | 06 / 6.8–6.10 + 후속 · #397 |
 | 시터 **Home 대시보드** (한 화면) · 할 일 / 체크인 / 내 기록 화면 | ✅ 🤖 | 06 후속 |
 | 오너 **Home 실시간 업데이트 카드** (밀어서 지우기) | ✅ 🤖 | 06 후속 |
 | 오너 **Home Today 면 Figma 정렬** (돌보는 중이면 초록 히어로 "Max is with Chloe" · Day N of M · 오늘 케어 진행바 · 통계 타일(care done · photos today · of walks) · Latest from 시터 · See today's updates → History, 아닐 때는 Your pets만, 펫 타일 2열 · + Add pet). 숫자는 시터가 기록한 값만, 없으면 숨김 · 아이콘은 Lucide 임시(SVG 오면 `components/home/HomeArt.tsx`) | 🟡 타입체크 · 토큰 체크 ✅ · e2e 기대값 수정(`pets` · `live-updates`)은 아직 안 돌림 · 사람 확인 대기 | 오너 Home Figma |
@@ -274,7 +274,7 @@
 | REM-5 | **실제 시계로**: 오너가 2~3분 뒤 시각의 할 일을 만들고, 시터는 Home을 연 채 기다림 | 30초 안에 Today 목록에 나타나고, 그 시각 정각에 토스트 + 팝업 | **👤만** | ➖ |
 | HOME-5 | (돌보는 중이 아닐 때) 시터 Home | 요청 배너 · 오늘 인계 · 다가오는 예약이 짧게 | 🤖 `today` | ➖ |
 | CHK-1 | 체크인 화면 → Max의 Meal **All** 누르기 (메모 비움) | 버튼이 **"✓ All"** 로 선택만 됨(**아직 전송 안 됨**), "Ready to send: …" 안내, 다시 누르면 선택 해제. **Send**를 눌러야 전송 → 토스트 "Sent ✅", 오너 알림 "Max ate everything 🍽️" | 🤖 `quick-checkin` | ➖ |
-| CHK-8 | (#397, Sitter-011) Meal **All** · Potty **Normal** · Walk **20** · Mood **Calm** 을 차례로 누르고, Mood를 **Happy**로 바꾼 뒤 메모 "Loved the park" → **Send** | 네 그룹이 **동시에** 선택됨(같은 그룹에서 다른 답을 누르면 그 그룹만 바뀜). "Ready to send: Fed · All, Potty · Normal, Walk · 20 min, Mood · Happy". 보내면 체크인 4개가 저장되고 오너 알림은 **하나**("Max ate everything 🍽️ · Potty update for Max: normal 💩 · Max had a 20-minute walk 🦮 · Max seems happy 😊", 본문 = 메모). 메모 · 사진은 첫 선택(Meal)에만 붙음. 오너 History에는 4줄 | 🤖 `quick-checkin` · SQL smoke `015q` · 오너 화면은 👤 | 사람 확인 대기 |
+| CHK-8 | (#397, Sitter-011) Meal **All** · Potty **Normal** · Walk **20** · Mood **Calm** 을 차례로 누르고, Mood를 **Happy**로 바꾼 뒤 메모 "Loved the park" → **Send** | 네 그룹이 **동시에** 선택됨(같은 그룹에서 다른 답을 누르면 그 그룹만 바뀜). "Ready to send: Fed · All, Potty · Normal, Walk · 20 min, Mood · Happy". 보내면 체크인 4개가 저장되고 오너 알림은 **하나**("Max ate everything 🍽️ · Potty update for Max: normal 💩 · Max had a 20-minute walk 🦮 · Max seems happy 😊", 본문 = 메모). 메모 · 사진은 첫 선택(Meal)에만 붙음. 오너 History에는 4줄 | 🤖 `quick-checkin` · SQL smoke `015r` · 오너 화면은 👤 | 사람 확인 대기 |
 | CHK-2 | 카드 아래 **"Sent to Robert today"** 목록 | 방금 보낸 것이 시각과 함께 쌓임 (메모는 따옴표로) | 🤖 `quick-checkin` | ➖ |
 | CHK-3 | 메모 칸에 글을 쓰고 Meal **A little** | 오너 알림: **보낸 것(제목) + 메모(본문)**. 전송 후 메모 칸 비워짐 | 🤖 `quick-checkin` | ➖ |
 | CHK-4 | 아무것도 고르지 않고 메모만 쓰기 | 메모가 없으면 **Send 비활성**. 메모를 쓰면 "Ready to send as a note" → Send로 노트 전송 | 🤖 `quick-checkin` | ➖ |
