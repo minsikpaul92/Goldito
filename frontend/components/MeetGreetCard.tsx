@@ -150,7 +150,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
     // Either side starts here (the booking is the chat's first request): Skip on the left, Request on the right.
     body = (
       <>
-        <Text style={styles.title}>Meet & Greet</Text>
+        <Text style={[styles.title, styles.center]}>Meet & Greet</Text>
         <View style={styles.pair}>
           <Button label="Skip" variant="secondary" onPress={() => setConfirm("skip")} disabled={busy} style={styles.half} testID="meet-skip" />
           <Button label="Request" onPress={() => void openSheet()} disabled={busy} style={styles.half} testID="meet-request" />
@@ -351,6 +351,7 @@ const makeStyles = (theme: Theme) =>
       maxWidth: "92%",
       alignSelf: "center",
     },
+    center: { textAlign: "center" },
     title: {
       fontSize: theme.fontSize.body,
       fontWeight: theme.fontWeight.semibold,

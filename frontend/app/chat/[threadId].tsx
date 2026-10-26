@@ -809,7 +809,8 @@ export default function Chat() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: theme.color.background },
-    content: { gap: theme.spacing.sm },
+    // Messages sit at the bottom, so the last card is right above the chips.
+    content: { gap: theme.spacing.sm, flexGrow: 1, justifyContent: "flex-end" },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center", paddingVertical: theme.spacing.md },
     stage: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
     cardRow: { width: "100%" },
