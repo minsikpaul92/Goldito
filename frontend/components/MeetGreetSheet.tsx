@@ -106,7 +106,7 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
           {spots.nearby ? (
             <CheckRow
               radio
-              label={`🌳 ${spots.nearby}`}
+              label={spots.nearby}
               hint={`A park near ${spots.ownerName}'s home`}
               checked={spot === spots.nearby}
               onChange={() => setSpot(spots.nearby as string)}

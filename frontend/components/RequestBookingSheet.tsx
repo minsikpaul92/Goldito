@@ -334,8 +334,8 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     panel: { gap: 14, padding: theme.spacing.md },
     section: { gap: theme.spacing.sm },
-    sectionLabel: { fontSize: 13, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    sectionHint: { fontSize: 12, fontWeight: theme.fontWeight.medium, color: theme.color.cardTextMuted },
+    sectionLabel: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    sectionHint: { fontSize: theme.fontSize.caption, fontWeight: theme.fontWeight.medium, color: theme.color.cardTextMuted },
     hint: { fontSize: theme.fontSize.small, color: theme.color.cardTextMuted },
     dateField: {
       minHeight: theme.layout.touchTarget,

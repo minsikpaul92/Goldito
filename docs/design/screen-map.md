@@ -1049,7 +1049,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Sheet | ``Send to ${otherName}`` | `meet-sheet` | 79 |
 | Button | ``Send to ${otherName}`` | `meet-send` | 85 |
 | SegmentedControl | — | `meet-mode` | 93 |
-| CheckRow | ``🌳 ${spots.nearby}`` | `meet-spot-nearby` | 107 |
+| CheckRow | `spots.nearby` | `meet-spot-nearby` | 107 |
 | CheckRow | 📍 Somewhere else | `meet-spot-other` | 116 |
 | Stepper | Meet & Greet day | `meet-day` | 138 |
 | Stepper | Meet & Greet time | `meet-time` | 149 |

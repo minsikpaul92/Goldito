@@ -121,7 +121,7 @@ const makeStyles = (theme: Theme) =>
     totalRowGreen: { borderTopColor: theme.color.primaryText },
     row: { flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.md },
     actions: { gap: theme.spacing.sm, marginTop: theme.spacing.md },
-    from: { fontSize: 11, fontWeight: theme.fontWeight.bold, letterSpacing: 0.33, textTransform: "uppercase", color: theme.color.textMuted },
+    from: { fontSize: theme.fontSize.caption, fontWeight: theme.fontWeight.bold, letterSpacing: 0.33, textTransform: "uppercase", color: theme.color.textMuted },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, letterSpacing: 0.3, color: theme.color.text },
     body: { fontSize: theme.fontSize.body, letterSpacing: 0.3, color: theme.color.text, flexShrink: 1 },
     muted: { fontSize: theme.fontSize.small, letterSpacing: 0.3, color: theme.color.textMuted },

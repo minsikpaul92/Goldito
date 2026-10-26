@@ -288,7 +288,7 @@ const makeStyles = (theme: Theme) =>
     content: { gap: theme.spacing.md, paddingBottom: theme.spacing.xl },
     heading: { ...sectionTitleStyle(theme), color: theme.color.success },
     consentsHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    consentsLabel: { fontSize: 13, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    consentsLabel: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     footer: { fontSize: theme.fontSize.caption, color: theme.color.textMuted, fontStyle: "italic" },
     footerBar: {
       padding: theme.spacing.md,
