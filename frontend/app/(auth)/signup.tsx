@@ -157,10 +157,10 @@ export default function SignupScreen() {
     );
     action = (
       <Button
-        label={role ? "Continue" : "Pick one to continue"}
+        label={role ? "Next" : "Pick one first"}
         onPress={() => setStep(1)}
         disabled={!role}
-        testID="signup-continue"
+        testID="signup-next"
       />
     );
   } else if (step === 1) {
@@ -213,14 +213,7 @@ export default function SignupScreen() {
         </View>
       </>
     );
-    action = (
-      <Button
-        label="Continue"
-        onPress={toPassword}
-        disabled={!nameDone}
-        testID="signup-continue"
-      />
-    );
+    action = <Button label="Next" onPress={toPassword} disabled={!nameDone} testID="signup-next" />;
   } else {
     body = (
       <>
