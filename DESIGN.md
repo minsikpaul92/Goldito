@@ -188,6 +188,7 @@ Each design decision, its reason, and what it replaced. Change a row only with t
 | **D18** | **UX calls, decided by Mook (Oct 25)**: U1 A, U2 C, U3 B, U4 A, U5 A, U6 A, U7 A, U8 B, U9 A, U10 A, U11 A, U12 A (§7.13). Back was the chevron + Back (U1 changed by D20); typed input is kept as a draft in long flows and a sheet asks before dropping it; Undo is 6 s; Accept is the one yes word | Twelve calls from the UX audit, drawn as phone screens and picked on one page | Icon-only Back; dropping typed text silently; per-card primaries |
 | **D19** | **Snap and the coin, settled (Mook, Oct 25)**: the fifth tab is **Snap** (treat check · mood · stickers), in the app (#341) and in Figma's Tab Bar; the logo is the **pixel gold coin with a paw** plus "Goldito" in the display face (decided Oct 19). The gold tag, Notebook and Pixel stay on the brand site as other directions, for reference | Both were still listed under §0.7 although the app and Figma had moved on | Mood as the tab name; the gold tag as the logo |
 | **D20** | **Back is the ← arrow alone (Mook, Oct 25)**: one control everywhere, top left, 44 × 44, read aloud as Back, no visible word; `Icon name="arrowBack"` in `BackLink`, `StepHeader` and `StepFrame`, and the native header in minimal mode. Replaces U1 A | "‹ Back" crowded the sign-up step header next to its progress bar; the arrow is what ~37 native headers already showed, and what #383 proposed | Chevron + the word Back (U1 A) |
+| **D21** | **Sign out asks in a sheet (Mook, Oct 26)**: the menu and Settings both confirm Sign out in a bottom sheet, as #387 built it. Replaces U5 A | The sheet shipped (#387) before U5 was built; one sheet in both places is already consistent, and signing out of a demo account by accident costs a judge the stay | No confirm (U5 A) |
 
 ---
 
@@ -216,7 +217,7 @@ Goldito is a private care app for **dogs and cats**. Owners hand their pet to a 
 - **Content width: 370** (402 − 2 × 16). Full-width components (cards, rows, banners, fields) are built at 370 in Figma, and everything inside them fills or grows — never a fixed inner width — so they adapt from 360 to 440. Chat bubbles are 80 % of the content width.
 - Bottom tab bar per role (owner / sitter). The primary action sits at the bottom of the screen, within thumb reach.
 - The header shows who is signed in under the title, for example **Chloe · Sitter** (header C, D13). There is no role chip.
-- **Avatar menu** (`components/HeaderMenu.tsx`): your avatar, in a thin `primary` ring, opens a full-width drawer that slides in from the right. You (→ Profile), Notifications with the count, Schedule (sitters), What's new, Settings, and Sign out pinned at the bottom with a confirm. Settings has Sign out with the same confirm.
+- **Avatar menu** (`components/HeaderMenu.tsx`): your avatar, in a thin `primary` ring, opens a full-width drawer that slides in from the right. You (→ Profile), Notifications with the count, Schedule (sitters), What's new, Settings, and Sign out pinned at the bottom; it asks in a bottom sheet (#387). Settings has Sign out with the same sheet (D21).
 
 ### 2.1 Desktop browsers (judges): phone frame
 
@@ -729,7 +730,7 @@ From the [UX audit](https://mooque-dev.github.io/goldito-design/ux-audit.html), 
 | U2 | Leaving with typed input | Keep a draft, or ask "Discard?" | **C: Both: drafts in long flows, ask before leaving a sheet** |
 | U3 | Undo time | 5 s (this file before), 6 s (the toast today), 8 s (care request) | **B: 6 s everywhere** |
 | U4 | Full-screen viewer close | ✕ top left or top right | **A: ✕ top left, labelled Close** |
-| U5 | Sign out | Confirm (two ways today) or no confirm | **A: No confirm** |
+| U5 | Sign out | Confirm (two ways today) or no confirm | **B: Confirm in a sheet** (picked A, then kept the sheet #387 had just shipped; D21) |
 | U6 | Error surfaces | As §7.11, or toasts only | **A: By job, as §7.11 (add `ErrorDialog` to §6)** |
 | U7 | Skeletons before the freeze | All 53 spinner screens, tab roots only, or after | **A: Skeletons on tab roots, after the freeze; spinners until then** |
 | U8 | Steps in the URL | Now or after the freeze | **B: After the freeze; until then browser Back leaves the flow and the draft is kept** |
