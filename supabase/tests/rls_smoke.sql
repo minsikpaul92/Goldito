@@ -3279,7 +3279,7 @@ $$;
 
 
 -- ---------------------------------------------------------------------------
--- O (011g, FB-25 · FB-29): the sitter's private note about an owner
+-- O (011g, FB-25 · FB-29, 015s): the sitter's review of an owner, read by that owner and by every sitter
 -- ---------------------------------------------------------------------------
 
 do $$
@@ -3292,6 +3292,7 @@ declare
   v_b uuid;
   v_err text;
   v_notes int;
+  v_sum jsonb;
 begin
   perform _t_as(null);
   insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Notey') returning id into pet;
@@ -3311,7 +3312,7 @@ begin
   perform _t_as(chloe);
   perform save_owner_note(v_b, 4, '  Clear care notes  ');
   perform _t_ok((select rating = 4 and comment = 'Clear care notes' from public.sitter_owner_notes where booking_id = v_b),
-    'O: the sitter saves a private note about the owner (trimmed)');
+    'O: the sitter saves a review of the owner (trimmed)');
   perform save_owner_note(v_b, 5, 'Happy to host again');
   perform _t_ok((select count(*) = 1 and max(rating) = 5 from public.sitter_owner_notes where booking_id = v_b),
     'O: saving again edits the same note');
@@ -3320,7 +3321,11 @@ begin
     'O: the owner is not told');
 
   perform _t_as(robert);
-  perform _t_ok((select count(*) from public.sitter_owner_notes where booking_id = v_b) = 0, 'O: the owner cannot read it');
+  perform _t_ok((select count(*) from public.sitter_owner_notes where booking_id = v_b) = 1, 'O: the owner reads the review about them (015s)');
+  v_sum := owner_rating_summary(robert);
+  perform _t_ok((v_sum ->> 'count')::int = 1 and v_sum -> 'reviews' -> 0 ->> 'reviewer' = 'Chloe'
+      and (v_sum -> 'reviews' -> 0 ->> 'mine')::boolean = false,
+    'O: …and in their summary, with the sitter''s first name');
   begin
     perform save_owner_note(v_b, 1, 'From the owner');
     v_err := null;
@@ -3328,7 +3333,14 @@ begin
   end;
   perform _t_ok(v_err = 'forbidden', 'O: …or write one');
   perform _t_as(paul);
-  perform _t_ok((select count(*) from public.sitter_owner_notes where booking_id = v_b) = 0, 'O: another sitter cannot read it');
+  perform _t_ok((select count(*) from public.sitter_owner_notes where booking_id = v_b) = 0, 'O: another sitter cannot read the row');
+  v_sum := owner_rating_summary(robert);
+  perform _t_ok((v_sum ->> 'count')::int = 1 and v_sum -> 'reviews' -> 0 ->> 'comment' = 'Happy to host again'
+      and v_sum ->> 'avg' = '5.0',
+    'O: …but sees the owner''s average and every review in owner_rating_summary (015s)');
+  perform _t_as(joy);
+  perform _t_ok(owner_rating_summary(robert) is null, 'O: another owner does not see it');
+  perform _t_as(paul);
   begin
     insert into public.sitter_owner_notes (booking_id, sitter_id, owner_id, rating) values (v_b, paul, robert, 1);
     v_err := null;

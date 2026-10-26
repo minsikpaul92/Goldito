@@ -526,6 +526,7 @@
 | FLOW-23 | 오너 리뷰 Send → 같은 화면의 **♡ Add Chloe to favorites** 한 번 누르기 → **Back to the booking** (#251) | 질문 시트 없음, 별 없음. 하트가 채워지고 "Chloe is a favorite" 토스트(시터에게는 알림 없음). 채팅 · 시터 프로필과 같은 하트. Book care 검색에서 즐겨찾기 시터가 먼저. 이미 즐겨찾기면 묻지 않고 채워진 하트 "Favorite"만 보임. 이미 리뷰한 예약의 리뷰 화면에도 같은 하트 (FB-28) | 🤖 `completion` · SQL P | ➖ |
 | FLOW-24 | 시터: Returned 뒤 같은 예약 상세를 끝까지 스크롤 (#382, Sitter-009) | 아래에 고정된 영역이 없고 한 페이지로 스크롤됨. 펫 카드들 아래에 "Stay complete 🐾" · 펫마다 메달 · 오너 리뷰 · 오너 메모가 이어짐. 고정 버튼은 Received · Returned일 때만 | 🤖 `handoff` | 사람 확인 대기 |
 | FLOW-25 | 시터: 그 예약에서 오너 메모 Save → **Done** (#382, Sitter-010) | 메모를 저장하기 전에는 Done이 없고, 저장하면 메모 카드에 Done 하나가 생김. 누르면 시터 Home. 채팅의 리뷰 카드에는 Done이 없음. 펫별 리뷰는 만들지 않음(메달로 대신, #407에서 결정) | 🤖 `handoff` | 사람 확인 대기 |
+| FLOW-26 | DB: 시터의 오너 리뷰 공개 (#415, `015s`) | 그 오너는 행을 읽고, 다른 시터는 `owner_rating_summary`로 평균 · 개수 · 전체 리뷰(시터 이름 첫 단어)를 봄. 다른 오너에게는 null. `sitter_rating_summary`는 최근 3개가 아니라 코멘트 전부 | SQL smoke O | 호스팅 DB에 `015s` 적용 뒤 한 번 |
 
 ---
 
