@@ -228,7 +228,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
         )}
         {hidePrimary ? null : <Button label="Done, we met" onPress={pressDone} disabled={busy} testID="meet-done" />}
         <View style={styles.links}>
-          {calendarUrl ? <LinkButton label="Add to calendar" href={calendarUrl} look="text" newWindow testID="meet-calendar" /> : null}
+          {calendarUrl ? <LinkButton label="Add to calendar" href={calendarUrl} look="text" testID="meet-calendar" /> : null}
           <TextButton label="Change" onPress={() => void openSheet()} testID="meet-change" />
         </View>
       </>
