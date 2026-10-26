@@ -16,7 +16,7 @@ Shows: `BootView`
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | error ?? "Something went wrong." | — | 27 |
-| TextButton | Sign out | `gate-logout` | 33 |
+| TextButton | Log out | `gate-logout` | 33 |
 
 ### `/chat/[threadId]` — [app/chat/[threadId].tsx](../../frontend/app/chat/[threadId].tsx)
 
@@ -71,8 +71,8 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Button | Next | `own-next` | 185 |
-| Sheet | Sign out | `own-leave-sheet` | 215 |
-| Button | Sign out | `own-leave-confirm` | 221 |
+| Sheet | Log out | `own-leave-sheet` | 215 |
+| Button | Log out | `own-leave-confirm` | 221 |
 | Stepper | `plural` | ``own-count-${kind}`` | 269 |
 | Button | Next | `own-next` | 290 |
 | TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 291 |
@@ -199,9 +199,9 @@ Shows: `AddPhotoSheet` · `FeedBrowser` · `FeedPetPicker` · `FeedBarRight` · 
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 183 |
-| EmptyState | No pets yet | — | 196 |
-| Pressable | Add photo | `feed-add-photo` | 234 |
+| EmptyState | Couldn't load your pets | — | 186 |
+| EmptyState | No pets yet | — | 199 |
+| Pressable | Add photo | `feed-add-photo` | 238 |
 
 ### `/owner/history` — [app/owner/history.tsx](../../frontend/app/owner/history.tsx)
 
@@ -373,10 +373,7 @@ Menu → Settings (Phase 11.11, D47): the account, What's New, notifications, Pr
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `settings-back` | 73 |
-| Sheet | Sign out? | `settings-log-out-sheet` | 125 |
-| Button | Sign out | `settings-log-out-confirm` | 127 |
-| Button | Cancel | **none** | 128 |
+| BackLink | — | `settings-back` | 72 |
 
 ### `/signup` — [app/(auth)/signup.tsx](../../frontend/app/(auth)/signup.tsx)
 
@@ -888,12 +885,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load the feed | — | 205 |
-| EmptyState | Nothing hidden | — | 207 |
-| EmptyState | No photos yet | — | 209 |
-| EmptyState | EMPTY_TITLE[filter as FeedFilterKey] | — | 211 |
-| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 234 |
-| Pressable | ``${tagLabel ?? "Photo"} at ${time}`` | ``feed-card-${post.id}`` | 359 |
+| EmptyState | Couldn't load Moments | — | 212 |
+| EmptyState | Nothing hidden | — | 214 |
+| EmptyState | No photos yet | — | 216 |
+| EmptyState | EMPTY_TITLE[filter as FeedFilterKey] | — | 218 |
+| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 241 |
+| Pressable | ``${tagLabel ?? "Photo"} at ${time}`` | ``feed-card-${post.id}`` | 366 |
 
 ### FeedDeleteSheet — [components/FeedDeleteSheet.tsx](../../frontend/components/FeedDeleteSheet.tsx)
 
@@ -973,14 +970,11 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `label` | `testID` | 138 |
-| Pressable | ``${name}, ${role.toLowerCase()} account. Menu`` | `open-menu` | 153 |
-| Pressable | Close menu | `header-menu-close` | 208 |
-| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 219 |
-| Pressable | — | `log-out` | 281 |
-| Pressable | Cancel sign out | `log-out-scrim` | 299 |
-| Button | Sign out | `log-out-confirm` | 333 |
-| Button | Cancel | `log-out-cancel` | 339 |
+| Pressable | `label` | `testID` | 79 |
+| Pressable | ``${name}, ${role.toLowerCase()} account. Menu`` | `open-menu` | 94 |
+| Pressable | Close menu | `header-menu-close` | 149 |
+| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 160 |
+| Pressable | — | `log-out` | 222 |
 
 ### HeadsUpSection — [components/HeadsUpSection.tsx](../../frontend/components/HeadsUpSection.tsx)
 
@@ -1183,7 +1177,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Tag | ``Sent to ${pet.ownerName} ✓`` | ``report-sent-${pet.id}`` | 352 |
-| Button | Write another report | ``report-another-${pet.id}`` | 367 |
+| Button | Write another page | ``report-another-${pet.id}`` | 367 |
 | Button | busy === "send" ? "Sending…" : `Send to ${pet.ownerName}` | ``report-send-${pet.id}`` | 405 |
 | TextButton | Fix a recorded value | ``report-edit-${pet.id}`` | 435 |
 | Sheet | Fix a recorded value | ``report-edit-sheet-${pet.id}`` | 437 |
@@ -1566,9 +1560,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load pets | — | 75 |
-| EmptyState | Share a moment | — | 80 |
-| Pressable | Add photo | `feed-add-photo` | 257 |
+| EmptyState | Couldn't load pets | — | 76 |
+| EmptyState | Share a moment | — | 81 |
+| Pressable | Add photo | `feed-add-photo` | 260 |
 
 ### NotificationsCenter — [features/notifications/NotificationsCenter.tsx](../../frontend/features/notifications/NotificationsCenter.tsx)
 
@@ -1652,18 +1646,18 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Sticker | — | 57 |
-| EmptyState | No pet in your care right now | — | 214 |
-| EmptyState | Add a pet first | — | 216 |
-| Pressable | Tap your pet to cut it out | `sticker-photo` | 247 |
-| Button | Save sticker | `sticker-save` | 297 |
-| TextButton | ⬇ Download sticker | `sticker-download` | 298 |
-| TextButton | Pick another photo | `sticker-pick-again` | 299 |
-| Button | photo ? "Pick another photo" : "Pick a photo" | `sticker-pick` | 302 |
-| Pressable | Download sticker | `sticker-tile-download` | 326 |
-| Pressable | Delete sticker | `sticker-delete` | 337 |
-| Sheet | Delete sticker | `sticker-delete-sheet` | 353 |
-| Button | Delete sticker | `sticker-delete-confirm` | 354 |
+| EmptyState | Sticker | — | 58 |
+| EmptyState | No pet in your care right now | — | 216 |
+| EmptyState | Add a pet first | — | 218 |
+| Pressable | Tap your pet to cut it out | `sticker-photo` | 249 |
+| Button | Save sticker | `sticker-save` | 299 |
+| TextButton | ⬇ Download sticker | `sticker-download` | 300 |
+| TextButton | Pick another photo | `sticker-pick-again` | 301 |
+| Button | photo ? "Pick another photo" : "Pick a photo" | `sticker-pick` | 304 |
+| Pressable | Download sticker | `sticker-tile-download` | 328 |
+| Pressable | Delete sticker | `sticker-delete` | 339 |
+| Sheet | Delete sticker | `sticker-delete-sheet` | 355 |
+| Button | Delete sticker | `sticker-delete-confirm` | 356 |
 
 ### TreatCheckScreen — [features/snap/TreatCheckScreen.tsx](../../frontend/features/snap/TreatCheckScreen.tsx)
 
@@ -1694,4 +1688,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-504 actions · 502 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+499 actions · 498 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

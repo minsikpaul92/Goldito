@@ -21,9 +21,9 @@ const SECTIONS: LegalSection[] = [
   {
     title: "3. AI suggestions and veterinary disclaimer",
     body: [
-      "Goldito provides AI-assisted drafts for chat replies, daily reports, care plans, and treat checks using NVIDIA Nemotron and open-source models.",
+      "Goldito provides AI-assisted drafts for chat replies, diary pages, care plans, and treat checks using NVIDIA Nemotron and open-source models.",
       "AI outputs are helpful suggestions and do not constitute veterinary, medical, or professional behavioral advice.",
-      "All AI-generated messages and daily reports require human review and approval before being sent, unless auto-send has been explicitly enabled.",
+      "All AI-generated messages and diary pages require human review and approval before being sent, unless auto-send has been explicitly enabled.",
     ],
   },
   {

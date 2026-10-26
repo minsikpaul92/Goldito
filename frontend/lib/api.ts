@@ -94,7 +94,7 @@ async function apiRequest<T>(method: "POST" | "DELETE", path: string, body?: unk
     data: { session },
   } = await getSupabase().auth.getSession();
   if (!session?.access_token) {
-    throw new ApiError("Sign in to continue.", 401, "unauthorized");
+    throw new ApiError("Log in to continue.", 401, "unauthorized");
   }
   const response = await fetch(`${base}${path.startsWith("/") ? path : `/${path}`}`, {
     method,

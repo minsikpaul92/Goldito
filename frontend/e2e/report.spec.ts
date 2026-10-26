@@ -158,7 +158,7 @@ test.describe("daily report", () => {
     const notes = Array.from({ length: 7 }, (_, i) => ({ id: `note-c${i}`, kind: "episode", label: `Moment ${i}`, source: "checkin", check: null, media_id: null }));
     const { reportRequests } = await openSitterDiary(page, notes);
     const screen = app(page);
-    await expect(screen.getByTestId(`report-too-many-${MAX.id}`)).toHaveText("Only 8 highlights fit in the report. Turn a few off.");
+    await expect(screen.getByTestId(`report-too-many-${MAX.id}`)).toHaveText("Only 8 highlights fit on the page. Turn a few off.");
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
     await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue(/lovely day with Max/);
     expect((reportRequests[0].chips as string[]).length).toBe(9);

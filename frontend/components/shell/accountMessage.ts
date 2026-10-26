@@ -12,8 +12,8 @@ export function isAccountMessage(data: unknown): data is AccountMessage {
   return typeof data === "object" && data !== null && (data as { type?: unknown }).type === ACCOUNT_MESSAGE;
 }
 
-/** "Paul · Owner", or "Not signed in". */
+/** "Paul · Owner", or "Not logged in". */
 export function accountLabel(account: FrameAccount | undefined): string {
-  if (!account) return "Not signed in";
+  if (!account) return "Not logged in";
   return `${account.name} · ${account.role === "owner" ? "Owner" : "Sitter"}`;
 }

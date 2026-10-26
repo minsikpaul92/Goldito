@@ -129,7 +129,7 @@ export async function signConsent(input: SignConsentInput): Promise<BookingConse
   if (!name) throw new Error("Enter your name to sign.");
 
   const { data: userData, error: userError } = await getSupabase().auth.getUser();
-  if (userError || !userData.user) fail("confirm you are signed in");
+  if (userError || !userData.user) fail("confirm you are logged in");
 
   const row = {
     booking_id: input.bookingId,

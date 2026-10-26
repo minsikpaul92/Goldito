@@ -288,7 +288,7 @@ test.describe("feed visibility (5.8)", () => {
     await expect(app(page).getByTestId("feed-add-share")).toHaveAttribute("aria-checked", "false");
     await expect(app(page).getByTestId("feed-add-save")).toContainText("Save, only you");
     await save(page);
-    await expect(app(page).getByTestId("toast")).toContainText("Saved just for you");
+    await expect(app(page).getByTestId("toast")).toContainText("Only you can see it");
     expect(calls.db.feed_posts[1]).toMatchObject({ visibility: "private", posted_by: SITTER.id });
   });
 
@@ -377,7 +377,7 @@ test.describe("feed visibility (5.8)", () => {
     await app(page).getByTestId("sample-walk").click();
     await expect(app(page).getByTestId("feed-add-share")).toHaveAttribute("aria-checked", "false");
     await save(page);
-    await expect(app(page).getByTestId("toast")).toContainText("Saved just for you");
+    await expect(app(page).getByTestId("toast")).toContainText("Only you can see it");
     expect(calls.sign[0]).toMatchObject({ pet_id: PET_ID, purpose: "feed" });
     const mine = calls.db.feed_posts.find((p) => p.posted_by === OWNER.id)!;
     expect(mine).toMatchObject({ visibility: "private", sitter_id: null });
@@ -414,7 +414,7 @@ test.describe("feed visibility (5.8)", () => {
     await expect(app(page).getByTestId("feed-add-share")).toHaveAttribute("aria-checked", "false");
     await expect(app(page).getByTestId("feed-add-share")).toBeDisabled();
     await save(page);
-    await expect(app(page).getByTestId("toast")).toContainText("Saved just for you");
+    await expect(app(page).getByTestId("toast")).toContainText("Only you can see it");
     expect(calls.db.feed_posts[0]).toMatchObject({ visibility: "private", posted_by: SITTER.id });
   });
 });

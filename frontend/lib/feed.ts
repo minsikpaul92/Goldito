@@ -150,7 +150,7 @@ function asTimelinePost(row: TimelineRow): FeedTimelinePost | null {
 export async function createFeedPost(input: CreateFeedPostInput): Promise<FeedPost> {
   const { data: userData, error: userError } = await getSupabase().auth.getUser();
   if (userError || !userData.user) {
-    throw new Error("Couldn't confirm you are signed in.");
+    throw new Error("Couldn't confirm you are logged in.");
   }
 
   const { data, error } = await getSupabase()
@@ -374,7 +374,7 @@ export async function listFeedPosts(
     .range(offset, offset + limit - 1);
 
   if (error) {
-    throw new Error("Couldn't load the feed. Check your connection and try again.");
+    throw new Error("Couldn't load Moments. Check your connection and try again.");
   }
 
   const rows = (data ?? []) as unknown as TimelineRow[];

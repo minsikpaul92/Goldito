@@ -15,14 +15,14 @@ export function describeAuthError(error: AuthErrorLike | null | undefined): stri
     return "Wrong email or password.";
   }
   if (code === "email_not_confirmed" || message.includes("email not confirmed")) {
-    return "Please confirm your email first, then sign in.";
+    return "Confirm your email first, then log in.";
   }
   if (
     code === "user_already_exists" ||
     code === "email_exists" ||
     message.includes("already registered")
   ) {
-    return "An account with this email already exists. Sign in instead.";
+    return "An account with this email already exists. Log in instead.";
   }
   if (code === "weak_password" || message.includes("password should be")) {
     return "Use a password with at least 6 characters.";

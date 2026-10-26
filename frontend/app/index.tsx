@@ -27,10 +27,10 @@ function ProfileError() {
       <EmptyState
         emoji="🐾"
         title={error ?? "Something went wrong."}
-        message="Check your connection and try again, or log out and sign in again."
+        message="Check your connection and try again, or log out and log in again."
         action={{ label: "Try again", onPress: reload }}
       />
-      <TextButton label="Sign out" onPress={() => void signOut()} testID="gate-logout" />
+      <TextButton label="Log out" onPress={() => void signOut()} testID="gate-logout" />
     </View>
   );
 }

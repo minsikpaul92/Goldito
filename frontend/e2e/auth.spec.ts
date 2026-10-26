@@ -175,7 +175,6 @@ test.describe("auth and role routing", () => {
 
     await screen.getByTestId("open-menu").click();
     await screen.getByTestId("log-out").click();
-    await screen.getByTestId("log-out-confirm").click();
     await expect(page).toHaveURL(/\/welcome$/);
     await page.goto("/login");
     await screen.getByTestId("demo-sitter").click();
@@ -184,7 +183,6 @@ test.describe("auth and role routing", () => {
     // The query does the same (desktop side panel, split view).
     await screen.getByTestId("open-menu").click();
     await screen.getByTestId("log-out").click();
-    await screen.getByTestId("log-out-confirm").click();
     await expect(page).toHaveURL(/\/welcome$/);
     await page.goto("/login?demo=owner");
     await expect(page).toHaveURL(/\/owner$/);
@@ -196,7 +194,6 @@ test.describe("auth and role routing", () => {
     await expect(page).toHaveURL(/\/owner$/);
     await app(page).getByTestId("open-menu").click();
     await app(page).getByTestId("log-out").click();
-    await app(page).getByTestId("log-out-confirm").click();
     await expect(page).toHaveURL(/\/welcome$/);
 
     await page.goto("/owner");
