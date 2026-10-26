@@ -29,6 +29,7 @@ import { downloadBlob, downloadFromUrl, stickerFilename } from "./download";
 import { PetChips, PetsState, Role, SnapPets } from "./SnapPets";
 import { PetSticker, deleteSticker, listStickers, saveSticker } from "./stickerApi";
 import { detectPets, loadFrames } from "./vision";
+import { useWords } from "../settings/playfulWords";
 
 type Step = "preparing" | "cutting" | "saving";
 type Photo = { frame: HTMLCanvasElement; url: string; aspect: number };
@@ -65,6 +66,7 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
   const styles = useThemedStyles(makeStyles);
   const errorDialog = useErrorDialog();
   const toast = useToast();
+  const words = useWords();
   const session = useSession();
   const me = session.status === "signedIn" ? session.profile.id : null;
   const photoRef = useRef<View>(null);
@@ -178,8 +180,8 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
       const file = new File([sticker.blob], "sticker.png", { type: "image/png" });
       const uploaded = await uploadMedia({ petId, purpose: "sticker", file, resourceType: "image" });
       await saveSticker(petId, uploaded.mediaId, me);
-      const name = pets.status === "ready" ? pets.pets.find((p) => p.id === petId)?.name : null;
-      toast.show(name ? `Paw-fect! Saved to ${name}'s stickers` : "Paw-fect! Sticker saved");
+      const pet = pets.status === "ready" ? pets.pets.find((p) => p.id === petId) : undefined;
+      toast.show(pet?.name ? words("stickerSaved", { pet }) : words("stickerSavedAny", { pet }));
       setSticker(null);
       setPhoto(null);
       setPoint(null);

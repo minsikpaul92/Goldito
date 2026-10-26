@@ -38,6 +38,13 @@ async function addSamplePhoto(page: Page) {
 }
 
 test.describe("photo caption", () => {
+  test("with Playful words off in Settings, the share toast is plain", async ({ page }) => {
+    await page.addInitScript(() => window.localStorage.setItem("goldito-playful-words", "false"));
+    await openSitterFeed(page, { status: 200, body: { caption: "Max on a walk", category: "walk", source: "ai", model: "m", latency_ms: 300 } });
+    await addSamplePhoto(page);
+    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
+  });
+
   test("the sitter only uploads: the model's caption and tag are saved, with a Writing a caption… step", async ({ page }) => {
     const { db, asked } = await openSitterFeed(page, {
       status: 200,

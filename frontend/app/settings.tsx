@@ -3,14 +3,12 @@ import { Redirect, router } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { Button } from "../components/ui/Button";
 import { Avatar } from "../components/ui/Avatar";
 import { BackLink } from "../components/ui/BackLink";
 import { List, ListRow } from "../components/ui/ListRow";
 import { LoadingView } from "../components/ui/LoadingView";
 import { Screen } from "../components/ui/Screen";
 import { ScreenHeader } from "../components/ui/ScreenHeader";
-import { Sheet } from "../components/ui/Sheet";
 import { useMyPets } from "../features/pets/useMyPets";
 import { loadCoverPhoto, photoThumb } from "../features/profile/profilePhotosApi";
 import { useNotificationPrefs } from "../features/settings/notificationPrefs";
@@ -18,6 +16,7 @@ import { useSession } from "../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 import { tokens } from "../theme/tokens";
+import { usePlayfulWords } from "../features/settings/playfulWords";
 
 /** The person's cover photo on a round ground, or their first letter when they have none (Figma: top right and the green block). */
 function Face({ profileId, name, background, color }: { profileId: string; name: string; background: string; color: string }) {
@@ -59,8 +58,8 @@ export default function SettingsScreen() {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const session = useSession();
-  const [confirmLogOut, setConfirmLogOut] = useState(false);
   const { prefs, setPref } = useNotificationPrefs();
+  const [playful, setPlayful] = usePlayfulWords();
   if (session.status === "loading") return <LoadingView />;
   if (session.status !== "signedIn") return <Redirect href="/welcome" />;
   const { profile } = session;
@@ -109,32 +108,38 @@ export default function SettingsScreen() {
       </Text>
       <List testID="settings-notifications">
         <ListRow title="Trip updates" subtitle="On the way, arrived" switchValue={prefs.trip} onSwitchChange={(on) => void setPref("trip", on)} />
-        <ListRow title="Daily notes and photos" switchValue={prefs.daily} onSwitchChange={(on) => void setPref("daily", on)} />
+        <ListRow title="Diary pages and photos" switchValue={prefs.daily} onSwitchChange={(on) => void setPref("daily", on)} />
         <ListRow title="Tips and news" switchValue={prefs.tips} onSwitchChange={(on) => void setPref("tips", on)} />
+      </List>
+
+      <Text accessibilityRole="header" style={[styles.heading, display ? { fontFamily: display } : null]}>
+        Words
+      </Text>
+      <List>
+        <ListRow
+          title="Playful words"
+          subtitle="Little puns in toasts and empty states. Safety, money and agreements always stay plain."
+          switchValue={playful}
+          onSwitchChange={setPlayful}
+          testID="settings-playful"
+        />
       </List>
 
       <List>
         <ListRow title="Terms of Service" onPress={() => router.push("/terms")} testID="settings-terms" />
         <ListRow title="Privacy" onPress={() => router.push("/privacy")} testID="settings-privacy" />
-        <ListRow title="Sign out" tone="danger" onPress={() => setConfirmLogOut(true)} testID="settings-log-out" />
+        <ListRow title="Log out" tone="danger" onPress={() => void session.signOut()} testID="settings-log-out" />
       </List>
       <Text style={styles.version} testID="settings-version">
         Goldito {version}
       </Text>
 
-      <Sheet visible={confirmLogOut} title="Sign out?" onClose={() => setConfirmLogOut(false)} testID="settings-log-out-sheet">
-        <View style={styles.confirm}>
-          <Button label="Sign out" variant="danger" onPress={() => void session.signOut()} testID="settings-log-out-confirm" />
-          <Button label="Cancel" variant="secondary" onPress={() => setConfirmLogOut(false)} />
-        </View>
-      </Sheet>
     </Screen>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    confirm: { gap: theme.spacing.sm },
     content: { gap: 12, paddingBottom: theme.spacing.xl },
     initial: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
     initialText: { fontSize: 14, fontWeight: "800" },

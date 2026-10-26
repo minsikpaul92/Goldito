@@ -59,7 +59,7 @@ export default function SitterHistory() {
         />
       ) : null}
       {state.status === "ready" && state.entries.length === 0 ? (
-        <EmptyState emoji="🕘" title="Nothing sent yet" message="Tasks you finish, check-ins and daily reports you send show up here." />
+        <EmptyState emoji="🕘" title="Nothing sent yet" message="Tasks you finish, check-ins and diary pages you send show up here." />
       ) : null}
       {state.status === "ready" ? <DiaryTimeline entries={state.entries} /> : null}
     </Screen>

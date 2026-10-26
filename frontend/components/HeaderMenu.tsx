@@ -1,10 +1,9 @@
 import { router } from "expo-router";
-import { ComponentProps, useEffect, useMemo, useRef, useState } from "react";
+import { ComponentProps, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
   Modal,
-  PanResponder,
   Pressable,
   StyleSheet,
   Text,
@@ -15,8 +14,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, IconName } from "./ui/Icon";
 import { Avatar } from "./ui/Avatar";
-import { Button } from "./ui/Button";
-import { sectionTitleStyle } from "./ui/SectionTitle";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { useNotifications } from "../providers/NotificationsProvider";
 import { useSession } from "../providers/SessionProvider";
@@ -27,7 +24,7 @@ const DURATION = 260;
 
 /**
  * Header menu (#147): your avatar opens a full-width drawer from the right, so the header shows who is signed in
- * (team pick, Oct 22). You → Profile, Notifications, Schedule (sitters), What's new, Settings, Sign out.
+ * (team pick, Oct 22). You → Profile, Notifications, Schedule (sitters), What's new, Settings, Log out (no confirm: it isn't destructive, U5).
  */
 export function HeaderMenu() {
   const theme = useTheme();
@@ -37,51 +34,7 @@ export function HeaderMenu() {
   const { profile, signOut } = useSession();
   const { unreadCount } = useNotifications();
   const [open, setOpen] = useState(false);
-  const [confirming, setConfirming] = useState(false);
   const slide = useRef(new Animated.Value(0)).current;
-  const confirmAnim = useRef(new Animated.Value(0)).current;
-  const dragY = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (confirming) {
-      dragY.setValue(0);
-    }
-  }, [confirming, dragY]);
-
-  const pan = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_e, g) =>
-          g.dy > 2 && Math.abs(g.dy) > Math.abs(g.dx),
-        onPanResponderMove: (_e, g) => dragY.setValue(Math.max(0, g.dy)),
-        onPanResponderRelease: (_e, g) => {
-          if (g.dy > 60 || g.vy > 0.5) {
-            Animated.timing(dragY, {
-              toValue: 360,
-              duration: 160,
-              useNativeDriver: true,
-            }).start(() => {
-              setConfirming(false);
-              dragY.setValue(0);
-            });
-          } else {
-            Animated.spring(dragY, {
-              toValue: 0,
-              useNativeDriver: true,
-              bounciness: 0,
-            }).start();
-          }
-        },
-        onPanResponderTerminate: () =>
-          Animated.spring(dragY, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 0,
-          }).start(),
-      }),
-    [dragY],
-  );
 
   useEffect(() => {
     if (!open) return;
@@ -94,15 +47,6 @@ export function HeaderMenu() {
     }).start();
   }, [open, slide]);
 
-  useEffect(() => {
-    Animated.timing(confirmAnim, {
-      toValue: confirming ? 1 : 0,
-      duration: confirming ? 220 : 160,
-      easing: confirming ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-  }, [confirming, confirmAnim]);
-
   // Slides back out, then unmounts; `then` runs after (e.g. navigate).
   const close = (then?: () => void) => {
     Animated.timing(slide, {
@@ -112,9 +56,6 @@ export function HeaderMenu() {
       useNativeDriver: true,
     }).start(() => {
       setOpen(false);
-      setConfirming(false);
-      confirmAnim.setValue(0);
-      dragY.setValue(0);
       then?.();
     });
   };
@@ -280,70 +221,13 @@ export function HeaderMenu() {
 
             <Pressable
               accessibilityRole="button"
-              onPress={() => setConfirming(true)}
+              onPress={() => close(() => void signOut())}
               style={({ pressed }) => [styles.row, pressed && styles.pressed]}
               testID="log-out"
             >
               <Icon name="logOut" size={24} color={theme.color.textMuted} />
-              <Text style={[styles.rowLabel, styles.mutedLabel]}>Sign out</Text>
+              <Text style={[styles.rowLabel, styles.mutedLabel]}>Log out</Text>
             </Pressable>
-          </View>
-
-          <View
-            pointerEvents={confirming ? "auto" : "none"}
-            style={[StyleSheet.absoluteFill, styles.confirmContainer]}
-          >
-            <Animated.View
-              style={[styles.confirmScrim, { opacity: confirmAnim }]}
-            >
-              <Pressable
-                style={StyleSheet.absoluteFill}
-                onPress={() => setConfirming(false)}
-                accessibilityLabel="Cancel sign out"
-                testID="log-out-scrim"
-              />
-            </Animated.View>
-            <Animated.View
-              style={[
-                styles.confirmSheet,
-                {
-                  paddingBottom: insets.bottom + theme.spacing.md,
-                  transform: [
-                    {
-                      translateY: Animated.add(
-                        confirmAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [360, 0],
-                        }),
-                        dragY,
-                      ),
-                    },
-                  ],
-                },
-              ]}
-            >
-              <View {...pan.panHandlers} style={styles.handleArea}>
-                <View style={styles.handle} />
-              </View>
-              <Text style={styles.confirmTitle}>Sign out?</Text>
-              <Text style={styles.confirmMessage}>
-                Are you sure you want to sign out?
-              </Text>
-              <View style={styles.confirmButtons}>
-                <Button
-                  label="Sign out"
-                  variant="danger"
-                  onPress={() => close(() => void signOut())}
-                  testID="log-out-confirm"
-                />
-                <Button
-                  label="Cancel"
-                  variant="secondary"
-                  onPress={() => setConfirming(false)}
-                  testID="log-out-cancel"
-                />
-              </View>
-            </Animated.View>
           </View>
         </Animated.View>
       </Modal>
@@ -430,58 +314,5 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.small,
       fontWeight: theme.fontWeight.bold,
       color: theme.color.onMedia,
-    },
-    confirmContainer: { zIndex: 10 },
-    confirmScrim: {
-      position: "absolute",
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-      backgroundColor: theme.color.overlay,
-    },
-    confirmSheet: {
-      position: "absolute",
-      bottom: 0,
-      left: 0,
-      right: 0,
-      backgroundColor: theme.color.surface,
-      borderTopLeftRadius: theme.radius.xl,
-      borderTopRightRadius: theme.radius.xl,
-      paddingHorizontal: theme.spacing.md,
-      paddingTop: theme.spacing.sm,
-      gap: theme.spacing.md,
-      borderTopWidth: 1,
-      borderTopColor: theme.color.border,
-      shadowColor: theme.color.text,
-      shadowOffset: { width: 0, height: -4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 8,
-    },
-    handleArea: {
-      alignSelf: "stretch",
-      alignItems: "center",
-      justifyContent: "center",
-      paddingTop: theme.spacing.xs,
-      paddingBottom: theme.spacing.sm,
-      cursor: "pointer",
-    },
-    handle: {
-      width: 40,
-      height: 4,
-      borderRadius: theme.radius.pill,
-      backgroundColor: theme.color.borderStrong,
-    },
-    confirmTitle: {
-      ...sectionTitleStyle(theme),
-    },
-    confirmMessage: {
-      fontSize: theme.fontSize.body,
-      color: theme.color.textMuted,
-    },
-    confirmButtons: {
-      gap: theme.spacing.sm,
-      paddingTop: theme.spacing.xs,
     },
   });

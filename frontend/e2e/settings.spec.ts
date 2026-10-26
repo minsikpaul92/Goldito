@@ -68,6 +68,20 @@ for (const user of [OWNER, SITTER]) {
     await page.reload();
     await expect(screen.getByRole("switch", { name: "Trip updates" })).toHaveAttribute("aria-checked", "false");
     await expect(screen.getByRole("switch", { name: "Tips and news" })).toHaveAttribute("aria-checked", "true");
-    await expect(screen.getByRole("switch", { name: "Daily notes and photos" })).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByRole("switch", { name: "Diary pages and photos" })).toHaveAttribute("aria-checked", "true");
+  });
+
+  test(`${user.role}: Settings → Playful words starts on, turns off and stays off after a reload`, async ({ page }) => {
+    await mockSupabase(page, [OWNER, SITTER]);
+    await signIn(page, user);
+    const screen = app(page);
+    await screen.getByTestId("open-menu").click();
+    await screen.getByTestId("open-settings").click();
+    const playful = screen.getByRole("switch", { name: "Playful words" });
+    await expect(playful).toHaveAttribute("aria-checked", "true");
+    await playful.click();
+    await expect(playful).toHaveAttribute("aria-checked", "false");
+    await page.reload();
+    await expect(screen.getByRole("switch", { name: "Playful words" })).toHaveAttribute("aria-checked", "false");
   });
 }

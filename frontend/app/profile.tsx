@@ -292,7 +292,7 @@ export default function ProfileScreen() {
   if (loadError) {
     return (
       <Screen>
-        <EmptyState emoji="🐾" title="Couldn't load your profile" message={loadError} />
+        <EmptyState emoji="🐾" title="Couldn't load your profile" message="Check your connection and try again." />
       </Screen>
     );
   }
@@ -670,7 +670,7 @@ export default function ProfileScreen() {
               }
               setAiReplyMode(mode, false)
                 .then(setAiMode)
-                .catch((e: Error) => toast.show(e.message, { tone: "error" }));
+                .catch(() => toast.show("Couldn't change auto-send. Try again.", { tone: "error" }));
             }}
             testID="profile-ai-mode"
           />
@@ -706,7 +706,7 @@ export default function ProfileScreen() {
                 setAiMode(next);
                 setConsenting(false);
               })
-              .catch((e: Error) => toast.show(e.message, { tone: "error" }));
+              .catch(() => toast.show("Couldn't change auto-send. Try again.", { tone: "error" }));
           }}
           testID="ai-consent-confirm"
         />
