@@ -142,7 +142,7 @@ test.describe("meet & greet", () => {
       meet_greet_proposed_by: SITTER.id,
     });
     const screen = await openDetail(page, OWNER);
-    await expect(screen.getByTestId("meet-greet")).toContainText("Video · Oct 4, 7:00 PM");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Online · Oct 4, 7:00 PM");
     await expect(screen.getByTestId("meet-greet")).toContainText("No Google Meet link yet");
     // #229: a video call has nothing to go over together.
     await expect(screen.getByTestId("meet-greet")).not.toContainText("Go over together");
@@ -201,8 +201,8 @@ test.describe("meet & greet", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, { sitter_interest_at: null, meet_greet_due_at: null });
     const screen = await openDetail(page, OWNER);
-    await expect(screen.getByTestId("meet-request")).toHaveText("Request Meet & Greet");
-    await expect(screen.getByTestId("meet-skip")).toHaveText("Skip Meet & Greet");
+    await expect(screen.getByTestId("meet-request")).toHaveText("Request");
+    await expect(screen.getByTestId("meet-skip")).toHaveText("Skip");
     await expect(screen.getByTestId("hold-note")).toHaveCount(0);
 
     await screen.getByTestId("meet-request").click();

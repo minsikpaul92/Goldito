@@ -301,7 +301,7 @@ test.describe("the + menu", () => {
     await screen.getByTestId("chat-plus").click();
     await expect(screen.getByTestId("chat-plus-trip")).toBeDisabled();
     await expect(screen.getByTestId("chat-plus-photo")).toHaveCount(0);
-    await expect(screen.getByTestId("chat-plus-quote")).toBeDisabled(); // this chat has no stay card to price
+    await expect(screen.getByTestId("chat-plus-quote")).toHaveCount(0); // the first quote is gone: only a final quote has a + entry
   });
 
   test("Photo request in the menu asks for a photo while the pet is in care", async ({ page }) => {

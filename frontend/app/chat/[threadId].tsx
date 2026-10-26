@@ -536,7 +536,7 @@ export default function Chat() {
     return (
       <View key={m.id} style={c.type === "payment" && !(b.status === "cancelled" || b.status === "declined") ? [styles.cardRow, owner ? styles.cardMine : styles.cardTheirs] : styles.cardWide}>
         {c.type === "meet_greet" ? (
-          <MeetGreetCard ref={current ? meetCard : undefined} booking={b} viewer={header.myRole} onChanged={load} />
+          <MeetGreetCard ref={current ? meetCard : undefined} booking={b} viewer={header.myRole} onChanged={load} inChat />
         ) : c.type === "agreement" ? (
           <ChatAgreementCard booking={b} />
         ) : (
@@ -633,7 +633,7 @@ export default function Chat() {
         {messages.slice(stayAfter).map(renderMessage)}
         {booking && booking.meetGreetStatus !== "not_needed" && messages.some((m) => m.card?.type === "meet_greet" && m.card.bookingId === booking.id) && !(booking.meetGreetStatus === "required" && !booking.sitterInterestAt) ? (
           <View style={styles.cardWide}>
-            <MeetGreetCard ref={meetCard} booking={booking} viewer={header.myRole} onChanged={load} />
+            <MeetGreetCard ref={meetCard} booking={booking} viewer={header.myRole} onChanged={load} inChat />
           </View>
         ) : null}
         {booking && !["requested", "meet_greet"].includes(booking.stage) ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
