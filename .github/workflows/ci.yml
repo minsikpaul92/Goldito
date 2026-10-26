@@ -124,8 +124,15 @@ jobs:
         run: npm ci
       - name: What's New matches docs/CHANGELOG.md
         run: node scripts/changelog.mjs --check && node --test scripts/
-      - name: Screen map matches the code (docs/design/screen-map.md)
-        run: node scripts/screen-map.mjs --check
+      - name: Build the screen map (not committed; attached to the run)
+        run: node scripts/screen-map.mjs
+      - name: Upload the screen map
+        if: matrix.shard == 1
+        uses: actions/upload-artifact@v4
+        with:
+          name: screen-map
+          path: docs/design/screen-map.md
+          retention-days: 14
       - name: Art module matches the .svg files (assets/art)
         run: node scripts/art.mjs --check
       - name: Design tokens (no new raw colours, font sizes or emoji labels; design site ds-status.html)
