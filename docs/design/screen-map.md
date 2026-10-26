@@ -41,7 +41,7 @@ Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreement
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
-Shows: `Art` · `BrandLogo` · `OrDivider` · `SocialSignIn`
+Shows: `BrandLogo` · `OrDivider` · `RoleArt` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
@@ -604,10 +604,10 @@ Shows: `Art` · `BrandLogo` · `DemoSheet` · `SocialSignIn`
 | Button | Try the demo | `welcome-demo` | 40 |
 | Button | Create account | `welcome-create` | 42 |
 | TextButton | Sign up with email | `welcome-sign-up` | 46 |
-| TextButton | Log in | `welcome-sign-in` | 47 |
-| Pressable | — | `welcome-privacy` | 50 |
-| Pressable | — | `welcome-terms` | 56 |
-| Pressable | How it works, three short pages | `welcome-how` | 88 |
+| TextButton | Log in | `welcome-sign-in` | 48 |
+| Pressable | — | `welcome-privacy` | 51 |
+| Pressable | — | `welcome-terms` | 57 |
+| Pressable | How it works, three short pages | `welcome-how` | 89 |
 
 ### `/welcome/how` — [app/(public)/welcome/how.tsx](../../frontend/app/(public)/welcome/how.tsx)
 
@@ -617,11 +617,11 @@ Shows: `Art` · `DemoSheet`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Try the demo | `how-demo` | 126 |
-| Button | Create account | `how-create` | 127 |
-| Button | Next | `how-next` | 135 |
-| BackLink | — | `how-back` | 144 |
-| TextButton | Skip | `how-skip` | 148 |
+| Button | Try the demo | `how-demo` | 128 |
+| Button | Create account | `how-create` | 129 |
+| Button | Next | `how-next` | 137 |
+| BackLink | — | `how-back` | 146 |
+| TextButton | Skip | `how-skip` | 150 |
 
 ### `/welcome/owner` — [app/(public)/welcome/owner.tsx](../../frontend/app/(public)/welcome/owner.tsx)
 
@@ -1418,8 +1418,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Continue with Apple | ``${testID}-apple`` | 30 |
-| Button | Continue with Google | ``${testID}-google`` | 37 |
+| Button | Apple | ``${testID}-apple`` | 31 |
+| Button | Google | ``${testID}-google`` | 40 |
 
 ### BigOption — [components/ownerOnboarding/BigOption.tsx](../../frontend/components/ownerOnboarding/BigOption.tsx)
 

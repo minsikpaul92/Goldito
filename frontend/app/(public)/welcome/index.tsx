@@ -5,7 +5,7 @@ import { Animated, Easing, Image, ImageSourcePropType, Pressable, StyleSheet, Te
 import { Art } from "../../../components/art/Art";
 import { BrandLogo } from "../../../components/BrandLogo";
 import { DemoSheet } from "../../../components/intro/DemoSheet";
-import { SocialSignIn } from "../../../components/intro/SocialSignIn";
+import { SocialSignIn, isSocialSignInShown } from "../../../components/intro/SocialSignIn";
 import { Button } from "../../../components/ui/Button";
 import { Icon } from "../../../components/ui/Icon";
 import { Screen } from "../../../components/ui/Screen";
@@ -44,6 +44,7 @@ export default function WelcomeLanding() {
       <SocialSignIn testID="welcome-social" />
       <View style={styles.links}>
         <TextButton label="Sign up with email" onPress={() => router.push("/signup")} testID="welcome-sign-up" />
+        <View style={styles.linkRule} />
         <TextButton label="Log in" onPress={() => router.push("/login")} testID="welcome-sign-in" />
       </View>
       <View style={styles.legal}>
@@ -65,7 +66,7 @@ export default function WelcomeLanding() {
       <Screen contentStyle={styles.content} footer={footer}>
         <BrandLogo height={26} testID="welcome-brand" />
 
-        <View style={styles.hero}>
+        <View style={[styles.hero, isSocialSignInShown && styles.heroShort]}>
           <View style={styles.sun} />
           <View style={styles.ground} />
           <View style={styles.tag}>
@@ -77,8 +78,8 @@ export default function WelcomeLanding() {
               <Image source={s.src} style={{ width: s.size, height: s.size }} resizeMode="contain" aria-hidden />
             </Bob>
           ))}
-          <Image source={MAX} style={styles.max} resizeMode="contain" accessibilityLabel={`${pets[0]}, a white dog`} />
-          <Image source={MOCHI} style={styles.mochi} resizeMode="contain" accessibilityLabel={`${pets[1]}, an orange cat`} />
+          <Image source={MAX} style={[styles.max, isSocialSignInShown && styles.maxShort]} resizeMode="contain" accessibilityLabel={`${pets[0]}, a white dog`} />
+          <Image source={MOCHI} style={[styles.mochi, isSocialSignInShown && styles.mochiShort]} resizeMode="contain" accessibilityLabel={`${pets[1]}, an orange cat`} />
         </View>
 
         <Text accessibilityRole="header" style={styles.title}>
@@ -139,6 +140,10 @@ const makeStyles = (theme: Theme) => {
       backgroundColor: theme.color.blockMint,
       overflow: "hidden",
     },
+    // Apple and Google take a row in the footer; a shorter picture keeps How it works in view.
+    heroShort: { height: 96 },
+    maxShort: { width: 54, height: 74, bottom: 6 },
+    mochiShort: { width: 92, height: 48, bottom: 8 },
     sun: {
       position: "absolute",
       width: 180,
@@ -196,7 +201,8 @@ const makeStyles = (theme: Theme) => {
     howSub: { fontSize: theme.fontSize.small, color: theme.color.text },
     pressed: { opacity: 0.6 },
     footer: { gap: theme.spacing.sm },
-    links: { flexDirection: "row", justifyContent: "space-between" },
+    links: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: theme.spacing.sm },
+    linkRule: { width: 1, height: 18, backgroundColor: theme.color.border },
     legal: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: theme.spacing.xs, marginTop: -theme.spacing.sm },
     legalLink: { minHeight: 44, justifyContent: "center", paddingHorizontal: theme.spacing.xs },
     legalText: { fontSize: theme.fontSize.caption + 1, color: theme.color.textMuted },
