@@ -71,6 +71,7 @@ Every Figma variable carries its code name as **code syntax** (Figma uses kebab-
 | Toast | `providers/ToastProvider.tsx` (`useToast()`) | ✅ |
 | Logo (brand site) | `components/BrandLogo.tsx` + `assets/brand/` · favicon in `app.json` | ✅ |
 | Booking Card / Stage Card | `components/BookingCard.tsx`, `components/BookingStageBar.tsx` (steps Request · M&G · Confirm · Pay · Care; a small word under a step: Scheduled, Trip, Skipped, #237) | ✅ |
+| Booking Ticket | `components/BookingTicket.tsx`: the stay's big card (dates, the five steps, drop-off and pick-up, paid). It lives on **Home** for owners and sitters (the stay in care, else the next paid one, `homeStay`); the Bookings tab lists every booking as a `BookingCard` row (Oct 25) | ✅ |
 | Stay Summary Card | `components/StaySummaryCard.tsx` | ✅ |
 | Latest Update Row | `components/home/LatestCard.tsx` | ✅ |
 | Pet Mini Card | `components/PetCard.tsx` | ✅ |
@@ -593,10 +594,13 @@ Public intro for **signed-out** visitors (`/welcome`, `/welcome/how`, `/login`, 
 | :--- | :--- |
 | Who sees it | **Signed-out only.** `(public)` layout redirects signed-in users away. After **Sign out**, Welcome shows again (OB.1). **`intro_seen` skip (OB.4) is deferred** — keep showing Welcome for judges; do not block Phase 04. |
 | Boot | While the session loads, `BootView`: the four-print paw walk (`PawWalk`) with the coin and Goldito under it, never a bare spinner. The pet setup finish is meant to reuse the same walk (not built yet). |
-| Welcome | Max and Mochi on a mint block, the tagline, then **Try the demo** as the one primary button (opens `DemoSheet`: who to be), then Sign up with email and Log in as text buttons. Without a demo password the primary is Create account. |
+| Welcome | Max and Mochi on a mint block, the tagline, a butter **How it works** card (art, "Three short pages, about a minute", chevron) so a first-time visitor sees where to learn more, then **Try the demo** as the one primary button (opens `DemoSheet`: who to be), then Sign up with email and Log in as text buttons, and a small Privacy · Terms line. Without a demo password the primary is Create account. |
 | How it works | Three pages (the problem, two sides, one stay) drawn with the app's own art and demo photos; Next, Skip and Back; the last page offers Try the demo and Create account. No placeholder boxes. |
-| Sign up | Three steps under one `StepHeader` (who you are, name and email, password); Back steps back and keeps what was typed, then leaves. Terms and Privacy are links. |
-| Apple / Google | `SocialSignIn` stays hidden until they work (`EXPO_PUBLIC_SOCIAL_SIGN_IN=1` shows them); a judge never taps a "Coming soon" button. |
+| Sign up | Three steps under one `StepHeader` (who you are, name and email, password); its Back is the chevron plus the word Back, like `BackLink` (§7.8). Back steps back and keeps what was typed, then leaves. Terms and Privacy are links. |
+| Demo roles | The demo sheet and the Log in demo tiles show what each side gets (`RoleArt`): the owner's home with a photo of Max arriving; the sitter with Max and Mochi and the camera. |
+| How it works 2 | Chloe's checks reach Robert along a dashed line with a "Goldito sends the update" pill on it, the step Goldito takes for them. |
+| Apple / Google | `SocialSignIn` stays hidden until they work; when shown, Apple and Google share one row of two so Welcome keeps How it works in view (`EXPO_PUBLIC_SOCIAL_SIGN_IN=1` shows them); a judge never taps a "Coming soon" button. |
+| Privacy and Terms | One `LegalPage`: `BackLink`, `ScreenHeader` (title, Last updated), then one `Collapsible` card per section, one open at a time. No native header on top of it. Welcome links to both from a small caption line under the buttons. |
 
 ### 7.10 Dates and times
 

@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Art } from "../../components/art/Art";
+import { RoleArt } from "../../components/intro/RoleArt";
 import { SocialSignIn } from "../../components/intro/SocialSignIn";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -136,7 +136,7 @@ export default function SignupScreen() {
         <Text style={styles.subtitle}>You can add the other side later.</Text>
         <View accessibilityRole="radiogroup" style={styles.roles}>
           <RoleOption
-            art="owner/pet-dog"
+            role="owner"
             title="I'm a pet owner"
             body="Book a sitter and get updates without asking."
             selected={role === "owner"}
@@ -145,7 +145,7 @@ export default function SignupScreen() {
             testID="role-owner"
           />
           <RoleOption
-            art="sitter/five-second"
+            role="sitter"
             title="I'm a pet sitter"
             body="Care, snap, tap. Goldito writes the day."
             selected={role === "sitter"}
@@ -332,7 +332,7 @@ export default function SignupScreen() {
 }
 
 type RoleOptionProps = {
-  art: "owner/pet-dog" | "sitter/five-second";
+  role: Role;
   title: string;
   body: string;
   selected: boolean;
@@ -341,9 +341,9 @@ type RoleOptionProps = {
   testID: string;
 };
 
-/** A role as a big colored card with a radio dot (peach for owners, mint for sitters, like the demo tiles). */
+/** A role as a big colored card with a radio dot (peach for owners, mint for sitters) and the same picture as the demo sheet. */
 function RoleOption({
-  art,
+  role,
   title,
   body,
   selected,
@@ -364,7 +364,7 @@ function RoleOption({
       ]}
       testID={testID}
     >
-      <Art name={art} size={56} />
+      <RoleArt role={role} size={60} />
       <View style={styles.roleText}>
         <Text style={styles.roleTitle}>{title}</Text>
         <Text style={styles.roleBody}>{body}</Text>

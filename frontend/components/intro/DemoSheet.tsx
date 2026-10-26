@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Art } from "../art/Art";
+import { RoleArt } from "./RoleArt";
 import { Sheet } from "../ui/Sheet";
 import { DEFAULT_DEMO_SET } from "../../lib/demo";
 import { Role } from "../../providers/SessionProvider";
@@ -34,7 +34,7 @@ export function DemoSheet({ visible, onClose }: Props) {
           style={({ pressed }) => [styles.option, styles.owner, pressed && styles.pressed]}
           testID="demo-sheet-owner"
         >
-          <Art name="owner/pet-dog" size={56} />
+          <RoleArt role="owner" size={76} />
           <View style={styles.text}>
             <Text style={styles.title}>{`${owner.name}, the owner`}</Text>
             <Text style={styles.sub}>{`${petNames} are with ${sitter.name} this weekend. Follow the stay from home.`}</Text>
@@ -46,7 +46,7 @@ export function DemoSheet({ visible, onClose }: Props) {
           style={({ pressed }) => [styles.option, styles.sitter, pressed && styles.pressed]}
           testID="demo-sheet-sitter"
         >
-          <Art name="sitter/five-second" size={56} />
+          <RoleArt role="sitter" size={76} />
           <View style={styles.text}>
             <Text style={styles.title}>{`${sitter.name}, the sitter`}</Text>
             <Text style={styles.sub}>{`${petNames} are staying with you. Check in, snap a photo, done.`}</Text>

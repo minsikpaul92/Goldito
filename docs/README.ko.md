@@ -29,7 +29,7 @@ AI 에이전트가 답하고, 정리하고, 확인하고, 써 주니 시터는 �
 ## 60초 만에 써 보기
 
 > [!TIP]
-> 설치 없이: **[goldito-petcare.vercel.app](https://goldito-petcare.vercel.app)** 을 열고 **Try demo → Owner**(또는 **Sitter**)를 누르세요. 가입도 비밀번호도 필요 없습니다 — 데모 계정과 반려동물은 모두 가상입니다.
+> 설치 없이: **[goldito-petcare.vercel.app](https://goldito-petcare.vercel.app)** 을 열고 **Try the demo**를 누르고 **Robert, the owner**(또는 **Chloe, the sitter**)를 고르세요. 가입도 비밀번호도 필요 없습니다 — 데모 계정과 반려동물은 모두 가상입니다.
 
 1. 컴퓨터에서는 앱이 폰 프레임 안에서 돌아갑니다: **클릭 = 탭, 드래그·스크롤 = 스와이프**. 샘플 사진이 내장돼 있어 카메라가 없어도 됩니다.
 2. 다른 역할은 시크릿 창에서 열면 한 번의 돌봄을 양쪽에서 볼 수 있습니다.
@@ -306,7 +306,7 @@ cd frontend && cp .env.example .env            # EXPO_PUBLIC_API_URL=http://loca
 npm install && npx expo start --web --port 8081
 ```
 
-`http://localhost:8081`을 열고 **Try demo**를 누르세요. 테스트: `backend/`에서 `pytest -q`, `frontend/`에서 Playwright(해당 README 참고).
+`http://localhost:8081`을 열고 **Try the demo**를 누르세요. 테스트: `backend/`에서 `pytest -q`, `frontend/`에서 Playwright(해당 README 참고).
 
 | 경로 | 문서 |
 | :--- | :--- |

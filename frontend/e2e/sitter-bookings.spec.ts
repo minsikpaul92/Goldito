@@ -134,7 +134,7 @@ test.describe("sitter requests", () => {
     await page.goto("/owner/bookings");
     const screen = app(page);
     await expect(screen.getByTestId("your-bookings")).toBeVisible();
-    await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("Ask");
+    await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("Requested");
     const yours = await screen.getByTestId("your-bookings").boundingBox();
     const find = await screen.getByTestId("find-sitter").boundingBox();
     expect(yours!.y).toBeLessThan(find!.y);
@@ -158,10 +158,8 @@ test.describe("sitter requests", () => {
     await expect(card).toContainText("Robert");
     await expect(card).toContainText("Custom time, needs your OK");
     await expect(card).toContainText("Meet first");
-    await expect(card).toContainText("Drop-off · Robert drives");
-    await expect(card).toContainText("7:00 AM");
-    await expect(card).toContainText("Pick-up · you drive");
-    await expect(card).toContainText("5:00 PM");
+    // Bookings is a plain list since Oct 25 (the ticket with the times is on Home): who drives each way.
+    await expect(card).toContainText("Robert drives over · You bring them home");
 
     await card.click();
     await expect(page).toHaveURL(new RegExp(`/sitter/bookings/${BOOKING}$`));

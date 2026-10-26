@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { BookingCard } from "../../../components/BookingCard";
-import { BookingTicket } from "../../../components/BookingTicket";
 import { PhotoViewerSheet } from "../../../components/PhotoViewerSheet";
 import { SitterResultCard } from "../../../components/SitterResultCard";
 import { SitterSearchBar } from "../../../components/SitterSearchBar";
@@ -169,13 +168,10 @@ export default function OwnerBookings() {
         <Text style={styles.hint}>{open === "past" ? "No past stays." : open === "upcoming" ? "Nothing paid and coming up." : "Nothing waiting."}</Text>
       ) : (
         <View style={styles.rows}>
-          {listed.map((booking) =>
-            open === "past" ? (
-              <BookingCard key={booking.id} booking={booking} viewer="owner" onPress={() => router.push(`/owner/bookings/${booking.id}`)} />
-            ) : (
-              <BookingTicket key={booking.id} booking={booking} viewer="owner" onPress={() => router.push(`/owner/bookings/${booking.id}`)} />
-            ),
-          )}
+          {/* A plain list: the big ticket for the stay that's on is on Home (Oct 25). */}
+          {listed.map((booking) => (
+            <BookingCard key={booking.id} booking={booking} viewer="owner" onPress={() => router.push(`/owner/bookings/${booking.id}`)} />
+          ))}
         </View>
       )}
       <Button label="Book care" onPress={() => scroller.current?.scrollTo({ y: searchY.current, animated: true })} style={styles.bookCare} testID="book-care" />
