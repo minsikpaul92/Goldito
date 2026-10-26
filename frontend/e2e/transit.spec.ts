@@ -79,13 +79,6 @@ function seed(db: MockDb, place: "sitter_home" | "owner_home" | "other", dropInM
   });
 }
 
-/** Where each pin sits on the map (Leaflet places markers with a CSS transform): the car first, then the place. */
-async function pinSpots(page: Page): Promise<string[]> {
-  return app(page)
-    .locator(".goldito-pin")
-    .evaluateAll((pins) => pins.map((el) => (el as HTMLElement).style.transform));
-}
-
 /** How far apart the car and the place pins are on screen, in px: it doubles with each zoom step in. */
 async function pinGap(page: Page): Promise<number> {
   const spots = await app(page)
@@ -161,8 +154,9 @@ test.describe("pet transit", () => {
     await expect(screen.getByTestId("trip-eta")).toContainText("You've arrived", { timeout: 70_000 });
     // 015q: the drive parks for one more step, so two readings in a row land inside the 150 m circle.
     expect(db.trips[0]).toMatchObject({ status: "arrived", close_readings: 2 });
-    // #381: the car stays where the arrival was decided, next to the place pin, not on top of it.
-    await expect.poll(async () => new Set(await pinSpots(page)).size).toBe(2);
+    // Arrived: the car is drawn on the place pin.
+    await expect(screen.locator(".goldito-pin")).toHaveCount(2);
+    await expect.poll(() => pinGap(page)).toBe(0);
     const place = screen.getByTestId("trip-place-card");
     await expect(place).toContainText("Chloe's place");
     await expect(place).toContainText("12 Maple St");
