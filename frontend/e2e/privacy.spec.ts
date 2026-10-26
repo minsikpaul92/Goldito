@@ -6,12 +6,11 @@ import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 // Privacy page (10.11): public, so the Google consent screen and a signed-out visitor can read it.
 
 test.describe("privacy page", () => {
-  test("opens signed out from Welcome and lists what is stored and who else receives it", async ({ page }) => {
+  test("opens signed out and lists what is stored and who else receives it", async ({ page }) => {
     await mockSupabase(page, [OWNER, SITTER]);
-    await page.goto("/welcome");
+    await page.goto("/privacy");
     const screen = app(page);
 
-    await screen.getByTestId("welcome-privacy").click();
     await expect(page).toHaveURL(/\/privacy$/);
     await expect(screen.getByTestId("privacy")).toContainText("Last updated");
     // "What this is" is open first; the others are closed but still in the page.

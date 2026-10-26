@@ -101,6 +101,7 @@ test.describe("auth and role routing", () => {
     await signup.getByTestId("signup-email").fill("chloe@goldito.test");
     await signup.getByTestId("signup-next").click();
     await signup.getByTestId("signup-password").fill("care-snap-tap");
+    await signup.getByTestId("signup-confirm").fill("care-snap-tap");
     await signup.getByRole("button", { name: "Create account" }).click();
 
     await expect(page).toHaveURL(/\/sitter$/);
@@ -146,6 +147,13 @@ test.describe("auth and role routing", () => {
     await screen.getByTestId("signup-password").fill("max");
     await screen.getByRole("button", { name: "Create account" }).click();
     await expect(screen.getByTestId("signup-error")).toHaveText("Use a password with at least 6 characters.");
+    expect(signups).toHaveLength(0);
+
+    // Two different passwords do not sign up.
+    await screen.getByTestId("signup-password").fill("max-and-mochi");
+    await screen.getByTestId("signup-confirm").fill("max-and-mochj");
+    await screen.getByRole("button", { name: "Create account" }).click();
+    await expect(screen.getByTestId("signup-error")).toHaveText("Passwords don't match.");
     expect(signups).toHaveLength(0);
 
     // Back walks the steps, keeping what was typed, then leaves.

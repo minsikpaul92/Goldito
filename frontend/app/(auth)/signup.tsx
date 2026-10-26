@@ -55,13 +55,20 @@ export default function SignupScreen() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const strength = passwordStrength(password);
-  const nameDone = firstName.trim() !== "" && lastName.trim() !== "" && email.trim() !== "";
-  const canSubmit = isSupabaseConfigured && role !== null && nameDone && password !== "" && !submitting;
+  const nameDone =
+    firstName.trim() !== "" && lastName.trim() !== "" && email.trim() !== "";
+  const canSubmit =
+    isSupabaseConfigured &&
+    role !== null &&
+    nameDone &&
+    password !== "" &&
+    !submitting;
 
   function back() {
     setError(null);
@@ -82,7 +89,13 @@ export default function SignupScreen() {
   async function createAccount() {
     if (!canSubmit || !role) return;
     if (password.length < MIN_PASSWORD_LENGTH) {
-      setError(`Use a password with at least ${MIN_PASSWORD_LENGTH} characters.`);
+      setError(
+        `Use a password with at least ${MIN_PASSWORD_LENGTH} characters.`,
+      );
+      return;
+    }
+    if (password !== confirm) {
+      setError("Passwords don't match.");
       return;
     }
     setSubmitting(true);
@@ -124,7 +137,7 @@ export default function SignupScreen() {
         <View accessibilityRole="radiogroup" style={styles.roles}>
           <RoleOption
             role="owner"
-            title="I have a pet"
+            title="I'm a pet owner"
             body="Book a sitter and get updates without asking."
             selected={role === "owner"}
             onPress={() => setRole("owner")}
@@ -155,7 +168,9 @@ export default function SignupScreen() {
       <>
         <Text style={styles.title}>Create your account</Text>
         <Text style={styles.subtitle}>
-          {role === "owner" ? "Your sitter sees your first name." : "Owners see your first name."}
+          {role === "owner"
+            ? "Your sitter sees your first name."
+            : "Owners see your first name."}
         </Text>
         <SocialSignIn divider="or with email" testID="signup" />
         <View style={styles.form}>
@@ -219,12 +234,27 @@ export default function SignupScreen() {
             <View style={styles.strength} testID="signup-strength">
               <View style={styles.meter}>
                 {[1, 2, 3, 4].map((n) => (
-                  <View key={n} style={[styles.bar, n <= strength && styles.barOn]} />
+                  <View
+                    key={n}
+                    style={[styles.bar, n <= strength && styles.barOn]}
+                  />
                 ))}
               </View>
-              <Text style={styles.strengthLabel}>{STRENGTH_LABELS[strength]}</Text>
+              <Text style={styles.strengthLabel}>
+                {STRENGTH_LABELS[strength]}
+              </Text>
             </View>
           ) : null}
+          <TextField
+            label="Confirm password"
+            value={confirm}
+            onChangeText={setConfirm}
+            secureTextEntry
+            autoComplete="new-password"
+            textContentType="newPassword"
+            onSubmitEditing={() => void createAccount()}
+            testID="signup-confirm"
+          />
           {errorText}
           {notice ? <Text style={styles.notice}>{notice}</Text> : null}
         </View>
@@ -277,7 +307,13 @@ export default function SignupScreen() {
         </View>
       }
     >
-      <StepHeader flow="Sign up" step={step + 1} total={STEPS} onBack={back} testID="signup" />
+      <StepHeader
+        flow="Sign up"
+        step={step + 1}
+        total={STEPS}
+        onBack={back}
+        testID="signup"
+      />
       {!isSupabaseConfigured ? (
         <Card>
           <Text style={styles.error}>{SUPABASE_NOT_CONFIGURED}</Text>
@@ -299,14 +335,26 @@ type RoleOptionProps = {
 };
 
 /** A role as a big colored card with a radio dot (peach for owners, mint for sitters) and the same picture as the demo sheet. */
-function RoleOption({ role, title, body, selected, onPress, owner, testID }: RoleOptionProps) {
+function RoleOption({
+  role,
+  title,
+  body,
+  selected,
+  onPress,
+  owner,
+  testID,
+}: RoleOptionProps) {
   const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       accessibilityRole="radio"
       aria-checked={selected}
       onPress={onPress}
-      style={[styles.role, owner ? styles.roleOwner : styles.roleSitter, selected && styles.roleSelected]}
+      style={[
+        styles.role,
+        owner ? styles.roleOwner : styles.roleSitter,
+        selected && styles.roleSelected,
+      ]}
       testID={testID}
     >
       <RoleArt role={role} size={60} />
@@ -314,7 +362,9 @@ function RoleOption({ role, title, body, selected, onPress, owner, testID }: Rol
         <Text style={styles.roleTitle}>{title}</Text>
         <Text style={styles.roleBody}>{body}</Text>
       </View>
-      <View style={[styles.radio, selected && styles.radioOn]}>{selected ? <View style={styles.radioDot} /> : null}</View>
+      <View style={[styles.radio, selected && styles.radioOn]}>
+        {selected ? <View style={styles.radioDot} /> : null}
+      </View>
     </Pressable>
   );
 }
@@ -328,7 +378,9 @@ const makeStyles = (theme: Theme) => {
     title: {
       fontSize: theme.fontSize.title,
       color: theme.color.text,
-      ...(display ? { fontFamily: display } : { fontWeight: theme.fontWeight.bold }),
+      ...(display
+        ? { fontFamily: display }
+        : { fontWeight: theme.fontWeight.bold }),
     },
     subtitle: {
       fontSize: theme.fontSize.small,
@@ -355,9 +407,15 @@ const makeStyles = (theme: Theme) => {
     roleTitle: {
       fontSize: theme.fontSize.lead,
       color: theme.color.text,
-      ...(display ? { fontFamily: display } : { fontWeight: theme.fontWeight.bold }),
+      ...(display
+        ? { fontFamily: display }
+        : { fontWeight: theme.fontWeight.bold }),
     },
-    roleBody: { fontSize: theme.fontSize.small, color: theme.color.text, lineHeight: 20 },
+    roleBody: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.text,
+      lineHeight: 20,
+    },
     radio: {
       width: 24,
       height: 24,
@@ -369,7 +427,12 @@ const makeStyles = (theme: Theme) => {
       justifyContent: "center",
     },
     radioOn: { borderColor: theme.color.primary },
-    radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: theme.color.primary },
+    radioDot: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: theme.color.primary,
+    },
     form: {
       gap: theme.spacing.md,
     },
