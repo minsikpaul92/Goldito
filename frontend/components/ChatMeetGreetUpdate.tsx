@@ -39,12 +39,15 @@ export function ChatMeetGreetUpdate({ card, mine, otherName, at }: { card: Updat
         ? `Online · ${formatInstant(card.at)}`
         : `In person${card.place ? ` · ${card.place}` : ""} · ${formatInstant(card.at)}`
       : null;
+  // "Done" is both people's: a system line in the middle.
+  const shared = card.event === "done";
+  mine = mine && !shared;
   return (
-    <View style={[styles.row, mine ? styles.rowMe : styles.rowThem]} testID="chat-mg-update">
-      <View style={[styles.pill, mine ? styles.pillMe : styles.pillThem]}>
-        <Text style={[styles.title, mine && styles.onGreen]}>{meetGreetUpdateText(card, mine ? "You" : otherName)}</Text>
+    <View style={[styles.row, shared ? styles.rowShared : mine ? styles.rowMe : styles.rowThem]} testID="chat-mg-update">
+      <View style={[styles.pill, shared ? styles.pillShared : mine ? styles.pillMe : styles.pillThem]}>
+        <Text style={[styles.title, mine && styles.onGreen, shared && styles.centered]}>{meetGreetUpdateText(card, mine ? "You" : otherName)}</Text>
         {plan ? <Text style={[styles.line, mine && styles.onGreen]}>{plan}</Text> : null}
-        <Text style={[styles.stamp, mine && styles.onGreen]}>{formatStamp(at)}</Text>
+        <Text style={[styles.stamp, mine && styles.onGreen, shared && styles.centered]}>{formatStamp(at)}</Text>
       </View>
     </View>
   );
@@ -56,6 +59,9 @@ const makeStyles = (theme: Theme) =>
     row: {},
     rowMe: { alignItems: "flex-end" },
     rowThem: { alignItems: "flex-start" },
+    rowShared: { alignItems: "center" },
+    pillShared: { backgroundColor: theme.color.blockBlush, alignItems: "center" },
+    centered: { textAlign: "center" },
     pillMe: { backgroundColor: theme.color.primary },
     pillThem: { backgroundColor: theme.color.surface, borderWidth: 1, borderColor: theme.color.border },
     onGreen: { color: theme.color.primaryText },

@@ -716,7 +716,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `chat-payment-open` | 91 |
+| Pressable | — | `chat-payment-open` | 82 |
 
 ### ChatCareCards — [components/ChatCareCards.tsx](../../frontend/components/ChatCareCards.tsx)
 
@@ -994,27 +994,27 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Skip | `meet-skip` | 155 |
-| Button | Request | `meet-request` | 156 |
-| TextButton | Modify | `meet-change` | 166 |
-| Button | Accept | `meet-accept` | 175 |
-| Button | Skip Request | `meet-skip` | 188 |
-| Button | Modify | `meet-counter` | 189 |
-| LinkButton | Join Google Meet | `meet-join` | 200 |
-| TextButton | Get the Meet link | `meet-link-retry` | 204 |
-| CheckRow | `item` | ``meet-check-${item}`` | 219 |
-| Button | Done, we met | `meet-done` | 229 |
-| LinkButton | Add to calendar | `meet-calendar` | 231 |
-| TextButton | Change | `meet-change` | 232 |
-| Button | Accept | `meet-skip-accept` | 248 |
-| Button | Request | `meet-skip-counter` | 249 |
-| Sheet | Ask to skip | `meet-skip-sheet` | 275 |
-| Button | Ask to skip | `meet-skip-confirm` | 281 |
-| Sheet | Cancel | `meet-done-early-sheet` | 294 |
-| TextButton | Cancel | `meet-done-early-cancel` | 301 |
-| Button | Yes, we met | `meet-done-early-confirm` | 302 |
-| Sheet | Decline request | `meet-decline-sheet` | 316 |
-| Button | Decline request | `meet-decline-confirm` | 322 |
+| Button | Skip | `meet-skip` | 153 |
+| Button | Request | `meet-request` | 154 |
+| TextButton | Modify | `meet-change` | 164 |
+| Button | Accept | `meet-accept` | 173 |
+| Button | Skip Request | `meet-skip` | 186 |
+| Button | Modify | `meet-counter` | 187 |
+| LinkButton | Join Google Meet | `meet-join` | 198 |
+| TextButton | Get the Meet link | `meet-link-retry` | 202 |
+| CheckRow | `item` | ``meet-check-${item}`` | 217 |
+| Button | Done, we met | `meet-done` | 227 |
+| LinkButton | Add to calendar | `meet-calendar` | 229 |
+| TextButton | Change | `meet-change` | 230 |
+| Button | Accept | `meet-skip-accept` | 246 |
+| Button | Request | `meet-skip-counter` | 247 |
+| Sheet | Ask to skip | `meet-skip-sheet` | 273 |
+| Button | Ask to skip | `meet-skip-confirm` | 279 |
+| Sheet | Cancel | `meet-done-early-sheet` | 292 |
+| TextButton | Cancel | `meet-done-early-cancel` | 299 |
+| Button | Yes, we met | `meet-done-early-confirm` | 300 |
+| Sheet | Decline request | `meet-decline-sheet` | 314 |
+| Button | Decline request | `meet-decline-confirm` | 320 |
 
 ### MeetGreetSheet — [components/MeetGreetSheet.tsx](../../frontend/components/MeetGreetSheet.tsx)
 

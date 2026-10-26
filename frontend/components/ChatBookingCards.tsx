@@ -28,17 +28,8 @@ export function ChatAgreementCard({ booking }: { booking: BookingSummary }) {
       </Card>
     );
   }
-  return (
-    <Card tone="blush" style={styles.card} testID="chat-agreement-card">
-      <Text style={styles.title}>Book {booking.sitterName}</Text>
-      <Text style={styles.line} testID="agreement-owner">
-        {booking.ownerAgreedAt ? `${booking.ownerName} would like to book` : `${booking.ownerName}: not yet`}
-      </Text>
-      <Text style={styles.line} testID="agreement-sitter">
-        {booking.sitterAcceptedAt ? `${booking.sitterName} accepts` : `${booking.sitterName}: not yet`}
-      </Text>
-    </Card>
-  );
+  // Until both say yes the buttons below say it all: no card for "not yet".
+  return null;
 }
 
 type PaymentProps = {

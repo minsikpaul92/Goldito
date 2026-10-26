@@ -131,15 +131,13 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
     else void run(() => respondSkipMeetGreet(booking.id, true), "Meet & Greet skipped");
   };
 
-  if (status === "done" || status === "skipped" || !open) {
+  // "Met": the update line already says it was done, so the folded card adds nothing.
+  if (status === "done") return null;
+  if (status === "skipped" || !open) {
     return (
       <Card style={StyleSheet.flatten([styles.card, styles.folded])} tone="blush" testID="meet-greet">
         <Text style={styles.foldedText}>
-          {status === "done"
-            ? `Met${summary ? ` · ${summary}` : ""}`
-            : status === "skipped"
-              ? "Meet & Greet skipped, you both agreed"
-              : `Meet & Greet: ${summary ?? "not scheduled"}`}
+          {status === "skipped" ? "Meet & Greet skipped, you both agreed" : `Meet & Greet: ${summary ?? "not scheduled"}`}
         </Text>
       </Card>
     );
