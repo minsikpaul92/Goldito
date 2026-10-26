@@ -593,7 +593,7 @@ Public intro for **signed-out** visitors (`/welcome`, `/welcome/how`, `/login`, 
 | :--- | :--- |
 | Who sees it | **Signed-out only.** `(public)` layout redirects signed-in users away. After **Sign out**, Welcome shows again (OB.1). **`intro_seen` skip (OB.4) is deferred** — keep showing Welcome for judges; do not block Phase 04. |
 | Boot | While the session loads, `BootView`: the four-print paw walk (`PawWalk`) with the coin and Goldito under it, never a bare spinner. The pet setup finish is meant to reuse the same walk (not built yet). |
-| Welcome | Max and Mochi on a mint block, the tagline, then **Try the demo** as the one primary button (opens `DemoSheet`: who to be), then Sign up with email and Log in as text buttons. Without a demo password the primary is Create account. |
+| Welcome | Max and Mochi on a mint block, the tagline, a butter **How it works** card (art, "Three short pages, about a minute", chevron) so a first-time visitor sees where to learn more, then **Try the demo** as the one primary button (opens `DemoSheet`: who to be), then Sign up with email and Log in as text buttons, and a small Privacy · Terms line. Without a demo password the primary is Create account. |
 | How it works | Three pages (the problem, two sides, one stay) drawn with the app's own art and demo photos; Next, Skip and Back; the last page offers Try the demo and Create account. No placeholder boxes. |
 | Sign up | Three steps under one `StepHeader` (who you are, name and email, password); Back steps back and keeps what was typed, then leaves. Terms and Privacy are links. |
 | Apple / Google | `SocialSignIn` stays hidden until they work (`EXPO_PUBLIC_SOCIAL_SIGN_IN=1` shows them); a judge never taps a "Coming soon" button. |
