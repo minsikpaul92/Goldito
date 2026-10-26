@@ -240,7 +240,7 @@ export default function CheckoutScreen() {
             value={signerName}
             onChangeText={setSignerName}
             // Typed by the person, never filled in (#236): the name is only a hint.
-            placeholder={profileName ? `e.g. ${profileName}` : undefined}
+            placeholder={profileName || undefined}
             autoCapitalize="words"
             autoComplete="off"
             autoCorrect={false}
