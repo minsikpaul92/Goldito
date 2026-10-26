@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { behaviorPose, poopVisible } from "../../features/pets/petBehavior";
 import { usePetBehavior, type PetEvent } from "../../features/pets/usePetBehavior";
 import type { HatId } from "../../features/pets/sprites/hats";
+import type { PetRecipe } from "../../features/pets/sprites/petLook";
 import type { PixelColors } from "../../features/pets/sprites/photoColors";
 import { SCENE_SIZE, POOP_SIZE, spritePoop } from "../../features/pets/sprites/scene";
 import type { PetMood } from "../../lib/petStatus";
@@ -15,6 +16,9 @@ type Props = {
   coat?: unknown;
   breed?: string | null;
   colors?: PixelColors | null;
+  weightKg?: number | null;
+  /** The look the owner made (`pets.profile.pixel_look`). */
+  look?: PetRecipe | null;
   hat?: HatId | null;
   mood: PetMood;
   /** Screen px of one sprite pixel. */
@@ -27,7 +31,7 @@ type Props = {
 };
 
 /** The pet inside its room (11.12b): it walks, stops, turns around and lies down on its own; the mood leans what it does. */
-export function RoamingPet({ species, coat, breed, colors, hat, mood, pixel, roomWidth, event, testID }: Props) {
+export function RoamingPet({ species, coat, breed, colors, weightKg, look, hat, mood, pixel, roomWidth, event, testID }: Props) {
   const spriteWidth = SCENE_SIZE * pixel;
   const maxX = Math.max(0, Math.floor((roomWidth - spriteWidth) / pixel));
   const b = usePetBehavior(mood, maxX, false, event ?? null);
@@ -50,6 +54,8 @@ export function RoamingPet({ species, coat, breed, colors, hat, mood, pixel, roo
           coat={coat}
           breed={breed}
           colors={colors}
+          weightKg={weightKg}
+          look={look}
           hat={hat}
           mood={mood}
           pose={behaviorPose(b)}

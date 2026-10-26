@@ -7,6 +7,7 @@ import { TextButton } from "../ui/TextButton";
 import { asHat, itemName, ownedItems } from "../../features/pets/items";
 import { savePetHat } from "../../features/pets/petApi";
 import type { HatId } from "../../features/pets/sprites/hats";
+import { asPetRecipe } from "../../features/pets/sprites/petLook";
 import { asPixelColors } from "../../features/pets/sprites/photoColors";
 import { useToast } from "../../providers/ToastProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
@@ -32,7 +33,7 @@ export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => vo
   if (!pet) return null;
   const colors = asPixelColors(pet.profile?.pixel_colors);
   const hat = pet.id in hats ? hats[pet.id] : asHat(pet.profile?.hat);
-  const look = { id: pet.id, name: pet.name, species: pet.species, coat: pet.profile?.coat, breed: pet.breed, weightKg: pet.weight_kg, colors, hat };
+  const look = { id: pet.id, name: pet.name, species: pet.species, coat: pet.profile?.coat, breed: pet.breed, weightKg: pet.weight_kg, colors, hat, look: asPetRecipe(pet.profile?.pixel_look) };
 
   const toggleHat = async (id: HatId) => {
     const next = hat === id ? null : id;
@@ -83,7 +84,11 @@ export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => vo
           </Pressable>
         ))}
       </View>
-      <TextButton label="Match colors from photo" onPress={() => setMaking(true)} style={styles.make} testID="pet-colors-open" />
+      <View style={styles.actions}>
+        <TextButton label="Change look" onPress={() => router.push(`/owner/pets/${pet.id}/look`)} testID="pet-look-open" />
+        {/* A saved look wins over photo colors, so matching colors only shows while there is none. */}
+        {look.look ? null : <TextButton label="Match colors from photo" onPress={() => setMaking(true)} testID="pet-colors-open" />}
+      </View>
       <PetColorsSheet
         visible={making}
         onClose={() => setMaking(false)}
@@ -98,7 +103,7 @@ export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => vo
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     page: { gap: theme.spacing.md },
-    make: { alignSelf: "center" },
+    actions: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: theme.spacing.md },
     wardrobe: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: theme.spacing.sm },
     switcher: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: theme.spacing.sm },
     pill: {

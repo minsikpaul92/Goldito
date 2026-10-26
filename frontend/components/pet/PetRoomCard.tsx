@@ -3,6 +3,7 @@ import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from "react-nati
 
 import { PetStatus } from "../../lib/petStatus";
 import { formatTime, isoToZoned } from "../../features/schedule/dates";
+import type { PetRecipe } from "../../features/pets/sprites/petLook";
 import type { PixelColors } from "../../features/pets/sprites/photoColors";
 import { SCENE_SIZE } from "../../features/pets/sprites/scene";
 import { SIZE_SCALE, petSize } from "../../features/pets/sprites/sprites";
@@ -25,6 +26,8 @@ type Props = {
   colors?: PixelColors | null;
   /** A hat on its head (the pumpkin hat during the Halloween event). */
   hat?: HatId | null;
+  /** The look the owner made (`pets.profile.pixel_look`). */
+  look?: PetRecipe | null;
   /** Null while it loads: the pet shows calm and the HUD stays empty. */
   status: PetStatus | null;
   /** What the pet just did (ate, went potty): the room shows it once. */
@@ -43,7 +46,7 @@ const MOOD_LABEL = { excited: "Happy", calm: "Calm", tired: "Tired", hungry: "Hu
  * worked out from today's check-ins. Pure display: `PetRoom` loads the data. The room fills the space its parent gives
  * it (the owner's Pet page, the top of the sitter's Home) and the pet grows to fit, so it is the biggest thing on Home.
  */
-export function PetRoomCard({ name, species, coat, breed, weightKg, colors, hat, status, event, onPress, children, testID }: Props) {
+export function PetRoomCard({ name, species, coat, breed, weightKg, colors, hat, look, status, event, onPress, children, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const mood = status?.mood ?? "calm";
   const hud = status ? hudItems(status, species) : [];
@@ -78,6 +81,8 @@ export function PetRoomCard({ name, species, coat, breed, weightKg, colors, hat,
             coat={coat}
             breed={breed}
             colors={colors}
+            weightKg={weightKg}
+            look={look}
             hat={hat}
             mood={mood}
             pixel={Math.max(2, Math.floor(pixel * scale))}
