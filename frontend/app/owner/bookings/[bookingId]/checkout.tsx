@@ -1,9 +1,10 @@
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { ConsentCard } from "../../../../components/ConsentCard";
 import { Card } from "../../../../components/ui/Card";
+import { CheckRow } from "../../../../components/ui/CheckRow";
 import { QuoteCard } from "../../../../components/QuoteCard";
 import { Button } from "../../../../components/ui/Button";
 import { EmptyState } from "../../../../components/ui/EmptyState";
@@ -207,17 +208,18 @@ export default function CheckoutScreen() {
         ) : null}
 
         <View style={styles.consentsHead}>
-          <Text style={styles.consentsLabel} testID="checkout-consents-count">{`Consents (${required.length - missing.length}/${required.length})`}</Text>
           {unsigned.length > 0 ? (
-            <Pressable
-              accessibilityRole="button"
+            <CheckRow
+              label="Select all"
+              checked={allOn}
+              onChange={(on) => setChecks((c) => ({ ...c, ...Object.fromEntries(unsigned.map((k) => [k, on])) }))}
               disabled={busy}
-              onPress={() => setChecks((c) => ({ ...c, ...Object.fromEntries(unsigned.map((k) => [k, !allOn])) }))}
               testID="checkout-agree-all"
-            >
-              <Text style={styles.selectAll}>{allOn ? "Deselect all" : "Select all"}</Text>
-            </Pressable>
-          ) : null}
+            />
+          ) : (
+            <View />
+          )}
+          <Text style={styles.consentsLabel} testID="checkout-consents-count">{`Consents (${required.length - missing.length}/${required.length})`}</Text>
         </View>
 
         {required.map((kind) => {
@@ -286,7 +288,6 @@ const makeStyles = (theme: Theme) =>
     heading: { ...sectionTitleStyle(theme), color: theme.color.success },
     consentsHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     consentsLabel: { fontSize: 13, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    selectAll: { fontSize: 13, fontWeight: theme.fontWeight.bold, color: theme.color.primary, paddingVertical: 6 },
     footer: { fontSize: theme.fontSize.caption, color: theme.color.textMuted, fontStyle: "italic" },
     footerBar: {
       padding: theme.spacing.md,
