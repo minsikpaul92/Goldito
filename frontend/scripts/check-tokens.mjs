@@ -3,8 +3,9 @@
 // shrink over time: run `node scripts/check-tokens.mjs --update` after cleaning some up.
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DIRS = ["app", "components", "features", "providers", "lib"];
 // The theme defines tokens; pixel art and illustrations are artwork with their own palettes; dev routes are tools.
 const SKIP = [/^theme\//, /^app\/dev\//, /^features\/pets\/sprites\//, /^components\/pet\//, /^components\/ui\/Art\.tsx$/];
@@ -25,7 +26,7 @@ const found = [];
 for (const d of DIRS) {
   if (!fs.existsSync(path.join(ROOT, d))) continue;
   for (const file of walk(path.join(ROOT, d))) {
-    const rel = path.relative(ROOT, file);
+    const rel = path.relative(ROOT, file).split(path.sep).join("/");
     if (SKIP.some((r) => r.test(rel))) continue;
     fs.readFileSync(file, "utf8").split("\n").forEach((line) => {
       for (const rule of RULES) if (rule.re.test(line) && !line.includes("tokens-ok")) found.push(`${rule.id} ${rel} :: ${line.trim()}`);

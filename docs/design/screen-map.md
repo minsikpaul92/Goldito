@@ -974,13 +974,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `label` | `testID` | 53 |
-| Pressable | ``${name}, ${role.toLowerCase()} account. Menu`` | `open-menu` | 68 |
-| Pressable | Close menu | `header-menu-close` | 95 |
-| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 106 |
-| Button | Sign out | `log-out-confirm` | 128 |
-| Button | Cancel | `log-out-cancel` | 129 |
-| Pressable | — | `log-out` | 149 |
+| Pressable | `label` | `testID` | 138 |
+| Pressable | ``${name}, ${role.toLowerCase()} account. Menu`` | `open-menu` | 153 |
+| Pressable | Close menu | `header-menu-close` | 208 |
+| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 219 |
+| Pressable | — | `log-out` | 281 |
+| Pressable | Cancel sign out | `log-out-scrim` | 299 |
+| Button | Sign out | `log-out-confirm` | 333 |
+| Button | Cancel | `log-out-cancel` | 339 |
 
 ### HeadsUpSection — [components/HeadsUpSection.tsx](../../frontend/components/HeadsUpSection.tsx)
 
@@ -1689,4 +1690,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-504 actions · 502 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+505 actions · 503 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
