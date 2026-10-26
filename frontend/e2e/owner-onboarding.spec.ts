@@ -47,11 +47,12 @@ async function newOwner(page: import("@playwright/test").Page) {
   return db;
 }
 
-/** Foods has no Skip: tap None, go on (Next is the owner's look at the list, #366). */
+/** Foods has no Skip: Next with nothing picked, then say so (Next asks once what was picked, #366). */
 async function passFoods(page: import("@playwright/test").Page) {
   const screen = app(page);
-  await screen.getByTestId("own-food-none").click();
   await screen.getByTestId("own-next").click();
+  await expect(screen.getByTestId("own-foods-list")).toHaveText("No food allergies.");
+  await screen.getByTestId("own-foods-confirm").click();
 }
 
 /** Skips every optional screen after the name until the summary (the question screens all have a Skip). */
@@ -159,14 +160,29 @@ test.describe("owner onboarding", () => {
       await screen.getByTestId("own-skip").click();
     }
     await expect(screen.getByTestId("own-step-foods")).toBeVisible();
+    // The "Something else" box closes on another pick and does not come back after Back (#366 follow-up).
+    await screen.getByTestId("own-food-else").click();
+    await expect(screen.getByTestId("own-food-other-input")).toBeVisible();
     await screen.getByTestId("own-food-chicken").click();
+    await expect(screen.getByTestId("own-food-other-input")).toHaveCount(0);
+    await screen.getByTestId("own-food-else").click();
+    await screen.getByTestId("own-back").click();
+    await screen.getByTestId("own-skip").click();
+    await expect(screen.getByTestId("own-step-foods")).toBeVisible();
+    await expect(screen.getByTestId("own-food-other-input")).toHaveCount(0);
     await screen.getByTestId("own-food-else").click();
     await screen.getByTestId("own-food-other-input").fill("Grapes");
     await screen.getByTestId("own-food-other-add").click();
-    // No extra checkbox (#366): a chip or None is enough, and Next is the owner's look at the list.
+    // No checkbox: Next asks once what was picked. Change goes back to the list as it was.
     await expect(screen.getByTestId("own-foods-checked")).toHaveCount(0);
-    await expect(screen.getByTestId("own-next")).toBeEnabled();
     await screen.getByTestId("own-next").click();
+    await expect(screen.getByTestId("own-foods-sheet")).toContainText("Pip must avoid these?");
+    await expect(screen.getByTestId("own-foods-list")).toHaveText("Chicken, Grapes");
+    await screen.getByTestId("own-foods-change").click();
+    await expect(screen.getByTestId("own-step-foods")).toBeVisible();
+    await expect(screen.getByTestId("own-food-chicken")).toHaveAttribute("aria-pressed", "true");
+    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-foods-confirm").click();
 
     // About the owner, then where they live (a real address picked from the check).
     await expect(screen.getByTestId("own-title")).toHaveText("A few words about you");
@@ -537,8 +553,9 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-foods-checked")).toHaveCount(0);
     await screen.getByTestId("own-food-dairy").click();
     await screen.getByTestId("own-food-dairy").click();
-    await expect(screen.getByTestId("own-next")).toBeEnabled();
     await screen.getByTestId("own-next").click();
+    await expect(screen.getByTestId("own-foods-list")).toHaveText("Chicken");
+    await screen.getByTestId("own-foods-confirm").click();
     for (const id of ["ownerIntro", "location"]) {
       await expect(screen.getByTestId(`own-step-${id}`)).toBeVisible();
       await screen.getByTestId("own-skip").click();
