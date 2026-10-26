@@ -23,22 +23,13 @@ export function ChatAgreementCard({ booking }: { booking: BookingSummary }) {
 
   if (ended || both) {
     return (
-      <Card style={styles.card} testID="chat-agreement-card">
-        <Text style={styles.title}>{ended ?? "Booked, you both agreed ✓"}</Text>
+      <Card tone="blush" style={styles.card} testID="chat-agreement-card">
+        <Text style={styles.title}>{ended ?? "Booked, you both agreed"}</Text>
       </Card>
     );
   }
-  return (
-    <Card style={styles.card} testID="chat-agreement-card">
-      <Text style={styles.title}>Book {booking.sitterName}</Text>
-      <Text style={styles.line} testID="agreement-owner">
-        {booking.ownerAgreedAt ? `✓ ${booking.ownerName} would like to book` : `${booking.ownerName}: not yet`}
-      </Text>
-      <Text style={styles.line} testID="agreement-sitter">
-        {booking.sitterAcceptedAt ? `✓ ${booking.sitterName} accepts` : `${booking.sitterName}: not yet`}
-      </Text>
-    </Card>
-  );
+  // Until both say yes the buttons below say it all: no card for "not yet".
+  return null;
 }
 
 type PaymentProps = {
@@ -59,19 +50,21 @@ export function ChatPaymentCard({ booking, viewer, total, canPay, onPay }: Payme
   const ended = endedLine(booking);
   const paid = !!booking.paidAt;
   const amount = paid ? (booking.priceSnapshot?.total ?? total) : total;
+  // The owner pays, so it is the owner's own card (green); the sitter receives it (white). An ended booking is a system line.
+  const mine = !ended && viewer === "owner";
 
   const body = (
-    <Card style={styles.card} testID="chat-payment-card">
-      <Text style={styles.title}>{ended ?? (paid ? "Paid" : "Payment")}</Text>
+    <Card tone={ended ? "blush" : undefined} style={StyleSheet.flatten([styles.card, mine ? styles.mine : null])} testID="chat-payment-card">
+      <Text style={[styles.title, !ended && styles.strong, !ended && styles.start, mine && styles.onGreen]}>{ended ?? (paid ? "Paid" : "Payment")}</Text>
       {ended && booking.refundedAt && viewer === "owner" ? (
-        <Text style={styles.line} testID="payment-refunded">
+        <Text style={[styles.line, mine && styles.onGreen]} testID="payment-refunded">
           {`Refunded in full${booking.priceSnapshot?.total != null ? ` · ${money(booking.priceSnapshot.total)}` : ""}`}
         </Text>
       ) : null}
       {ended ? null : (
         <>
-          {amount != null ? <Text style={styles.total} testID="payment-total">{money(amount)}</Text> : null}
-          <Text style={styles.line}>
+          {amount != null ? <Text style={[styles.total, styles.start, mine && styles.onGreen]} testID="payment-total">{money(amount)}</Text> : null}
+          <Text style={[styles.line, !ended && styles.start, mine && styles.onGreen]}>
             {paid
               ? "Held until the stay ends"
               : viewer === "owner"
@@ -95,7 +88,11 @@ export function ChatPaymentCard({ booking, viewer, total, canPay, onPay }: Payme
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: 2, maxWidth: "92%", width: "92%" },
-    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    line: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    start: { textAlign: "left" },
+    strong: { fontWeight: theme.fontWeight.bold },
+    mine: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },
+    onGreen: { color: theme.color.primaryText },
+    title: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
+    line: { fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center" },
     total: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
   });

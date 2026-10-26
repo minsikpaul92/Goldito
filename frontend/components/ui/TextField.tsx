@@ -7,9 +7,11 @@ import { Theme } from "../../theme/themes";
 type Props = Omit<TextInputProps, "style"> & {
   label: string;
   error?: string | null;
+  /** Figma form field: light outline, 18 corners (on a tinted block). */
+  soft?: boolean;
 };
 
-export function TextField({ label, error, onFocus, onBlur, ...inputProps }: Props) {
+export function TextField({ label, error, soft, onFocus, onBlur, ...inputProps }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [focused, setFocused] = useState(false);
@@ -29,7 +31,7 @@ export function TextField({ label, error, onFocus, onBlur, ...inputProps }: Prop
           setFocused(false);
           onBlur?.(e);
         }}
-        style={[styles.input, focused && styles.inputFocused, error ? styles.inputError : null]}
+        style={[styles.input, soft && styles.soft, focused && styles.inputFocused, error ? styles.inputError : null]}
         {...inputProps}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -58,6 +60,7 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.body,
       color: theme.color.text,
     },
+    soft: { borderColor: theme.color.cardLine, borderRadius: 18, paddingHorizontal: 16 },
     inputFocused: {
       borderColor: theme.color.primary,
     },

@@ -40,15 +40,17 @@ type Props = {
   onChanged: () => Promise<void> | void;
   /** The chat footer carries the main button (Pick a time, Accept, Done, Continue); the card keeps the rest. */
   hidePrimary?: boolean;
+  /** In the chat a finished Meet & Greet draws nothing: its "done" message already says so. */
+  inChat?: boolean;
 };
 
 /** What the chat footer can ask of the card: do the step that is this person's turn. */
-export type MeetGreetHandle = { primary: () => void; skip: () => void };
+export type MeetGreetHandle = { primary: () => void; skip: () => void; open: () => void };
 
 export function meetGreetSummary(b: BookingSummary): string | null {
   const { mode, at, place } = b.meetGreet;
   if (!mode || !at) return null;
-  return mode === "video" ? `Video · ${formatInstant(at)}` : `In person · ${place ?? ""} · ${formatInstant(at)}`;
+  return mode === "video" ? `Online · ${formatInstant(at)}` : `In person · ${place ?? ""} · ${formatInstant(at)}`;
 }
 
 /**
@@ -58,7 +60,7 @@ export function meetGreetSummary(b: BookingSummary): string | null {
  * with Accept, the other choice, or Decline (ends the request).
  */
 export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGreetCard(
-  { booking, viewer, onChanged, hidePrimary },
+  { booking, viewer, onChanged, hidePrimary, inChat },
   ref,
 ) {
   const theme = useTheme();
@@ -70,7 +72,8 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
   const [confirm, setConfirm] = useState<"skip" | "decline" | "done-early" | null>(null);
   const [checked, setChecked] = useState<string[]>([]);
   const primaryRef = useRef<() => void>(() => undefined);
-  useImperativeHandle(ref, () => ({ primary: () => primaryRef.current(), skip: () => setConfirm("skip") }), []);
+  useImperativeHandle(ref, () => ({ primary: () => primaryRef.current(), skip: () => setConfirm("skip"), open: () => openRef.current() }), []);
+  const openRef = useRef<() => void>(() => undefined);
 
   const status = booking.meetGreetStatus;
   if (status === "not_needed") return null;
@@ -102,6 +105,8 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
     setSheet({ key: Date.now(), spots: await getMeetGreetOptions(booking.id) });
   };
 
+  openRef.current = () => void openSheet();
+
   const send = (mode: MeetGreetMode, at: string, place: string | null) => {
     setSheet(null);
     void run(async () => {
@@ -128,12 +133,14 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
     else void run(() => respondSkipMeetGreet(booking.id, true), "Meet & Greet skipped");
   };
 
+  // "Met": the update line already says it was done, so the folded card adds nothing.
+  if (status === "done" && inChat) return null;
   if (status === "done" || status === "skipped" || !open) {
     return (
-      <Card style={styles.card} tone={theme.ui.blocks ? "peach" : undefined} testID="meet-greet">
-        <Text style={styles.muted}>
+      <Card style={StyleSheet.flatten([styles.card, inChat ? styles.folded : null])} tone="blush" testID="meet-greet">
+        <Text style={styles.foldedText}>
           {status === "done"
-            ? `Met ✓${summary ? ` · ${summary}` : ""}`
+            ? `Met${summary ? ` · ${summary}` : ""}`
             : status === "skipped"
               ? "Meet & Greet skipped, you both agreed"
               : `Meet & Greet: ${summary ?? "not scheduled"}`}
@@ -142,6 +149,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
     );
   }
 
+  // The chat has its own, shorter card (Skip, Request, Accept); the booking pages keep the full one.
   const stalled = !!booking.meetGreetDueAt && Date.parse(booking.meetGreetDueAt) <= Date.now();
   const holdLine = datesOnHold(booking)
     ? viewer === "owner"
@@ -149,21 +157,21 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
       : `These dates are on hold for ${other}.`
     : null;
 
-  let body: ReactNode = null;
+  let legacyBody: ReactNode = null;
   if (status === "required" && awaitingFirstYes(booking) && viewer === "owner") {
     // The owner's choice right after Request booking (015f, #236). Both buttons stay on the card, also in the chat.
-    body = (
+    legacyBody = (
       <>
-        <Text style={styles.title}>Meet before the first stay?</Text>
+        <Text style={styles.title}>Meet & Greet</Text>
         <View style={styles.pair}>
-          <Button label="Request Meet & Greet" onPress={() => void openSheet()} disabled={busy} style={styles.half} testID="meet-request" />
-          <Button label="Skip Meet & Greet" variant="secondary" onPress={() => setConfirm("skip")} disabled={busy} style={styles.half} testID="meet-skip" />
+          <Button label="Skip" variant="secondary" onPress={() => setConfirm("skip")} disabled={busy} style={styles.half} testID="meet-skip" />
+          <Button label="Request" onPress={() => void openSheet()} disabled={busy} style={styles.half} testID="meet-request" />
         </View>
       </>
     );
   } else if (status === "required" && awaitingFirstYes(booking)) {
     // Nothing can be planned until the sitter says yes to meeting (D60) — the sitter's button is in the footer.
-    body = (
+    legacyBody = (
       <>
         <Text style={styles.title}>Meet before the first stay</Text>
         <Text style={styles.muted}>
@@ -174,7 +182,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
       </>
     );
   } else if (status === "required") {
-    body = (
+    legacyBody = (
       <>
         <Text style={styles.title}>{stalled ? "Still no time to meet" : "Set a time to meet"}</Text>
         {holdLine ? <Text style={styles.muted}>{holdLine}</Text> : null}
@@ -188,7 +196,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
       </>
     );
   } else if (status === "proposed" && mg.proposedBy === me) {
-    body = (
+    legacyBody = (
       <>
         <Text style={styles.title}>{`Waiting for ${other}`}</Text>
         <Text style={styles.body}>{summary}</Text>
@@ -199,7 +207,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
       </>
     );
   } else if (status === "proposed") {
-    body = (
+    legacyBody = (
       <>
         <Text style={styles.title}>{`${other} suggested a Meet & Greet`}</Text>
         <Text style={styles.body}>{summary}</Text>
@@ -225,7 +233,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
       </>
     );
   } else if (status === "agreed") {
-    body = (
+    legacyBody = (
       <>
         <Text style={styles.title}>Meet & Greet set</Text>
         <Text style={styles.body}>{summary}</Text>
@@ -268,14 +276,14 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
       </>
     );
   } else if (status === "skip_requested" && mg.skipRequestedBy === me) {
-    body = (
+    legacyBody = (
       <>
         <Text style={styles.title}>{`Waiting for ${other}`}</Text>
         <Text style={styles.muted}>You asked to skip the Meet & Greet.</Text>
       </>
     );
   } else if (status === "skip_requested") {
-    body = (
+    legacyBody = (
       <>
         <Text style={styles.title}>{`${other} would like to skip the Meet & Greet`}</Text>
         {hidePrimary ? null : (
@@ -294,8 +302,116 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
     );
   }
 
+  let chatBody: ReactNode = null;
+  if (status === "required") {
+    // Either side starts here (the booking is the chat's first request): Skip on the left, Request on the right.
+    chatBody = (
+      <>
+        <Text style={[styles.title, styles.center]}>Meet & Greet</Text>
+        <View style={styles.pair}>
+          <Button label="Skip" variant="secondary" onPress={() => setConfirm("skip")} disabled={busy} style={styles.half} testID="meet-skip" />
+          <Button label="Request" onPress={() => void openSheet()} disabled={busy} style={styles.half} testID="meet-request" />
+        </View>
+      </>
+    );
+  } else if (status === "proposed" && mg.proposedBy === me) {
+    chatBody = (
+      <>
+        <Text style={styles.title}>{`Waiting for ${other}`}</Text>
+        <Text style={styles.body}>{summary}</Text>
+        <View style={styles.links}>
+          <TextButton label="Modify" onPress={() => void openSheet()} testID="meet-change" />
+        </View>
+      </>
+    );
+  } else if (status === "proposed") {
+    chatBody = (
+      <>
+        <Text style={styles.title}>Meet & Greet</Text>
+        <Text style={styles.body}>{summary}</Text>
+        <Button
+          label="Accept"
+          onPress={() =>
+            void run(async () => {
+              await respondMeetGreet(booking.id, true);
+              // Online: the Google Meet link is made right away (3B.11); without Google it stays time + Add to calendar.
+              if (mg.mode === "video") await requestVideoLink(booking.id);
+            }, `Meet & Greet set with ${other}`)
+          }
+          disabled={busy}
+          testID="meet-accept"
+        />
+        <View style={styles.pair}>
+          <Button label="Skip Request" variant="secondary" onPress={() => setConfirm("skip")} disabled={busy} style={styles.half} testID="meet-skip" />
+          <Button label="Modify" variant="secondary" onPress={() => void openSheet()} disabled={busy} style={styles.half} testID="meet-counter" />
+        </View>
+      </>
+    );
+  } else if (status === "agreed") {
+    chatBody = (
+      <>
+        <Text style={styles.title}>Meet & Greet set</Text>
+        <Text style={styles.body}>{summary}</Text>
+        {mg.mode === "video" ? (
+          mg.link ? (
+            <LinkButton label="Join Google Meet" href={mg.link} testID="meet-join" />
+          ) : (
+            <View style={styles.links}>
+              <Text style={styles.muted}>No Google Meet link yet. The time and Add to calendar still work.</Text>
+              <TextButton
+                label="Get the Meet link"
+                onPress={() =>
+                  void run(async () => {
+                    if (!(await requestVideoLink(booking.id))) throw new Error("The Google Meet link isn't ready yet. Try again later.");
+                  }, "Google Meet link ready")
+                }
+                testID="meet-link-retry"
+              />
+            </View>
+          )
+        ) : (
+          <>
+            <Text style={styles.label}>Go over together</Text>
+            {CHECKLIST.map((item) => (
+              <CheckRow
+                key={item}
+                label={item}
+                checked={checked.includes(item)}
+                onChange={(on) => setChecked((c) => (on ? [...c, item] : c.filter((x) => x !== item)))}
+                testID={`meet-check-${item}`}
+              />
+            ))}
+          </>
+        )}
+        {hidePrimary ? null : <Button label="Done, we met" onPress={pressDone} disabled={busy} testID="meet-done" />}
+        <View style={styles.links}>
+          {calendarUrl ? <LinkButton label="Add to calendar" href={calendarUrl} look="text" testID="meet-calendar" /> : null}
+          <TextButton label="Change" onPress={() => void openSheet()} testID="meet-change" />
+        </View>
+      </>
+    );
+  } else if (status === "skip_requested" && mg.skipRequestedBy === me) {
+    chatBody = (
+      <>
+        <Text style={styles.title}>{`Waiting for ${other}`}</Text>
+        <Text style={styles.muted}>You asked to skip the Meet & Greet.</Text>
+      </>
+    );
+  } else if (status === "skip_requested") {
+    chatBody = (
+      <>
+        <Text style={styles.title}>Meet & Greet</Text>
+        <Text style={styles.body}>{`${other} would like to skip.`}</Text>
+        <Button label="Accept" onPress={() => void run(() => respondSkipMeetGreet(booking.id, true), "Meet & Greet skipped")} disabled={busy} testID="meet-skip-accept" />
+        <Button label="Request" variant="secondary" onPress={() => void openSheet()} disabled={busy} testID="meet-skip-counter" />
+      </>
+    );
+  }
+
+  const body = inChat ? chatBody : legacyBody;
+
   return (
-    <Card style={styles.card} tone={theme.ui.blocks ? "peach" : undefined} testID="meet-greet">
+    <Card style={inChat ? styles.cardChat : styles.card} tone="blush" testID="meet-greet">
       {body}
       {error ? (
         <Text accessibilityRole="alert" style={styles.error} testID="meet-error">
@@ -390,6 +506,14 @@ const makeStyles = (theme: Theme) =>
     card: {
       gap: theme.spacing.sm,
     },
+    // In the chat: 92% wide and centered like the other system cards.
+    cardChat: {
+      gap: theme.spacing.sm,
+      width: "92%",
+      maxWidth: "92%",
+      alignSelf: "center",
+    },
+    center: { textAlign: "center" },
     title: {
       fontSize: theme.fontSize.body,
       fontWeight: theme.fontWeight.semibold,
@@ -404,6 +528,9 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.body,
       color: theme.color.text,
     },
+    // The folded one-line card matches "Booked, you both agreed": 92% wide, one size, centered.
+    folded: { width: "92%", maxWidth: "92%", alignSelf: "center" },
+    foldedText: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
     muted: {
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,

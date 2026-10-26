@@ -5,7 +5,7 @@
 // and makes UX changes (move, merge, remove a button) safe to plan.
 //
 //   node scripts/screen-map.mjs          # write the map
-//   node scripts/screen-map.mjs --check  # exit 1 if the map is stale (CI)
+//   node scripts/screen-map.mjs --check  # exit 1 if docs/design/screen-map.md differs (not used in CI: the map is not committed)
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

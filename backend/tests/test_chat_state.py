@@ -20,13 +20,13 @@ def test_before_anyone_has_said_hello_the_step_is_hello():
     assert out["step"] == "hello" and out["now"] == [] and out["waiting_for"] == "their reply to my hello"
 
 
-def test_once_both_spoke_with_no_booking_the_owner_can_request_and_the_sitter_can_quote():
+def test_once_both_spoke_with_no_booking_the_owner_can_start_the_meet_and_greet_and_the_sitter_waits():
     owner = run("owner", available=["request_booking"])
     assert owner["step"] == "decide" and owner["done"] == ["Said hello", "Stay dates shared"]
-    assert "ask the sitter to take the stay" in owner["now"][0]
+    assert "start the booking" in owner["now"][0]
     assert "later" in owner and owner["later"][0] == "Meet & Greet"
-    sitter = run("sitter", available=["send_quote"])
-    assert "price the stay" in sitter["now"][0]
+    sitter = run("sitter", available=[])
+    assert not sitter.get("now")
 
 
 def test_a_requested_booking_waits_for_the_sitter_and_each_side_reads_its_own_turn():

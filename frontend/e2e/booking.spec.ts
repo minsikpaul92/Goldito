@@ -242,9 +242,9 @@ test.describe("book care", () => {
 
     await screen.getByTestId("start-chat").click();
     await expect(page).toHaveURL(/\/chat\//);
-    await screen.getByTestId("chat-request-booking").click();
+    await screen.getByTestId("chat-next-meet_start").click();
     await expect(screen.getByTestId("request-sheet")).toBeVisible();
-    await expect(screen.getByTestId("request-pet-Max")).toHaveAttribute("aria-checked", "true"); // no stay from a search: every pet starts picked
+    await expect(screen.getByTestId("request-pet-" + MAX)).toHaveAttribute("aria-checked", "true"); // no stay from a search: every pet starts picked
     await screen.getByTestId("request-send").click();
     await expect.poll(() => db.requests.length).toBe(1);
     expect(db.requests[0]).toMatchObject({ p_sitter: SITTER.id });

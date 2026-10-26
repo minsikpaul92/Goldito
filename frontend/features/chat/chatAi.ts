@@ -63,6 +63,16 @@ export async function fetchChatDraft(threadId: string, chip: string, typed?: str
   }
 }
 
+/** Whether the sitter's latest message says yes to the stay (the app then brings up the Meet & Greet). false when unsure or down. */
+export async function fetchSitterYes(threadId: string): Promise<boolean> {
+  try {
+    const r = await apiPost<{ yes?: boolean }>("/api/ai/chat-yes", { thread_id: threadId });
+    return r?.yes === true;
+  } catch {
+    return false;
+  }
+}
+
 const TTL_MS = 10 * 60 * 1000;
 const RETRY_AFTER_MS = 60 * 1000;
 const asked = new Map<string, { at: number; promise: Promise<ChatChips | null> }>();

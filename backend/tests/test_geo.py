@@ -263,3 +263,48 @@ def test_a_postal_code_is_searched_in_one_spelling_and_falls_back_to_its_area(cl
 
 def test_the_bundled_postal_areas_cover_toronto():
     assert {"M4P", "M4W", "M5V", "M6J"} <= set(geo.POSTAL_AREAS)
+
+
+# --- /api/geo/meet-park: a park near the owner's home for an in-person Meet & Greet ---
+
+from tests.fakes import FakeDB  # noqa: E402
+
+
+def test_nearest_park_picks_the_closest_named_park(monkeypatch):
+    hits = [
+        {"name": "Far Park", "type": "park", "lat": "43.70", "lon": "-79.40"},
+        {"name": "Near Park", "type": "park", "lat": "43.6500", "lon": "-79.3800"},
+        {"name": "A Cafe", "type": "cafe", "lat": "43.6500", "lon": "-79.3800"},
+        {"type": "park", "lat": "43.6500", "lon": "-79.3800"},  # no name
+    ]
+    monkeypatch.setattr(geo, "_get", lambda url, params: hits)
+    assert geo.nearest_park(43.65, -79.38) == "Near Park"
+
+
+def test_nearest_park_is_none_when_nothing_matches(monkeypatch):
+    monkeypatch.setattr(geo, "_get", lambda url, params: [{"name": "A Cafe", "type": "cafe", "lat": "1", "lon": "1"}])
+    assert geo.nearest_park(43.65, -79.38) is None
+
+
+def _meet_park(client, monkeypatch, *, parties, home):
+    db = FakeDB(
+        bookings=[{"id": "b-1234567890", "owner_id": parties[0], "sitter_id": parties[1]}],
+        owner_profiles=[{"id": parties[0], **home}],
+    )
+    monkeypatch.setattr("app.deps.supabase.get_service_client", lambda: db)
+    monkeypatch.setattr(geo, "nearest_park", lambda lat, lng: "Trinity Bellwoods Park")
+    return client.post("/api/geo/meet-park", headers={"Authorization": f"Bearer {owner_token()}"}, json={"booking_id": "b-1234567890"})
+
+
+def test_a_party_of_the_booking_gets_a_park_name_only(client, monkeypatch):
+    response = _meet_park(client, monkeypatch, parties=(base.OWNER_ID, base.SITTER_ID), home={"home_lat": 43.65, "home_lng": -79.38})
+    assert response.json() == {"found": True, "name": "Trinity Bellwoods Park"}
+
+
+def test_someone_outside_the_booking_gets_nothing(client, monkeypatch):
+    assert _meet_park(client, monkeypatch, parties=("x", "y"), home={"home_lat": 43.65, "home_lng": -79.38}).status_code == 404
+
+
+def test_no_saved_home_point_means_no_park(client, monkeypatch):
+    response = _meet_park(client, monkeypatch, parties=(base.OWNER_ID, base.SITTER_ID), home={"home_lat": None, "home_lng": None})
+    assert response.json() == {"found": False, "name": None}

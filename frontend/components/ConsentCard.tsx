@@ -26,12 +26,16 @@ export function ConsentCard({ template, checked, onCheckedChange, signedAt, disa
 
   return (
     <Card style={styles.card} testID={testID}>
-      <Text accessibilityRole="header" style={styles.title}>
-        {template.title}
-      </Text>
+      {signed ? (
+        <Text accessibilityRole="header" style={styles.title}>
+          {template.title}
+        </Text>
+      ) : (
+        <CheckRow label={template.title} checked={checked} onChange={onCheckedChange} disabled={disabled} testID={testID ? `${testID}-check` : undefined} />
+      )}
       {template.summary.map((line) => (
         <Text key={line} style={styles.summary}>
-          {`· ${line}`}
+          {line}
         </Text>
       ))}
       <Pressable
@@ -52,26 +56,19 @@ export function ConsentCard({ template, checked, onCheckedChange, signedAt, disa
         <Text style={styles.signed} testID={testID ? `${testID}-signed` : undefined}>
           {`Signed ${formatInstant(signedAt!)}`}
         </Text>
-      ) : (
-        <CheckRow
-          label="I agree"
-          checked={checked}
-          onChange={onCheckedChange}
-          disabled={disabled}
-          testID={testID ? `${testID}-check` : undefined}
-        />
-      )}
+      ) : null}
     </Card>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    card: { gap: theme.spacing.xs },
+    // Figma consent card: no fill, light green outline, 14 corners, 14 × 12 padding.
+    card: { gap: 6, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 14, borderColor: theme.color.cardLine, backgroundColor: "transparent" },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    summary: { fontSize: theme.fontSize.small, color: theme.color.text, lineHeight: 20 },
+    summary: { fontSize: theme.fontSize.small, color: theme.color.cardTextMuted, lineHeight: 19 },
     linkWrap: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center" },
-    link: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
+    link: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
     bodyBox: {
       gap: theme.spacing.sm,
       padding: theme.spacing.sm,

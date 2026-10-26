@@ -96,7 +96,16 @@ export function getCurrentPosition(): Promise<LatLng> {
 
 export type LocationSourceOptions =
   | { mode: "gps"; onPosition: (p: LatLng) => void; onError: (error: LocationError) => void }
-  | { mode: "simulate"; route: LatLng[]; onPosition: (p: LatLng) => void; onDone?: () => void };
+  | {
+      mode: "simulate";
+      route: LatLng[];
+      onPosition: (p: LatLng) => void;
+      onDone?: () => void;
+      /** Continue a drive from this point of the route (after a reload). */
+      startIndex?: number;
+      /** How many route points have gone out so far, to resume from. */
+      onStep?: (next: number) => void;
+    };
 
 /**
  * Starts reporting positions and returns `stop`. GPS: the first fix at once, then the latest one every 5 s.
@@ -111,8 +120,10 @@ export function startLocationSource(options: LocationSourceOptions): () => void 
   };
 
   if (options.mode === "simulate") {
-    const { route, onPosition, onDone } = options;
-    let next = 0;
+    const { route, onPosition, onDone, onStep } = options;
+    let next = options.startIndex ?? 0;
+    // Time decides where the car is, not the number of ticks: a tab that was asleep or throttled catches up in one jump.
+    const t0 = Date.now() - next * SIM_INTERVAL_MS;
     const step = () => {
       if (stopped) return;
       if (next >= route.length) {
@@ -120,7 +131,12 @@ export function startLocationSource(options: LocationSourceOptions): () => void 
         onDone?.();
         return;
       }
-      onPosition(route[next++]);
+      const due = Math.min(route.length, Math.floor((Date.now() - t0) / SIM_INTERVAL_MS) + 1);
+      if (due > next) {
+        next = due;
+        onPosition(route[due - 1]);
+        onStep?.(next);
+      }
     };
     step();
     timers.push(setInterval(step, SIM_INTERVAL_MS));

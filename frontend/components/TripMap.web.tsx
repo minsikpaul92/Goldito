@@ -19,9 +19,8 @@ function pin(emoji: string, label: string) {
 }
 
 /**
- * The trip map (phase-06b 6B.3, D32): Leaflet + OpenStreetMap tiles, **view only**. It fits the traveller and the
- * place on its own and has ± buttons — no drag-pan, wheel or pinch, so a drag over it scrolls the screen like
- * anywhere else in the phone frame (DESIGN.md §7.7).
+ * The trip map (phase-06b 6B.3, D32): Leaflet + OpenStreetMap tiles. It fits the traveller and the place on its own,
+ * has ± buttons and can be dragged to look around; the wheel and pinch stay off so the screen still scrolls.
  */
 export function TripMap({ traveler, dest, travelerLabel, testID = "trip-map" }: TripMapProps) {
   const styles = useThemedStyles(makeStyles);
@@ -35,7 +34,7 @@ export function TripMap({ traveler, dest, travelerLabel, testID = "trip-map" }: 
     if (!host.current) return;
     const instance = L.map(host.current, {
       zoomControl: false,
-      dragging: false,
+      dragging: true,
       scrollWheelZoom: false,
       touchZoom: false,
       doubleClickZoom: false,
@@ -44,6 +43,10 @@ export function TripMap({ traveler, dest, travelerLabel, testID = "trip-map" }: 
       attributionControl: true,
     });
     instance.attributionControl.setPrefix(false);
+    // Once the person pans or zooms, the map stops re-fitting on every new position.
+    instance.on("dragstart", () => {
+      zoomedByHand.current = true;
+    });
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: "© OpenStreetMap contributors",
@@ -94,7 +97,8 @@ export function TripMap({ traveler, dest, travelerLabel, testID = "trip-map" }: 
 
   return (
     <View style={styles.wrap} testID={testID}>
-      <div ref={host} style={{ height: HEIGHT, width: "100%" }} />
+      {/* The map owns the drag: the phone frame's mouse-as-finger scrolling stays out of it (TouchEmulation). */}
+      <div ref={host} data-gesture-owner="map" style={{ height: HEIGHT, width: "100%" }} />
       <View style={styles.zoom}>
         <Pressable accessibilityRole="button" accessibilityLabel="Zoom in" onPress={() => zoom(1)} style={styles.button} testID={`${testID}-zoom-in`}>
           <Text style={styles.buttonText}>+</Text>

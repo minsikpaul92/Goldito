@@ -48,6 +48,26 @@ export function useTrip(): TripContextValue {
   return value;
 }
 
+/** A simulated drive survives a reload: the route and how far it got are kept for this user (web storage). */
+type SavedDrive = { trip: Trip; route: LatLng[]; next: number; otherName: string };
+const driveKey = (userId: string) => `goldito.simdrive.${userId}`;
+const readDrive = (userId: string): SavedDrive | null => {
+  try {
+    const raw = globalThis.localStorage?.getItem(driveKey(userId));
+    return raw ? (JSON.parse(raw) as SavedDrive) : null;
+  } catch {
+    return null;
+  }
+};
+const writeDrive = (userId: string, drive: SavedDrive | null) => {
+  try {
+    if (drive) globalThis.localStorage?.setItem(driveKey(userId), JSON.stringify(drive));
+    else globalThis.localStorage?.removeItem(driveKey(userId));
+  } catch {
+    // no storage: the drive just does not survive a reload
+  }
+};
+
 type Pending = { args: StartTripArgs; resolve: (result: StartTripResult) => void };
 
 /**
@@ -68,11 +88,13 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const sharingRef = useRef<Sharing | null>(null);
   sharingRef.current = sharing;
 
+  const userId = session?.user.id ?? "";
   const halt = useCallback(() => {
     stopSource.current?.();
     stopSource.current = null;
     setSharing(null);
-  }, []);
+    if (userId) writeDrive(userId, null);
+  }, [userId]);
 
   useEffect(() => () => stopSource.current?.(), []);
 
@@ -91,6 +113,34 @@ export function TripProvider({ children }: { children: ReactNode }) {
     },
     [halt],
   );
+
+  /** Runs a simulated drive from `from` on the route; saved as it goes so a reload picks it up where it was. */
+  const runDrive = useCallback(
+    (trip: Trip, route: LatLng[], startIndex: number, otherName: string) => {
+      stopSource.current = startLocationSource({
+        mode: "simulate",
+        route,
+        startIndex,
+        onPosition: (p) => send(trip.id, p),
+        onStep: (next) => userId && writeDrive(userId, { trip, route, next, otherName }),
+      });
+      setSharing({ trip, mode: "simulate", otherName });
+    },
+    [send, userId],
+  );
+
+
+  // A reload (or coming back to the app) while a simulated drive was on: it goes on from where it was.
+  useEffect(() => {
+    if (!userId || sharingRef.current) return;
+    const saved = readDrive(userId);
+    if (!saved) return;
+    if (saved.next >= saved.route.length) {
+      writeDrive(userId, null);
+      return;
+    }
+    runDrive(saved.trip, saved.route, saved.next, saved.otherName);
+  }, [userId, runDrive]);
 
   const begin = useCallback(
     async (args: StartTripArgs, mode: "gps" | "simulate" | "none"): Promise<StartTripResult> => {
@@ -116,12 +166,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         const from = args.from ?? { lat: 43.6532, lng: -79.3832 };
         const trip = await startTrip(args.bookingId, args.kind, true, from);
         const to = trip.dest_lat != null && trip.dest_lng != null ? { lat: trip.dest_lat, lng: trip.dest_lng } : offsetPoint(from, 2000, 90);
-        stopSource.current = startLocationSource({
-          mode: "simulate",
-          route: buildSimulatedRoute(from, to).slice(1), // the first point went with Start trip
-          onPosition: (p) => send(trip.id, p),
-        });
-        setSharing({ trip, mode, otherName: args.otherName });
+        runDrive(trip, buildSimulatedRoute(from, to).slice(1), 0, args.otherName); // the first point went with Start trip
         return { started: true, trip, sharing: true };
       } catch (error) {
         if (error instanceof LocationError && error.reason === "denied") {
@@ -140,7 +185,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         return { started: false, reason: "error", message };
       }
     },
-    [send],
+    [send, runDrive],
   );
 
   const requestStart = useCallback(

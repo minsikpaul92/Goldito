@@ -47,7 +47,9 @@ class SitterAgent(ChatAgent):
 
     def fallback_chips(self, *, started: bool, state: str, facts: dict) -> list[str]:
         if state == "first_reply":
-            return ["Hi, nice to meet you", "Happy to help"]
+            if facts["availability"].get("can_host") is False:
+                return ["Sorry, I can't host", "Hi, let me check"]
+            return ["Hi, yes I can host", "Sorry, I can't host", "Hi, let me check"]
         if state == "follow_up":
             return ["Any questions for me?", "Shall we set a Meet & Greet?"]
         return logic.generic_chips("sitter", started=started, can_host=facts["availability"].get("can_host"))

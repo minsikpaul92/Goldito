@@ -124,7 +124,7 @@ test.describe("meet & greet", () => {
     await screen.getByTestId("meet-done").click();
     await screen.getByTestId("meet-done-early-confirm").click();
     await expect(screen.getByTestId("toast")).toContainText("Meet & Greet done");
-    await expect(screen.getByTestId("meet-greet")).toContainText("Met ✓");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Met");
     await expect(screen.getByTestId("accept-booking")).toBeEnabled();
     await screen.getByTestId("accept-booking").click();
     // 014o: the sitter's yes is half of the agreement; the owner still has to say "I'd like to book".
@@ -142,7 +142,7 @@ test.describe("meet & greet", () => {
       meet_greet_proposed_by: SITTER.id,
     });
     const screen = await openDetail(page, OWNER);
-    await expect(screen.getByTestId("meet-greet")).toContainText("Video · Oct 4, 7:00 PM");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Online · Oct 4, 7:00 PM");
     await expect(screen.getByTestId("meet-greet")).toContainText("No Google Meet link yet");
     // #229: a video call has nothing to go over together.
     await expect(screen.getByTestId("meet-greet")).not.toContainText("Go over together");
@@ -201,8 +201,8 @@ test.describe("meet & greet", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, { sitter_interest_at: null, meet_greet_due_at: null });
     const screen = await openDetail(page, OWNER);
-    await expect(screen.getByTestId("meet-request")).toHaveText("Request Meet & Greet");
-    await expect(screen.getByTestId("meet-skip")).toHaveText("Skip Meet & Greet");
+    await expect(screen.getByTestId("meet-request")).toHaveText("Request");
+    await expect(screen.getByTestId("meet-skip")).toHaveText("Skip");
     await expect(screen.getByTestId("hold-note")).toHaveCount(0);
 
     await screen.getByTestId("meet-request").click();
@@ -365,7 +365,7 @@ test.describe("meet & greet", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, { meet_greet_status: "agreed", meet_greet_mode: "video", meet_greet_at: "2030-10-04T23:00:00.000Z", meet_greet_proposed_by: SITTER.id });
     let screen = await openDetail(page, OWNER);
-    await expect(screen.getByTestId("stage-step-1")).toHaveText("M&G");
+    await expect(screen.getByTestId("stage-step-1")).toHaveText("Meet");
     await expect(screen.getByTestId("stage-step-1")).toHaveAttribute("aria-label", "Meet & Greet");
     await expect(screen.getByTestId("stage-note-1")).toHaveText("Scheduled");
 
@@ -374,7 +374,7 @@ test.describe("meet & greet", () => {
     screen = app(page);
     await expect(screen.getByTestId("stage-note-1")).toHaveText("Skipped");
     // The step is passed without a check: "–" in its circle (Request keeps its ✓).
-    await expect(screen.getByTestId("stage-bar")).toContainText("✓Request–M&G");
+    await expect(screen.getByTestId("stage-bar")).toContainText("✓Request–Meet");
   });
 
   test("declining a skip asks first and ends the request", async ({ page }) => {

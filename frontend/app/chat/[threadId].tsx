@@ -34,22 +34,24 @@ import {
   getChatHeader,
   loadChatMessages,
   markChatRead,
+  postBookingRequestCard,
   sendChatMessage,
 } from "../../features/chat/chatApi";
-import { ChatAction, ChatChip, TYPED_PAUSE_MS, chipsFor, fetchChatDraft, fetchTypedChips } from "../../features/chat/chatAi";
+import { ChatAction, ChatChip, TYPED_PAUSE_MS, chipsFor, fetchChatDraft, fetchSitterYes, fetchTypedChips } from "../../features/chat/chatAi";
 import { NextStep, Primary, actionPossible, finalQuote, hasPaymentCard, nextStep } from "../../features/chat/nextStep";
 import { inCare } from "../../features/chat/careCards";
 import { arrivedForNext, canReceiveNow, canReturnNow, canStartTripNow, canTravel, nextHandoff, startOpensAt } from "../../features/transit/tripLogic";
 import { useLiveTrips } from "../../features/transit/useLiveTrips";
-import { meetGreetPrimary } from "../../lib/meetGreet";
+import { meetGreetPrimary, respondSkipMeetGreet } from "../../lib/meetGreet";
 import { useLiveChat } from "../../features/chat/useLiveChat";
 import { SPECIES_EMOJI } from "../../features/pets/petFormat";
 import type { Species } from "../../types/db";
 import { useMyPets } from "../../features/pets/useMyPets";
 import { ProfilePhoto, loadProfilePhotos } from "../../features/profile/profilePhotosApi";
 import { formatDay, formatStamp, formatTime, isoToZoned } from "../../features/schedule/dates";
+import { createBookingFromStay } from "../../features/chat/startBooking";
 import { SERVICE_LABEL } from "../../features/sitters/sitterApi";
-import { BookingSummary, expressInterest, listOwnerBookings, listSitterBookings, respondBooking } from "../../lib/bookings";
+import { BookingError, BookingSummary, expressInterest, listOwnerBookings, listSitterBookings, requestBooking, respondBooking } from "../../lib/bookings";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useSession } from "../../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
@@ -108,6 +110,8 @@ export default function Chat() {
   const [signals, setSignals] = useState({ handoff: 0, trip: 0, photo: 0, receive: 0, returned: 0 });
   const [stepBusy, setStepBusy] = useState(false);
   const meetCard = useRef<MeetGreetHandle>(null);
+  /** Set by Request: open the Meet & Greet time sheet once the new booking's card is on screen. */
+  const openMeetSheet = useRef(false);
   const [quoteBusy, setQuoteBusy] = useState(false);
   const [chips, setChips] = useState<ChatChip[]>([]);
   const [action, setAction] = useState<ChatAction | null>(null);
@@ -119,6 +123,15 @@ export default function Chat() {
   const [inputHeight, setInputHeight] = useState(INPUT_MIN);
 
   // On the web the box is a textarea: it is as tall as its text (measured on the element), up to INPUT_MAX, then it scrolls.
+  // Request (before any booking) asked for the time sheet: open it as soon as the new Meet & Greet card is there.
+  useEffect(() => {
+    if (loaded?.booking && loaded.booking.meetGreetStatus === "not_needed") openMeetSheet.current = false; // a pair that has met has no Meet & Greet
+    if (openMeetSheet.current && meetCard.current) {
+      openMeetSheet.current = false;
+      meetCard.current.open();
+    }
+  }, [loaded]);
+
   useEffect(() => {
     if (Platform.OS !== "web") return;
     const el = input.current as unknown as HTMLTextAreaElement | null;
@@ -282,7 +295,7 @@ export default function Chat() {
         return species ? `${SPECIES_EMOJI[species]} ${p.name}` : p.name;
       })
       .join(", ");
-    return `${short(c.dropOffAt)} to ${short(c.pickUpAt)} · ${c.pets.length > 1 ? `${c.pets.length} pets: ` : ""}${names}`;
+    return `${short(c.dropOffAt)} to ${short(c.pickUpAt)}\n${c.pets.length > 1 ? `${c.pets.length} pets: ` : ""}${names}`;
   };
   const newerBooking = !!booking && booking.id !== returnedStay?.id;
   const latestCardAt = [...messages].reverse().find((m) => m.card?.type === "stay" || m.card?.type === "request")?.at;
@@ -325,9 +338,27 @@ export default function Chat() {
     }
   };
 
+  /** Owner: the booking is made from the stay on the chat's card (the sitter's place unless the owner's usual is another); no dates yet opens the sheet. */
+  const startMeetGreet = async (choice: "request" | "skip") => {
+    if (!stay || !profile) return setRequesting(true);
+    setStepBusy(true);
+    try {
+      const bookingId = await createBookingFromStay({ threadId, ownerId: profile.id, sitterId: header.otherId, sitterName: header.otherName, stay });
+      // Skip asks the sitter to skip; Request opens the time sheet as soon as the card is in the chat.
+      if (choice === "skip") await respondSkipMeetGreet(bookingId, true).catch(() => undefined);
+      else openMeetSheet.current = true;
+      await load();
+    } catch (e) {
+      errorDialog.show({ title: "Not sent", message: (e as Error).message });
+    } finally {
+      setStepBusy(false);
+    }
+    return undefined;
+  };
+
   /** The footer's one action. The cards show the result; the screen reloads from the database. */
   const doPrimary = async (p: Primary) => {
-    if (p.kind === "request") return setRequesting(true);
+    if (p.kind === "meet_start") return startMeetGreet("request");
     if (p.kind === "agree") return setAgreeing(true);
     if (p.kind === "final_quote") return setQuoting("final");
     if (p.kind === "pay") return booking ? router.push(`/owner/bookings/${booking.id}/checkout` as never) : undefined;
@@ -335,7 +366,11 @@ export default function Chat() {
     if (!booking) return undefined;
     setStepBusy(true);
     try {
-      if (p.kind === "interest") await expressInterest(booking.id);
+      if (p.kind === "interest") {
+        await expressInterest(booking.id);
+        const names = booking.pets.map((x) => x.name).filter(Boolean);
+        await sendChatMessage(threadId, `Yes, I can take ${names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : (names[0] ?? "your pet")} for these dates.`).catch(() => undefined);
+      }
       else if (p.kind === "accept") await respondBooking(booking.id, true);
       else if (p.kind === "confirm_quote") await confirmQuote(p.messageId);
       await load();
@@ -381,28 +416,14 @@ export default function Chat() {
       enabled: !!booking && !!meetGreetPrimary(booking, header.myRole) && !!meetCard.current,
       onPress: () => meetCard.current?.primary(),
     },
-    ...(!owner
+    ...(!owner && quoteKind === "final"
       ? [
           {
             id: "quote",
-            label: quoteKind === "final" ? "Final quote" : "Quote",
+            label: "Final quote",
             icon: "price" as const,
-            enabled: !finished && (quoteKind === "final" ? !!finalStay : !!stay),
-            onPress: () => setQuoting(quoteKind),
-          },
-        ]
-      : []),
-    ...(owner
-      ? [
-          {
-            id: "quote-request",
-            label: "Quote request",
-            icon: "chat" as const,
-            enabled: !finished && !!stay && !priced,
-            onPress: () => {
-              setText("Could you send me a quote for these dates?");
-              input.current?.focus();
-            },
+            enabled: !finished && !!finalStay,
+            onPress: () => setQuoting("final"),
           },
         ]
       : []),
@@ -463,6 +484,15 @@ export default function Chat() {
       await sendChatMessage(threadId, body);
       setText("");
       await load();
+      // The sitter wrote yes in their own words: that is the first yes, the Meet & Greet comes up.
+      if (!owner && booking?.stage === "requested") {
+        const bookingId = booking.id;
+        void fetchSitterYes(threadId).then(async (yes) => {
+          if (!yes) return;
+          await expressInterest(bookingId).catch(() => undefined);
+          await load();
+        });
+      }
     } catch (e) {
       errorDialog.show({ title: "Not sent", message: (e as Error).message, onRetry: () => void send() });
     } finally {
@@ -479,12 +509,12 @@ export default function Chat() {
     return (
       <View key={m.id} style={[styles.cardRow, mine ? styles.cardMine : styles.cardTheirs]}>
       <Card style={StyleSheet.flatten([styles.request, mine ? styles.mine : styles.theirs])} testID="chat-request-card">
-        <Text style={styles.requestTitle}>{mine ? "You sent a booking request" : "Booking request"}</Text>
-        <Text style={styles.requestLine}>{`${SERVICE_LABEL[c.serviceType].replace(/^\S+\s/, "")} · ${c.pets.map((p) => p.name).join(", ")}`}</Text>
-        <Text style={styles.requestLine}>{`Drop-off ${short(c.dropOffAt)} · ${placeText(c.dropOffPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
-        <Text style={styles.requestLine}>{`Pick-up ${short(c.pickUpAt)} · ${placeText(c.pickUpPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
-        {c.note ? <Text style={styles.requestNote} testID="chat-request-note">{`“${c.note}”`}</Text> : null}
-        {live ? <Text style={styles.requestLive}>{live}</Text> : null}
+        <Text style={[styles.requestTitle, mine && styles.onGreen]}>{mine ? "You sent a booking request" : "Booking request"}</Text>
+        <Text style={[styles.requestLine, mine && styles.onGreen]}>{`${SERVICE_LABEL[c.serviceType].replace(/^\S+\s/, "")} · ${c.pets.map((p) => p.name).join(", ")}`}</Text>
+        <Text style={[styles.requestLine, mine && styles.onGreen]}>{`Drop-off ${short(c.dropOffAt)} · ${placeText(c.dropOffPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
+        <Text style={[styles.requestLine, mine && styles.onGreen]}>{`Pick-up ${short(c.pickUpAt)} · ${placeText(c.pickUpPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
+        {c.note ? <Text style={[styles.requestNote, mine && styles.onGreen]} testID="chat-request-note">{`“${c.note}”`}</Text> : null}
+        {live ? <Text style={[styles.requestLive, mine && styles.onGreen]}>{live}</Text> : null}
       </Card>
       </View>
     );
@@ -496,13 +526,17 @@ export default function Chat() {
   const stepCard = (m: ChatMessage, c: Extract<ChatCard, { type: "meet_greet" | "agreement" | "payment" }>): ReactNode => {
     const b = pairBookings.find((x) => x.id === c.bookingId);
     if (!b) return null;
+    // The Meet & Greet card comes up with the sitter's Yes, not before.
+    if (c.type === "meet_greet" && b.meetGreetStatus === "required" && !b.sitterInterestAt) return null;
+    // The current booking's Meet & Greet card is drawn after the last message (below), so it follows the Yes.
+    if (c.type === "meet_greet" && booking?.id === b.id) return null;
     const current = booking?.id === b.id;
     const final = finalQuote(messages, b.id);
     const total = b.paidAt ? (b.priceSnapshot?.total ?? null) : final?.card.status === "confirmed" ? final.card.total : null;
     return (
-      <View key={m.id} style={styles.cardWide}>
+      <View key={m.id} style={c.type === "payment" && !(b.status === "cancelled" || b.status === "declined") ? [styles.cardRow, owner ? styles.cardMine : styles.cardTheirs] : styles.cardWide}>
         {c.type === "meet_greet" ? (
-          <MeetGreetCard ref={current ? meetCard : undefined} booking={b} viewer={header.myRole} onChanged={load} hidePrimary />
+          <MeetGreetCard ref={current ? meetCard : undefined} booking={b} viewer={header.myRole} onChanged={load} inChat />
         ) : c.type === "agreement" ? (
           <ChatAgreementCard booking={b} />
         ) : (
@@ -517,6 +551,51 @@ export default function Chat() {
       </View>
     );
   };
+
+  const stayCardEl = stayBooking ? (
+    <ChatStayCard booking={stayBooking} viewer={header.myRole} onChanged={() => void load()} receiveSignal={signals.receive} returnSignal={signals.returned} />
+  ) : null;
+  // Once the pets are back, the stay (and its review) sits where it happened: newer messages go below it.
+  const returnedAt = Date.parse(stayBooking?.pickUp?.completedAt ?? "");
+  const stayAfter = Number.isNaN(returnedAt) ? messages.length : messages.filter((m) => Date.parse(m.at) <= returnedAt).length;
+  const renderMessage = (m: (typeof messages)[number]) =>
+          m.kind === "card" && m.card?.type === "stay" ? (
+            <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
+              <Card style={StyleSheet.flatten([styles.stay, m.senderId === me ? styles.mine : styles.theirs])} testID="chat-stay-card">
+                <Text style={[styles.stayLine, m.senderId === me && styles.onGreen]} testID="chat-stay-line">
+                  {stayLine(m.card)}
+                </Text>
+              </Card>
+            </View>
+          ) : m.kind === "card" && m.card?.type === "request" ? (
+            // Starting the chat is the booking request: the card stays in the data but is not drawn.
+            null
+          ) : m.kind === "card" && (m.card?.type === "meet_greet" || m.card?.type === "agreement" || m.card?.type === "payment") ? (
+            stepCard(m, m.card)
+          ) : m.kind === "card" && m.card?.type === "meet_greet_update" ? (
+            <ChatMeetGreetUpdate key={m.id} card={m.card} mine={m.senderId === me} otherName={header.otherName} at={m.at} />
+          ) : m.kind === "card" && m.card?.type === "quote" ? (
+            <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
+              <ChatQuoteCard
+                card={m.card as QuoteCard}
+                role={header.myRole}
+                final={isFinal(m.id)}
+                side={m.senderId === me ? "me" : "them"}
+                from={m.senderId === me ? undefined : `${header.otherName} · ${formatStamp(m.at)}`}
+                busy={quoteBusy}
+                onConfirm={() => void quoteAction(() => confirmQuote(m.id))}
+                onDecline={isFinal(m.id) && booking ? () => setDeclining({ quote: true }) : undefined}
+              />
+            </View>
+          ) : m.kind === "text" ? (
+            <MessageBubble
+              key={m.id}
+              side={m.senderId === me ? "me" : "them"}
+              body={m.body ?? ""}
+              meta={formatStamp(m.at)}
+              testID={m.senderId === me ? "chat-bubble-me" : "chat-bubble-them"}
+            />
+          ) : null;
 
   return (
     <View style={styles.root} testID="chat">
@@ -539,7 +618,7 @@ export default function Chat() {
       <View style={styles.stage}>
         {bookingPath ? (
           <Pressable accessibilityRole="button" onPress={() => router.push(bookingPath as never)} testID="chat-stage">
-            <BookingStageBar booking={booking} viewer={header.myRole} chat trips={pairTrips} />
+            <BookingStageBar booking={booking?.stage === "completed" ? null : booking} viewer={header.myRole} chat trips={pairTrips} />
           </Pressable>
         ) : (
           <BookingStageBar booking={null} viewer={header.myRole} chat />
@@ -549,57 +628,32 @@ export default function Chat() {
         {messages.length === 0 ? (
           <Text style={styles.hint} testID="chat-empty">{`Say hi to ${header.otherName}.`}</Text>
         ) : null}
-        {messages.map((m) =>
-          m.kind === "card" && m.card?.type === "stay" ? (
-            <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
-              <Card style={StyleSheet.flatten([styles.stay, m.senderId === me ? styles.mine : styles.theirs])} testID="chat-stay-card">
-                <Text style={styles.requestLine} testID="chat-stay-line">
-                  {stayLine(m.card)}
-                </Text>
-              </Card>
-            </View>
-          ) : m.kind === "card" && m.card?.type === "request" ? (
-            requestCard(m, m.card)
-          ) : m.kind === "card" && (m.card?.type === "meet_greet" || m.card?.type === "agreement" || m.card?.type === "payment") ? (
-            stepCard(m, m.card)
-          ) : m.kind === "card" && m.card?.type === "meet_greet_update" ? (
-            <ChatMeetGreetUpdate key={m.id} card={m.card} mine={m.senderId === me} otherName={header.otherName} at={m.at} />
-          ) : m.kind === "card" && m.card?.type === "quote" ? (
-            <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
-              <ChatQuoteCard
-                card={m.card as QuoteCard}
-                role={header.myRole}
-                final={isFinal(m.id)}
-                side={m.senderId === me ? "me" : "them"}
-                busy={quoteBusy}
-                onConfirm={() => void quoteAction(() => confirmQuote(m.id))}
-                onDecline={isFinal(m.id) && booking ? () => setDeclining({ quote: true }) : undefined}
-              />
-            </View>
-          ) : m.kind === "text" ? (
-            <MessageBubble
-              key={m.id}
-              side={m.senderId === me ? "me" : "them"}
-              body={m.body ?? ""}
-              meta={formatStamp(m.at)}
-              testID={m.senderId === me ? "chat-bubble-me" : "chat-bubble-them"}
-            />
-          ) : null,
-        )}
-        {booking ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
+        {messages.slice(0, stayAfter).map(renderMessage)}
+        {stayCardEl}
+        {messages.slice(stayAfter).map(renderMessage)}
+        {booking && booking.meetGreetStatus !== "not_needed" && messages.some((m) => m.card?.type === "meet_greet" && m.card.bookingId === booking.id) && !(booking.meetGreetStatus === "required" && !booking.sitterInterestAt) ? (
+          <View style={styles.cardWide}>
+            <MeetGreetCard ref={meetCard} booking={booking} viewer={header.myRole} onChanged={load} inChat />
+          </View>
+        ) : null}
+        {booking && !["requested", "meet_greet"].includes(booking.stage) ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
         {booking ? <ChatCareCards booking={booking} viewer={header.myRole} askSignal={signals.photo} /> : null}
-        {stayBooking ? <ChatStayCard booking={stayBooking} viewer={header.myRole} onChanged={() => void load()} receiveSignal={signals.receive} returnSignal={signals.returned} /> : null}
         {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} startSignal={signals.trip} /> : null}
       </Screen>
       {/* A final quote carries Confirm and Decline on its card: the footer does not repeat them (#289). */}
-      {footerPrimary || step.quote || step.wait ? (
+      {footerPrimary || step.quote ? (
         <View style={styles.next}>
-          {footerPrimary ? (
+          {footerPrimary?.kind === "meet_start" ? (
+            <View style={styles.pair}>
+              <Button label="Skip" variant="secondary" disabled={stepBusy} onPress={() => void startMeetGreet("skip")} style={styles.half} testID="chat-meet-skip" />
+              <Button label="Request" disabled={stepBusy} onPress={() => void startMeetGreet("request")} style={styles.half} testID="chat-next-meet_start" />
+            </View>
+          ) : footerPrimary ? (
             <Button
               label={footerPrimary.label}
               disabled={stepBusy}
               onPress={() => void doPrimary(footerPrimary as Primary)}
-              testID={footerPrimary.kind === "request" ? "chat-request-booking" : `chat-next-${footerPrimary.kind}`}
+              testID={`chat-next-${footerPrimary.kind}`}
             />
           ) : step.quote ? (
             <Button label="Send quote" onPress={() => setQuoting("first")} testID="chat-send-quote" />
@@ -615,11 +669,6 @@ export default function Chat() {
               onPress={() => setDeclining({ quote: step.primary?.kind === "confirm_quote" })}
               testID="chat-decline"
             />
-          ) : null}
-          {!step.primary && step.wait ? (
-            <Text style={styles.waiting} testID="chat-waiting">
-              {step.wait}
-            </Text>
           ) : null}
         </View>
       ) : null}
@@ -777,7 +826,8 @@ export default function Chat() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: theme.color.background },
-    content: { gap: theme.spacing.sm },
+    // Messages sit at the bottom, so the last card is right above the chips.
+    content: { gap: theme.spacing.sm, flexGrow: 1, justifyContent: "flex-end" },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center", paddingVertical: theme.spacing.md },
     stage: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
     cardRow: { width: "100%" },
@@ -788,15 +838,21 @@ const makeStyles = (theme: Theme) =>
     stay: { gap: 2, maxWidth: "88%" },
     request: { gap: 2, maxWidth: "88%" },
     // Cards take the sides of the text bubbles (#289): mine tinted with the tail corner right, theirs white left.
-    mine: { backgroundColor: theme.color.accent, borderColor: theme.color.primary, borderBottomRightRadius: 4 },
-    theirs: { borderBottomLeftRadius: 4 },
+    // Cards follow the bubbles: mine green, theirs white, all corners round.
+    mine: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },
+    theirs: {},
+    onGreen: { color: theme.color.primaryText },
+    // The first message of a chat reads like the bubbles: body size.
+    stayLine: { fontSize: theme.fontSize.body, color: theme.color.text },
     requestTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     requestLine: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     requestNote: { fontSize: theme.fontSize.small, color: theme.color.text, fontStyle: "italic", marginTop: 2 },
     requestLive: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary, marginTop: 2 },
+    pair: { flexDirection: "row", gap: theme.spacing.sm },
+    half: { flex: 1 },
     next: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
     chipsScroll: { flexGrow: 0, maxWidth: 480, width: "100%", alignSelf: "center" },
-    chips: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs },
+    chips: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.md },
     // Reply chips share the picker look (selectable); the action chip stays ink because it does something (F06: 44 px).
     chip: selectable(theme).chip,
     actionChip: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },

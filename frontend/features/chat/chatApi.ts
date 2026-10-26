@@ -199,6 +199,25 @@ export async function openChatThread(otherId: string, stay?: Stay): Promise<stri
   return (data as { id: string }).id;
 }
 
+/** The owner's first words, sent with the first card: who they are and, when a stay came along, what they ask. */
+export function firstHello(sitterName: string, myName: string, petNames: string[]): string {
+  const pets = petNames.length > 1 ? `${petNames.slice(0, -1).join(", ")} and ${petNames[petNames.length - 1]}` : (petNames[0] ?? "");
+  return `Hi ${sitterName}, I'm ${myName}.${pets ? ` Could you take ${pets} for these days?` : ""}`;
+}
+
+/** Sends the hello once: only while I have not written anything in this chat yet. Never throws (the chat still opens). */
+export async function sendFirstHello(threadId: string, sitterName: string, myId: string, myName: string): Promise<void> {
+  try {
+    const messages = await loadChatMessages(threadId);
+    if (messages.some((m) => m.kind === "text" && m.senderId === myId)) return;
+    const stay = [...messages].reverse().find((m) => m.card?.type === "stay")?.card;
+    const names = stay?.type === "stay" ? stay.pets.map((p) => p.name) : [];
+    await sendChatMessage(threadId, firstHello(sitterName, myName, names));
+  } catch {
+    /* the person can still say hi by hand */
+  }
+}
+
 export async function listMyChats(): Promise<ChatListItem[]> {
   const { data, error } = await getSupabase().rpc("list_my_chats");
   if (error) fail(error, "Couldn't load your chats. Check your connection and try again.");

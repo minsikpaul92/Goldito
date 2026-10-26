@@ -49,7 +49,7 @@ export function ChatReviewCard({ booking, viewer }: { booking: BookingSummary; v
   if (review === undefined) return null;
   return (
     <View style={styles.wrap}>
-      <Card style={styles.card} testID="chat-review">
+      <Card tone="blush" style={styles.card} testID="chat-review">
         {review ? (
           <>
             <Text style={styles.title}>Your review</Text>
@@ -72,6 +72,6 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     wrap: { width: "92%", alignSelf: "center", gap: theme.spacing.sm },
     card: { gap: theme.spacing.sm },
-    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    body: { fontSize: theme.fontSize.body, color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text, textAlign: "center" },
+    body: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
   });
