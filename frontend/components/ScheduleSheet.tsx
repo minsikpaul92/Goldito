@@ -7,6 +7,7 @@ import { SegmentedControl } from "./ui/SegmentedControl";
 import { Sheet } from "./ui/Sheet";
 import { Stepper } from "./ui/Stepper";
 import { TextButton } from "./ui/TextButton";
+import { TimePickerSheet } from "./ui/TimePickerSheet";
 import { daySpan, formatDayRange, formatTime, shiftTime, timeToMinutes } from "../features/schedule/dates";
 import {
   CareSlot,
@@ -102,6 +103,7 @@ export function ScheduleSheet({
 }: Props) {
   const styles = useThemedStyles(makeStyles);
   const [draft, setDraft] = useState<ScheduleDraft>(initial);
+  const [picker, setPicker] = useState<{ slot: CareSlot; part: "start" | "end"; value: string } | null>(null);
   const problem = draftProblem(draft);
   const days = daySpan(from, to);
 
@@ -151,20 +153,24 @@ export function ScheduleSheet({
                     <View style={styles.time}>
                       <Text style={styles.caption}>From</Text>
                       <Stepper
+                        style={styles.stepper}
                         label={`${label} start`}
                         value={formatTime(s.startsAt)}
                         onDecrease={() => setSlot(slot, { startsAt: shiftTime(s.startsAt, -TIME_STEP) })}
                         onIncrease={() => setSlot(slot, { startsAt: shiftTime(s.startsAt, TIME_STEP) })}
+                        onPressValue={() => setPicker({ slot, part: "start", value: s.startsAt })}
                         testID={`schedule-${slot}-start`}
                       />
                     </View>
                     <View style={styles.time}>
                       <Text style={styles.caption}>{slot === "overnight" ? "To (next day)" : "To"}</Text>
                       <Stepper
+                        style={styles.stepper}
                         label={`${label} end`}
                         value={formatTime(s.endsAt)}
                         onDecrease={() => setSlot(slot, { endsAt: shiftTime(s.endsAt, -TIME_STEP) })}
                         onIncrease={() => setSlot(slot, { endsAt: shiftTime(s.endsAt, TIME_STEP) })}
+                        onPressValue={() => setPicker({ slot, part: "end", value: s.endsAt })}
                         testID={`schedule-${slot}-end`}
                       />
                     </View>
@@ -239,6 +245,20 @@ export function ScheduleSheet({
           {error}
         </Text>
       ) : null}
+
+      <TimePickerSheet
+        visible={!!picker}
+        title={picker ? `${picker.part === "start" ? "Start" : "End"} time` : undefined}
+        value={picker?.value ?? "09:00"}
+        onPick={(time) => {
+          if (picker) {
+            setSlot(picker.slot, picker.part === "start" ? { startsAt: time } : { endsAt: time });
+            setPicker(null);
+          }
+        }}
+        onClose={() => setPicker(null)}
+        testID="schedule-clock"
+      />
     </Sheet>
   );
 }
@@ -253,12 +273,17 @@ const makeStyles = (theme: Theme) =>
     },
     times: {
       flexDirection: "row",
-      flexWrap: "wrap",
-      gap: theme.spacing.md,
+      alignItems: "center",
+      gap: theme.spacing.sm,
       paddingLeft: theme.spacing.lg,
     },
     time: {
+      flex: 1,
+      minWidth: 0,
       gap: theme.spacing.xs,
+    },
+    stepper: {
+      justifyContent: "space-between",
     },
     caption: {
       fontSize: theme.fontSize.small,

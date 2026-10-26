@@ -5,6 +5,7 @@ import { Button } from "./ui/Button";
 import { Sheet } from "./ui/Sheet";
 import { Stepper } from "./ui/Stepper";
 import { TextButton } from "./ui/TextButton";
+import { TimePickerSheet } from "./ui/TimePickerSheet";
 import { formatTime, shiftTime, timeToMinutes } from "../features/schedule/dates";
 import { CareSlot, ClosingRule, SLOTS, WeekdayHour } from "../features/schedule/scheduleApi";
 import { useThemedStyles } from "../providers/ThemeProvider";
@@ -72,6 +73,7 @@ export function ClosingRulesSheet({ visible, rules, hours, weekdayHours, saving,
     return own;
   });
   const [view, setView] = useState<"all" | number>("all");
+  const [picker, setPicker] = useState<{ slot: CareSlot; index: 0 | 1; value: string } | null>(null);
   const problem = hoursProblem(draftHours, byDay);
 
   const shown = (slot: CareSlot): [string, string] =>
@@ -214,20 +216,24 @@ export function ClosingRulesSheet({ visible, rules, hours, weekdayHours, saving,
               <View style={styles.time}>
                 <Text style={styles.caption}>From</Text>
                 <Stepper
+                  style={styles.stepper}
                   label={`${label} start`}
                   value={formatTime(start)}
                   onDecrease={() => setHour(slot, 0, shiftTime(start, -TIME_STEP))}
                   onIncrease={() => setHour(slot, 0, shiftTime(start, TIME_STEP))}
+                  onPressValue={() => setPicker({ slot, index: 0, value: start })}
                   testID={`rules-${slot}-start`}
                 />
               </View>
               <View style={styles.time}>
                 <Text style={styles.caption}>{slot === "overnight" ? "To (next day)" : "To"}</Text>
                 <Stepper
+                  style={styles.stepper}
                   label={`${label} end`}
                   value={formatTime(end)}
                   onDecrease={() => setHour(slot, 1, shiftTime(end, -TIME_STEP))}
                   onIncrease={() => setHour(slot, 1, shiftTime(end, TIME_STEP))}
+                  onPressValue={() => setPicker({ slot, index: 1, value: end })}
                   testID={`rules-${slot}-end`}
                 />
               </View>
@@ -246,6 +252,20 @@ export function ClosingRulesSheet({ visible, rules, hours, weekdayHours, saving,
           {error}
         </Text>
       ) : null}
+
+      <TimePickerSheet
+        visible={!!picker}
+        title={picker ? `${picker.index === 0 ? "Start" : "End"} time` : undefined}
+        value={picker?.value ?? "09:00"}
+        onPick={(time) => {
+          if (picker) {
+            setHour(picker.slot, picker.index, time);
+            setPicker(null);
+          }
+        }}
+        onClose={() => setPicker(null)}
+        testID="rules-clock"
+      />
     </Sheet>
   );
 }
@@ -326,11 +346,16 @@ const makeStyles = (theme: Theme) =>
     },
     times: {
       flexDirection: "row",
-      flexWrap: "wrap",
-      gap: theme.spacing.md,
+      alignItems: "center",
+      gap: theme.spacing.sm,
     },
     time: {
+      flex: 1,
+      minWidth: 0,
       gap: theme.spacing.xs,
+    },
+    stepper: {
+      justifyContent: "space-between",
     },
     caption: {
       fontSize: theme.fontSize.small,
