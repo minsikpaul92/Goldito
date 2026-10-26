@@ -33,11 +33,11 @@ Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreement
 | Button | Send quote | `chat-send-quote` | 659 |
 | TextButton | Send quote | `chat-send-quote` | 662 |
 | TextButton | Decline | `chat-decline` | 665 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 692 |
-| Pressable | — | `chat-action-chip` | 713 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 724 |
-| Pressable | Send a card | `chat-plus` | 740 |
-| Pressable | Send | `chat-send` | 773 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 687 |
+| Pressable | — | `chat-action-chip` | 708 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 719 |
+| Pressable | Send a card | `chat-plus` | 735 |
+| Pressable | Send | `chat-send` | 768 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 

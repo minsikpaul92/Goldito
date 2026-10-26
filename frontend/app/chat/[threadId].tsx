@@ -641,7 +641,7 @@ export default function Chat() {
         {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} startSignal={signals.trip} /> : null}
       </Screen>
       {/* A final quote carries Confirm and Decline on its card: the footer does not repeat them (#289). */}
-      {footerPrimary || step.quote || step.wait ? (
+      {footerPrimary || step.quote ? (
         <View style={styles.next}>
           {footerPrimary?.kind === "meet_start" ? (
             <View style={styles.pair}>
@@ -669,11 +669,6 @@ export default function Chat() {
               onPress={() => setDeclining({ quote: step.primary?.kind === "confirm_quote" })}
               testID="chat-decline"
             />
-          ) : null}
-          {!step.primary && step.wait ? (
-            <Text style={styles.waiting} testID="chat-waiting">
-              {step.wait}
-            </Text>
           ) : null}
         </View>
       ) : null}

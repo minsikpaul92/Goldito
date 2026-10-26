@@ -114,11 +114,6 @@ export function BookingStageBar({
             );
           })}
         </View>
-        {caption ? (
-          <Text style={styles.caption} testID="stage-caption">
-            {caption}
-          </Text>
-        ) : null}
       </View>
     );
   }

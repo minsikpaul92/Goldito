@@ -192,7 +192,7 @@ def test_the_owner_opens_a_new_chat_from_chips(client, setup):
 def test_the_model_being_down_still_gives_plain_chips(client, setup):
     setup(nebius.AIUnavailable("down"))
     body = chips(client).json()
-    assert body["source"] == "fallback" and [c["label"] for c in body["chips"]] == ["Hi, nice to meet you", "Happy to help"]
+    assert body["source"] == "fallback" and [c["label"] for c in body["chips"]] == ["Hi, yes I can host", "Sorry, I can't host", "Hi, let me check"]
 
 
 # --- the draft ----------------------------------------------------------------------------------------------------
