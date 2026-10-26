@@ -238,6 +238,8 @@ export type MockDb = {
   pet_life_records: Row[];
   /** Pet medals (015b): given by the sitter after a stay, read by the owner. */
   pet_medals: Row[];
+  /** Per-pet reviews (015u): written by the stay's sitter after Returned, read by the owner and every sitter. */
+  pet_reviews: Row[];
   /** Prices a sitter set (006). Empty = nobody has any, like a fresh sitter. */
   sitter_rates: Row[];
   /** Treat checks (12.1, 013): written by the backend (tests push the row the API would insert); clients set acknowledged_at. */
@@ -321,6 +323,7 @@ function createMockDb(): MockDb {
     owner_favorite_sitters: [],
     pet_life_records: [],
     pet_medals: [],
+    pet_reviews: [],
     sitter_rates: [],
     safety_checks: [],
     photo_requests: [],
@@ -2410,6 +2413,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         (path !== "chat_threads" || row.owner_id === me || row.sitter_id === me) &&
         // RLS (015b): the pet's owner and the sitter who gave the medal.
         (path !== "pet_medals" || row.sitter_id === me || db.pets.some((p) => p.id === row.pet_id && p.owner_id === me)) &&
+        // RLS (015u): the pet's owner and every sitter.
+        (path !== "pet_reviews" || users.find((u) => u.id === me)?.role === "sitter" || db.pets.some((p) => p.id === row.pet_id && p.owner_id === me)) &&
         // RLS (011): an owner reads their pets' records; the raw source_snapshot is never selectable.
         // …and a sitter with a pending / confirmed booking that includes the pet (can_view_pet_profile).
         (path !== "pet_life_records" ||
@@ -2503,6 +2508,9 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (path === "pet_life_records" && select.includes("sitter:profiles")) {
       rows = rows.map((r) => ({ ...r, sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null } }));
     }
+    if (path === "pet_reviews" && select.includes("sitter:profiles")) {
+      rows = rows.map((r) => ({ ...r, sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null } }));
+    }
     if (path === "pet_medals" && select.includes("sitter:profiles")) {
       rows = rows.map((r) => ({ ...r, sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null } }));
     }
@@ -2551,7 +2559,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
       // Feed + notifications are read newest first (`order=created_at.desc`).
-      if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "pet_stickers" || path === "safety_checks") && params.get("order")!.endsWith(".desc")) {
+      if ((path === "pet_life_records" || path === "pet_reviews" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "pet_stickers" || path === "safety_checks") && params.get("order")!.endsWith(".desc")) {
         rows.reverse();
       }
     }
@@ -2646,6 +2654,21 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
           (a) => a.pet_id === row.pet_id && String(a.allergen).toLowerCase() === String(row.allergen).toLowerCase(),
         );
         if (dupe) return json(route, 409, { code: "23505", message: "duplicate key value" });
+      }
+    }
+    if (path === "pet_reviews") {
+      // upsert on (booking_id, pet_id); RLS (015u): the stay's sitter, a pet of the stay, after Returned.
+      for (const row of inserted) {
+        const booking = db.bookings.find((b) => b.id === row.booking_id && b.sitter_id === me && b.status === "confirmed");
+        const done = db.booking_handoffs.some((h) => h.booking_id === row.booking_id && h.kind === "pick_up" && h.completed_at);
+        const inStay = db.booking_pets.some((bp) => bp.booking_id === row.booking_id && bp.pet_id === row.pet_id);
+        if (row.sitter_id !== me || !booking || !done || !inStay) {
+          return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
+        }
+        const old = db.pet_reviews.find((r) => r.booking_id === row.booking_id && r.pet_id === row.pet_id);
+        if (old) row.created_at = old.created_at;
+        const keep = db.pet_reviews.filter((r) => r !== old);
+        db.pet_reviews.splice(0, db.pet_reviews.length, ...keep);
       }
     }
     if (path === "report_decor") {
