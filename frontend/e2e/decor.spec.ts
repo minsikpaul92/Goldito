@@ -90,15 +90,14 @@ test.describe("diary decorating", () => {
     await drag(page, from, { x: from.x + 60, y: from.y + 30 });
     await expect.poll(async () => (await spot(mine, paper)).x).toBeCloseTo(0.5 + 60 / p.width, 1);
 
-    await screen.getByTestId("decor-bigger").click();
-    await screen.getByTestId("decor-bigger").click();
-    await screen.getByTestId("decor-rotate-right").click();
+    // No size or turn buttons any more: the corner handle does both (#369, next test).
+    await expect(screen.getByTestId("decor-bigger")).toHaveCount(0);
     await screen.getByTestId("decor-save").click();
     await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
 
     const saved = db.report_decor.find((r) => r.user_id === OWNER.id)!;
     const [item] = saved.items as Record<string, number | string>[];
-    expect(item).toMatchObject({ sticker_id: "st-1", public_id: `goldito/${MAX.id}/sticker/a`, scale: 1.4, rotate: 15 });
+    expect(item).toMatchObject({ sticker_id: "st-1", public_id: `goldito/${MAX.id}/sticker/a`, scale: 1, rotate: 0 });
     expect(Number(item.x)).toBeCloseTo(0.5 + 60 / p.width, 1);
     expect(Number(item.y)).toBeCloseTo(0.5 + 30 / p.height, 1);
     // The sitter's layer is untouched, and so is the text.
@@ -113,6 +112,67 @@ test.describe("diary decorating", () => {
     expect(after.x).toBeCloseTo(before.x, 2);
     expect(after.y).toBeCloseTo(before.y, 2);
     expect(isInside(await box(screen.getByTestId("decor-canvas-front")), await box(screen.getByTestId("diary-entry-paper")))).toBe(true);
+  });
+
+  test("the corner handle sizes and turns the picked sticker, within the limits (#369)", async ({ page }) => {
+    const db = await openOwnerEntry(page, (d) => seedSticker(d, OWNER.id));
+    const screen = app(page);
+    await screen.getByTestId("decor-start").click();
+    await screen.getByTestId("decor-add").click();
+    const mine = screen.getByTestId("decor-mine");
+    await mine.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    const handle = screen.getByTestId("decor-resize");
+    await expect(handle).toHaveCount(1); // only on the picked sticker
+
+    // Half as far again from the centre: half as big again.
+    const c = center(await box(mine));
+    const h = center(await box(handle));
+    await drag(page, h, { x: c.x + (h.x - c.x) * 1.5, y: c.y + (h.y - c.y) * 1.5 });
+    // A quarter turn around the centre.
+    const h2 = center(await box(handle));
+    await drag(page, h2, { x: c.x - (h2.y - c.y), y: c.y + (h2.x - c.x) });
+    await screen.getByTestId("decor-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    let [item] = db.report_decor.find((r) => r.user_id === OWNER.id)!.items as Record<string, number>[];
+    expect(item.scale).toBeCloseTo(1.5, 1);
+    expect(Math.abs(item.rotate - 90)).toBeLessThan(4);
+
+    // Far out it stops at the biggest size.
+    await screen.getByTestId("decor-start").click();
+    await screen.getByTestId("decor-mine").click();
+    const h3 = center(await box(handle));
+    await drag(page, h3, { x: c.x + (h3.x - c.x) * 6, y: c.y + (h3.y - c.y) * 6 });
+    await screen.getByTestId("decor-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    [item] = db.report_decor.find((r) => r.user_id === OWNER.id)!.items as Record<string, number>[];
+    expect(item.scale).toBe(2.5);
+  });
+
+  test("two fingers on a sticker pinch it bigger (#369)", async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "touch points are sent through Chrome DevTools");
+    const db = await openOwnerEntry(page, (d) => seedSticker(d, OWNER.id));
+    const screen = app(page);
+    await screen.getByTestId("decor-start").click();
+    await screen.getByTestId("decor-add").click();
+    const mine = screen.getByTestId("decor-mine");
+    await mine.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    const s = await box(mine);
+    const c = center(s);
+    const d0 = s.width / 4;
+    const cdp = await page.context().newCDPSession(page);
+    const at = (d: number) => [
+      { x: c.x - d, y: c.y, id: 1 },
+      { x: c.x + d, y: c.y, id: 2 },
+    ];
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: at(d0) });
+    for (let i = 1; i <= 10; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: at(d0 * (1 + i / 10)) });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await screen.getByTestId("decor-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    const [item] = db.report_decor.find((r) => r.user_id === OWNER.id)!.items as Record<string, number>[];
+    expect(item.scale).toBeCloseTo(2, 1);
+    // A pinch does not move the sticker.
+    expect(item.x).toBeCloseTo(0.5, 1);
   });
 
   test("Cancel keeps what was saved; Remove takes the picked sticker off", async ({ page }) => {

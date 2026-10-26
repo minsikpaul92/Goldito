@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
 
 import { Button } from "../../components/ui/Button";
 import { SegmentedControl } from "../../components/ui/SegmentedControl";
 import { Sheet } from "../../components/ui/Sheet";
-import { TextButton } from "../../components/ui/TextButton";
 import { UploadError, uploadMedia } from "../../lib/cloudinary";
 import { FALLBACK_CAPTION, createFeedPost } from "../../lib/feed";
 import { PickedMedia, pickMedia } from "../../lib/media";
@@ -41,6 +40,8 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
   const [petId, setPetId] = useState<string | null>(null);
   const [body, setBody] = useState("");
   const [photo, setPhoto] = useState<PickedMedia | null>(null);
+  /** Replace and Remove show over the photo after a tap on it. */
+  const [photoMenu, setPhotoMenu] = useState(false);
   const [stickers, setStickers] = useState<DecorItem[]>([]);
   const session = useSession();
   const me = session.status === "signedIn" ? session.profile.id : null;
@@ -52,6 +53,7 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
     setPetId(initialPetId && pets.some((p) => p.id === initialPetId) ? initialPetId : (pets[0]?.id ?? null));
     setBody("");
     setPhoto(null);
+    setPhotoMenu(false);
     setStickers([]);
   }, [visible, initialPetId, pets]);
 
@@ -62,9 +64,32 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
   useEffect(() => () => (preview ? URL.revokeObjectURL(preview) : undefined), [preview]);
 
   const addPhoto = async () => {
+    setPhotoMenu(false);
     const picked = await pickMedia({ purpose: "feed", mediaTypes: ["image"] });
     if (picked) setPhoto(picked);
   };
+
+  // The picture box is the photo button (#369): empty, it opens the picker; with a photo, Replace and Remove.
+  const picturePress = photo
+    ? {
+        onPress: () => setPhotoMenu((open) => !open),
+        label: "Change the photo",
+        testID: "diary-write-photo-change",
+        actions: photoMenu ? (
+          <>
+            <PhotoAction label="Replace" onPress={() => void addPhoto()} testID="diary-write-photo-replace" />
+            <PhotoAction
+              label="Remove"
+              onPress={() => {
+                setPhoto(null);
+                setPhotoMenu(false);
+              }}
+              testID="diary-write-photo-remove"
+            />
+          </>
+        ) : undefined,
+      }
+    : { onPress: () => void addPhoto(), label: "Add a photo", testID: "diary-write-photo" };
 
   const save = async () => {
     if (!pet || saving) return;
@@ -138,27 +163,33 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
           pictureUrl={preview}
           testID="diary-write-page"
           pending={{ items: stickers, onChange: setStickers }}
+          picturePress={saving ? undefined : picturePress}
           writing={{ onChangeText: setBody, placeholder: "Dear diary, today…", maxLength: REPORT_BODY_MAX, disabled: saving, testID: "diary-write-body" }}
         />
       ) : null}
-      <View style={styles.row}>
-        {photo ? (
-          <>
-            <Text style={styles.photo} testID="diary-write-photo-added">
-              📷 Photo added
-            </Text>
-            <TextButton label="Remove" onPress={() => setPhoto(null)} testID="diary-write-photo-remove" />
-          </>
-        ) : (
-          <TextButton label="+ Photo" onPress={() => void addPhoto()} testID="diary-write-photo" />
-        )}
-      </View>
     </Sheet>
+  );
+}
+
+function PhotoAction({ label, onPress, testID }: { label: string; onPress: () => void; testID: string }) {
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} style={styles.action} testID={testID}>
+      <Text style={styles.actionLabel}>{label}</Text>
+    </Pressable>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    row: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
-    photo: { fontSize: theme.fontSize.body, color: theme.color.text },
+    action: {
+      minHeight: 36,
+      paddingHorizontal: theme.spacing.md,
+      justifyContent: "center",
+      borderRadius: theme.radius.pill,
+      backgroundColor: theme.color.surface,
+      borderWidth: 1,
+      borderColor: theme.color.border,
+    },
+    actionLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
   });
