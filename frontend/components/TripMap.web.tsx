@@ -21,7 +21,7 @@ function pin(emoji: string, label: string) {
 }
 
 /**
- * The trip map (phase-06b 6B.3, D32): Leaflet + OpenStreetMap tiles. It fits the traveller and the place on its own.
+ * The trip map (phase-06b 6B.3, D32): Leaflet + Esri Light Gray tiles. It fits the traveller and the place on its own.
  * A finger or the mouse drags it, two fingers pinch zoom, and ± zoom. The wheel zooms only once the map has focus
  * (a click or Tab on it), so scrolling past it still scrolls the screen (#381).
  */
@@ -90,9 +90,9 @@ export function TripMap({ traveler, dest, travelerLabel, testID = "trip-map" }: 
     instance.on("keydown", (e) => {
       if ((e as L.LeafletKeyboardEvent).originalEvent.key.startsWith("Arrow")) markMoved();
     });
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "© OpenStreetMap contributors",
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 16,
+      attribution: "Tiles © Esri",
     }).addTo(instance);
     fitting.current = true;
     instance.setView([43.6532, -79.3832], 12);

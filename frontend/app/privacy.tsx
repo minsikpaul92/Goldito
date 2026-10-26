@@ -41,7 +41,7 @@ const SECTIONS: LegalSection[] = [
   {
     title: "Other services that receive data",
     body: [
-      "OpenStreetMap: when you save a home address, the address text is sent once to OpenStreetMap's Nominatim search to place the pin on the map. When you use your current location, for your home address or to search for sitters, that exact point is sent once to the same search to read the full address (house number included) and fill it in or show it in the search bar. You can change the address before you save it. Sitters never see your current location. The map pictures on the trip screen load from OpenStreetMap tile servers in your browser, so they see your IP address and the map area you view.",
+      "OpenStreetMap: when you save a home address, the address text is sent once to OpenStreetMap's Nominatim search to place the pin on the map. When you use your current location, for your home address or to search for sitters, that exact point is sent once to the same search to read the full address (house number included) and fill it in or show it in the search bar. You can change the address before you save it. Sitters never see your current location. The map pictures on the trip screen load from Esri tile servers in your browser, so they see your IP address and the map area you view.",
       "Cloudinary stores and delivers photos.",
       "Vercel hosts the website and Render hosts our server. Both see ordinary request logs such as IP addresses.",
     ],
