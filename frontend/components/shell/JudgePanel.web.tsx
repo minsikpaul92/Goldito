@@ -41,8 +41,12 @@ export function JudgePanel({ panes, accounts }: Props) {
   const send = useCommands();
   const split = panes.length > 1;
 
-  // A seat that changes (a new judge, or none) starts the panel over.
+  // Another seat starts the panel over. A phone reloading (a scene opening) reports no account for a moment; that
+  // is not a new seat.
+  const lastSeat = useRef(seat);
   useEffect(() => {
+    if (!seat || seat === lastSeat.current) return;
+    lastSeat.current = seat;
     setActive(null);
     setError(null);
   }, [seat]);
