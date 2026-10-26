@@ -428,4 +428,20 @@ test.describe("daily report", () => {
     await page.goto("/owner/diary");
     await expect(app(page).getByText("When a stay is on, updates show up here live", { exact: false })).toBeVisible();
   });
+
+  test("a long chip wraps inside the card and can still be turned off (Sitter-013)", async ({ page }) => {
+    const long = { id: "note-c-long", kind: "episode", label: `Max looks SO HAPPY on our walk today! ${"He sniffed every tree on the street and ".repeat(4)}then napped.`.slice(0, 200), source: "checkin", check: null, media_id: null };
+    await openSitterDiary(page, [long]);
+    const screen = app(page);
+    const chip = screen.getByTestId(`report-chip-${MAX.id}-${long.id}`);
+    const card = await screen.getByTestId(`report-${MAX.id}`).boundingBox();
+    const box = await chip.boundingBox();
+    expect(box && card).toBeTruthy();
+    expect(box!.x).toBeGreaterThanOrEqual(card!.x);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(card!.x + card!.width + 0.5);
+    expect(box!.height).toBeGreaterThan(60); // several lines, not one line running off the edge
+    await chip.click();
+    await expect(chip).toHaveAttribute("aria-pressed", "false");
+  });
+
 });

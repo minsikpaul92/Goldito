@@ -398,6 +398,7 @@
 | REPORT-14 | (Diary book DB.2) 시터 → Diary — 아무것도 안 했을 때 | **그림일기 표지가 바로** 보임(📅 날짜 · "Max's day 🐾" · 그림 칸 · 줄 공책), 줄 위에 손글씨로 직접 씀("Dear diary, today…"). 쓰기 시작하면 "Draft — only you can see it", **Send to {견주}**가 켜짐. 직접 쓴 글만 Send → AI 호출 없이 오늘 초안이 만들어져(`save_report_draft`, 014b) 바로 보내짐, 견주에게 알림 1개 | 🤖 `report.spec.ts` · SQL `rls_smoke` 014b · 호스팅 DB는 `014b` 적용 뒤 👤 | 사람 확인 대기 |
 | REPORT-15 | (DB.2) 페이지에 몇 줄 쓴 뒤 아래 **Let Goldito write it** → **✨ Rewrite the page from the chips** | "This replaces what's on the page — nothing is sent." 안내, 만든 글이 **종이 위에** 초안으로 들어감(견주에게 안 감). 종이에서 고친 뒤 Send → 그 초안이 보내짐(새 행 없음). 칩 · 사진 · 내 줄은 같은 화면에 그대로 있어 끄고 다시 쓸 수 있음(이전의 Back to chips 없음) | 🤖 `report.spec.ts` | 사람 확인 대기 |
 | REPORT-16 | (#186) 시터가 40자보다 긴 메모로 체크인(예: "Watched the birds from the window for an hour") → Diary의 칩 | 칩이 **낱말 단위로 잘리고 "…"로 끝남**("Watched the birds from the window for…"), 40자 안. 글 초안에는 원문이 그대로 들어감. 사진 설명 칩 · 피드 캡션 칩도 같음 | 🤖 pytest `test_ai_report_chips`(`_chip`). 2026-10-20 **어시스턴트(사람 아님)**가 Paul 데모 세트로 화면 확인 | 사람 확인 대기 (어시스턴트 실행만, 사람 확인 아님) |
+| REPORT-17 | (#398, Sitter-013) 시터 Diary에 긴 칩(예: "Max looks SO HAPPY on our walk today! …", 200자까지) | 칩이 카드 폭을 넘지 않고 **안에서 여러 줄로 줄바꿈**, 눌러서 끄고 켤 수 있음. 칩 글씨는 작게(small), 높이는 터치 크기(44) 유지. Goldito 칩 · 내가 쓴 줄 모두 같음 | 🤖 `report.spec.ts`(카드 안 위치 · 끄기) | 사람 확인 대기 |
 
 ### 3.11 문의 AI (INQ) — Phase 07B · *사전: 백엔드 + `NEBIUS_API_KEY`, Chloe의 일정 · 요금이 있고 Robert에게 Max(+Mochi)가 있음*
 
