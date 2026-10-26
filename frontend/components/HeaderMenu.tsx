@@ -397,7 +397,7 @@ const makeStyles = (theme: Theme) =>
     },
     youText: { flex: 1, minWidth: 0, gap: 2 },
     name: {
-      fontSize: 20,
+      fontSize: theme.fontSize.option,
       fontWeight: theme.fontWeight.bold,
       color: theme.color.text,
     },
@@ -411,7 +411,7 @@ const makeStyles = (theme: Theme) =>
     pressed: { opacity: theme.motion.pressOpacity },
     rowLabel: {
       flex: 1,
-      fontSize: 18,
+      fontSize: theme.fontSize.lead,
       fontWeight: theme.fontWeight.semibold,
       color: theme.color.primary,
     },
@@ -453,7 +453,7 @@ const makeStyles = (theme: Theme) =>
       gap: theme.spacing.md,
       borderTopWidth: 1,
       borderTopColor: theme.color.border,
-      shadowColor: "#000",
+      shadowColor: theme.color.text,
       shadowOffset: { width: 0, height: -4 },
       shadowOpacity: 0.08,
       shadowRadius: 12,
