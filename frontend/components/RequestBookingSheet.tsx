@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AddressInput } from "./AddressInput";
 import { Button } from "./ui/Button";
+import { Card } from "./ui/Card";
 import { ChoiceChips } from "./ui/ChoiceChips";
 import { DayPickerSheet } from "./ui/DayPickerSheet";
 import { SegmentedControl } from "./ui/SegmentedControl";
@@ -40,6 +41,21 @@ type When = { day: string; time: string };
 /** `placed` is the address text that was found on the map, for "elsewhere". */
 type Place = { type: LocationType; note: string; placed: string | null };
 type Picker = { kind: Kind; part: "day" | "time" } | null;
+
+/** "Max", "Max and Mochi", "Max, Mochi and Luna". */
+function stayNames(ids: string[], all: { id: string; name: string }[]): string {
+  const names = ids.map((id) => all.find((p) => p.id === id)?.name).filter(Boolean) as string[];
+  if (names.length === 0) return "Your pet";
+  return names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
+/** "Oct 26 to 28 · 2 nights" (same month) or "Oct 30 to Nov 2 · 3 nights", as in Figma. */
+function datesLine(from: string, to: string): string {
+  const nights = Math.max(0, Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000));
+  const sameMonth = from.slice(0, 7) === to.slice(0, 7);
+  const end = sameMonth ? String(Number(to.slice(8, 10))) : formatDay(to);
+  return `${formatDay(from)} to ${end} · ${nights} night${nights === 1 ? "" : "s"}`;
+}
 
 /**
  * Request booking as a sheet over the chat (3D.7 groundwork): the stay from the search (pets, dates, times), the place of
@@ -242,6 +258,7 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
       }
       testID="request-sheet"
     >
+      <Card tone="mint" style={styles.panel}>
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Service</Text>
         <ChoiceChips
@@ -250,13 +267,13 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
           onChange={(v) => v[0] && setService(v[0] as ServiceType)}
           testID="request-service"
         />
-        <Text style={styles.hint}>{houseSitting ? `${sitterName} stays at your place.` : `Your pets stay at ${sitterName}'s place.`}</Text>
+        <Text style={styles.hint}>{houseSitting ? `${sitterName} stays at your home.` : `${stayNames(petIds, pets)} ${petIds.length > 1 ? "stay" : "stays"} at ${sitterName}'s home.`}</Text>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Dates</Text>
         <Pressable accessibilityRole="button" onPress={() => setDatesOpen((o) => !o)} style={styles.dateField} testID="request-dates">
-          <Text style={styles.dateText} numberOfLines={1}>{`${formatDay(dropOff.day)} ${formatTime(dropOff.time)} to ${formatDay(pickUp.day)} ${formatTime(pickUp.time)}`}</Text>
+          <Text style={styles.dateText} numberOfLines={1}>{datesLine(dropOff.day, pickUp.day)}</Text>
           <Text style={styles.link}>{datesOpen ? "Done" : "Change"}</Text>
         </Pressable>
         {datesOpen ? (
@@ -279,13 +296,15 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
           onChange={setPetIds}
           testID="request-pet"
         />
-        <Text style={styles.hint}>Their profiles (breed, age, allergies) go with your request.</Text>
+        <Text style={styles.hint}>Their profiles (breed, age, allergies) go with your question.</Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>{`Note for ${sitterName} (optional)`}</Text>
-        <TextField label="" placeholder="e.g. Max gets anxious with loud noises" value={note} onChangeText={setNote} maxLength={500} multiline testID="request-note" />
+        <Text style={styles.sectionLabel}>Your question (optional)</Text>
+        <TextField label="" placeholder={`e.g. Can ${petIds.length === 1 ? (pets.find((p) => p.id === petIds[0])?.name ?? "my pet") : "my pet"} take a pill in a treat?`} value={note} onChangeText={setNote} maxLength={500} multiline soft testID="request-note" />
       </View>
+
+      </Card>
 
       <DayPickerSheet
         visible={picker?.part === "day"}
@@ -313,10 +332,11 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
+    panel: { gap: 14, padding: theme.spacing.md },
     section: { gap: theme.spacing.sm },
     sectionLabel: { fontSize: 13, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    sectionHint: { fontSize: 12, fontWeight: theme.fontWeight.medium, color: theme.color.textMuted },
-    hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    sectionHint: { fontSize: 12, fontWeight: theme.fontWeight.medium, color: theme.color.cardTextMuted },
+    hint: { fontSize: theme.fontSize.small, color: theme.color.cardTextMuted },
     dateField: {
       minHeight: theme.layout.touchTarget,
       flexDirection: "row",
