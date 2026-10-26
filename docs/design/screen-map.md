@@ -1351,8 +1351,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Zoom in | ``${testID}-zoom-in`` | 99 |
-| Pressable | Zoom out | ``${testID}-zoom-out`` | 102 |
+| Pressable | Zoom in | ``${testID}-zoom-in`` | 102 |
+| Pressable | Zoom out | ``${testID}-zoom-out`` | 105 |
 
 ### VideoTrimSheet.web — [components/VideoTrimSheet.web.tsx](../../frontend/components/VideoTrimSheet.web.tsx)
 

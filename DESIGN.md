@@ -452,7 +452,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | `ConsentCard` (built: `components/ConsentCard.tsx`) | One consent: title, 3-line summary, **Read full text**, checkbox. Footer note "Demo template — not legal advice" |
 | `EntryInfoCard` (built: `components/EntryInfoCard.tsx`) | Owner's entry info for the sitter (03C). Locked: 🔒 + "Unlocks Oct 9, 5:30 AM". Unlocked: **Show code** button, code hides again after 10 s. Never on a toast or notification |
 | `ChecklistCard` (built: `components/ChecklistCard.tsx`) | AI checklist preview from a care request (06): editable rows (time · title · dose), delete, Heads-up chips |
-| `TripMap` (web) | View-only Leaflet + OpenStreetMap map (06B): auto-fits traveler + destination, **±** buttons only, no drag-pan (drags scroll the screen, §7.7). Shows OSM attribution. A "Sharing your location until you arrive" banner sits above it while sharing |
+| `TripMap` (web) | Leaflet + OpenStreetMap map (06B): auto-fits traveler + destination until the person drags it, **±** buttons and drag-pan (no wheel or pinch, so the screen still scrolls; on arrival the car sits on the pin). Shows OSM attribution. A "Sharing your location until you arrive" banner sits above it while sharing |
 | `StarRating` | Five tappable stars (07C), large hit areas, keyboard and mouse |
 | `LifeRecordCard` | Pet Life Record (07C): Eats · Meds · Potty · Behavior · Heads-up · Sitter tips, each line with its source ("From Chloe · Oct 9–12") |
 | `Skeleton` | Gray blocks while loading; matches the final layout. After 10 s add "Still loading…" + **Retry** |
