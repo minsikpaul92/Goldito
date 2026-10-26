@@ -1,18 +1,8 @@
-import { useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
-import { LayoutRectangle, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-
-import { Screen } from "../components/ui/Screen";
-import { useThemedStyles } from "../providers/ThemeProvider";
-import { Theme } from "../theme/themes";
-
-type Section = { title: string; body: string[] };
-
-const slug = (title: string) => title.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
+import { LegalPage, LegalSection } from "../components/LegalPage";
 
 const UPDATED = "October 24, 2026";
 
-const SECTIONS: Section[] = [
+const SECTIONS: LegalSection[] = [
   {
     title: "1. About this prototype",
     body: [
@@ -52,87 +42,7 @@ const SECTIONS: Section[] = [
   },
 ];
 
+/** Terms of Service (#375): reachable signed out from sign-up, and from Settings. */
 export default function Terms() {
-  const styles = useThemedStyles(makeStyles);
-  const { open: openParam } = useLocalSearchParams<{ open?: string }>();
-  const [open, setOpen] = useState<string | undefined>(
-    SECTIONS.some((section) => slug(section.title) === openParam) ? openParam : slug(SECTIONS[0].title),
-  );
-  const scrollRef = useRef<ScrollView>(null);
-  const sectionLayouts = useRef<Record<string, LayoutRectangle>>({});
-  const isInitialMount = useRef(true);
-
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    if (!open) return;
-
-    const timer = setTimeout(() => {
-      const layout = sectionLayouts.current[open];
-      if (layout) {
-        scrollRef.current?.scrollTo({ y: Math.max(0, layout.y - 16), animated: true });
-      }
-    }, 60);
-
-    return () => clearTimeout(timer);
-  }, [open]);
-
-  return (
-    <Screen ref={scrollRef} contentStyle={styles.content} testID="terms">
-      <Text accessibilityRole="header" style={styles.title}>
-        Terms of Service
-      </Text>
-      <Text style={styles.updated}>Last updated {UPDATED}</Text>
-      {SECTIONS.map((section) => {
-        const id = slug(section.title);
-        const expanded = open === id;
-        return (
-          <View
-            key={id}
-            onLayout={(e) => {
-              sectionLayouts.current[id] = e.nativeEvent.layout;
-            }}
-            style={styles.section}
-            testID={`terms-${id}`}
-          >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ expanded }}
-              onPress={() => setOpen(expanded ? undefined : id)}
-              style={styles.headingRow}
-              testID={`terms-${id}-toggle`}
-            >
-              <Text accessibilityRole="header" style={styles.heading}>
-                {section.title}
-              </Text>
-              <Text style={styles.chevron}>{expanded ? "▾" : "▸"}</Text>
-            </Pressable>
-            <View style={expanded ? styles.body : styles.bodyClosed}>
-              {section.body.map((paragraph) => (
-                <Text key={paragraph} style={styles.paragraph}>
-                  {paragraph}
-                </Text>
-              ))}
-            </View>
-          </View>
-        );
-      })}
-    </Screen>
-  );
+  return <LegalPage title="Terms of Service" updated={UPDATED} sections={SECTIONS} testID="terms" />;
 }
-
-const makeStyles = (theme: Theme) =>
-  StyleSheet.create({
-    content: { gap: theme.spacing.md, paddingBottom: theme.spacing.xl },
-    title: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    updated: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    section: { borderBottomWidth: 1, borderBottomColor: theme.color.border, paddingBottom: theme.spacing.sm },
-    headingRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 44 },
-    heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text, flexShrink: 1 },
-    chevron: { fontSize: theme.fontSize.body, color: theme.color.textMuted },
-    body: { gap: theme.spacing.sm, paddingBottom: theme.spacing.sm },
-    bodyClosed: { display: "none" },
-    paragraph: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: 22 },
-  });

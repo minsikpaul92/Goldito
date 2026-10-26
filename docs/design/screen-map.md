@@ -41,7 +41,7 @@ Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreement
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
-Shows: `Art` · `BrandLogo` · `OrDivider` · `SocialSignIn`
+Shows: `BrandLogo` · `OrDivider` · `RoleArt` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
@@ -340,11 +340,9 @@ Shows: `TreatCheckScreen`
 
 ### `/privacy` — [app/privacy.tsx](../../frontend/app/privacy.tsx)
 
-Public privacy page (10.11): reachable signed out — the Google OAuth consent screen (Branding) and the Welcome screen link here. Sections open one at a time; closed ones stay in the DOM (hidden) so the text is still there for crawlers and tests. `/privacy?open=google-calendar-and-meet` opens that section, for the consent-screen reviewer.
+Public privacy page (10.11): reachable signed out — the Google OAuth consent screen (Branding) and the Welcome screen link here. `/privacy?open=google-calendar-and-meet` opens that section, for the consent-screen reviewer.
 
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Pressable | — | ``privacy-${id}-toggle`` | 132 |
+Shows: `LegalPage`
 
 ### `/profile` — [app/profile.tsx](../../frontend/app/profile.tsx)
 
@@ -384,7 +382,7 @@ Menu → Settings (Phase 11.11, D47): the account, What's New, notifications, Pr
 
 Sign up in three short steps (intro trial): who you are, your name and email, a password. One progress bar and one Back; Back on the first step leaves.
 
-Shows: `Art` · `SocialSignIn`
+Shows: `RoleArt` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
@@ -591,24 +589,25 @@ Shows: `TodayTasks`
 
 ### `/terms` — [app/terms.tsx](../../frontend/app/terms.tsx)
 
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Pressable | — | ``terms-${id}-toggle`` | 100 |
+Terms of Service (#375): reachable signed out from sign-up, and from Settings.
+
+Shows: `LegalPage`
 
 ### `/welcome` — [app/(public)/welcome/index.tsx](../../frontend/app/(public)/welcome/index.tsx)
 
 Welcome (OB.1, intro trial on the design site): Max and Mochi, the tagline, and Try the demo as the main button, then email sign-up and Log in. How it works opens three short pages.
 
-Shows: `BrandLogo` · `DemoSheet` · `SocialSignIn`
+Shows: `Art` · `BrandLogo` · `DemoSheet` · `SocialSignIn`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Try the demo | `welcome-demo` | 39 |
-| Button | Create account | `welcome-create` | 41 |
-| TextButton | Sign up with email | `welcome-sign-up` | 45 |
-| TextButton | Log in | `welcome-sign-in` | 46 |
-| TextButton | How it works › | `welcome-how` | 77 |
-| TextButton | Privacy | `welcome-privacy` | 78 |
+| Button | Try the demo | `welcome-demo` | 40 |
+| Button | Create account | `welcome-create` | 42 |
+| TextButton | Sign up with email | `welcome-sign-up` | 46 |
+| TextButton | Log in | `welcome-sign-in` | 48 |
+| Pressable | — | `welcome-privacy` | 51 |
+| Pressable | — | `welcome-terms` | 57 |
+| Pressable | How it works, three short pages | `welcome-how` | 89 |
 
 ### `/welcome/how` — [app/(public)/welcome/how.tsx](../../frontend/app/(public)/welcome/how.tsx)
 
@@ -618,11 +617,11 @@ Shows: `Art` · `DemoSheet`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Try the demo | `how-demo` | 126 |
-| Button | Create account | `how-create` | 127 |
-| Button | Next | `how-next` | 135 |
-| BackLink | — | `how-back` | 144 |
-| TextButton | Skip | `how-skip` | 148 |
+| Button | Try the demo | `how-demo` | 128 |
+| Button | Create account | `how-create` | 129 |
+| Button | Next | `how-next` | 137 |
+| BackLink | — | `how-back` | 146 |
+| TextButton | Skip | `how-skip` | 150 |
 
 ### `/welcome/owner` — [app/(public)/welcome/owner.tsx](../../frontend/app/(public)/welcome/owner.tsx)
 
@@ -988,6 +987,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Button | Add Heads-up | `heads-up-add` | 105 |
+
+### LegalPage — [components/LegalPage.tsx](../../frontend/components/LegalPage.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| BackLink | — | ``${testID}-back`` | 61 |
 
 ### MediaConfirm — [components/MediaConfirm.tsx](../../frontend/components/MediaConfirm.tsx)
 
@@ -1415,8 +1420,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Continue with Apple | ``${testID}-apple`` | 30 |
-| Button | Continue with Google | ``${testID}-google`` | 37 |
+| Button | Apple | ``${testID}-apple`` | 31 |
+| Button | Google | ``${testID}-google`` | 40 |
 
 ### BigOption — [components/ownerOnboarding/BigOption.tsx](../../frontend/components/ownerOnboarding/BigOption.tsx)
 

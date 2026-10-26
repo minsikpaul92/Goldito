@@ -20,6 +20,12 @@ test.describe("welcome", () => {
     // Apple and Google stay hidden until they work.
     await expect(screen.getByTestId("welcome-social-apple")).toHaveCount(0);
 
+    await screen.getByTestId("welcome-terms").click();
+    await expect(page).toHaveURL(/\/terms$/);
+    await expect(screen.getByTestId("terms")).toContainText("Last updated");
+    await screen.getByTestId("terms-back").click();
+    await expect(page).toHaveURL(/\/welcome$/);
+
     await screen.getByTestId("welcome-sign-up").click();
     await expect(page).toHaveURL(/\/signup$/);
     await page.goBack();
