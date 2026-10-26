@@ -272,7 +272,7 @@ test.describe("chat hub", () => {
     await screen.getByTestId("start-chat").click();
     await expect(page).toHaveURL(/\/chat\//);
     await expect(screen.getByTestId("chat-stay-card")).toContainText("Max");
-    await screen.getByTestId("chat-request-booking").click();
+    await screen.getByTestId("chat-next-meet_start").click();
     await expect(screen.getByTestId("request-sheet")).toBeVisible();
     await screen.getByTestId("request-send").click();
     await expect.poll(() => db.requests.length).toBe(1);
@@ -289,7 +289,7 @@ test.describe("chat hub", () => {
     await expect(page).toHaveURL(/\/owner$/);
     await page.goto(`/chat/${THREAD}`);
     await expect(app(page).getByTestId("chat-stay-card").or(app(page).getByTestId("chat-bubble-me").first())).toBeVisible();
-    await expect(app(page).getByTestId("chat-request-booking")).toHaveCount(0);
+    await expect(app(page).getByTestId("chat-next-meet_start")).toHaveCount(0);
   });
 
   test("asking about a different stay with nothing said since changes the stay card; after a message it adds one", async ({ page }) => {
@@ -348,7 +348,7 @@ test.describe("chat hub", () => {
     const screen = await openChats(page, OWNER, "owner");
     await screen.getByTestId("chat-row-Chloe").click();
 
-    await screen.getByTestId("chat-request-booking").click();
+    await screen.getByTestId("chat-next-meet_start").click();
     await expect(screen.getByTestId("request-sheet")).toBeVisible();
     await expect(screen.getByTestId("chat-header")).toBeVisible(); // the chat stays behind the sheet
     await expect(screen.getByTestId("request-pet-" + MAX)).toHaveAttribute("aria-checked", "true"); // the stay's pets start picked
@@ -390,7 +390,7 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("chat-request-card")).toContainText("You sent a booking request");
     await expect(screen.getByTestId("chat-request-card")).toContainText("750 Bloor St W, Toronto, ON M6G 3K4");
     await expect(screen.getByTestId("chat-request-note")).toHaveText("“Max gets anxious with loud noises”");
-    await expect(screen.getByTestId("chat-request-booking")).toHaveCount(0);
+    await expect(screen.getByTestId("chat-next-meet_start")).toHaveCount(0);
     expect(db.chat_messages.filter((m) => (m.card as { type?: string } | null)?.type === "request")).toHaveLength(1);
   });
 
@@ -659,7 +659,7 @@ test.describe("chat hub", () => {
     await screen.getByTestId("chat-row-Robert").click();
 
     await expect(screen.getByTestId("chat-stay-line")).toHaveText(/ · Max$/);
-    await expect(screen.getByTestId("chat-request-booking")).toHaveCount(0);
+    await expect(screen.getByTestId("chat-next-meet_start")).toHaveCount(0);
     await screen.getByTestId("chat-send-quote").click();
     await expect(screen.getByTestId("send-quote-sheet")).toContainText("Max");
     await screen.getByTestId("send-quote-submit").click();
@@ -995,7 +995,7 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("toast")).toContainText("Request ended");
     expect(db.bookings[0]).toMatchObject({ status: "cancelled", cancelled_by: OWNER.id, cancel_reason: "Found another sitter" });
     // The request is over: the owner can ask again, and nothing asks for a yes any more.
-    await expect(screen.getByTestId("chat-request-booking")).toBeVisible();
+    await expect(screen.getByTestId("chat-next-meet_start")).toBeVisible();
     await expect(screen.getByTestId("chat-decline")).toHaveCount(0);
   });
 
@@ -1067,7 +1067,7 @@ test.describe("chat hub", () => {
     await expect(page).toHaveURL(/\/owner$/);
     await page.goto(`/chat/${THREAD}`);
     expect(await circles(app(page))).toEqual({ label: "Step 1 of 5", labels: ["Request", "Meet", "Confirm", "Pay", "Care"] });
-    await expect(app(page).getByTestId("chat-request-booking")).toBeVisible();
+    await expect(app(page).getByTestId("chat-next-meet_start")).toBeVisible();
   });
 
   // #142 second half: besides the word chips, one action chip can point at the next step. It does what the footer or the

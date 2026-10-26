@@ -6,9 +6,13 @@ type QuoteCard = Extract<ChatCard, { type: "quote" }>;
 
 export type Role = "owner" | "sitter";
 
+/** What the sitter's Meet & Greet button says to the owner before a booking exists. */
+export const MEET_ASK = "Shall we set up a Meet & Greet?";
+
 /** The one thing that is this person's turn (3D.7). The chat footer shows it; the cards show what happened. */
 export type Primary =
-  | { kind: "request"; label: string }
+  | { kind: "meet_start"; label: string }
+  | { kind: "meet_ask"; label: string }
   | { kind: "interest"; label: string }
   | { kind: "meet"; label: string }
   | { kind: "agree"; label: string }
@@ -35,6 +39,8 @@ type Input = {
   /** A quote that is not replaced already prices the stay on the latest card. */
   priced: boolean;
   otherName: string;
+  /** My own id: tells whether I already asked for the Meet & Greet. */
+  me?: string;
   now?: number;
 };
 
@@ -66,9 +72,9 @@ export function actionPossible(id: string, step: NextStep, booking: BookingSumma
   const meet = booking ? meetGreetPrimary(booking, role, now)?.key : undefined;
   switch (id) {
     case "request_booking":
-      return kind === "request";
+      return kind === "meet_start";
     case "send_quote":
-      return step.quote;
+      return false;
     case "interest":
       return kind === "interest";
     case "meet_time":
@@ -100,12 +106,16 @@ export function actionPossible(id: string, step: NextStep, booking: BookingSumma
 export function nextStep(i: Input): NextStep {
   const { role, booking, messages, hasStay, priced, otherName } = i;
   const waiting = `Waiting for ${otherName}`;
-  const quote = role === "sitter" && hasStay && !priced;
+  // The first quote is gone: the price is the sitter's own rate plus the extra pet, worked out by the server.
+  const quote = false;
   const none: NextStep = { primary: null, quote: false, wait: null };
 
   if (!booking || ["completed", "declined", "cancelled"].includes(booking.stage)) {
-    if (role === "owner") return { primary: { kind: "request", label: "Request booking" }, quote: false, wait: null };
-    return { ...none, quote };
+    if (role === "owner") return { primary: { kind: "meet_start", label: "Meet & Greet" }, quote: false, wait: null };
+    if (!hasStay) return none;
+    // The booking is the owner's to make; the sitter asks for the Meet & Greet once and then waits.
+    const asked = messages.at(-1)?.kind === "text" && messages.at(-1)?.body === MEET_ASK && messages.at(-1)?.senderId === i.me;
+    return asked ? { ...none, wait: waiting } : { primary: { kind: "meet_ask", label: "Meet & Greet" }, quote: false, wait: null };
   }
 
   switch (booking.stage) {

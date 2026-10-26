@@ -156,7 +156,7 @@ test.describe("handoff in the chat", () => {
     db.sitter_profile_answers.push(answer("sitter_picks_up"));
     const screen = await openChatAs(page, OWNER);
 
-    await screen.getByTestId("chat-request-booking").click();
+    await screen.getByTestId("chat-next-meet_start").click();
     await screen.getByTestId("request-dates").click();
     await expect(screen.getByTestId("request-drop-place")).toHaveText("At my place, 9 Oak Ave");
     await expect(screen.getByTestId("request-pick-place")).toHaveText("At my place, 9 Oak Ave");
@@ -172,8 +172,8 @@ test.describe("handoff in the chat", () => {
     // The next request (after the first ended) opens on my default, not on her preference.
     db.bookings[0].status = "declined";
     await page.reload();
-    await expect(screen.getByTestId("chat-request-booking")).toBeVisible();
-    await screen.getByTestId("chat-request-booking").click();
+    await expect(screen.getByTestId("chat-next-meet_start")).toBeVisible();
+    await screen.getByTestId("chat-next-meet_start").click();
     await screen.getByTestId("request-dates").click();
     await expect(screen.getByTestId("request-drop-place")).toHaveText("At Chloe's place, Toronto M4W");
   });

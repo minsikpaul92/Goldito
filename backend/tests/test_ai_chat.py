@@ -358,17 +358,12 @@ def action_of(response) -> str | None:
     return (response.json().get("action") or {}).get("id")
 
 
-def test_a_question_about_the_price_points_at_send_quote_and_the_label_is_ours(client, setup):
+def test_a_question_about_the_price_gets_no_quote_action_there_is_no_first_quote(client, setup):
     ctx = setup(with_action("send_quote"), db=make_db(message(1, OWNER_ID, card=STAY, n=0), ASK_PRICE))
     response = chips(client)
-    assert response.json()["action"] == {"id": "send_quote", "label": "Send quote"}
-    assert list(ctx.model.payload()["actions"]) == ["send_quote"]  # the model only sees what is possible
+    assert response.json()["action"] is None
+    assert "actions" not in ctx.model.payload()  # the sitter has nothing to press yet
     assert [c["label"] for c in response.json()["chips"]] == ["Let me check", "Sure"]  # the chips stay
-
-
-def test_a_model_that_is_not_sure_gets_no_action(client, setup):
-    setup(with_action("send_quote", 0.4), db=make_db(message(1, OWNER_ID, card=STAY, n=0), ASK_PRICE))
-    assert action_of(chips(client)) is None
 
 
 def test_an_action_that_is_not_possible_right_now_is_dropped_even_if_the_message_says_so(client, setup):
@@ -389,16 +384,9 @@ def test_the_model_being_down_gives_no_action(client, setup):
     assert body["action"] is None and body["source"] == "fallback"
 
 
-def test_a_stay_that_is_already_priced_is_not_offered_a_second_quote(client, setup):
-    quote = message(3, SITTER_ID, card={"type": "quote", "status": "sent", "drop_off_at": STAY["drop_off_at"], "pick_up_at": STAY["pick_up_at"], "extras": []})
-    ctx = setup(with_action("send_quote"), db=make_db(message(1, OWNER_ID, card=STAY, n=0), quote, message(4, OWNER_ID, "Sounds good")))
-    assert action_of(chips(client)) is None
-    assert "actions" not in ctx.model.payload()
-
-
 def test_the_owner_with_no_booking_can_be_pointed_at_request_booking(client, setup):
     setup(with_action("request_booking"), db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, SITTER_ID, "Yes, I have room. Want to request it?")))
-    assert chips(client, owner_token()).json()["action"] == {"id": "request_booking", "label": "Request booking"}
+    assert chips(client, owner_token()).json()["action"] == {"id": "request_booking", "label": "Meet & Greet"}
 
 
 @pytest.mark.parametrize(
@@ -421,7 +409,7 @@ def test_after_the_meet_and_greet_each_side_is_pointed_at_their_own_yes(client, 
 def test_a_first_time_request_waits_for_the_sitters_first_yes(client, setup):
     ctx = setup(with_action("interest"), db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Can we meet first?"), bookings=[booking(meet_greet_status="required")]), stage="requested")
     assert action_of(chips(client)) == "interest"
-    assert chips_payload_actions(ctx) == ["interest", "send_quote"]
+    assert chips_payload_actions(ctx) == ["interest"]
     owner_view = setup(with_action("interest"), db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, SITTER_ID, "Yes let's meet"), bookings=[booking(meet_greet_status="required")]), stage="requested")
     assert action_of(chips(client, owner_token())) is None and "actions" not in owner_view.model.payload()
 

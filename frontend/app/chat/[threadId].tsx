@@ -34,10 +34,11 @@ import {
   getChatHeader,
   loadChatMessages,
   markChatRead,
+  postBookingRequestCard,
   sendChatMessage,
 } from "../../features/chat/chatApi";
 import { ChatAction, ChatChip, TYPED_PAUSE_MS, chipsFor, fetchChatDraft, fetchTypedChips } from "../../features/chat/chatAi";
-import { NextStep, Primary, actionPossible, finalQuote, hasPaymentCard, nextStep } from "../../features/chat/nextStep";
+import { MEET_ASK, NextStep, Primary, actionPossible, finalQuote, hasPaymentCard, nextStep } from "../../features/chat/nextStep";
 import { inCare } from "../../features/chat/careCards";
 import { arrivedForNext, canReceiveNow, canReturnNow, canStartTripNow, canTravel, nextHandoff, startOpensAt } from "../../features/transit/tripLogic";
 import { useLiveTrips } from "../../features/transit/useLiveTrips";
@@ -48,8 +49,9 @@ import type { Species } from "../../types/db";
 import { useMyPets } from "../../features/pets/useMyPets";
 import { ProfilePhoto, loadProfilePhotos } from "../../features/profile/profilePhotosApi";
 import { formatDay, formatStamp, formatTime, isoToZoned } from "../../features/schedule/dates";
-import { SERVICE_LABEL } from "../../features/sitters/sitterApi";
-import { BookingSummary, expressInterest, listOwnerBookings, listSitterBookings, respondBooking } from "../../lib/bookings";
+import { loadOwnerDefault, loadSitterWays, openingPlace } from "../../features/chat/handoffDefaults";
+import { SERVICE_LABEL, getSitterProfile } from "../../features/sitters/sitterApi";
+import { BookingError, BookingSummary, expressInterest, listOwnerBookings, listSitterBookings, requestBooking, respondBooking } from "../../lib/bookings";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useSession } from "../../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
@@ -296,6 +298,7 @@ export default function Chat() {
         hasStay: !!stay,
         priced,
         otherName: header.otherName,
+        me,
       });
   // The final quote prices the booking as it stands now (agreed times and pets), not the first card.
   const finalStay =
@@ -325,9 +328,60 @@ export default function Chat() {
     }
   };
 
+  /** Owner: the booking is made from the stay on the chat's card (the sitter's place unless the owner's usual is another); no dates yet opens the sheet. */
+  const startMeetGreet = async () => {
+    if (!stay || !profile) return setRequesting(true);
+    setStepBusy(true);
+    try {
+      const [sitter, mine, ways] = await Promise.all([
+        getSitterProfile(header.otherId),
+        loadOwnerDefault(profile.id).catch(() => null),
+        loadSitterWays(header.otherId).catch(() => null),
+      ]);
+      const houseSitting = !!sitter && !sitter.services.includes("boarding");
+      const type = houseSitting ? ("owner_home" as const) : openingPlace(mine, ways);
+      const bookingId = await requestBooking({
+        sitterId: header.otherId,
+        petIds: stay.pets.map((p) => p.id),
+        dropOff: { at: stay.dropOffAt, locationType: type, note: null },
+        pickUp: { at: stay.pickUpAt, locationType: type, note: null },
+        note: null,
+        serviceType: houseSitting ? "house_sitting" : "boarding",
+      });
+      await postBookingRequestCard(threadId, bookingId).catch(() => undefined);
+      await load();
+    } catch (e) {
+      const code = e instanceof BookingError ? e.code : "";
+      const message =
+        code === "pet_already_booked"
+          ? "One of your pets already has a sitter (or a pending request) at that time."
+          : code === "sitter_unavailable"
+            ? `${header.otherName} no longer has room for these dates.`
+            : (e as Error).message;
+      errorDialog.show({ title: "Not sent", message });
+    } finally {
+      setStepBusy(false);
+    }
+    return undefined;
+  };
+
+  /** Sitter: there is no booking yet, so the Meet & Greet button asks the owner to start it. */
+  const askMeetGreet = async () => {
+    setStepBusy(true);
+    try {
+      await sendChatMessage(threadId, MEET_ASK);
+      await load();
+    } catch (e) {
+      errorDialog.show({ title: "Not sent", message: (e as Error).message });
+    } finally {
+      setStepBusy(false);
+    }
+  };
+
   /** The footer's one action. The cards show the result; the screen reloads from the database. */
   const doPrimary = async (p: Primary) => {
-    if (p.kind === "request") return setRequesting(true);
+    if (p.kind === "meet_start") return startMeetGreet();
+    if (p.kind === "meet_ask") return askMeetGreet();
     if (p.kind === "agree") return setAgreeing(true);
     if (p.kind === "final_quote") return setQuoting("final");
     if (p.kind === "pay") return booking ? router.push(`/owner/bookings/${booking.id}/checkout` as never) : undefined;
@@ -381,28 +435,14 @@ export default function Chat() {
       enabled: !!booking && !!meetGreetPrimary(booking, header.myRole) && !!meetCard.current,
       onPress: () => meetCard.current?.primary(),
     },
-    ...(!owner
+    ...(!owner && quoteKind === "final"
       ? [
           {
             id: "quote",
-            label: quoteKind === "final" ? "Final quote" : "Quote",
+            label: "Final quote",
             icon: "price" as const,
-            enabled: !finished && (quoteKind === "final" ? !!finalStay : !!stay),
-            onPress: () => setQuoting(quoteKind),
-          },
-        ]
-      : []),
-    ...(owner
-      ? [
-          {
-            id: "quote-request",
-            label: "Quote request",
-            icon: "chat" as const,
-            enabled: !finished && !!stay && !priced,
-            onPress: () => {
-              setText("Could you send me a quote for these dates?");
-              input.current?.focus();
-            },
+            enabled: !finished && !!finalStay,
+            onPress: () => setQuoting("final"),
           },
         ]
       : []),
@@ -608,7 +648,7 @@ export default function Chat() {
               label={footerPrimary.label}
               disabled={stepBusy}
               onPress={() => void doPrimary(footerPrimary as Primary)}
-              testID={footerPrimary.kind === "request" ? "chat-request-booking" : `chat-next-${footerPrimary.kind}`}
+              testID={`chat-next-${footerPrimary.kind}`}
             />
           ) : step.quote ? (
             <Button label="Send quote" onPress={() => setQuoting("first")} testID="chat-send-quote" />

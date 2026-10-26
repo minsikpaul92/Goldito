@@ -458,7 +458,7 @@ test.describe("reviews in the chat", () => {
 
     let screen = await openChatAs(page, OWNER);
     await expect(screen.getByTestId("chat-stay-home")).toContainText("Home safe");
-    await expect(screen.getByTestId("chat-request-booking")).toHaveCount(0);
+    await expect(screen.getByTestId("chat-next-meet_start")).toHaveCount(0);
     await expect(screen.getByTestId("chat-review")).toContainText("How was Max's stay with Chloe?");
     await expect(screen.getByTestId("review-send")).toBeDisabled(); // no stars yet
     await screen.getByTestId("review-rating-4").click();
