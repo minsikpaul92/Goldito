@@ -22,6 +22,7 @@ import FaceSlightlySmiling from "lucide-react-native/icons/face-slightly-smiling
 import HandHeart from "lucide-react-native/icons/hand-heart";
 import Heart from "lucide-react-native/icons/heart";
 import Leaf from "lucide-react-native/icons/leaf";
+import LocateFixed from "lucide-react-native/icons/locate-fixed";
 import House from "lucide-react-native/icons/house";
 import Image from "lucide-react-native/icons/image";
 import Images from "lucide-react-native/icons/images";
@@ -108,6 +109,7 @@ const ICONS = {
   people: Users,
   paw: PawPrint,
   place: MapPin,
+  recenter: LocateFixed,
   price: Tag,
   chat: MessageCircleMore,
   car: Car,

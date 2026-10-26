@@ -79,6 +79,19 @@ function seed(db: MockDb, place: "sitter_home" | "owner_home" | "other", dropInM
   });
 }
 
+/** How far apart the car and the place pins are on screen, in px: it doubles with each zoom step in. */
+async function pinGap(page: Page): Promise<number> {
+  const spots = await app(page)
+    .locator(".goldito-pin")
+    .evaluateAll((pins) =>
+      pins.map((el) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+      }),
+    );
+  return spots.length === 2 ? Math.round(Math.hypot(spots[0].x - spots[1].x, spots[0].y - spots[1].y)) : 0;
+}
+
 async function stubTiles(page: Page) {
   await page.route("**/tile.openstreetmap.org/**", (route) => route.fulfill({ status: 200, contentType: "image/png", body: TILE }));
 }
@@ -105,6 +118,7 @@ const runningTrip = (patch: Record<string, unknown> = {}) => ({
   last_at: new Date().toISOString(),
   eta_at: new Date(Date.now() + 12 * 60_000).toISOString(),
   distance_m: 5200,
+  close_readings: 0,
   simulated: false,
   sharing: true,
   started_at: new Date().toISOString(),
@@ -138,7 +152,11 @@ test.describe("pet transit", () => {
     await expect(screen.getByText("© OpenStreetMap contributors")).toBeVisible();
 
     await expect(screen.getByTestId("trip-eta")).toContainText("You've arrived", { timeout: 70_000 });
-    expect(db.trips[0].status).toBe("arrived");
+    // 015q: the drive parks for one more step, so two readings in a row land inside the 150 m circle.
+    expect(db.trips[0]).toMatchObject({ status: "arrived", close_readings: 2 });
+    // Arrived: the car is drawn on the place pin.
+    await expect(screen.locator(".goldito-pin")).toHaveCount(2);
+    await expect.poll(() => pinGap(page)).toBe(0);
     const place = screen.getByTestId("trip-place-card");
     await expect(place).toContainText("Chloe's place");
     await expect(place).toContainText("12 Maple St");
@@ -430,7 +448,7 @@ test.describe("pet transit", () => {
     await ownerCtx.close();
   });
 
-  test("the map can be dragged to look around, and ± are buttons", async ({ page }) => {
+  test("the map can be dragged to look around, the wheel zooms it only once it has focus, and Recenter fits it again (#381)", async ({ page }) => {
     await stubTiles(page);
     await page.goto("/dev/gestures");
     const screen = app(page);
@@ -439,16 +457,56 @@ test.describe("pet transit", () => {
     await map.scrollIntoViewIfNeeded();
     await expect(screen.locator(".leaflet-container")).toBeVisible();
     const pane = screen.locator(".leaflet-map-pane");
-    const before = await pane.evaluate((el) => (el as HTMLElement).style.transform);
+    const transform = () => pane.evaluate((el) => (el as HTMLElement).style.transform);
+    // A zoom animates (the wheel's after a short debounce), and Leaflet drops a zoom asked for during one:
+    // wait until the pins stop moving.
+    const settled = async () => {
+      await expect(screen.locator(".leaflet-zoom-anim")).toHaveCount(0);
+      let last = -1;
+      await expect
+        .poll(async () => {
+          const gap = await pinGap(page);
+          const same = gap === last;
+          last = gap;
+          return same;
+        }, { intervals: [200] })
+        .toBe(true);
+      return last;
+    };
+    const before = await transform();
+    const fitted = await settled();
+    expect(fitted).toBeGreaterThan(0);
+    await expect(screen.getByTestId("lab-map-recenter")).toHaveCount(0); // nothing to recenter yet
+
+    // Before the map has focus, the wheel over it scrolls the screen and leaves the map alone.
+    let middle = center(await box(map));
     const startScroll = await scrollOffset(scroller);
+    await page.mouse.move(middle.x, middle.y);
+    await page.mouse.wheel(0, 120);
+    await expect.poll(() => scrollOffset(scroller)).toBeGreaterThan(startScroll);
+    expect(await pinGap(page)).toBe(fitted);
 
-    const middle = center(await box(map));
+    // A drag pans the map, not the screen, and gives it focus.
+    middle = center(await box(map));
+    const dragScroll = await scrollOffset(scroller);
     await drag(page, middle, { x: middle.x, y: middle.y - 150 });
-    expect(await pane.evaluate((el) => (el as HTMLElement).style.transform)).not.toBe(before); // the map panned
-    expect(await scrollOffset(scroller)).toBe(startScroll); // and the screen did not scroll
+    expect(await transform()).not.toBe(before); // the map panned
+    expect(await scrollOffset(scroller)).toBe(dragScroll); // and the screen did not scroll
+    await expect(screen.getByTestId("lab-map-recenter")).toBeVisible();
 
-    const zoomBefore = await screen.locator(".leaflet-zoom-animated").first().evaluate((el) => (el as HTMLElement).style.transform);
+    // With focus the wheel zooms the map, and the screen stays put.
+    await page.mouse.move(middle.x, middle.y);
+    await page.mouse.wheel(0, -120);
+    await expect.poll(() => pinGap(page)).toBeGreaterThan(fitted * 1.5);
+    expect(await scrollOffset(scroller)).toBe(dragScroll);
+
+    const zoomAgain = await settled();
     await screen.getByTestId("lab-map-zoom-in").click();
-    await expect.poll(() => screen.locator(".leaflet-zoom-animated").first().evaluate((el) => (el as HTMLElement).style.transform)).not.toBe(zoomBefore);
+    await expect.poll(() => pinGap(page)).toBeGreaterThan(zoomAgain * 1.5);
+
+    // Recenter puts the car and the place back in view and hides itself.
+    await screen.getByTestId("lab-map-recenter").click();
+    await expect(screen.getByTestId("lab-map-recenter")).toHaveCount(0);
+    await expect.poll(() => pinGap(page)).toBe(fitted);
   });
 });

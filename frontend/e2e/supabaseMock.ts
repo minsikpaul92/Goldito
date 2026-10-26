@@ -627,7 +627,7 @@ function matches(row: Row, params: URLSearchParams): boolean {
   return true;
 }
 
-/** start_trip / update_trip_position / end_trip (012): the same rules as the SQL, in the order it checks them. */
+/** start_trip / update_trip_position / end_trip (012, 015q): the same rules as the SQL, in the order it checks them. */
 function handleTrip(route: Route, name: string, args: Record<string, unknown>, me: string | null, db: MockDb) {
   const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
   const iso = () => new Date(nowMs()).toISOString();
@@ -674,6 +674,7 @@ function handleTrip(route: Route, name: string, args: Record<string, unknown>, m
       last_at: first ? iso() : null,
       eta_at: distance != null ? eta(distance) : null,
       distance_m: distance != null ? Math.round(distance) : null,
+      close_readings: 0,
       simulated: !!args.p_simulated,
       sharing: share,
       started_at: iso(),
@@ -690,17 +691,22 @@ function handleTrip(route: Route, name: string, args: Record<string, unknown>, m
   if (name === "update_trip_position") {
     if (!["en_route", "arrived"].includes(String(trip.status))) return fail("trip_not_active");
     if (trip.sharing === false) return fail("not_sharing");
+    if (args.p_accuracy != null && Number(args.p_accuracy) < 0) return fail("invalid_position");
     if (trip.status === "arrived" || (trip.last_at && nowMs() - Date.parse(String(trip.last_at)) < 1000)) return json(route, 200, trip);
     const at = { lat: Number(args.p_lat), lng: Number(args.p_lng) };
     const distance = trip.dest_lat != null ? distanceMeters(at, { lat: Number(trip.dest_lat), lng: Number(trip.dest_lng) }) : null;
+    // 015q: a reading worse than 100 m never counts; two good ones in a row within 150 m make the arrival.
+    const good = args.p_accuracy == null || Number(args.p_accuracy) <= 100;
+    const close = Number(trip.close_readings ?? 0);
     Object.assign(trip, {
       last_lat: at.lat,
       last_lng: at.lng,
       last_at: iso(),
       distance_m: distance != null ? Math.round(distance) : null,
       eta_at: distance != null ? eta(distance) : null,
+      close_readings: distance != null && good ? (distance <= 150 ? Math.min(close + 1, 2) : 0) : close,
     });
-    if (distance != null && distance <= 150) Object.assign(trip, { status: "arrived", arrived_at: iso() });
+    if (Number(trip.close_readings) >= 2) Object.assign(trip, { status: "arrived", arrived_at: iso() });
     return json(route, 200, trip);
   }
 
