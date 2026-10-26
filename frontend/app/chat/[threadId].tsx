@@ -558,6 +558,21 @@ export default function Chat() {
   // Once the pets are back, the stay (and its review) sits where it happened: newer messages go below it.
   const returnedAt = Date.parse(stayBooking?.pickUp?.completedAt ?? "");
   const stayAfter = Number.isNaN(returnedAt) ? messages.length : messages.filter((m) => Date.parse(m.at) <= returnedAt).length;
+  // The booking's own cards (Meet & Greet, handoffs, diary, trips) happened before the return: on a finished stay they
+  // sit above "Home safe" and the review, not under them.
+  const stayOver = !Number.isNaN(returnedAt) && booking?.id === stayBooking?.id;
+  const bookingCards = (
+    <>
+      {booking && booking.meetGreetStatus !== "not_needed" && messages.some((m) => m.card?.type === "meet_greet" && m.card.bookingId === booking.id) && !(booking.meetGreetStatus === "required" && !booking.sitterInterestAt) ? (
+        <View style={styles.cardWide}>
+          <MeetGreetCard ref={meetCard} booking={booking} viewer={header.myRole} onChanged={load} inChat />
+        </View>
+      ) : null}
+      {booking && !["requested", "meet_greet"].includes(booking.stage) ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
+      {booking ? <ChatCareCards booking={booking} viewer={header.myRole} askSignal={signals.photo} /> : null}
+      {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} startSignal={signals.trip} /> : null}
+    </>
+  );
   const renderMessage = (m: (typeof messages)[number]) =>
           m.kind === "card" && m.card?.type === "stay" ? (
             <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
@@ -629,16 +644,10 @@ export default function Chat() {
           <Text style={styles.hint} testID="chat-empty">{`Say hi to ${header.otherName}.`}</Text>
         ) : null}
         {messages.slice(0, stayAfter).map(renderMessage)}
+        {stayOver ? bookingCards : null}
         {stayCardEl}
         {messages.slice(stayAfter).map(renderMessage)}
-        {booking && booking.meetGreetStatus !== "not_needed" && messages.some((m) => m.card?.type === "meet_greet" && m.card.bookingId === booking.id) && !(booking.meetGreetStatus === "required" && !booking.sitterInterestAt) ? (
-          <View style={styles.cardWide}>
-            <MeetGreetCard ref={meetCard} booking={booking} viewer={header.myRole} onChanged={load} inChat />
-          </View>
-        ) : null}
-        {booking && !["requested", "meet_greet"].includes(booking.stage) ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
-        {booking ? <ChatCareCards booking={booking} viewer={header.myRole} askSignal={signals.photo} /> : null}
-        {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} startSignal={signals.trip} /> : null}
+        {stayOver ? null : bookingCards}
       </Screen>
       {/* A final quote carries Confirm and Decline on its card: the footer does not repeat them (#289). */}
       {footerPrimary || step.quote ? (
