@@ -1065,3 +1065,45 @@ def test_the_draft_keeps_what_was_typed(client, setup):
     )
     assert r.status_code == 200
     assert ctx.model.payload()["typing"] == "can you do earlier pick up"
+
+
+# --- /chat-yes: the sitter's own words say yes to the stay (the app then brings up the Meet & Greet) ---
+
+
+def post_yes(client, token):
+    return client.post("/api/ai/chat-yes", headers={"Authorization": f"Bearer {token}"}, json={"thread_id": THREAD})
+
+
+def yes_db(reply: str | None = "Yes, my calendar is clear for those dates."):
+    msgs = [message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Could you take Max for these days?")]
+    if reply:
+        msgs.append(message(3, SITTER_ID, reply))
+    return make_db(*msgs)
+
+
+def test_a_clear_yes_from_the_sitter_is_a_yes(client, setup):
+    ctx = setup({"yes": True, "confidence": 0.95}, db=yes_db())
+    assert post_yes(client, sitter_token()).json() == {"yes": True, "for_message_id": "m3"}
+    assert ctx.model.payload()["sitter_message"] == "Yes, my calendar is clear for those dates."
+
+
+def test_an_unsure_model_is_not_a_yes(client, setup):
+    setup({"yes": True, "confidence": 0.4}, db=yes_db("Maybe, let me check."))
+    assert post_yes(client, sitter_token()).json()["yes"] is False
+
+
+def test_the_owner_never_triggers_it_and_nothing_is_asked(client, setup):
+    ctx = setup(db=yes_db())
+    assert post_yes(client, owner_token()).json() == {"yes": False, "for_message_id": None}
+    assert ctx.model.calls == []
+
+
+def test_no_message_from_the_sitter_is_a_no_without_asking(client, setup):
+    ctx = setup(db=yes_db(None))
+    assert post_yes(client, sitter_token()).json()["yes"] is False
+    assert ctx.model.calls == []
+
+
+def test_the_model_being_down_is_a_no(client, setup):
+    setup(nebius.AIUnavailable("down"), db=yes_db())
+    assert post_yes(client, sitter_token()).json()["yes"] is False

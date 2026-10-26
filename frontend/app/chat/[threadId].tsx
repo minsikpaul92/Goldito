@@ -37,7 +37,7 @@ import {
   postBookingRequestCard,
   sendChatMessage,
 } from "../../features/chat/chatApi";
-import { ChatAction, ChatChip, TYPED_PAUSE_MS, chipsFor, fetchChatDraft, fetchTypedChips } from "../../features/chat/chatAi";
+import { ChatAction, ChatChip, TYPED_PAUSE_MS, chipsFor, fetchChatDraft, fetchSitterYes, fetchTypedChips } from "../../features/chat/chatAi";
 import { NextStep, Primary, actionPossible, finalQuote, hasPaymentCard, nextStep } from "../../features/chat/nextStep";
 import { inCare } from "../../features/chat/careCards";
 import { arrivedForNext, canReceiveNow, canReturnNow, canStartTripNow, canTravel, nextHandoff, startOpensAt } from "../../features/transit/tripLogic";
@@ -484,6 +484,15 @@ export default function Chat() {
       await sendChatMessage(threadId, body);
       setText("");
       await load();
+      // The sitter wrote yes in their own words: that is the first yes, the Meet & Greet comes up.
+      if (!owner && booking?.stage === "requested") {
+        const bookingId = booking.id;
+        void fetchSitterYes(threadId).then(async (yes) => {
+          if (!yes) return;
+          await expressInterest(bookingId).catch(() => undefined);
+          await load();
+        });
+      }
     } catch (e) {
       errorDialog.show({ title: "Not sent", message: (e as Error).message, onRetry: () => void send() });
     } finally {
