@@ -982,10 +982,11 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | `title` | `media-picker` | 46 |
-| Pressable | ``Use sample: ${sample.label}`` | ``sample-${sample.id}`` | 52 |
-| Button | Take photo | `media-take-photo` | 84 |
-| Button | Choose from library | `media-choose-library` | 86 |
+| Sheet | `title` | `media-picker` | 110 |
+| SegmentedControl | — | `media-category-tabs` | 121 |
+| Pressable | ``Use sample: ${sample.label}`` | ``sample-${sample.id}`` | 155 |
+| Button | Take photo | `media-take-photo` | 195 |
+| Button | Choose from library | `media-choose-library` | 202 |
 
 ### MeetGreetCard — [components/MeetGreetCard.tsx](../../frontend/components/MeetGreetCard.tsx)
 
@@ -1664,4 +1665,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-495 actions · 493 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+496 actions · 494 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
