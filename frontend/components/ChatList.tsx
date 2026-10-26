@@ -15,7 +15,7 @@ type Props = {
   onLeave: (threadId: string) => void;
   /** The chat to point at (the newest one with something new for me, #228): an accent bar and a tinted row. */
   highlightId?: string | null;
-  /** The sitter's list names the owner's pets of the stay ("Biscuit, Luna's owner Peter"); the owner's does not. */
+  /** The sitter's list names the owner's pets of the stay ("Peter · Biscuit, Luna"); the owner's does not. */
   showPets?: boolean;
 };
 
@@ -56,7 +56,7 @@ export function ChatList({ items, onLeave, highlightId, showPets }: Props) {
             )}
             <View style={styles.body}>
               <Text style={[styles.name, chat.unread > 0 && styles.bold]} numberOfLines={1}>
-                {showPets && chat.pets.length > 0 ? `${chat.pets.map((p) => p.name).join(", ")}'s owner ${chat.otherName}` : chat.otherName}
+                {showPets && chat.pets.length > 0 ? `${chat.otherName} · ${chat.pets.map((p) => p.name).join(", ")}` : chat.otherName}
               </Text>
               <Text style={[styles.preview, chat.unread > 0 && styles.bold]} numberOfLines={1}>
                 {previewOf(chat)}
