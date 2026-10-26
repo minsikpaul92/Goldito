@@ -778,7 +778,7 @@ export default function Chat() {
         </Pressable>
       </View>
       {owner && booking ? (
-        <AgreeSheet visible={agreeing} booking={booking} onClose={() => setAgreeing(false)} onAgreed={() => void load()} />
+        <AgreeSheet visible={agreeing} booking={booking} onClose={() => setAgreeing(false)} onAgreed={() => void load()} onChanged={() => void load()} />
       ) : null}
       {booking && declining ? (
         <ChatDeclineSheet
