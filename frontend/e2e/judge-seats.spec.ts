@@ -156,4 +156,24 @@ test.describe("judge seats, split view", () => {
     await expect(page.getByText("Chloe · Sitter")).toBeVisible();
     await expect.poll(() => page.frame({ name: "pane-right" })?.url() ?? "").toMatch(/\/sitter$/);
   });
+
+  test("Try the demo on Welcome takes a seat and opens both phones, owner left and sitter right", async ({ page }) => {
+    await mockSupabase(page, JUDGES);
+    const calls = await fakeSeats(page, { judge1: "taken" });
+    await page.goto("/welcome");
+    const screen = app(page);
+
+    await screen.getByTestId("welcome-demo").click();
+    await expect(screen.getByTestId("demo-seat-judge1")).toContainText("In use");
+    await expect(screen.getByTestId("demo-seat-judge1")).toHaveAttribute("aria-disabled", "true");
+    await screen.getByTestId("demo-seat-judge3").click();
+
+    await expect(page).toHaveURL(/\/\?view=split$/);
+    await expect.poll(() => page.frame({ name: "pane-left" })?.url() ?? "").toMatch(/\/owner$/);
+    await expect.poll(() => page.frame({ name: "pane-right" })?.url() ?? "").toMatch(/\/sitter$/);
+    expect(new Set(calls.claims.map((claim) => claim.set))).toEqual(new Set(["judge3"]));
+
+    // The seat hand-off is read once, so a reload after log out does not sign in again.
+    expect(await page.evaluate(() => window.sessionStorage.getItem("goldito-judge-start"))).toBeNull();
+  });
 });
