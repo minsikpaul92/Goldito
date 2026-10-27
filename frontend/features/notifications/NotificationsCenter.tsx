@@ -10,6 +10,7 @@ import { LoadingView } from "../../components/ui/LoadingView";
 import { Sheet } from "../../components/ui/Sheet";
 import { SwipeToDelete } from "../../components/ui/SwipeToDelete";
 import { TextButton } from "../../components/ui/TextButton";
+import { listOwnerBookings, listSitterBookings } from "../../lib/bookings";
 import { formatFeedTime } from "../../lib/feed";
 import {
   AppNotification,
@@ -21,7 +22,19 @@ import {
   markNotificationRead,
 } from "../../lib/notifications";
 import { DETAIL_TYPES, detailNextLabel, useNoticeMedia } from "./noticeMedia";
-import { NoticeEntry, NoticeTone, checkinFoldTitle, checkinSummary, groupNotices, noticeAction, noticeIcon, plainText } from "./noticeDisplay";
+import {
+  NoticeEntry,
+  NoticeTone,
+  StaySpan,
+  checkinFoldTitle,
+  checkinSummary,
+  groupNotices,
+  noticeAction,
+  noticeIcon,
+  plainText,
+  staySpans,
+} from "./noticeDisplay";
+import { appToday, formatTime, isoToZoned } from "../schedule/dates";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useNotifications } from "../../providers/NotificationsProvider";
 import { Role, useSession } from "../../providers/SessionProvider";
@@ -50,7 +63,13 @@ export function NotificationsCenter({ role }: { role: Role }) {
   const noticeMedia = useNoticeMedia(list.status === "loading" ? null : list.items);
   const [detail, setDetail] = useState<AppNotification | null>(null);
   const [openFolds, setOpenFolds] = useState<Set<string>>(new Set());
-  const days = useMemo(() => groupNotices(list.status === "loading" ? [] : list.items), [list]);
+  const [stays, setStays] = useState<StaySpan[]>([]);
+  const me = session.status === "signedIn" ? session.profile : null;
+  // One "now" for both the day cards and the times on their rows, so a row never says "1h ago" under another day.
+  const { days, now } = useMemo(() => {
+    const at = Date.now();
+    return { now: at, days: groupNotices(list.status === "loading" ? [] : list.items, appToday(new Date(at)), stays) };
+  }, [list, stays]);
 
   const load = useCallback(async (soft = false) => {
     if (!soft) setList({ status: "loading" });
@@ -70,6 +89,23 @@ export function NotificationsCenter({ role }: { role: Role }) {
     useCallback(() => {
       void load(false);
     }, [load]),
+  );
+
+  // The stays, for "Day 2 of 4 with Chloe" on the day cards: the one bookings query Home and Bookings make. Without
+  // it the cards keep the plain date.
+  const meId = me?.id;
+  const meRole = me?.role;
+  useFocusEffect(
+    useCallback(() => {
+      if (!meId || (meRole !== "owner" && meRole !== "sitter")) return;
+      let live = true;
+      (meRole === "owner" ? listOwnerBookings(meId) : listSitterBookings(meId))
+        .then((bookings) => live && setStays(staySpans(bookings, meRole)))
+        .catch(() => undefined);
+      return () => {
+        live = false;
+      };
+    }, [meId, meRole]),
   );
 
   // Soft refresh when a new Realtime notice arrives while this screen is open.
@@ -174,11 +210,14 @@ export function NotificationsCenter({ role }: { role: Role }) {
     });
 
   /** One notice: its drawn icon, the words without emoji, a photo or the word for what to do, swipe to delete. */
-  const renderRow = (item: AppNotification) => {
+  /** "52m ago" on today's card; the time of day on older cards, whose label already names the day. */
+  const when = (iso: string, today: boolean) => (today ? formatFeedTime(iso, now) : formatTime(isoToZoned(iso).time));
+
+  const renderRow = (item: AppNotification, today: boolean) => {
     const media = noticeMedia[item.id];
     const { icon, tone } = noticeIcon(item);
     const action = media ? null : noticeAction(item.type, role);
-    const sub = [item.body ? plainText(item.body) : null, formatFeedTime(item.createdAt)].filter(Boolean).join(" · ");
+    const sub = [item.body ? plainText(item.body) : null, when(item.createdAt, today)].filter(Boolean).join(" · ");
     return (
       <SwipeToDelete key={item.id} onDelete={() => void onDelete(item)} radius={theme.radius.md} testID={`notification-swipe-${item.id}`}>
         <Pressable
@@ -262,7 +301,7 @@ export function NotificationsCenter({ role }: { role: Role }) {
                 <Fragment key={entryKey(entry)}>
                   {i > 0 && isRead(day.entries[i - 1]) && isRead(entry) ? <View style={styles.divider} /> : null}
                   {entry.kind === "one" ? (
-                    renderRow(entry.notice)
+                    renderRow(entry.notice, day.today)
                   ) : (
                     <View style={styles.fold}>
                       <Pressable
@@ -279,14 +318,14 @@ export function NotificationsCenter({ role }: { role: Role }) {
                             {checkinFoldTitle(entry.notices)}
                           </Text>
                           <Text style={styles.sub} numberOfLines={1}>
-                            {checkinSummary(entry.notices)} · {formatFeedTime(entry.notices[0].createdAt)}
+                            {checkinSummary(entry.notices)} · {when(entry.notices[0].createdAt, day.today)}
                           </Text>
                         </View>
                         <View style={openFolds.has(entry.key) ? styles.chevronOpen : null}>
                           <Icon name="expand" size={20} color={theme.color.textMuted} />
                         </View>
                       </Pressable>
-                      {openFolds.has(entry.key) ? <View style={styles.foldItems}>{entry.notices.map((n) => renderRow(n))}</View> : null}
+                      {openFolds.has(entry.key) ? <View style={styles.foldItems}>{entry.notices.map((n) => renderRow(n, day.today))}</View> : null}
                     </View>
                   )}
                 </Fragment>

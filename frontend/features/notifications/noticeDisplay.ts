@@ -1,7 +1,8 @@
 import type { IconName } from "../../components/ui/Icon";
+import type { BookingSummary } from "../../lib/bookings";
 import type { AppNotification } from "../../lib/notifications";
 import type { Role } from "../../providers/SessionProvider";
-import { addDays, appToday, formatDay, isoToZoned } from "../schedule/dates";
+import { addDays, appToday, daySpan, formatDay, isoToZoned } from "../schedule/dates";
 
 // Emoji, variation selectors and joiners. Ranges rather than \p{…} so every JS engine we ship on reads it.
 const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}\u{20E3}]/gu;
@@ -115,7 +116,34 @@ export type NoticeEntry =
   | { kind: "one"; notice: AppNotification }
   | { kind: "fold"; key: string; notices: AppNotification[] };
 
-export type NoticeDay = { day: string; label: string; entries: NoticeEntry[] };
+/** `today`: rows say "52m ago"; on other days the card's label has the day, so rows say "11:38 PM". */
+export type NoticeDay = { day: string; label: string; today: boolean; entries: NoticeEntry[] };
+
+/** A stay's calendar days (app timezone) and who it is with, for "Day 2 of 4 with Chloe". */
+export type StaySpan = { start: string; end: string; with: string };
+
+/**
+ * Paid or in-care stays as day spans; bookings without both handoff times are left out. The owner's stay is "with" its
+ * sitter, the sitter's "with" its pets.
+ */
+export function staySpans(bookings: BookingSummary[], role: Role): StaySpan[] {
+  return bookings.flatMap((b) => {
+    if ((b.stage !== "in_care" && b.stage !== "paid") || !b.dropOff || !b.pickUp) return [];
+    const who = role === "owner" ? b.sitterName : b.pets.map((p) => p.name).join(" and ");
+    return who ? [{ start: isoToZoned(b.dropOff.at).day, end: isoToZoned(b.pickUp.at).day, with: who }] : [];
+  });
+}
+
+/**
+ * "Day 2 of 4 with Chloe" when one stay covers `day`, counted like Home's stay card; null outside any stay, or when
+ * two stays overlap that day (a sitter with two families), since one label can't say which.
+ */
+export function stayDayLabel(day: string, stays: StaySpan[]): string | null {
+  const covering = stays.filter((s) => s.start <= day && day <= s.end);
+  if (covering.length !== 1) return null;
+  const [stay] = covering;
+  return `Day ${daySpan(stay.start, day)} of ${Math.max(1, daySpan(stay.start, stay.end))} with ${stay.with}`;
+}
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -127,16 +155,18 @@ export function dayLabel(day: string, today: string = appToday()): string {
 }
 
 /**
- * The list as day cards, newest day first. Within a day, two or more check-ins of the same pet fold into one row
+ * The list as day cards, newest day first, by the calendar day of each notice in the app timezone (the one every date
+ * in the app uses, D8), against the same `today` the rows' times are read from. Within a day, two or more check-ins of the same pet fold into one row
  * (kept where the newest of them was); everything else stays one row per notice, newest first.
  */
-export function groupNotices(items: AppNotification[], today: string = appToday()): NoticeDay[] {
+export function groupNotices(items: AppNotification[], today: string = appToday(), stays: StaySpan[] = []): NoticeDay[] {
   const days: NoticeDay[] = [];
   for (const n of items) {
     const day = isoToZoned(n.createdAt).day;
     let group = days.find((d) => d.day === day);
     if (!group) {
-      group = { day, label: dayLabel(day, today), entries: [] };
+      const label = [dayLabel(day, today), stayDayLabel(day, stays)].filter(Boolean).join(" · ");
+      group = { day, label, today: day === today, entries: [] };
       days.push(group);
     }
     group.entries.push({ kind: "one", notice: n });
