@@ -28,6 +28,20 @@ the server owns every fact, and a person approves every word.
 
 > **Judges:** tap **Try the demo**, then **Robert, the owner** or **Chloe, the sitter**, for a free Judge seat (Judge 1 to 4). A seat is yours alone: it starts from a clean stay and frees itself when you log out or leave for 10 minutes. On a computer, **[Show both phones](https://goldito-petcare.vercel.app/?view=split)** and use the panel left of the phones to run the five scenes. Demo accounts and pets are fictional.
 
+<details>
+<summary>Judge logins (if you prefer to type them)</summary>
+
+Password for every account below: `<DEMO_PASSWORD>`
+
+| Seat | Owner (Robert) | Sitter (Chloe) |
+| :--- | :--- | :--- |
+| Judge 1 | `demo-owner-judge1@goldito.test` | `demo-sitter-judge1@goldito.test` |
+| Judge 2 | `demo-owner-judge2@goldito.test` | `demo-sitter-judge2@goldito.test` |
+| Judge 3 | `demo-owner-judge3@goldito.test` | `demo-sitter-judge3@goldito.test` |
+| Judge 4 | `demo-owner-judge4@goldito.test` | `demo-sitter-judge4@goldito.test` |
+
+</details>
+
 ---
 
 ## Goldito in 30 seconds
