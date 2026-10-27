@@ -170,6 +170,8 @@ Tap a stage for the details.
 
 <img src="docs/assets/readme/care-checkin.gif" alt="The sitter taps check-ins and adds a photo for Biscuit while the owner's Home updates live: meals, potty, walks, and mood" width="560">
 
+<img src="docs/assets/readme/diary-page.gif" alt="The sitter writes the diary page from the day's chips and photo, adds stickers, and sends it to the owner" width="320">
+
 > *"Max took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited. It was adorable. Her potty was perfectly healthy, too. 🐶"*
 > From an AI daily note built from a few chips, two photos, and one short line from the sitter
 
