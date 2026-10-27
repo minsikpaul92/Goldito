@@ -42,10 +42,12 @@ import Plus from "lucide-react-native/icons/plus";
 import RefreshCw from "lucide-react-native/icons/refresh-cw";
 import CloudRain from "lucide-react-native/icons/cloud-rain";
 import Settings from "lucide-react-native/icons/settings";
+import Share from "lucide-react-native/icons/share";
 import Sprout from "lucide-react-native/icons/sprout";
 import Sparkles from "lucide-react-native/icons/sparkles";
 import Square from "lucide-react-native/icons/square";
 import SquareCheck from "lucide-react-native/icons/square-check";
+import Sticker from "lucide-react-native/icons/sticker";
 import Tag from "lucide-react-native/icons/tag";
 import TriangleAlert from "lucide-react-native/icons/triangle-alert";
 import User from "lucide-react-native/icons/user";
@@ -118,6 +120,9 @@ const ICONS = {
   received: LogIn,
   returned: LogOut,
   photo: Image,
+  // A Diary page's two actions (diary audit, Oct 27): Decorate and Share.
+  sticker: Sticker,
+  share: Share,
   hidden: EyeOff,
   video: Video,
   warning: TriangleAlert,
