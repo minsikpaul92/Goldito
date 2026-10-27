@@ -28,33 +28,23 @@ the server owns every fact, and a person approves every word.
 
 ## Goldito in 30 seconds
 
-**The problem.** We have worked as pet sitters for three years, many stays with the same dogs and cats. Apps connect owners and sitters, and take a cut of every booking, but the stay itself is still typed by hand: replies to "can you take her?", the pill schedule, the "don't knock" rule, the evening update, the photo the owner asks for twice. Much of it happens outside the app, and when the stay ends, everything the sitter learned about the pet is lost in a chat thread.
+**The problem.** We have been pet sitters for three years. Apps connect owners and sitters, but the stay itself is still typed by hand: replies to "can you take her?", the pill schedule, the evening update, the photo the owner asks for twice. That is about **40 minutes a day** for us (about 10 with Goldito, our estimate), and when the stay ends, what the sitter learned about the pet is lost in a chat thread.
 
-| Our three years of sitting | |
-| :--- | :--- |
-| Stays | 120 to 180 (3 to 5 pets a month) |
-| Clients | 50 to 80 |
-| Messages | 5,000 to 7,000 |
-| Time spent on replies, photo and activity updates, daily reports, and schedule checks | **about 40 minutes a day** |
-| The same work with Goldito (our estimate) | **about 10 minutes a day, roughly 75% less** |
-
-**What Goldito does.** One app, and one chat per owner and sitter, carries the whole stay: inquiry, Meet & Greet, booking, the trip, daily care, and the ride home.
+**What Goldito does.** One chat per owner and sitter carries the whole stay: inquiry, Meet & Greet, booking, the trip, daily care, and the ride home.
 
 | | |
 | :--- | :--- |
-| **No typing** | The sitter taps a chip and gets a reply in their own voice; taps a few check-ins and gets the evening note; snaps a photo and it is captioned and filed. Owners describe their pet with a photo and a few spoken sentences. |
+| **No typing** | The sitter taps a chip and gets a reply in their own voice, taps a few check-ins and gets the evening note, snaps a photo and it is captioned and filed. Owners describe their pet with a photo and a few spoken sentences. |
 | **AI you can check** | Prices, dates, availability, and door codes come from the server, never from the model. Nemotron writes only from the facts it is handed, and **nothing is sent until a person taps Send**. |
-| **Memory that follows the pet** | Each stay becomes the pet's Life Record. The next stay, even with a new sitter, starts already knowing the pet. |
+| **Memory that follows the pet** | Each stay becomes the pet's Life Record, so the next stay, even with a new sitter, starts already knowing the pet. |
 
-**AI is a tool here, not the sender.** AI cannot always be right, so a person checks every step: Goldito never sends a message, a daily note, or a review on its own.
-
-**Why not a marketplace plus ChatGPT?** A general chatbot cannot see the sitter's calendar, quote, house rules, or the pet's history, cannot be trusted with a lockbox code, and forgets the pet when the sitter changes. In Goldito the facts come from the server, the words sound like the sitter, and the memory follows the pet.
+**AI is a tool here, not the sender.** Goldito never sends a message, a daily note, or a review on its own. A general chatbot cannot see the sitter's calendar, quote, or house rules, cannot be trusted with a lockbox code, and forgets the pet when the sitter changes. Here the facts come from the server, the words sound like the sitter, and the memory follows the pet.
 
 ---
 
 ## Powered by NVIDIA Nemotron on Nebius Token Factory
 
-Every AI call runs on **Nebius Token Factory**, from the backend only (keys never reach the app). **NVIDIA Nemotron 3** does all the reasoning and writing, and we pick the size per job: **Nano** for simple judgments, **Super** for anything that has to follow a conversation or its context, and **Ultra** for the safety call that needs the strongest reasoning. A Token Factory vision model reads photos, and a Token Factory embedding model powers retrieval.
+Every AI call runs on **Nebius Token Factory**, from the backend only (keys never reach the app). **NVIDIA Nemotron 3** does the reasoning and writing: **Nano** for simple judgments, **Super** for anything that follows a conversation, **Ultra** for the safety call. A Token Factory vision model reads photos and an embedding model powers retrieval.
 
 ### The agent loop
 
@@ -65,7 +55,7 @@ Every AI call runs on **Nebius Token Factory**, from the backend only (keys neve
   a treat label)           via RAG)                                           quotes)                 next stay)
 ```
 
-Each event in a stay triggers the agent: it gathers what it needs, acts, and remembers. It is not perfect, but answering only from the limited facts the server hands it is how we keep hallucination as low as we can.
+Each event in a stay triggers the agent. It answers only from the facts the server hands it, which is how we keep hallucination low.
 
 | When this happens | The agent | Model | A person decides |
 | :--- | :--- | :--- | :--- |
@@ -81,10 +71,9 @@ Each event in a stay triggers the agent: it gathers what it needs, acts, and rem
 <img src="docs/assets/readme/chat-draft.gif" alt="The sitter taps a reply chip and Nemotron drafts a message in her voice with the server's quote" width="360">
 -->
 
-**Guardrails.** The model never writes a price, a date, or an entry code: a draft whose numbers do not match the server is rewritten once, then falls back to plain words. Entry codes never enter a prompt or the RAG index. Life Records drop sentences with no recorded evidence. Spoken profile facts need a matching quote from what the owner said, and safety answers are never pre-filled. The treat verdict is never below the rule table. If a model is slow or down, the screen gets fixed chips or a plain list, never an error.
+**Guardrails.** The model never writes a price, a date, or an entry code (a draft whose numbers do not match the server is rewritten once, then falls back to plain words). Entry codes never enter a prompt or the RAG index. Life Records and spoken profile facts need recorded evidence or a matching quote, and safety answers are never pre-filled. The treat verdict is never below the rule table. If a model is slow or down, the screen shows fixed chips or a plain list, never an error.
 
-<details>
-<summary><b>Models and measurements</b> (click to expand)</summary>
+### Models and measurements
 
 | Model (Token Factory ID) | Used for | Measured |
 | :--- | :--- | :--- |
@@ -96,9 +85,7 @@ Each event in a stay triggers the agent: it gathers what it needs, acts, and rem
 
 ¹ NVIDIA's vision models on Token Factory (`Nemotron-Nano-V2-12b`, `Cosmos3-Super-Reasoner`, `Nemotron-3-Nano-Omni`) are offered only as dedicated endpoints, not on the shared API (checked 2026-10-02). Keeping one running until judging ends would cost more than our credits, so vision uses MiniCPM-V 4.5 on the shared API, and all reasoning and writing stay on Nemotron. Every check: [model-ids.md](docs/plan/phases/notes/model-ids.md).
 
-**Tested in CI on every push:** about 680 pytest tests, more than 600 Playwright tests (67 specs, desktop phone frame and mouse), and 86 SQL migrations applied to a Postgres stub followed by a row-level-security smoke test.
-
-</details>
+**Tested in CI on every push:** about 690 pytest tests, more than 640 Playwright tests (68 specs, desktop phone frame and mouse), and 88 SQL migrations applied to a Postgres stub followed by a row-level-security smoke test.
 
 ---
 
