@@ -414,7 +414,7 @@ export default function Chat() {
   const plusItems: PlusItem[] = [
     {
       id: "meet",
-      label: "Meet & Greet request",
+      label: "Meet request",
       icon: "people",
       enabled: !!booking && !!meetGreetPrimary(booking, header.myRole) && !!meetCard.current,
       onPress: () => meetCard.current?.primary(),
