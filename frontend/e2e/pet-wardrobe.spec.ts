@@ -50,7 +50,7 @@ test.describe("wardrobe", () => {
     const db = await start(page, (d) => d.pets.push(pet("pet-max", "Max", { profile: { coat: "cream", note: "keep me" } })));
     const screen = app(page);
     await screen.getByTestId("home-pager").waitFor();
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("pet-room-Max-sprite")).toBeVisible();
     await expect(screen.getByTestId("pet-hat-pumpkin")).toHaveAttribute("aria-pressed", "false");
     expect(await pumpkinPixels(screen, "Max")).toBe(0);
@@ -62,7 +62,7 @@ test.describe("wardrobe", () => {
 
     // Still on after the pets are loaded again.
     await page.reload();
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("pet-hat-pumpkin")).toHaveAttribute("aria-pressed", "true");
     await expect.poll(() => pumpkinPixels(screen, "Max")).toBeGreaterThan(0);
 
@@ -74,10 +74,11 @@ test.describe("wardrobe", () => {
   test("each pet has its own hat", async ({ page }) => {
     await start(page, (d) => d.pets.push(pet("pet-max", "Max"), pet("pet-mochi", "Mochi", { species: "cat", created_at: "2026-10-02T09:00:00Z" })));
     const screen = app(page);
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await screen.getByTestId("pet-hat-pumpkin").click();
     await expect.poll(() => pumpkinPixels(screen, "Max")).toBeGreaterThan(0);
-    await screen.getByTestId("pet-switch-Mochi").click();
+    await screen.getByTestId("pet-switch").click();
+    await screen.getByTestId("pet-switch-menu").getByText("Mochi", { exact: true }).click();
     await expect(screen.getByTestId("pet-hat-pumpkin")).toHaveAttribute("aria-pressed", "false");
     expect(await pumpkinPixels(screen, "Mochi")).toBe(0);
   });
@@ -85,7 +86,7 @@ test.describe("wardrobe", () => {
   test("a hat that is not a hat we know is ignored", async ({ page }) => {
     await start(page, (d) => d.pets.push(pet("pet-max", "Max", { profile: { hat: "crown" } })));
     const screen = app(page);
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("pet-hat-pumpkin")).toHaveAttribute("aria-pressed", "false");
     expect(await pumpkinPixels(screen, "Max")).toBe(0);
   });
@@ -100,7 +101,7 @@ test.describe("wardrobe", () => {
       SITTER,
     );
     const screen = app(page);
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await screen.getByTestId("pet-room-Max-sprite").waitFor();
     await expect.poll(() => pumpkinPixels(screen, "Max")).toBeGreaterThan(0);
   });

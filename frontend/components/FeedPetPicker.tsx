@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { HOME_TEXT } from "./home/homeType";
 import { PetFace } from "./PetFace";
@@ -31,6 +31,8 @@ type Props = {
 
 type Anchor = { x: number; y: number; width: number; height: number };
 
+const MENU_MIN = 200;
+
 /**
  * The first filter chip of the Feed (Muk's trial, #345): "All pets" with their faces, a menu that drops right under it
  * to narrow to one pet. A sitter sees the pets in care first, a line, then the pets of stays that are over; an owner
@@ -41,6 +43,8 @@ export function FeedPetPicker({ groups, allPets, value, onChange, faces, hints, 
   const styles = useThemedStyles(makeStyles);
   const pill = useRef<View>(null);
   const [anchor, setAnchor] = useState<Anchor | null>(null);
+  // The width the menu can use, so a chip at the right end of a row opens its menu leftward.
+  const { width: roomWidth } = useWindowDimensions();
   const all = groups.flatMap((g) => g.pets);
   const hasAll = allPets.length > 1;
   const chosen = value === ALL_PETS && hasAll ? null : (all.find((p) => p.id === value) ?? all[0]);
@@ -78,11 +82,22 @@ export function FeedPetPicker({ groups, allPets, value, onChange, faces, hints, 
         <Icon name="expand" size={16} color={theme.color.textMuted} />
       </Pressable>
       <Modal visible={anchor != null} transparent animationType="fade" onRequestClose={close}>
-        <Pressable accessibilityLabel="Close" onPress={close} style={StyleSheet.absoluteFill} testID={`${testID}-backdrop`} />
+        <Pressable
+          accessibilityLabel="Close"
+          onPress={close}
+          style={StyleSheet.absoluteFill}
+          testID={`${testID}-backdrop`}
+        />
         {anchor ? (
           <View
             accessibilityRole="menu"
-            style={[styles.menu, { top: anchor.y + anchor.height + 4, left: anchor.x, minWidth: Math.max(anchor.width, 200) }]}
+            style={[
+              styles.menu,
+              { top: anchor.y + anchor.height + 4, minWidth: Math.max(anchor.width, MENU_MIN) },
+              roomWidth > 0 && anchor.x + Math.max(anchor.width, MENU_MIN) > roomWidth - 8
+                ? { right: Math.max(8, roomWidth - anchor.x - anchor.width) }
+                : { left: anchor.x },
+            ]}
             testID={`${testID}-menu`}
           >
             {hasAll ? (

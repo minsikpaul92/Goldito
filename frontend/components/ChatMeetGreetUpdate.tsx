@@ -11,17 +11,17 @@ type Update = Extract<ChatCard, { type: "meet_greet_update" }>;
 export function meetGreetUpdateText(card: Update, who: string): string {
   switch (card.event) {
     case "proposed":
-      return who === "You" ? "You sent a Meet & Greet Request" : `${who} sent a Meet & Greet Request`;
+      return who === "You" ? "You asked to meet" : `${who} asked to meet`;
     case "agreed":
-      return `${who} accepted the Meet & Greet`;
+      return `${who} agreed to meet`;
     case "time_declined":
       return `${who} can't make that time`;
     case "skip_requested":
-      return `${who} asked to skip the Meet & Greet`;
+      return `${who} asked to skip the meet`;
     case "skipped":
-      return `${who} agreed to skip the Meet & Greet`;
+      return `${who} agreed to skip the meet`;
     case "done":
-      return "Meet & Greet done";
+      return "Meet done";
     case "declined":
       return `${who} declined the request`;
   }

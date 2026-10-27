@@ -14,7 +14,10 @@ const FRESH_MS = 20_000;
  * Reloads when a notice arrives (the sitter's check-in reaches the owner as one), and the clock moves on every minute
  * so a pet turns hungry without a reload. A failed load keeps the last picture: the room is a bonus on Home.
  */
-export function usePetRoom(petId: string | null, reloadKey = 0): { status: PetStatus | null; event: PetEvent | null } {
+export function usePetRoom(
+  petId: string | null,
+  reloadKey = 0,
+): { status: PetStatus | null; event: PetEvent | null; updatedAt: string | null } {
   const { inboxRevision } = useNotifications();
   const [data, setData] = useState<{ checkins: StatusCheckin[]; pending: PendingTask[]; event: PetEvent | null } | null>(null);
   const [now, setNow] = useState(() => new Date());
@@ -52,5 +55,10 @@ export function usePetRoom(petId: string | null, reloadKey = 0): { status: PetSt
   }, []);
 
   const status = useMemo(() => (data ? derivePetStatus(data.checkins, data.pending, now) : null), [data, now]);
-  return { status, event: data?.event ?? null };
+  // The newest check-in today: the room's "Updated" line.
+  const updatedAt = useMemo(
+    () => (data?.checkins.length ? data.checkins.reduce((a, c) => (Date.parse(c.at) > Date.parse(a) ? c.at : a), data.checkins[0].at) : null),
+    [data],
+  );
+  return { status, event: data?.event ?? null, updatedAt };
 }

@@ -190,12 +190,14 @@ Each design decision, its reason, and what it replaced. Change a row only with t
 | **D20** | **Words and playful words (Mook, Oct 26)**: Log in / Log out everywhere; the sitter's daily write-up is a Diary page; puns come only from `content/words.ts` through `useWords()`, and Settings → Playful words turns them off | The copy audit: log in, sign in and sign out mixed; the write-up called Diary, report, daily note and page; puns typed into four screens (cats got Paw-fect!) with no way to turn them off | Sign in / Sign out; "daily report"; hard-coded puns |
 | **D20** | **Back is the ← arrow alone (Mook, Oct 25)**: one control everywhere, top left, 44 × 44, read aloud as Back, no visible word; `Icon name="arrowBack"` in `BackLink`, `StepHeader` and `StepFrame`, and the native header in minimal mode. Replaces U1 A | "‹ Back" crowded the sign-up step header next to its progress bar; the arrow is what ~37 native headers already showed, and what #383 proposed | Chevron + the word Back (U1 A) |
 | **D21** | **Sign out asks in a sheet (Mook, Oct 26)**: the menu and Settings both confirm Sign out in a bottom sheet, as #387 built it. Replaces U5 A | The sheet shipped (#387) before U5 was built; one sheet in both places is already consistent, and signing out of a demo account by accident costs a judge the stay | No confirm (U5 A) |
+| **D23** | **The booking stepper says skipped and under way with dashes (Mook, Oct 27)**: a Meet both agreed to skip is a **dashed circle with »** (`Icon name="skipped"`), still dashed links on both sides and a grey Skipped pill; the link into the step under way is **dashed and flows toward it**, and done links stay solid. Reduce motion keeps the dashes still. `BookingStageBar` | Skipped showed a "–" in a done circle, and the step under way differed from the rest only by a bolder label | A grey solid circle for Skipped (4 A); a turning dashed ring or three dots for the step under way (5 M2, M3) |
+| **D24** | **Meet is the one word (Mook, Oct 27)**: steps, buttons, toasts, chat lines and notices say **Meet** ("Schedule a meet", "Skip the meet", "Robert agreed to meet"). The full name **Meet & Greet** appears only where it is explained: How it works ("A Meet & Greet; notes become a checklist"), Terms, and the calendar invite read outside the app | Meet & Greet, M&G and Meet were mixed, and "Meet & Greet" does not fit a step label (#237) | Meet & Greet everywhere; Meet with no explanation anywhere (6 A) |
 
 ---
 
 ## 1. Product feel
 
-Goldito is a private care app for **dogs and cats**. Owners hand their pet to a part-time sitter; the app keeps them updated without asking. One stay runs through five stages — Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion ([full-process.ko.md](docs/plan/full-process.ko.md)) — so screens should feel like one continuous journey (Rover booking × KidsNote care × Uber trip), not separate tools.
+Goldito is a private care app for **dogs and cats**. Owners hand their pet to a part-time sitter; the app keeps them updated without asking. One stay runs through five stages — Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion ([README](README.md#how-goldito-works)) — so screens should feel like one continuous journey (Rover booking × KidsNote care × Uber trip), not separate tools.
 
 | Keyword | Means in UI |
 | :--- | :--- |
@@ -222,7 +224,7 @@ Goldito is a private care app for **dogs and cats**. Owners hand their pet to a 
 
 ### 2.1 Desktop browsers (judges): phone frame
 
-Judges open the demo URL on a computer. They must get the same experience as on a phone ([architecture D25](docs/plan/phases/architecture.ko.md)).
+Judges open the demo URL on a computer. They must get the same experience as on a phone ([architecture D25](docs/plan/phases/architecture.md)).
 
 | Where the app runs | What renders |
 | :--- | :--- |
@@ -447,7 +449,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | Role label next to a name | The header's **Owner** / **Sitter** is a `brand` `Tag`. Show the same Tag next to a person's name wherever it would otherwise be unclear who they are (booking card and detail, inquiry thread, request cards) — never plain text like "(sitter)" |
 | `Button` variants | Built: `primary`, `secondary`, `danger` (`error` fill, only for destructive confirms). Proposed: `large` (full-width, 56 tall — the one primary action on sitter screens), Figma `Loading` state |
 | `AlertModal` | Safety results — see [§7.4](#74-danger-is-loud) |
-| `TabBar` | Per role; [architecture §3](docs/plan/phases/architecture.ko.md) **D47 / D47b · D61 · D63**: both **Home · Bookings · Chat · Feed · Snap** (Chat = the chats with an unread badge, icon `chats` = square bubble with a paw; Feed = Photos · Diary switch; Snap = treat check · mood · sticker, icon `camera`). Settings (and sitter Earnings later) = header Profile |
+| `TabBar` | Per role; [architecture §3](docs/plan/phases/architecture.md) **D47 / D47b · D61 · D63**: both **Home · Bookings · Chat · Feed · Snap** (Chat = the chats with an unread badge, icon `chats` = square bubble with a paw; Feed = Photos · Diary switch; Snap = treat check · mood · sticker, icon `camera`). Settings (and sitter Earnings later) = header Profile |
 | Pet photo avatars | `Avatar kind="photo"` once pets have photos (11.10); `kind="emoji"` (🐶 / 🐱) until then |
 | `TaskRow` | Checkmark circle + title + time; pending first; tap → "Complete with photo" |
 | `FeedCard` (built: `components/FeedCard.tsx`) | Photo/video (`radius.lg`), caption, time, optional mood chip |
@@ -525,7 +527,7 @@ Each screen has at most one filled `primary` button. Everything else is secondar
 Sitter task row → big **Complete with photo**. Owner booking → **Request booking**.
 
 ### 7.2 No typing for sitters (P0)
-No caption box, no long report typing. Sitters tap: **Today quick check-ins** (meal, potty, walk minutes, mood, note) and scheduled tasks (**Mark done** or with photo). Report screen = the **5-second check**: up to 2 photos → **AI-suggested chips** from the day's check-ins, tasks, and photos (the sitter turns off wrong ones) + an optional short note (≤ 200 chars) → Generate → review → **Send** posts it (D34 · D38). Optional edit before Send is OK. Inquiries: the AI drafts the reply in the sitter's tone; the sitter just taps **Send** (Edit / Add / Regenerate are optional, D36 · D38). See [sitter-care-loop.ko.md](docs/plan/sitter-care-loop.ko.md).
+No caption box, no long report typing. Sitters tap: **Today quick check-ins** (meal, potty, walk minutes, mood, note) and scheduled tasks (**Mark done** or with photo). Report screen = the **5-second check**: up to 2 photos → **AI-suggested chips** from the day's check-ins, tasks, and photos (the sitter turns off wrong ones) + an optional short note (≤ 200 chars) → Generate → review → **Send** posts it (D34 · D38). Optional edit before Send is OK. Inquiries: the AI drafts the reply in the sitter's tone; the sitter just taps **Send** (Edit / Add / Regenerate are optional, D36 · D38).
 
 Owners may type where it saves the sitter work: the inquiry question, the care & medication request, their name on consents, and their preferred meeting spots.
 
@@ -554,7 +556,12 @@ Always explain what will appear and who adds it.
 - **AI buttons:** a button that asks the AI to write or check carries the sparkles line icon before its label: `<Button ai />` (or `<Icon name="ai" />` on a chip), 18 px on buttons and 14 px on chips. Never the ✨ emoji.
 - Any other emoji is fine, in a button too, when it helps (📍 on a "use my current location" button, a pet's 🐶 / 🐱). Swapping one for a line icon is optional.
 - Times shown in the app timezone (America/Toronto) with AM/PM.
-- **One word per thing** (D20): **Log in / Log out** (never sign in / sign out, except Google's own "Sign in with Google"); the sitter's daily write-up is a **Diary page** ("Writing Max's page", "Diary page · Sent"); the photo tab is **Moments**; errors start with **Couldn't**.
+- **Questions and choices** (sign-up and onboarding; the wording itself lives in `frontend/features/onboarding/questions.ts` and `frontend/features/ownerOnboarding/questions.ts`):
+  - Everyday words that older users and non-native speakers get at a glance ("When a guest visits", not "When a visitor comes in").
+  - A question reads as a question ("Do you take cats?", "How many walks a day?"), never a noun phrase ("Pick-up preference").
+  - A choice is a short keyword, not a sentence ("Pulls away", "Fast & wants more!"). Sitter counts stay at three choices (1 · 2 · 3+); owner pet questions use the pet's `{name}` and a 4-step scale from weaker to stronger.
+  - No medical or diagnostic words: "Based on what you tell us", never "Behavior assessment" or "Separation anxiety". Skipping is always **Skip**.
+- **One word per thing** (D20, D24): **Meet** (Meet & Greet only where it is explained); **Log in / Log out** (never sign in / sign out, except Google's own "Sign in with Google"); the sitter's daily write-up is a **Diary page** ("Writing Max's page", "Diary page · Sent"); the photo tab is **Moments**; errors start with **Couldn't**.
 - **Playful words** (D20): a pun only on a toast, an empty state, a loading line, a few titles and small celebrations, taken from `frontend/content/words.ts` with `useWords()` (plain, dog and cat versions; the playful one follows the pet's species). Never on safety, money, agreements, errors or button labels. **Settings → Playful words** (on by default) turns every one back to its plain line. The list and the never list: [Playful words](https://mooque-dev.github.io/goldito-design/words-trial.html).
 
 ### 7.7 Works with a mouse
@@ -611,7 +618,7 @@ Four jobs, four controls. Pick by the job, never by the screen. The [UX audit](h
 
 ### 7.9 Welcome / role onboarding
 
-Public intro for **signed-out** visitors (`/welcome`, `/welcome/how`, `/login`, `/signup`). Spec: [onboarding.ko.md](docs/plan/onboarding.ko.md); design: the [intro trial](https://mooque-dev.github.io/goldito-design/intro-trial.html) (#374).
+Public intro for **signed-out** visitors (`/welcome`, `/welcome/how`, `/login`, `/signup`). Design: the [intro trial](https://mooque-dev.github.io/goldito-design/intro-trial.html) (#374).
 
 | Rule | Detail |
 | :--- | :--- |

@@ -1,14 +1,16 @@
 import { useFocusEffect, router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { NoticeDetail, NoticeThumb } from "../../components/NoticeDetail";
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { Icon } from "../../components/ui/Icon";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { Sheet } from "../../components/ui/Sheet";
 import { SwipeToDelete } from "../../components/ui/SwipeToDelete";
 import { TextButton } from "../../components/ui/TextButton";
+import { listOwnerBookings, listSitterBookings } from "../../lib/bookings";
 import { formatFeedTime } from "../../lib/feed";
 import {
   AppNotification,
@@ -20,6 +22,19 @@ import {
   markNotificationRead,
 } from "../../lib/notifications";
 import { DETAIL_TYPES, detailNextLabel, useNoticeMedia } from "./noticeMedia";
+import {
+  NoticeEntry,
+  NoticeTone,
+  StaySpan,
+  checkinFoldTitle,
+  checkinSummary,
+  groupNotices,
+  noticeAction,
+  noticeIcon,
+  plainText,
+  staySpans,
+} from "./noticeDisplay";
+import { appToday, formatTime, isoToZoned } from "../schedule/dates";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useNotifications } from "../../providers/NotificationsProvider";
 import { Role, useSession } from "../../providers/SessionProvider";
@@ -47,6 +62,14 @@ export function NotificationsCenter({ role }: { role: Role }) {
   const errorDialog = useErrorDialog();
   const noticeMedia = useNoticeMedia(list.status === "loading" ? null : list.items);
   const [detail, setDetail] = useState<AppNotification | null>(null);
+  const [openFolds, setOpenFolds] = useState<Set<string>>(new Set());
+  const [stays, setStays] = useState<StaySpan[]>([]);
+  const me = session.status === "signedIn" ? session.profile : null;
+  // One "now" for both the day cards and the times on their rows, so a row never says "1h ago" under another day.
+  const { days, now } = useMemo(() => {
+    const at = Date.now();
+    return { now: at, days: groupNotices(list.status === "loading" ? [] : list.items, appToday(new Date(at)), stays) };
+  }, [list, stays]);
 
   const load = useCallback(async (soft = false) => {
     if (!soft) setList({ status: "loading" });
@@ -66,6 +89,23 @@ export function NotificationsCenter({ role }: { role: Role }) {
     useCallback(() => {
       void load(false);
     }, [load]),
+  );
+
+  // The stays, for "Day 2 of 4 with Chloe" on the day cards: the one bookings query Home and Bookings make. Without
+  // it the cards keep the plain date.
+  const meId = me?.id;
+  const meRole = me?.role;
+  useFocusEffect(
+    useCallback(() => {
+      if (!meId || (meRole !== "owner" && meRole !== "sitter")) return;
+      let live = true;
+      (meRole === "owner" ? listOwnerBookings(meId) : listSitterBookings(meId))
+        .then((bookings) => live && setStays(staySpans(bookings, meRole)))
+        .catch(() => undefined);
+      return () => {
+        live = false;
+      };
+    }, [meId, meRole]),
   );
 
   // Soft refresh when a new Realtime notice arrives while this screen is open.
@@ -161,6 +201,50 @@ export function NotificationsCenter({ role }: { role: Role }) {
     if (href) router.push(href);
   };
 
+  const toggleFold = (key: string) =>
+    setOpenFolds((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
+  /** One notice: its drawn icon, the words without emoji, a photo or the word for what to do, swipe to delete. */
+  /** "52m ago" on today's card; the time of day on older cards, whose label already names the day. */
+  const when = (iso: string, today: boolean) => (today ? formatFeedTime(iso, now) : formatTime(isoToZoned(iso).time));
+
+  const renderRow = (item: AppNotification, today: boolean) => {
+    const media = noticeMedia[item.id];
+    const { icon, tone } = noticeIcon(item);
+    const action = media ? null : noticeAction(item.type, role);
+    const sub = [item.body ? plainText(item.body) : null, when(item.createdAt, today)].filter(Boolean).join(" · ");
+    return (
+      <SwipeToDelete key={item.id} onDelete={() => void onDelete(item)} radius={theme.radius.md} testID={`notification-swipe-${item.id}`}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${item.readAt ? "" : "Unread. "}${plainText(item.title)}. ${sub}`}
+          onPress={() => void onOpen(item)}
+          style={({ pressed }) => [styles.row, !item.readAt && styles.unread, pressed && styles.pressed]}
+          testID={`notification-${item.id}`}
+        >
+          <IconSquare icon={icon} tone={tone} unread={!item.readAt} />
+          <View style={styles.textCol}>
+            <Text style={[styles.title, !item.readAt && styles.titleUnread]}>{plainText(item.title)}</Text>
+            <Text style={styles.sub} numberOfLines={2}>
+              {sub}
+            </Text>
+          </View>
+          {media ? <NoticeThumb media={media} size={44} /> : null}
+          {action ? (
+            <View style={styles.action}>
+              <Text style={styles.actionText}>{action}</Text>
+            </View>
+          ) : null}
+        </Pressable>
+      </SwipeToDelete>
+    );
+  };
+
   if (session.status === "loading") return <LoadingView />;
 
   if (list.status === "loading") return <LoadingView />;
@@ -204,32 +288,50 @@ export function NotificationsCenter({ role }: { role: Role }) {
         <TextButton label="Clear all" danger onPress={() => setConfirmClear(true)} testID="clear-all" />
       </View>
       <FlatList
-        data={items}
-        keyExtractor={(item) => item.id}
+        data={days}
+        keyExtractor={(d) => d.day}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
-          <SwipeToDelete
-            onDelete={() => void onDelete(item)}
-            radius={theme.radius.md}
-            testID={`notification-swipe-${item.id}`}
-          >
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => void onOpen(item)}
-              style={({ pressed }) => [styles.row, pressed && styles.pressed, !item.readAt && styles.unread]}
-              testID={`notification-${item.id}`}
-            >
-              <View style={styles.rowBody}>
-                {!item.readAt ? <View style={styles.dot} /> : <View style={styles.dotSpacer} />}
-                <View style={styles.textCol}>
-                  <Text style={[styles.title, !item.readAt && styles.titleUnread]}>{item.title}</Text>
-                  {item.body ? <Text style={styles.body}>{item.body}</Text> : null}
-                  <Text style={styles.time}>{formatFeedTime(item.createdAt)}</Text>
-                </View>
-                {noticeMedia[item.id] ? <NoticeThumb media={noticeMedia[item.id]} /> : null}
-              </View>
-            </Pressable>
-          </SwipeToDelete>
+        renderItem={({ item: day }) => (
+          <View style={styles.dayWrap} testID={`notice-day-${day.day}`}>
+            <Text style={styles.dayLabel} accessibilityRole="header">
+              {day.label}
+            </Text>
+            <View style={styles.dayCard}>
+              {day.entries.map((entry, i) => (
+                <Fragment key={entryKey(entry)}>
+                  {i > 0 && isRead(day.entries[i - 1]) && isRead(entry) ? <View style={styles.divider} /> : null}
+                  {entry.kind === "one" ? (
+                    renderRow(entry.notice, day.today)
+                  ) : (
+                    <View style={styles.fold}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: openFolds.has(entry.key) }}
+                        accessibilityHint="Shows each check-in"
+                        onPress={() => toggleFold(entry.key)}
+                        style={({ pressed }) => [styles.row, !isRead(entry) && styles.unread, pressed && styles.pressed]}
+                        testID={`notification-fold-${entry.key}`}
+                      >
+                        <IconSquare icon="check" tone="butter" unread={!isRead(entry)} />
+                        <View style={styles.textCol}>
+                          <Text style={[styles.title, !isRead(entry) && styles.titleUnread]} numberOfLines={1}>
+                            {checkinFoldTitle(entry.notices)}
+                          </Text>
+                          <Text style={styles.sub} numberOfLines={1}>
+                            {checkinSummary(entry.notices)} · {when(entry.notices[0].createdAt, day.today)}
+                          </Text>
+                        </View>
+                        <View style={openFolds.has(entry.key) ? styles.chevronOpen : null}>
+                          <Icon name="expand" size={20} color={theme.color.textMuted} />
+                        </View>
+                      </Pressable>
+                      {openFolds.has(entry.key) ? <View style={styles.foldItems}>{entry.notices.map((n) => renderRow(n, day.today))}</View> : null}
+                    </View>
+                  )}
+                </Fragment>
+              ))}
+            </View>
+          </View>
         )}
       />
       <NoticeDetail
@@ -277,60 +379,114 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.surface,
     },
     list: {
-      padding: theme.spacing.sm,
-      gap: theme.spacing.xs,
+      padding: theme.spacing.md,
+      gap: theme.spacing.md,
       paddingBottom: theme.spacing.xl,
     },
-    // Each notice is a rounded card (like iPhone notifications), so the swipe layer under it matches.
-    row: {
-      paddingVertical: theme.spacing.md,
-      paddingHorizontal: theme.spacing.md,
-      borderRadius: theme.radius.md,
+    dayWrap: { gap: theme.spacing.sm },
+    dayLabel: {
+      paddingHorizontal: theme.spacing.xs,
+      fontSize: theme.fontSize.caption + 1,
+      fontWeight: theme.fontWeight.bold,
+      letterSpacing: 0.6,
+      textTransform: "uppercase",
+      color: theme.color.textMuted,
+    },
+    // One card per day; rows inside keep their own room and shape, so unread rows never run into each other.
+    dayCard: {
+      padding: theme.spacing.xs + 2,
+      gap: theme.spacing.xs + 2,
+      borderRadius: theme.radius.lg,
       borderWidth: 1,
       borderColor: theme.color.border,
+      backgroundColor: theme.color.surface,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm + theme.spacing.xs,
+      minHeight: theme.layout.touchTarget + theme.spacing.md,
+      paddingVertical: theme.spacing.sm + theme.spacing.xs,
+      paddingHorizontal: theme.spacing.sm + theme.spacing.xs,
+      borderRadius: theme.radius.md,
       backgroundColor: theme.color.surface,
     },
     unread: {
       backgroundColor: theme.color.accent,
     },
     pressed: {
-      opacity: 0.85,
+      opacity: theme.opacity.pressed,
     },
-    rowBody: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      gap: theme.spacing.sm,
+    // A hairline only between two read rows; unread rows are set apart by their tint.
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      marginHorizontal: theme.spacing.sm + theme.spacing.xs,
+      backgroundColor: theme.color.border,
     },
-    dot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      marginTop: 6,
-      backgroundColor: theme.color.primary,
-    },
-    dotSpacer: {
-      width: 8,
-      height: 8,
-      marginTop: 6,
-    },
+    fold: { gap: theme.spacing.xs + 2 },
+    foldItems: { gap: theme.spacing.xs + 2, paddingLeft: theme.spacing.md },
+    chevronOpen: { transform: [{ rotate: "180deg" }] },
     textCol: {
       flex: 1,
+      minWidth: 0,
       gap: 2,
     },
     title: {
-      fontSize: theme.fontSize.body,
+      fontSize: theme.fontSize.small + 1,
+      lineHeight: theme.lineHeight.small,
       color: theme.color.text,
     },
     titleUnread: {
       fontWeight: theme.fontWeight.semibold,
     },
-    body: {
-      fontSize: theme.fontSize.small,
+    sub: {
+      fontSize: theme.fontSize.small - 1,
+      lineHeight: 18,
       color: theme.color.textMuted,
     },
-    time: {
-      marginTop: 2,
-      fontSize: theme.fontSize.caption,
-      color: theme.color.textMuted,
+    action: {
+      minHeight: 28,
+      justifyContent: "center",
+      paddingHorizontal: theme.spacing.sm + 2,
+      borderRadius: theme.radius.pill,
+      borderWidth: 1.5,
+      borderColor: theme.color.text,
+      backgroundColor: theme.color.surface,
+    },
+    actionText: {
+      fontSize: theme.fontSize.small - 1,
+      fontWeight: theme.fontWeight.semibold,
+      color: theme.color.text,
+    },
+    square: {
+      width: 36,
+      height: 36,
+      borderRadius: theme.radius.sm + 2,
+      alignItems: "center",
+      justifyContent: "center",
     },
   });
+
+const TONE: Record<NoticeTone, "blockMint" | "blockPeach" | "blockButter" | "blockBlush"> = {
+  mint: "blockMint",
+  peach: "blockPeach",
+  butter: "blockButter",
+  blush: "blockBlush",
+};
+
+/** The drawn icon in its tinted square; on a mint (unread) row a mint square turns white so it still shows. */
+function IconSquare({ icon, tone, unread }: { icon: ReturnType<typeof noticeIcon>["icon"]; tone: NoticeTone; unread: boolean }) {
+  const theme = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const ground = theme.color[TONE[tone]];
+  const background = unread && ground.toLowerCase() === theme.color.accent.toLowerCase() ? theme.color.surface : ground;
+  return (
+    <View style={[styles.square, { backgroundColor: background }]}>
+      <Icon name={icon} size={20} color={theme.color.text} />
+    </View>
+  );
+}
+
+const entryKey = (e: NoticeEntry) => (e.kind === "one" ? e.notice.id : `fold-${e.key}`);
+
+const isRead = (e: NoticeEntry) => (e.kind === "one" ? !!e.notice.readAt : e.notices.every((n) => n.readAt));

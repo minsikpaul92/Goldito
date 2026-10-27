@@ -53,11 +53,13 @@ test.describe("diary book", () => {
 
     await screen.getByTestId("diary-entry-cover-" + MOCHI.id).click();
     await expect(screen.getByTestId("diary-entry-where")).toContainText("Mochi · Oct 6");
-    await expect(screen.getByText("Page 1 of 1")).toBeVisible();
+    await expect(screen.getByTestId("diary-entry-prev")).toBeDisabled();
+    await expect(screen.getByTestId("diary-entry-next")).toBeDisabled();
     await expect(screen.getByTestId("diary-entry-body")).toContainText("watched birds");
     await screen.getByTestId("diary-entry-covers").click();
     await screen.getByTestId("diary-entry-cover-" + MAX.id).click();
-    await expect(screen.getByText("Page 2 of 2")).toBeVisible(); // Mochi's page is not in Max's book
+    await expect(screen.getByTestId("diary-entry-prev")).toBeEnabled(); // Mochi's page is not in Max's book
+    await expect(screen.getByTestId("diary-entry-next")).toBeDisabled();
   });
 
   test("every page has a spiral edge", async ({ page }) => {
@@ -69,13 +71,15 @@ test.describe("diary book", () => {
     await openOwnerBook(page);
     const screen = app(page);
     await expect(screen.getByTestId("diary-entry-where")).toContainText("Max · Oct 7");
-    await expect(screen.getByText("Page 2 of 2")).toBeVisible();
+    await expect(screen.getByTestId("diary-entry-prev")).toBeEnabled();
+    await expect(screen.getByTestId("diary-entry-next")).toBeDisabled();
     await expect(screen.getByTestId("diary-entry-next")).toBeDisabled();
     await expect(screen.getByText("SECRET DRAFT")).toHaveCount(0);
 
     await screen.getByTestId("diary-entry-prev").click();
     await expect(screen.getByTestId("diary-entry-where")).toContainText("Max · Oct 5");
-    await expect(screen.getByText("Page 1 of 2")).toBeVisible();
+    await expect(screen.getByTestId("diary-entry-prev")).toBeDisabled();
+    await expect(screen.getByTestId("diary-entry-next")).toBeEnabled();
     await expect(screen.getByTestId("diary-entry-prev")).toBeDisabled();
     await screen.getByTestId("diary-entry-next").click();
     await expect(screen.getByTestId("diary-entry-where")).toContainText("Max · Oct 7");
@@ -142,7 +146,11 @@ test.describe("diary book", () => {
     await page.goto("/owner/diary/p1");
     const screen = app(page);
     await expect(screen.getByTestId("diary-entry-where")).toContainText("Max · Oct 5");
-    await expect(screen.getByText("Page 1 of 2")).toBeVisible();
+    // Opened on one page: the header ← is the only way back (diary audit, Oct 27).
+    await expect(screen.getByTestId("diary-entry-covers")).toHaveCount(0);
+    await expect(screen.getByTestId("diary-write")).toHaveCount(0);
+    await expect(screen.getByTestId("diary-entry-prev")).toBeDisabled();
+    await expect(screen.getByTestId("diary-entry-next")).toBeEnabled();
   });
 
   test("the sitter's Diary book holds the pages they sent, per pet they cared for", async ({ page }) => {
@@ -158,7 +166,8 @@ test.describe("diary book", () => {
     await screen.getByTestId("sitter-diary-view-book").click();
     await screen.getByTestId("sitter-book-cover-" + MAX.id).click();
     await expect(screen.getByTestId("sitter-book-where")).toContainText("Max · Oct 7");
-    await expect(screen.getByText("Page 2 of 2")).toBeVisible();
+    await expect(screen.getByTestId("sitter-book-prev")).toBeEnabled();
+    await expect(screen.getByTestId("sitter-book-next")).toBeDisabled();
     await screen.getByTestId("sitter-book-covers").click();
     await screen.getByTestId("sitter-book-cover-" + MOCHI.id).click();
     await expect(screen.getByTestId("sitter-book-body")).toContainText("watched birds");

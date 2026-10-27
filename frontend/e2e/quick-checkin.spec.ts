@@ -4,12 +4,14 @@ import { caring, mockUpload } from "./careFixtures";
 import { app, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
-// Sitter quick check-in (phase-06 6.10, reworked 6.16, #397): one pick per group → optional memo/photo → Send.
+// Sitter quick check-in (phase-06 6.10, reworked 6.16, #397, Oct 27 call): one pick per group → the group folds to
+// one line (tap to change) → optional memo/photo → Send, which sits in a dock with what is ready.
 
 const MAX = { id: "00000000-0000-4000-8000-0000000000aa", name: "Max", species: "dog" } as const;
 const MOCHI = { id: "00000000-0000-4000-8000-0000000000bb", name: "Mochi", species: "cat" } as const;
 const send = (pet: { id: string }) => `checkin-send-${pet.id}`;
 const tid = (pet: { id: string }, kind: string, value: string) => `checkin-${pet.id}-${kind}-${value}`;
+const row = (pet: { id: string }, kind: string) => `checkin-${pet.id}-${kind}-row`;
 
 async function openCheckin(page: import("@playwright/test").Page, petId: string) {
   await signIn(page, SITTER);
@@ -31,12 +33,19 @@ test.describe("quick check-in", () => {
     const screen = app(page);
     await expect(screen.getByTestId(send(MAX))).toBeDisabled();
     await screen.getByTestId(tid(MAX, "meal", "all")).click();
-    await expect(screen.getByTestId(tid(MAX, "meal", "all"))).toHaveAttribute("aria-pressed", "true");
-    await expect(screen.getByTestId(`checkin-picked-${MAX.id}`)).toContainText("Ready to send: ");
+    // The answered group folds to one line with its pick; the dock lists it next to Send.
+    await expect(screen.getByTestId(row(MAX, "meal"))).toContainText("All");
+    await expect(screen.getByTestId(tid(MAX, "meal", "all"))).toHaveCount(0);
+    await expect(screen.getByTestId(`checkin-picked-${MAX.id}`)).toContainText("Ready to send:");
+    await expect(screen.getByTestId(`checkin-ready-${MAX.id}-meal`)).toHaveText("Fed · All");
+    await expect(screen.getByTestId(send(MAX))).toHaveText("Send to Robert");
     await page.waitForTimeout(300);
     expect(db.care_checkins).toHaveLength(0);
-    // Tapping the same option again unpicks it.
+    // Tap the line to open it again; tapping the same option again unpicks it.
+    await screen.getByTestId(row(MAX, "meal")).click();
+    await expect(screen.getByTestId(tid(MAX, "meal", "all"))).toHaveAttribute("aria-pressed", "true");
     await screen.getByTestId(tid(MAX, "meal", "all")).click();
+    await expect(screen.getByTestId(tid(MAX, "meal", "all"))).toHaveAttribute("aria-pressed", "false");
     await expect(screen.getByTestId(send(MAX))).toBeDisabled();
     await screen.getByTestId(tid(MAX, "meal", "all")).click();
     await screen.getByTestId(send(MAX)).click();
@@ -184,14 +193,17 @@ test.describe("quick check-in", () => {
     await screen.getByTestId(tid(MAX, "walk", "20")).click();
     await screen.getByTestId(tid(MAX, "mood", "calm")).click();
     // Another answer in a group replaces that group's pick only.
+    await screen.getByTestId(row(MAX, "mood")).click();
+    await expect(screen.getByTestId(tid(MAX, "mood", "calm"))).toHaveAttribute("aria-pressed", "true");
     await screen.getByTestId(tid(MAX, "mood", "happy")).click();
-    const picks = [["meal", "all"], ["potty", "normal"], ["walk", "20"], ["mood", "happy"]];
-    for (const [kind, value] of picks) {
-      await expect(screen.getByTestId(tid(MAX, kind, value))).toHaveAttribute("aria-pressed", "true");
-    }
-    await expect(screen.getByTestId(tid(MAX, "mood", "calm"))).toHaveAttribute("aria-pressed", "false");
-    await expect(screen.getByTestId(`checkin-picked-${MAX.id}`)).toContainText("Ready to send: Fed · All, Potty · Normal");
-    await expect(screen.getByTestId(`checkin-picked-${MAX.id}`)).toContainText("Mood · Happy");
+    const picks = [["meal", "All"], ["potty", "Normal"], ["walk", "20 min"], ["mood", "Happy"]];
+    for (const [kind, label] of picks) await expect(screen.getByTestId(row(MAX, kind))).toContainText(label);
+    await expect(screen.getByTestId(`checkin-ready-${MAX.id}-meal`)).toHaveText("Fed · All");
+    await expect(screen.getByTestId(`checkin-ready-${MAX.id}-potty`)).toHaveText("Potty · Normal");
+    await expect(screen.getByTestId(`checkin-ready-${MAX.id}-mood`)).toHaveText("Mood · Happy");
+    // The dock stays in view with Send, however far the screen is scrolled.
+    await screen.getByTestId(`checkin-memo-${MAX.id}`).scrollIntoViewIfNeeded();
+    await expect(screen.getByTestId(send(MAX))).toBeInViewport();
 
     await screen.getByTestId(`checkin-memo-${MAX.id}`).fill("Loved the park");
     await screen.getByTestId(send(MAX)).click();
@@ -202,7 +214,9 @@ test.describe("quick check-in", () => {
     const notices = db.notifications.filter((n) => n.type === "care_checkin");
     expect(notices).toHaveLength(1);
     expect(notices[0]).toMatchObject({ title: "Max meal all · Max potty normal · Max walk 20 · Max mood happy", body: "Loved the park" });
-    for (const [kind, value] of picks) await expect(screen.getByTestId(tid(MAX, kind, value))).toHaveAttribute("aria-pressed", "false");
+    // Sent: every group opens again with nothing picked.
+    for (const [kind] of picks) await expect(screen.getByTestId(row(MAX, kind))).toHaveCount(0);
+    await expect(screen.getByTestId(tid(MAX, "meal", "all"))).toHaveAttribute("aria-pressed", "false");
     await expect(screen.getByTestId(`checkin-sent-${MAX.id}`)).toContainText("Walk · 20 min");
   });
 });

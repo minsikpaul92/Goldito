@@ -45,7 +45,7 @@ export function bookingBadges(b: BookingSummary, viewer: Viewer): Badge[] {
   // First-time pairs (D60): meet first → dates held while the Meet & Greet is arranged → the sitter confirms.
   const meetBadge = (): Badge | null => {
     if (awaitingFirstYes(b)) return { label: "Meet first", tone: "brand" };
-    if (datesOnHold(b) && meetGreetBlocksAccept(b)) return { label: "Dates held · Meet & Greet", tone: "brand" };
+    if (datesOnHold(b) && meetGreetBlocksAccept(b)) return { label: "Dates held · Meet", tone: "brand" };
     if (datesOnHold(b)) {
       return viewer === "sitter"
         ? { label: "Met, ready to confirm", tone: "warning" }

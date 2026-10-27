@@ -131,6 +131,26 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-age-plus").click();
     await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-weight").fill("6,5");
+
+    // The 8-bit pet: Generate replaces Next once breed, color and weight are filled. The pet is drawn, then Next goes on.
+    await expect(screen.getByTestId("own-next")).toHaveCount(0);
+    await screen.getByTestId("own-generate").click();
+    await expect(screen.getByTestId("own-title")).toHaveText("Meet Pip");
+    await expect(screen.getByTestId("own-next")).toBeEnabled();
+    // Title, room and button fit one screen: no scrolling.
+    const scroller = screen.getByTestId("own-step-reveal");
+    expect(await scroller.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
+    const heavy = await screen.getByTestId("own-reveal-pet").getAttribute("aria-label");
+    // Changing the weight draws it again.
+    await screen.getByTestId("own-back").click();
+    await screen.getByTestId("own-weight").fill("1");
+    await screen.getByTestId("own-generate").click();
+    await expect(screen.getByTestId("own-next")).toBeEnabled();
+    expect(await screen.getByTestId("own-reveal-pet").getAttribute("aria-label")).not.toBe(heavy);
+    await screen.getByTestId("own-back").click();
+    await screen.getByTestId("own-weight").fill("6,5");
+    await screen.getByTestId("own-generate").click();
+    await expect(screen.getByTestId("own-next")).toBeEnabled();
     await screen.getByTestId("own-next").click();
     await expect(screen.getByTestId("own-title")).toHaveText("Tell us about Pip");
     await screen.getByTestId("own-pet-intro").fill("Loves the sofa.");

@@ -13,7 +13,7 @@ export type DemoSet = {
 };
 
 /**
- * Seeded demo accounts (onboarding.ko.md OB.3). One owner and one sitter per teammate, so a reset only touches
+ * Seeded demo accounts (OB.3). One owner and one sitter per teammate, so a reset only touches
  * the set of whoever asks for it. The first set is the default pair; the judges get the four judge sets (#411). Keep in sync with
  * backend/app/services/demo_accounts.py (the pets too), backend/scripts/seed_demo.py, README and Devpost. The password is a
  * public, demo-only value (architecture §4), never a real password or a service key.

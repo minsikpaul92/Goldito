@@ -7,8 +7,8 @@ FastAPI (Python 3.12): Cloudinary signing, JWT-protected routes, Nemotron via Ne
 ## Environment
 
 1. Copy [`.env.example`](.env.example) → `.env` (gitignored).
-2. Variable names match [architecture §4](../docs/plan/phases/architecture.ko.md#4-환경-변수-마스터-목록).
-3. Secrets setup: [docs/plan/env-setup.ko.md](../docs/plan/env-setup.ko.md).
+2. Variable names match [architecture §4](../docs/plan/phases/architecture.md#4-환경-변수-마스터-목록).
+3. Secrets setup: [docs/plan/env-setup.md](../docs/plan/env-setup.md).
 
 ## Run
 
@@ -34,7 +34,7 @@ docker run --rm -p 8000:8000 --env-file .env goldito-backend
 curl -s http://localhost:8000/health
 ```
 
-The image holds `app/` only (no `.env`, tests, or scripts). It listens on `$PORT` (default 8000) because Render sets its own. CI builds the image and checks `/health` on every backend change. **Deployed on Render** (https://goldito-backend.onrender.com): Render builds this Dockerfile from `main` on every merge (root directory `backend`); the free plan sleeps after 15 min idle, so `.github/workflows/keepalive.yml` pings `/health` every 10 min. Deployed env: everything in `.env.example`, with `CORS_ORIGINS` including the Vercel URL ([env-setup](../docs/plan/env-setup.ko.md)).
+The image holds `app/` only (no `.env`, tests, or scripts). It listens on `$PORT` (default 8000) because Render sets its own. CI builds the image and checks `/health` on every backend change. **Deployed on Render** (https://goldito-backend.onrender.com): Render builds this Dockerfile from `main` on every merge (root directory `backend`); the free plan sleeps after 15 min idle, so `.github/workflows/keepalive.yml` pings `/health` every 10 min. Deployed env: everything in `.env.example`, with `CORS_ORIGINS` including the Vercel URL ([env-setup](../docs/plan/env-setup.md)).
 
 ## Media upload (Phase 04) — manual check
 
@@ -121,7 +121,7 @@ Policies and grants: [`supabase/migrations/002_rls_policies.sql`](../supabase/mi
 
 ## Planned layout
 
-See [architecture §2](../docs/plan/phases/architecture.ko.md#2-리포-구조-최종-형태): `app/main.py`, `routers/`, `services/nebius.py`, `ai/prompts/`, etc.
+See [architecture §2](../docs/plan/phases/architecture.md#2-리포-구조-최종-형태): `app/main.py`, `routers/`, `services/nebius.py`, `ai/prompts/`, etc.
 
 ## Data sources
 

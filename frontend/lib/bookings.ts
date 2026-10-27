@@ -24,9 +24,9 @@ const MESSAGES: Record<string, string> = {
   proposal_expired: "That time has passed. Suggest another time.",
   request_expired: "This request's pick-up time has passed, so it can't be accepted.",
   invalid_location: "House sitting happens at the owner's home.",
-  interest_required: "Say yes to meeting first, then plan the Meet & Greet.",
+  interest_required: "Say yes to meeting first, then plan the meet.",
   interest_not_needed: "You've met before, so there is no first yes. Just Accept.",
-  meet_greet_required: "Meet first, or agree to skip the Meet & Greet, then book.",
+  meet_greet_required: "Meet first, or agree to skip the meet, then book.",
   handoff_pending: "Answer the proposed time first.",
 };
 

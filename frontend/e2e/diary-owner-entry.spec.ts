@@ -77,7 +77,8 @@ test.describe("owner diary page", () => {
     await expect(screen.getByTestId("toast")).toContainText("Page saved");
     await expect(screen.getByTestId("diary-entry-body")).toContainText("met a duck");
     await expect(screen.getByText("Your page")).toBeVisible();
-    await expect(screen.getByText("Page 2 of 2")).toBeVisible();
+    await expect(screen.getByTestId("diary-entry-prev")).toBeEnabled();
+    await expect(screen.getByTestId("diary-entry-next")).toBeDisabled();
 
     const mine = db.daily_reports.find((r) => r.sitter_id === OWNER.id)!;
     expect(mine).toMatchObject({ pet_id: MAX.id, status: "sent", body: "Max met a duck at the park today." });
@@ -92,7 +93,8 @@ test.describe("owner diary page", () => {
     await screen.getByTestId("diary-write-body").fill("First page.");
     await screen.getByTestId("diary-write-save").click();
     await expect(screen.getByTestId("diary-entry-body")).toContainText("First page.");
-    await expect(screen.getByText("Page 1 of 1")).toBeVisible();
+    await expect(screen.getByTestId("diary-entry-prev")).toBeDisabled();
+    await expect(screen.getByTestId("diary-entry-next")).toBeDisabled();
   });
 
   test("with two pets the page goes to the pet picked", async ({ page }) => {
@@ -268,7 +270,8 @@ test.describe("owner diary page", () => {
     await screen.getByTestId("sitter-diary-view-book").click();
     await screen.getByTestId("sitter-book-cover-" + MAX.id).click();
     await expect(screen.getByTestId("sitter-book-body")).toContainText("Max napped a lot.");
-    await expect(screen.getByText("Page 1 of 1")).toBeVisible();
+    await expect(screen.getByTestId("sitter-book-prev")).toBeDisabled();
+    await expect(screen.getByTestId("sitter-book-next")).toBeDisabled();
     await expect(screen.getByText("OWNER'S PRIVATE PAGE")).toHaveCount(0);
   });
 });

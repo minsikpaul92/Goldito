@@ -25,7 +25,7 @@ export function meetGreetPrimary(b: BookingSummary, viewer: "owner" | "sitter", 
     case "required":
       // The owner may ask first (015f, #236); the sitter plans after their first yes.
       if (b.sitterInterestAt) return { key: "schedule", label: "Pick a time" };
-      return viewer === "owner" ? { key: "schedule", label: "Request Meet & Greet" } : null;
+      return viewer === "owner" ? { key: "schedule", label: "Ask to meet" } : null;
     case "proposed":
       return mg.proposedBy !== me ? { key: "accept", label: "Accept" } : null;
     case "agreed":
@@ -43,7 +43,7 @@ const MESSAGES: Record<string, string> = {
   place_too_long: "Keep the place to one short line.",
   invalid_window: "Pick a time in the future.",
   meet_greet_too_late: "Pick a time before the drop-off.",
-  invalid_status: "This Meet & Greet has already changed. Reopen the booking to see the latest.",
+  invalid_status: "This meet has already changed. Reopen the booking to see the latest.",
 };
 
 async function call(fn: string, args: Record<string, unknown>, fallback: string): Promise<void> {
@@ -57,7 +57,7 @@ export function proposeMeetGreet(bookingId: string, mode: MeetGreetMode, at: str
   return call(
     "propose_meet_greet",
     { p_booking: bookingId, p_mode: mode, p_at: at, p_place: place },
-    "Couldn't send the Meet & Greet. Try again.",
+    "Couldn't send the meet request. Try again.",
   );
 }
 
