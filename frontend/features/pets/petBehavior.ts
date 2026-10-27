@@ -127,6 +127,32 @@ export function triggerBehavior(b: Behavior, kind: "eat" | "poop", mood: PetMood
   return { ...b, view: "side", action: kind, age: 0, hold: span, span };
 }
 
+/**
+ * Somewhere the pet goes on its own (the owner's room, Oct 27): its bed when sleepy, its bowl when hungry, under a new
+ * photo, after a ball. `x` is in sprite pixels like `Behavior.x`; on arrival it lies down, or stands looking at you.
+ */
+export type Goal = { x: number; then: "lie" | "look"; speed?: number };
+
+/** Whether the pet stands at its goal (within a sprite pixel). */
+export const atGoal = (b: Behavior, goal: Goal) => Math.abs(goal.x - b.x) < 1;
+
+/** One tick toward a goal: walk there (any distance, past the roaming walls), then lie down or look at you. */
+export function seekBehavior(b: Behavior, goal: Goal): Behavior {
+  const poops = b.poops.map((p) => ({ ...p, age: p.age + 1 })).filter((p) => p.age <= POOP_STAYS);
+  const dx = goal.x - b.x;
+  if (Math.abs(dx) >= 1) {
+    const step = Math.sign(dx) * Math.min(Math.abs(dx), goal.speed ?? SPEED);
+    const walking = b.action === "walk";
+    return { ...b, view: "side", action: "walk", facing: dx > 0 ? "right" : "left", x: b.x + step, age: walking ? b.age + 1 : 0, hold: 2, span: 2, poops };
+  }
+  if (goal.then === "lie") {
+    if (b.action === "lie") return { ...b, x: goal.x, age: b.age + 1, hold: Math.max(b.hold, 2), poops };
+    return { ...b, view: "side", action: "lie", x: goal.x, age: 0, hold: 60, span: 60, poops };
+  }
+  if (b.view === "front" && b.action === "idle") return { ...b, x: goal.x, age: b.age + 1, hold: Math.max(b.hold, 2), poops };
+  return { ...b, view: "front", action: "idle", x: goal.x, age: 0, hold: 6, span: 6, poops };
+}
+
 /** The pet wakes up (the sitter tapped Awake): it gets up and looks at you before it carries on. */
 export function wakeBehavior(b: Behavior): Behavior {
   if (b.action !== "lie") return b;

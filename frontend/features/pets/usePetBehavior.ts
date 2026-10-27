@@ -1,19 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { PetMood } from "../../lib/petStatus";
-import { TICK_MS, initialBehavior, stepBehavior, triggerBehavior, wakeBehavior, type Behavior } from "./petBehavior";
+import { TICK_MS, initialBehavior, seekBehavior, stepBehavior, triggerBehavior, wakeBehavior, type Behavior, type Goal } from "./petBehavior";
 
 /** Something the pet just did that the room shows: the sitter fed it or it went potty. `id` tells a new one from one already shown. */
 export type PetEvent = { id: string; kind: "eat" | "poop" };
 
 /**
  * The pet's behavior as it moves: a new state every tick. `maxX` is how far right it may go; `still` keeps it standing;
- * a new `event` makes it eat at a bowl or squat and leave a poop (the room clears it after a while).
+ * a new `event` makes it eat at a bowl or squat and leave a poop (the room clears it after a while). A `goal` sends it
+ * somewhere on purpose (the owner's room: bed, bowl, photo, ball) instead of wandering.
  */
-export function usePetBehavior(mood: PetMood, maxX: number, still = false, event: PetEvent | null = null): Behavior {
+export function usePetBehavior(mood: PetMood, maxX: number, still = false, event: PetEvent | null = null, goal: Goal | null = null): Behavior {
   const [behavior, setBehavior] = useState<Behavior>(initialBehavior);
-  const latest = useRef({ mood, maxX });
-  latest.current = { mood, maxX };
+  const latest = useRef({ mood, maxX, goal });
+  latest.current = { mood, maxX, goal };
 
   // Start in the middle of the room once its width is known.
   const placed = useRef(false);
@@ -43,7 +44,8 @@ export function usePetBehavior(mood: PetMood, maxX: number, still = false, event
   useEffect(() => {
     if (still) return;
     const timer = setInterval(() => {
-      setBehavior((b) => stepBehavior(b, latest.current.mood, Math.random, latest.current.maxX));
+      const { mood: m, maxX: wall, goal: g } = latest.current;
+      setBehavior((b) => (g && b.action !== "eat" && b.action !== "poop" ? seekBehavior(b, g) : stepBehavior(b, m, Math.random, wall)));
     }, TICK_MS);
     return () => clearInterval(timer);
   }, [still]);
