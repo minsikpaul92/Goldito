@@ -7,7 +7,7 @@ import type { ScriptStep } from "./judgeScript";
  * opens `owner` and `sitter` on their phones (one phone shows the `lead` side), then plays its script there (taps and
  * typing, judgeScript) or outlines the control to tap.
  * Paths may hold `{booking}` (the set's latest booking) or be `{chat}` (the owner's chat with the set's sitter).
- * Tags name what really runs: Nemotron models (NVIDIA) apart from MiniCPM-V (OpenBMB), Qwen3, Groq Whisper and Tavily.
+ * Tags name what really runs: Nemotron models (NVIDIA) apart from Qwen3, Groq Whisper and Tavily.
  */
 
 /**
@@ -46,7 +46,7 @@ export type Scene = {
 export const NANO: SceneTag = { label: "Nemotron Nano", nvidia: true };
 export const SUPER: SceneTag = { label: "Nemotron Super", nvidia: true };
 export const ULTRA: SceneTag = { label: "Nemotron Ultra", nvidia: true };
-export const MINICPM: SceneTag = { label: "MiniCPM-V" };
+export const VISION: SceneTag = { label: "Nemotron Super VL", nvidia: true };
 export const TAVILY: SceneTag = { label: "Tavily" };
 
 const SITTER_HOME: SceneTarget = { path: "/sitter" };
@@ -184,7 +184,7 @@ export const SCENES: Scene[] = [
     // Add pet is the sign-up questions for one pet (#367): voice, photo, breed and coat, then breed needs.
     owner: { path: "/owner-onboarding?add=1", highlight: "own-species-dog", script: MEET_SCRIPT },
     sitter: SITTER_HOME,
-    tags: [{ label: "Groq Whisper" }, NANO, MINICPM, TAVILY],
+    tags: [{ label: "Groq Whisper" }, NANO, VISION, TAVILY],
   },
   {
     key: "treat",
@@ -195,7 +195,7 @@ export const SCENES: Scene[] = [
     lead: "owner",
     owner: { path: "/owner/snap/treat", highlight: "treat-snap", script: TREAT_OWNER_SCRIPT, finale: TRY_ANOTHER_TREAT },
     sitter: { path: "/sitter/snap/treat", script: TREAT_SITTER_SCRIPT, after: true, finale: TRY_ANOTHER_TREAT },
-    tags: [MINICPM, { label: "Rule table" }, TAVILY, ULTRA],
+    tags: [VISION, { label: "Rule table" }, TAVILY, ULTRA],
     intro: {
       title: "Treat check",
       body: "Max is allergic to chicken. Snap the ingredients on a treat or food, and Goldito catches what is easy to miss. The owner checks one, then the sitter.",
@@ -223,7 +223,7 @@ export const SCENES: Scene[] = [
     lead: "sitter",
     owner: OWNER_HOME,
     sitter: { path: "/sitter", highlight: "checkin-tiles", script: CARE_SCRIPT },
-    tags: [SUPER, MINICPM],
+    tags: [SUPER, VISION],
   },
   {
     key: "home",
@@ -255,7 +255,7 @@ export const SCENES: Scene[] = [
       script: [{ tap: "mood-pick" }, { tap: "sample-mood_tug" }, { wait: "mood-result", timeout: AI_MS }],
     },
     sitter: SITTER_HOME,
-    tags: [MINICPM, NANO],
+    tags: [VISION, NANO],
     more: true,
   },
   {

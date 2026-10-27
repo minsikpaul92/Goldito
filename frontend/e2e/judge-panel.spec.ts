@@ -71,7 +71,7 @@ test.describe("judge panel", () => {
     for (const [i, key] of ["meet", "treat", "chat", "care", "home"].entries()) {
       await expect(page.getByTestId(`judge-scene-${key}`)).toContainText(titles[i]);
     }
-    // Tavily (its logo) on scenes 1 and 2 only; MiniCPM-V is never called an NVIDIA model.
+    // Tavily (its logo) on scenes 1 and 2 only.
     await expect(page.getByTestId("judge-scene-meet").getByTestId("judge-tag-tavily")).toBeVisible();
     await expect(page.getByTestId("judge-scene-treat").getByTestId("judge-tag-tavily")).toBeVisible();
     await expect(page.getByTestId("judge-scene-treat")).toContainText("Nemotron Ultra");

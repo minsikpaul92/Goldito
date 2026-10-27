@@ -126,6 +126,14 @@ def test_reasoning_can_be_kept_on_and_vision_gets_no_flag(monkeypatch):
     assert completions.calls[1]["model"] == "openbmb/vision-model"
 
 
+def test_a_nemotron_vision_model_gets_thinking_off_and_a_minicpm_one_does_not(monkeypatch):
+    completions, _ = install(monkeypatch, "a", "b")
+    nebius.chat("vision", [], model="nvidia/Nemotron-3.5-Super-VL")
+    nebius.chat("vision", [], model="openbmb/MiniCPM-V-4_5")
+    assert completions.calls[0]["extra_body"] == {"chat_template_kwargs": {"enable_thinking": False}}
+    assert "extra_body" not in completions.calls[1]
+
+
 def test_streaming_refused_falls_back_to_a_plain_call(monkeypatch):
     completions, _ = install(monkeypatch, bad_request(), "plain answer")
     result = nebius.chat("fast", [])
