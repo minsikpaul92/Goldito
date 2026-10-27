@@ -1,6 +1,6 @@
 # Nebius x NVIDIA Global AI Hackathon — Summary
 
-Condensed from the official Devpost pages (Overview, Rules, Resources, Updates) as of Sep 28, 2026.
+Condensed from the official Devpost pages (Overview, Rules, Resources, Updates) as of Sep 28, 2026; checked again against the full Official Rules on Oct 27, 2026.
 If anything here conflicts with the [Official Rules](https://nebiusglobalaihackathon.devpost.com/rules), the Official Rules win.
 
 ---
@@ -42,8 +42,9 @@ Only **one** track is selected per submission.
 
 ## 4. Submission Checklist
 
-- [ ] **Working demo URL** (hosted app or test build). If login is required, include test credentials.
-- [ ] **Text description** — what we built, why, and how it works.
+- [ ] **Working demo URL** (hosted app or test build), free and unrestricted for the Sponsor, Devpost, and Judges until **Dec 15**.
+- [ ] **Testing instructions** (a field on the submission form). Our site is public, so say: open the demo, tap **Try the demo**, pick Owner or Sitter (a free Judge seat, 1 to 4). Also list the backup accounts `demo-owner-judge1` to `demo-sitter-judge4` `@goldito.test` and the demo password there, not in the repo. The rules ask for login credentials in the testing instructions when a site is private.
+- [ ] **Text description** — what we built, why, and how it works (features and functionality; the app must work as the video and text describe).
 - [ ] **Track** selected.
 - [ ] **Public repository** (GitHub) with all source code, assets, and run instructions.
 - [ ] **Open source license** detectable in the repo's About section (we use MIT ✅).
@@ -51,9 +52,12 @@ Only **one** track is selected per submission.
   - how NVIDIA Nemotron (or other NVIDIA open models) is used,
   - where Token Factory accelerated our workflow,
   - any other Nebius tools/services used.
-- [ ] **Demo video** — under **3 minutes**, **public on YouTube**, shows the app running on its target device, with **audio explaining the Nebius Token Factory + NVIDIA model usage**. No copyrighted music or third-party trademarks without permission.
+- [ ] **Demo video** — under **3 minutes** (judges need not watch past 3:00), **public on YouTube** with the link on the submission form, shows the app running on its target device, with **audio explaining the Nebius Token Factory + NVIDIA model usage**. No copyrighted music or third-party trademarks without permission.
 - [ ] **Feedback** on Token Factory, AI Cloud, and every NVIDIA model/tool used (required).
 - [ ] **English** for all materials (or provide English translations).
+- [ ] **Representative** is one team member who is of age where they live and not in an excluded place (Brazil, Quebec, Russia, Crimea, Cuba, Iran, North Korea, or another comprehensively sanctioned country). They submit for the team and receive any prize.
+- [ ] **Best Use of Tavily** (bonus): the runtime Tavily call is in the treat check; say so in the description.
+- [ ] **Submit before Oct 30, 10:00 AM PT.** After that the submission cannot be changed; only the Sponsor and Devpost may allow removing infringing or personal material.
 - [ ] (If applicable) IRL city event attended.
 
 ---
@@ -110,7 +114,10 @@ Seoul (Sep 11) and NYC (Sep 25) have already passed.
 - **New or significantly updated** during the submission period (ours is new).
 - **Third-party APIs/data** must be used within their terms (Supabase, Expo, Vercel, etc.).
 - **IP & privacy:** submissions must not violate anyone's copyright or privacy rights → any real customer data used in prompts or demos must be anonymized.
-- **No financial/preferential support** from Nebius or Devpost for the project.
+- **No financial/preferential support** from Nebius or Devpost for the project (the free credits from the Builders Program are offered to everyone and are fine).
+- **Prize paperwork:** a winner is not final until the affidavit and tax forms are returned within 10 business days (W-9 for US residents, W-8BEN for others); the Representative splits the prize among the team. Winners pay their own taxes and fees.
+- **Publicity:** entering lets the Sponsor and Devpost use the team's names, likeness, and the submission to promote the hackathon for three years.
+- **Submission is original work** the team owns, with no one else's IP; open-source parts are used under their licenses (credits are in the README).
 - **Multiple submissions** allowed only if substantially different.
 
 ---
@@ -121,3 +128,16 @@ Seoul (Sep 11) and NYC (Sep 25) have already passed.
 - **Push past the obvious.** Judges want tracks pushed beyond the basics.
 - **Name the project like a human.**
 - **Use the right model for the job** — swap models between vision, reasoning, and fast tasks.
+
+---
+
+## 10. Keep it up until Dec 15 (our checklist, not a rule)
+
+The demo has to work for judges from Dec 1 to Dec 15, after the Oct 30 deadline.
+
+- [ ] Token Factory credit balance covers judging (Nemotron calls, vision, embeddings); the demo caps AI calls per person per day.
+- [ ] Tavily credits last through judging.
+- [ ] Supabase project is not paused for inactivity; Render backend and Vercel app are still deployed (the Render free plan sleeps and needs 30 to 50 seconds to wake; the README says so).
+- [ ] Cloudinary storage and bandwidth stay inside the plan.
+- [ ] Judge seats 1 to 4 are free and the seed is fresh (`python -m scripts.seed_demo --check`).
+- [ ] No deploy or schema change in the last days before judging without a smoke test.
