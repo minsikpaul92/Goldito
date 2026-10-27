@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { PawWalk } from "../intro/PawWalk";
 import { tokens } from "../../theme/tokens";
@@ -27,6 +27,11 @@ type Props = {
   /** Covers the screen with the paw walk (the judge panel resetting the stay). */
   loading?: boolean;
 };
+
+// The gold coin of the app's boot screen (web: the master SVG).
+const SYMBOL = require("../../assets/brand/goldito-symbol.svg");
+/** How long the coin shows before the paw walk. */
+const LOGO_MS = 1_200;
 
 const LABEL_HEIGHT = 28;
 const FOOTER_HEIGHT = 40;
@@ -68,12 +73,7 @@ export function DeviceFrame({ children, columns = 1, label, footer, reserve = 0,
               <StatusBar />
               <View style={styles.content}>
                 {children}
-                {loading ? (
-                  <View style={styles.loading} accessibilityLabel="Setting up the stay" testID="frame-loading">
-                    <PawWalk loop />
-                    <Text style={styles.loadingText}>Setting up the stay…</Text>
-                  </View>
-                ) : null}
+                {loading ? <FrameLoading /> : null}
               </View>
               <View style={styles.homeIndicatorArea}>
                 <View style={styles.homeIndicator} />
@@ -84,6 +84,27 @@ export function DeviceFrame({ children, columns = 1, label, footer, reserve = 0,
         {footer ? <View style={styles.footer}>{footer}</View> : null}
       </View>
     </ScrollView>
+  );
+}
+
+/** The gold coin logo for a moment (as the app opens), then the paw walk while the stay resets. */
+function FrameLoading() {
+  const [walking, setWalking] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setWalking(true), LOGO_MS);
+    return () => clearTimeout(timer);
+  }, []);
+  return (
+    <View style={styles.loading} accessibilityLabel="Setting up the stay" testID="frame-loading">
+      {walking ? (
+        <>
+          <PawWalk loop />
+          <Text style={styles.loadingText}>Setting up the stay…</Text>
+        </>
+      ) : (
+        <Image source={SYMBOL} style={styles.coin} resizeMode="contain" testID="frame-loading-logo" />
+      )}
+    </View>
   );
 }
 
@@ -244,6 +265,8 @@ const styles = StyleSheet.create({
     gap: tokens.spacing.md,
     backgroundColor: tokens.color.background,
   },
+  // The coin fills about 60% of its canvas, like BootView.
+  coin: { width: 120, height: 120 },
   loadingText: {
     fontSize: tokens.fontSize.body,
     fontWeight: "600",

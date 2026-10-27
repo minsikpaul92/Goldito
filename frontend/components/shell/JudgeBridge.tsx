@@ -19,7 +19,7 @@ import {
   isJudgeCommand,
   isJudgeSignInMessage,
 } from "./judgeMessages";
-import { ScriptStep, playScript, queueScript, stopScript, takeScript } from "./judgeScript";
+import { ScriptStep, clearSignals, playScript, queueScript, stopScript, takeScript } from "./judgeScript";
 
 // Per phone: the two phones of the split view share one sessionStorage.
 const highlightKey = () => `goldito-judge-highlight:${window.name}`;
@@ -71,6 +71,8 @@ export function JudgeBridge() {
         } else if (command.op === "go") {
           await signInAs(command.set, command.role);
           const path = await resolvePath(command.path, command.role);
+          // Both phones open at once, before either plays, so the last scene's signals go here.
+          clearSignals();
           writeHighlight(command.script ? null : command.highlight);
           queueScript(command.script ? { steps: command.script, pace: command.pace ?? 1 } : null);
           reply(command.id, true);

@@ -13,6 +13,8 @@ export type ScriptStep =
   | { type: string; text: string }
   /** Wait until a control shows (an AI answer, the next page). */
   | { wait: string; timeout?: number }
+  /** Wait until at least `n` of a control show (the other side's new chat message has arrived). */
+  | { count: string; n: number; timeout?: number }
   /** Wait until a control is gone (a spinner). */
   | { gone: string; timeout?: number }
   /** Wait until a text field or text holds something (an AI draft). */
@@ -22,12 +24,52 @@ export type ScriptStep =
   /** Open another screen (a full load); the rest plays there. */
   | { open: string }
   /** The end: a pulsing outline and a note on a control, asking the judge to try it (until it is tapped). */
-  | { invite: string; text: string };
+  | { invite: string; text: string }
+  /** Tap a control only if it shows within a moment (an optional choice, e.g. a nearby meeting spot). */
+  | { tapIf: string }
+  /** Tap the first of these controls whose words match `prefer` (a pattern, any case), else the first one (an AI chip). */
+  | { tapBest: string; prefer: string; timeout?: number }
+  /** Tell the other phone this side got here (two phones taking turns in one scene). */
+  | { signal: string }
+  /** Wait for the other phone's signal. */
+  | { until: string; timeout?: number };
 
 const FIND_MS = 20_000;
 const BEAT_MS = 700;
 const KEY_MS = 45;
 const INVITE_ID = "goldito-judge-invite";
+
+// Signals between the two phones go through sessionStorage, which both phones of the page share (same origin), so a
+// signal sent before the other side waits for it, or across its reload, is not lost.
+const SIGNAL_PREFIX = "goldito-judge-signal:";
+const TAP_IF_MS = 3_000;
+const UNTIL_MS = 180_000;
+
+function sendSignal(name: string): void {
+  try {
+    window.sessionStorage.setItem(`${SIGNAL_PREFIX}${name}`, "1");
+  } catch {
+    // No storage: the other phone's wait runs out and says so.
+  }
+}
+
+function hasSignal(name: string): boolean {
+  try {
+    return window.sessionStorage.getItem(`${SIGNAL_PREFIX}${name}`) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** A new scene starts with no signals from the last one. */
+export function clearSignals(): void {
+  try {
+    const keys = Array.from({ length: window.sessionStorage.length }, (_, i) => window.sessionStorage.key(i) ?? "");
+    keys.filter((key) => key.startsWith(SIGNAL_PREFIX)).forEach((key) => window.sessionStorage.removeItem(key));
+  } catch {
+    // Nothing kept.
+  }
+}
 
 /** Stop asks the playing script to end after the step it is on (the panel's Stop). */
 let stopAsked = false;
@@ -187,11 +229,41 @@ export async function playScript(steps: ScriptStep[], color: string, pace = 1): 
       save({ steps: steps.slice(i + 1), pace });
       window.location.assign(step.open);
       return "moved";
+    } else if ("signal" in step) {
+      sendSignal(step.signal);
+    } else if ("until" in step) {
+      await until(() => (hasSignal(step.until) ? true : null), step.timeout ?? UNTIL_MS, `the other phone (${step.until})`);
+    } else if ("tapBest" in step) {
+      const pattern = new RegExp(step.prefer, "i");
+      const el = await until(() => {
+        const all = Array.from(document.querySelectorAll<HTMLElement>(selector(step.tapBest))).filter((c) => visible(c) && enabled(c));
+        return all.find((c) => pattern.test(c.innerText)) ?? all[0] ?? null;
+      }, step.timeout ?? FIND_MS, step.tapBest);
+      const unmark = mark(el, color);
+      await wait(BEAT_MS);
+      el.click();
+      await wait(BEAT_MS / 2);
+      unmark();
+    } else if ("tapIf" in step) {
+      const found = await until(() => query(step.tapIf), TAP_IF_MS, step.tapIf).catch(() => null);
+      if (found && enabled(found)) {
+        const unmark = mark(found, color);
+        await wait(BEAT_MS);
+        found.click();
+        await wait(BEAT_MS / 2);
+        unmark();
+      }
     } else if ("invite" in step) {
       const el = await until(() => query(step.invite), FIND_MS, step.invite);
       invite(el, step.text, color);
     } else if ("wait" in step) {
       await until(() => query(step.wait), step.timeout ?? FIND_MS, step.wait);
+    } else if ("count" in step) {
+      await until(
+        () => (Array.from(document.querySelectorAll<HTMLElement>(selector(step.count))).filter(visible).length >= step.n ? true : null),
+        step.timeout ?? FIND_MS,
+        `${step.n} × ${step.count}`,
+      );
     } else if ("gone" in step) {
       await until(() => (query(step.gone) ? null : true), step.timeout ?? FIND_MS, `${step.gone} to finish`);
     } else if ("filled" in step) {

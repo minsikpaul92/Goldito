@@ -74,11 +74,16 @@ const MEET_SCRIPT: ScriptStep[] = [
   { tap: "own-voice-type" },
   { type: "own-voice-personality", text: "Gentle and curious" },
   { type: "own-voice-loves", text: "Squeaky toys and belly rubs" },
-  { type: "own-voice-scares", text: "Thunder" },
+  { type: "own-voice-scares", text: "Thunder. A blanket over his crate calms him." },
+  { type: "own-voice-routine", text: "Breakfast at 7, a walk at noon, dinner at 6, bed at 10" },
+  { type: "own-voice-health", text: "Healthy, no daily meds" },
+  { type: "own-voice-careful", text: "He slips his collar if he sees a squirrel" },
+  { type: "own-voice-more", text: "He sleeps better with his blue toy" },
   { tap: "own-voice-use" },
   // Breed, age, weight and foods are asked on their own screens: the breed comes from the list.
   { wait: "own-step-breed" },
-  { tap: "own-breed" },
+  // Typing searches the list; then Maltese is picked from it.
+  { type: "own-breed", text: "Malt" },
   { tap: "own-breed-option-maltese" },
   { tap: "own-next" },
   { wait: "own-step-coat" },
@@ -143,13 +148,86 @@ const TREAT_SITTER_SCRIPT: ScriptStep[] = [
 
 const TRY_ANOTHER_TREAT: ScriptStep[] = [{ invite: "treat-snap", text: "Tap Check another treat and try one" }];
 
-const CHAT_SCRIPT: ScriptStep[] = [
-  { wait: "chat-chips" },
-  { gone: "chat-chips-loading", timeout: AI_MS },
-  { tap: "chat-chip-1" },
-  { filled: "chat-input", timeout: AI_MS },
+/**
+ * Book in chat, the two phones taking turns (the chat is live on both, and `signal` / `until` pass the turn): the owner
+ * finds Chloe and starts the chat (that is the booking request), Chloe says yes and answers with an AI draft, they set
+ * a Meet & Greet and mark it done, both accept, Chloe says it was nice to meet, sends the final quote, and the owner
+ * confirms and pays. The judge sets keep the story names, Robert and Chloe.
+ */
+/** One chat message the way the app means it: wait for the AI chips, tap the best fit, let the AI write the draft, Send. */
+function chipMessage(prefer: string): ScriptStep[] {
+  return [
+    { gone: "chat-chips-loading", timeout: AI_MS },
+    { tapBest: "chat-chip-*", prefer, timeout: AI_MS },
+    { gone: "chat-chips-loading", timeout: AI_MS },
+    { filled: "chat-input", timeout: AI_MS },
+    { pause: 2_000 },
+    { tap: "chat-send" },
+  ];
+}
+
+const CHAT_OWNER_SCRIPT: ScriptStep[] = [
+  { tap: "sitter-tile-Chloe" },
+  { tap: "start-chat" },
+  { wait: "chat-bubble-me", timeout: 30_000 },
   { pause: 1_500 },
-  { tap: "chat-send" },
+  { signal: "asked" },
+  { until: "said-yes" },
+  // Chloe's answer is on this phone too before the chips are read (they belong to the latest message).
+  { count: "chat-bubble-them", n: 1, timeout: 30_000 },
+  { pause: 1_500 },
+  ...chipMessage("allerg|chicken|food|care"),
+  { signal: "allergy" },
+  { until: "meet-requested" },
+  { tap: "meet-accept", timeout: 30_000 },
+  { signal: "meet-accepted" },
+  { until: "met" },
+  { tap: "chat-next-agree", timeout: 30_000 },
+  { tap: "agree-submit" },
+  { signal: "owner-agreed" },
+  { until: "quote-sent" },
+  { pause: 2_000 },
+  { tap: "quote-confirm", timeout: 30_000 },
+  { tap: "chat-next-pay", timeout: 30_000 },
+  { wait: "checkout-title", timeout: 30_000 },
+  { tap: "checkout-agree-all" },
+  { type: "checkout-signer", text: "Robert" },
+  { pause: 1_000 },
+  { tap: "checkout-pay" },
+];
+
+const CHAT_SITTER_SCRIPT: ScriptStep[] = [
+  { until: "asked" },
+  // The chat list loads once; a fresh load shows Robert's new chat.
+  { open: "/sitter/chat" },
+  { tap: "chat-row-Robert", timeout: 30_000 },
+  { wait: "chat-bubble-them" },
+  { pause: 2_000 },
+  // A yes chip: the AI reads the draft as a yes and the Meet & Greet card comes up.
+  ...chipMessage("yes|available|happy|can take|sure"),
+  { signal: "said-yes" },
+  { until: "allergy" },
+  { count: "chat-bubble-them", n: 2, timeout: 30_000 },
+  { pause: 1_500 },
+  // Chloe answers the allergy question the same way.
+  ...chipMessage("allerg|chicken|no problem|of course|careful"),
+  { tap: "meet-request", timeout: AI_MS },
+  { tapIf: "meet-spot-nearby" },
+  { tap: "meet-send" },
+  { signal: "meet-requested" },
+  { until: "meet-accepted" },
+  { pause: 1_500 },
+  { tap: "meet-done", timeout: 30_000 },
+  { tap: "meet-done-early-confirm" },
+  { signal: "met" },
+  { tap: "chat-next-accept", timeout: 30_000 },
+  { until: "owner-agreed" },
+  { wait: "chat-agreement-card", timeout: 30_000 },
+  ...chipMessage("nice|meet|great|thank|lovely"),
+  { pause: 1_500 },
+  { tap: "chat-next-final_quote", timeout: 30_000 },
+  { tap: "send-quote-submit" },
+  { signal: "quote-sent" },
 ];
 
 /** Feed, walk, potty, nap from the pet room, then the day's page written from the chips and sent. */
@@ -206,14 +284,13 @@ export const SCENES: Scene[] = [
   {
     key: "chat",
     title: "Book in chat",
-    hint: "Tap a chip, check the draft, Send.",
-    state: "past",
+    hint: "Robert asks Chloe, they meet, both accept, and Robert pays.",
+    // Before the two have met: the chat is where it all starts.
+    state: "pets",
     lead: "owner",
-    owner: { path: "{chat}", highlight: "chat-chips", script: CHAT_SCRIPT },
-    sitter: { path: "/sitter/chat" },
+    owner: { path: "/owner/bookings", script: CHAT_OWNER_SCRIPT },
+    sitter: { path: "/sitter/chat", script: CHAT_SITTER_SCRIPT },
     tags: [SUPER, NANO],
-    play: { label: "Play Chloe's reply", role: "sitter", what: "reply" },
-    autoPlay: true,
   },
   {
     key: "care",

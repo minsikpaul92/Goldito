@@ -196,7 +196,6 @@ function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
           {DISCLAIMER}
         </Text>
       }
-      footerSolid
       testID="treat-check"
     >
       <View style={styles.section}>
