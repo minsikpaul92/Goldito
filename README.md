@@ -28,11 +28,11 @@ the server owns every fact, and a person approves every word.
 
 ## Goldito in 30 seconds
 
-**The problem.** We have been pet sitters for three years. Apps connect owners and sitters, but the stay itself is still typed by hand: replies to "can you take her?", the pill schedule, the evening update, the photo the owner asks for twice. That is about **40 minutes a day** for us (about 10 with Goldito, our estimate), and when the stay ends, what the sitter learned about the pet is lost in a chat thread.
+**The insight.** We have been pet sitters for three years, and the pet is rarely the anxious one. The owner is. With no news, owners text again, ask for a photo, and ask for it twice. Answering that, plus the replies, the pill schedule, and the evening update, is about **40 minutes a day** for us (about 10 with Goldito, our estimate). And when the stay ends, what the sitter learned about the pet is lost in a chat thread.
 
-**What Goldito does.** One chat per owner and sitter carries the whole stay: inquiry, Meet & Greet, booking, the trip, daily care, and the ride home.
+**What Goldito does.** Goldito is built to put the owner at ease. One chat per owner and sitter carries the whole stay: inquiry, Meet & Greet, booking, the trip, daily care, and the ride home. While the pet is in care, the sitter sends small care messages with a tap, so the owner hears from the sitter before they have to ask.
 
-- **No typing.** The sitter taps a chip and gets a reply in their own voice, taps a few check-ins and gets the evening note, snaps a photo and it is captioned and filed. Owners describe their pet with a photo and a few spoken sentences.
+- **Updates before the owner asks.** Check-ins, photos, and the evening note reach the owner on their own. The sitter taps a chip and gets a reply in their own voice, taps a few check-ins and gets the note, snaps a photo and it is captioned and filed.
 - **AI you can check.** Prices, dates, availability, and door codes come from the server, never from the model. Nemotron writes only from the facts it is handed, and **nothing is sent until a person taps Send**.
 - **Memory that follows the pet.** Each stay becomes the pet's Life Record, so the next stay, even with a new sitter, starts already knowing the pet.
 
