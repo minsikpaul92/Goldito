@@ -14,10 +14,12 @@ type Props = {
   scrollbar?: boolean;
   /** Floats over the bottom of the scroll area, always visible (a primary action on a long form); the content shows around it. */
   footer?: ReactNode;
+  /** The footer sits on a solid bar with a top hairline, like the tab bar, and the content ends above it (an action bar). */
+  footerSolid?: boolean;
   testID?: string;
 };
 
-export const Screen = forwardRef<ScrollView, Props>(function Screen({ children, contentStyle, scrollbar, footer, testID }, ref) {
+export const Screen = forwardRef<ScrollView, Props>(function Screen({ children, contentStyle, scrollbar, footer, footerSolid, testID }, ref) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const [footerHeight, setFooterHeight] = useState(0);
@@ -47,8 +49,8 @@ export const Screen = forwardRef<ScrollView, Props>(function Screen({ children, 
         {children}
       </ScrollView>
       {footer ? (
-        <View style={styles.footerWrap} pointerEvents="box-none">
-          <View style={[styles.fade, fadeStyle]} pointerEvents="none" />
+        <View style={[styles.footerWrap, footerSolid && styles.footerSolid]} pointerEvents="box-none">
+          {footerSolid ? null : <View style={[styles.fade, fadeStyle]} pointerEvents="none" />}
           <View style={styles.footer} onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}>
             {footer}
           </View>
@@ -76,6 +78,15 @@ const makeStyles = (theme: Theme) =>
       left: 0,
       right: 0,
       bottom: 0,
+    },
+    footerSolid: {
+      backgroundColor: theme.color.surface,
+      borderTopWidth: 1,
+      borderTopColor: theme.color.border,
+      ...Platform.select<ViewStyle>({
+        web: { boxShadow: "0 -8px 12px rgba(27,67,50,0.08)" } as ViewStyle,
+        default: { elevation: 8 },
+      }),
     },
     fade: {
       position: "absolute",

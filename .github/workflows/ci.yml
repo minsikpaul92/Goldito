@@ -154,6 +154,8 @@ jobs:
           EXPO_PUBLIC_API_URL: http://127.0.0.1:4173/api-mock
           # Test-only: the Profile → Demo tools sheet (testing reset) is built in so its spec can open it.
           EXPO_PUBLIC_DEMO_TOOLS: "1"
+          # Test-only: the e2e admin account may edit pet looks (pet-look spec).
+          EXPO_PUBLIC_ADMIN_EMAILS: admin@goldito.test
       - name: Playwright (desktop phone frame + mouse)
         if: env.RUN_E2E == 'true'
         env:
