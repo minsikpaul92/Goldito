@@ -16,9 +16,7 @@ the server owns every fact, and a person approves every word.
 [![Tavily](https://img.shields.io/badge/search-Tavily-4f46e5?style=flat-square)](#tavily-live-answers-from-trusted-sites)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-<!-- TODO(image): hero GIF, about 360 px wide. The owner adds a photo of Max; the AI reads breed and coat color, and Goldito builds Max as an 8-bit pet from the preset, color, and weight.
-<img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner adds a photo of Max, the AI reads breed and coat color, and Goldito builds Max as an 8-bit pet" width="360">
--->
+<img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner adds a photo of Mumu, the AI reads breed and coat color, and Goldito builds Mumu as an 8-bit pet" width="340">
 
 **[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up) · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
 
