@@ -88,7 +88,7 @@ export default function HowItWorks() {
           {(
             [
               ["Ask", "A quote in minutes", "bookings/house", "blockPeach"],
-              ["Meet", "Care notes become a checklist", "owner/care-bowl", "blockMint"],
+              ["Meet", "A Meet & Greet; notes become a checklist", "owner/care-bowl", "blockMint"],
               ["Book", "Sign, pay, entry on time", "sitter/pill", "blockBlush"],
               ["Care", "Photos and the daily page", "owner/camera", "blockButter"],
               ["Home safe", `A review and ${pet}'s record`, "owner/pet-dog", "blockMint"],
