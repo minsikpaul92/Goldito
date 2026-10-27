@@ -158,7 +158,7 @@ function invite(el: HTMLElement, text: string, color: string): void {
     padding: "10px 14px",
     borderRadius: "14px",
     background: color,
-    color: "#fff",
+    color: "#fff", // tokens-ok: a plain DOM note on the brand color, outside the app's theme
     font: "600 14px system-ui, sans-serif",
     textAlign: "center",
     zIndex: "9999",

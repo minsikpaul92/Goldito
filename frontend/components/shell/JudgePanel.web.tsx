@@ -513,7 +513,7 @@ const makeStyles = (theme: Theme) =>
       borderRadius: 999,
       borderWidth: 1,
       borderColor: theme.color.border,
-      backgroundColor: "#FFFFFF",
+      backgroundColor: theme.color.surface,
     },
     sceneBody: { paddingHorizontal: theme.spacing.sm + 4, paddingBottom: theme.spacing.sm + 4, gap: theme.spacing.sm },
     pressed: { opacity: 0.85 },
