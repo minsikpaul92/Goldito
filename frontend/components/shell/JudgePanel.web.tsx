@@ -29,6 +29,9 @@ type Props = {
   onSettingUp?: (on: boolean) => void;
 };
 
+/** How long after a scene ends "Want to try it yourself?" comes up. */
+const TRY_ASK_MS = 2_000;
+
 /** The paw walk stays a moment after the screens open, so the phones' reload is not seen. */
 const SETTLE_MS = 1_200;
 
@@ -85,7 +88,9 @@ export function JudgePanel({ panes, accounts, onSettingUp }: Props) {
       }
       now.finale.forEach((side) => void send(side.pane, { op: "run", script: side.steps, pace }, WAIT_MS.go).catch(() => undefined));
       if (now.scene.autoPlay) setAutoPlay(now.scene);
-      if (now.scene.tryIt) setTryAsk(now.scene.tryIt);
+      // A moment to take in the paid booking before the question.
+      const tryIt = now.scene.tryIt;
+      if (tryIt) setTimeout(() => setTryAsk(tryIt), TRY_ASK_MS);
       flow.current = null;
       setPlaying(null);
     };

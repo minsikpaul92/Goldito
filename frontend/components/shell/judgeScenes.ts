@@ -196,6 +196,10 @@ const CHAT_OWNER_SCRIPT: ScriptStep[] = [
   { type: "checkout-signer", text: "Robert" },
   { pause: 1_000 },
   { tap: "checkout-pay" },
+  // Paid: the booking opens; then Chloe's chat shows it too.
+  { wait: "paid-chip", timeout: 30_000 },
+  { pause: 1_000 },
+  { signal: "paid" },
 ];
 
 const CHAT_SITTER_SCRIPT: ScriptStep[] = [
@@ -230,6 +234,10 @@ const CHAT_SITTER_SCRIPT: ScriptStep[] = [
   { tap: "chat-next-final_quote", timeout: 30_000 },
   { tap: "send-quote-submit" },
   { signal: "quote-sent" },
+  // After Robert pays, Chloe's chat scrolls to the end, where the paid booking shows.
+  { until: "paid" },
+  { pause: 1_500 },
+  { reveal: "chat-payment-card", timeout: 30_000 },
 ];
 
 /** Feed, walk, potty, nap from the pet room, then the day's page written from the chips and sent. */

@@ -13,6 +13,8 @@ export type ScriptStep =
   | { type: string; text: string }
   /** Wait until a control shows (an AI answer, the next page). */
   | { wait: string; timeout?: number }
+  /** Scroll the last of these controls into view (the end of a chat). */
+  | { reveal: string; timeout?: number }
   /** Wait until at least `n` of a control show (the other side's new chat message has arrived). */
   | { count: string; n: number; timeout?: number }
   /** Wait until a control is gone (a spinner). */
@@ -274,6 +276,13 @@ export async function playScript(steps: ScriptStep[], color: string, pace = 1): 
       }
     } else if ("wait" in step) {
       await until(() => query(step.wait), step.timeout ?? FIND_MS, step.wait);
+    } else if ("reveal" in step) {
+      const last = await until(() => {
+        const all = Array.from(document.querySelectorAll<HTMLElement>(selector(step.reveal))).filter(visible);
+        return all.at(-1) ?? null;
+      }, step.timeout ?? FIND_MS, step.reveal);
+      last.scrollIntoView({ block: "end", behavior: "smooth" });
+      await wait(BEAT_MS);
     } else if ("count" in step) {
       await until(
         () => (Array.from(document.querySelectorAll<HTMLElement>(selector(step.count))).filter(visible).length >= step.n ? true : null),
