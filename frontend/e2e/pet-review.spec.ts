@@ -139,7 +139,7 @@ test.describe("pet reviews", () => {
     await signIn(page, OWNER);
     const screen = app(page);
     await screen.getByTestId("home-pager").waitFor();
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("pet-room-Max")).toBeVisible();
     const list = screen.getByTestId(`pet-reviews-${MAX}`);
     await expect(list).toBeVisible();
@@ -149,7 +149,8 @@ test.describe("pet reviews", () => {
     await expect(screen.getByTestId("pet-review-row-rev-new")).toContainText("Sweetest boy");
     const ids = await list.locator("[data-testid^='pet-review-row-']").evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
     expect(ids).toEqual(["pet-review-row-rev-new", "pet-review-row-rev-old"]);
-    await screen.getByTestId("pet-switch-Mochi").click();
+    await screen.getByTestId("pet-switch").click();
+    await screen.getByTestId("pet-switch-menu").getByText("Mochi", { exact: true }).click();
     await expect(screen.getByTestId("pet-room-Mochi")).toBeVisible();
     await expect(screen.getByTestId(`pet-reviews-${MOCHI}`)).toHaveCount(0);
   });

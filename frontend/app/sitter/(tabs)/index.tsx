@@ -213,7 +213,7 @@ export default function SitterHome() {
     </>
   );
 
-  // On duty: Today is the front, the pixel pet room the back (the flip button, like the owner's Home).
+  // On duty: Today is the front, the pixel pet room the back (the Today / Pet room tabs, like the owner's Home).
   if (caringPets.length > 0) {
     return (
       <View style={styles.page} onLayout={measure}>
@@ -222,7 +222,7 @@ export default function SitterHome() {
           pages={[
             { label: "Today", content: <SitterToday pets={caringPets} top={banners} bottom={lists} /> },
             {
-              label: "Pet",
+              label: "Pet room",
               content: (
                 <Screen contentStyle={styles.content}>
                   <SitterPetRoom pets={caringPets} height={pageHeight > 0 ? Math.round(pageHeight * ROOM_SHARE) : ROOM_FALLBACK} />

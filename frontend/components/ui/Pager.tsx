@@ -1,8 +1,8 @@
 import { ReactNode, useMemo, useRef, useState } from "react";
-import { Animated, Easing, PanResponder, Platform, Pressable, StyleSheet, View } from "react-native";
+import { Animated, Easing, PanResponder, Platform, StyleSheet, View } from "react-native";
 
-import { Icon } from "./Icon";
-import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
+import { ViewTabs } from "./ViewTabs";
+import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
 /** A sideways drag this far (px) or flick this fast flips the card. */
@@ -14,18 +14,19 @@ const WHEEL_PAUSE_MS = 600;
 const FLIP_MS = 420;
 
 type Props = {
-  /** Exactly two pages: the front and the back of the card. */
-  pages: { label: string; content: ReactNode }[];
+  /** Exactly two pages: the front and the back of the card. `right` sits at the end of the tab row while its page shows. */
+  pages: { label: string; content: ReactNode; right?: ReactNode }[];
   testID?: string;
 };
 
 /**
- * A two-sided card (Home hero, #286): the flip button turns it 180 degrees to the other page. A sideways drag or wheel
- * flips it too, and the card turns the way the finger or the wheel goes (it follows the drag, a short drag springs back).
+ * A two-sided card (Home hero, #286): underline tabs on top (the same as Photos / Diary on Moments) turn it 180 degrees
+ * to the other page, and the page in view can put something at the right end of the row (the pet chip on Pet room).
+ * The tabs replaced a refresh-style flip button nobody read as "there is another page" (Mook, Oct 27). A sideways drag
+ * or wheel flips it too, and the card turns the way the finger or the wheel goes (it follows the drag, a short drag springs back).
  * The back is built only once it is shown, so Home does not load the pet room until someone looks at it.
  */
 export function Pager({ pages, testID }: Props) {
-  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [index, setIndex] = useState(0);
   const [seen, setSeen] = useState<ReadonlySet<number>>(() => new Set([0]));
@@ -52,7 +53,9 @@ export function Pager({ pages, testID }: Props) {
     );
   };
   const settle = () => Animated.spring(angle, { toValue: base.current, useNativeDriver: false, bounciness: 0 }).start();
-  const flip = () => turnTo(indexRef.current === 0 ? 1 : -1);
+  const show = (next: number) => {
+    if (next !== indexRef.current) turnTo(next === 1 ? 1 : -1);
+  };
   const turnRef = useRef(turnTo);
   turnRef.current = turnTo;
   const settleRef = useRef(settle);
@@ -104,16 +107,14 @@ export function Pager({ pages, testID }: Props) {
   return (
     <View style={styles.root} testID={testID}>
       <View style={styles.bar}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Flip to ${pages[index === 0 ? 1 : 0].label}`}
-          hitSlop={8}
-          onPress={flip}
-          style={({ pressed }) => [styles.flip, pressed && styles.pressed]}
-          testID={testID ? `${testID}-flip` : undefined}
-        >
-          <Icon name="refresh" size={theme.icon.sm} color={theme.color.primary} />
-        </Pressable>
+        <ViewTabs
+          rule={false}
+          options={pages.map((page, i) => ({ value: String(i), label: page.label }))}
+          value={String(index)}
+          onChange={(next) => show(Number(next))}
+          testID={testID ? `${testID}-tab` : undefined}
+        />
+        {pages[index]?.right ? <View style={styles.right}>{pages[index].right}</View> : null}
       </View>
       <View
         style={styles.clip}
@@ -142,22 +143,20 @@ export function Pager({ pages, testID }: Props) {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: { flex: 1 },
+    // The same row as the Moments tabs (FeedSwitch): tabs on the left, the page's extra on the right; it wraps at large text.
     bar: {
       flexDirection: "row",
-      justifyContent: "flex-end",
-      paddingHorizontal: theme.spacing.md,
-      paddingVertical: theme.spacing.xs,
+      flexWrap: "wrap",
+      alignItems: "flex-end",
+      justifyContent: "space-between",
+      columnGap: theme.spacing.md,
+      marginHorizontal: 20,
+      marginTop: theme.spacing.xs,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.color.border,
       backgroundColor: theme.color.background,
     },
-    flip: {
-      width: 32,
-      height: 32,
-      borderRadius: theme.radius.pill,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.color.accent,
-    },
-    pressed: { opacity: 0.8 },
+    right: { flexShrink: 1, flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, paddingBottom: 6 },
     clip: { flex: 1 },
     face: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backfaceVisibility: "hidden" },
   });
