@@ -95,7 +95,7 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 
 - **One API for everything.** Text, vision, and embeddings all go through the `openai` Python SDK pointed at Token Factory, in one client ([`services/nebius.py`](backend/app/services/nebius.py)). A feature asks for a role (`fast`, `report`, `safety`, `vision`), not a model.
 - **Swapping a model is a config change.** Each role is an environment variable (`MODEL_FAST`, `MODEL_REPORT`, `MODEL_SAFETY`, `MODEL_VISION`, `MODEL_CHAT_*`). Moving the chat from Nano to Super after a side-by-side simulation, judged by Ultra, changed no code.
-- **Checks before building.** `GET /v1/models` let us script what our key could really call: it showed early that NVIDIA vision, an embedding model, and speech to text were not on the shared API, before we built on them.
+- **Checks before building.** `GET /v1/models` let us script what our key could really call: it showed early that there was no NVIDIA embedding model and no speech to text on the shared API, before we built on them.
 - **Measured on the real API from day one.** The first Nano and MiniCPM-V calls ran with our first catalog check (2026-09-29); scripts in [`backend/scripts`](backend/scripts) time each feature. Every call writes one metrics line (endpoint, model, latency, time to first token, tokens), never the prompt or the answer.
 
 **Other Nebius services.** We tried a Nebius AI Cloud Serverless endpoint for the FastAPI backend on 2026-10-09 and chose Render instead; why is in the feedback log below.

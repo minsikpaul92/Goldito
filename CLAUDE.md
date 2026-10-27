@@ -36,7 +36,7 @@ Every feature must pass:
 | Data / Auth / Realtime | Supabase (Postgres + RLS + Realtime notifications) |
 | Media | Cloudinary (signed upload, `f_auto,q_auto` delivery) |
 | Video Meet & Greet | Google Meet links from the Google Calendar API (backend only; Goldito Google account OAuth — D45) |
-| AI | Token Factory (backend only; keys never in client) — Nemotron for replies/reasoning/reports, MiniCPM-V for vision (final — NVIDIA vision models are Dedicated-Endpoint-only), Qwen3 Embedding for RAG (final; Supabase pgvector) — US/NVIDIA models first (D39) ([model-ids.md](docs/plan/phases/notes/model-ids.md)) |
+| AI | Token Factory (backend only; keys never in client) — Nemotron for replies/reasoning/reports, Nemotron 3.5 Super VL for vision (since 2026-10-27; MiniCPM-V before, and the rollback), Qwen3 Embedding for RAG (final; Supabase pgvector) — US/NVIDIA models first (D39) ([model-ids.md](docs/plan/phases/notes/model-ids.md)) |
 
 **Preferred pattern:** Frontend uses **Supabase client + RLS** for CRUD; FastAPI for Cloudinary, AI, and authenticated helpers.
 
@@ -246,7 +246,7 @@ The scenario core (03B → 07C) comes first, then Pet Transit (06B) as the last 
 
 ## 8. AI endpoints (contract)
 
-Implement in FastAPI; all call **Nebius Token Factory** — Nemotron for text, MiniCPM-V for vision, Qwen3 Embedding for RAG. Prices, dates, and availability come from the server, never from the model; entry codes never go into prompts (D29, D31). Every call writes one metrics log line (architecture §9):
+Implement in FastAPI; all call **Nebius Token Factory** — Nemotron for text, Nemotron 3.5 Super VL for vision, Qwen3 Embedding for RAG. Prices, dates, and availability come from the server, never from the model; entry codes never go into prompts (D29, D31). Every call writes one metrics log line (architecture §9):
 
 | Endpoint | Purpose |
 | :--- | :--- |

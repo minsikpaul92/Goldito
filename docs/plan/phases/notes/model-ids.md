@@ -13,27 +13,29 @@
 | **Inquiry auto-reply** (Stage 1) | 07B | `POST /api/ai/inquiry-reply` | `MODEL_FAST` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | **Speed:** answer in seconds from server-collected facts (schedule, quote, policy, RAG). Never computes prices. |
 | **RAG embeddings** (Stage 1 · 5) | 07B · 07C | `services/rag.py` | `MODEL_EMBED` | `Qwen/Qwen3-Embedding-8B` | Only embedding model in the catalog. `dimensions: 1024` works on both base URLs (2026-10-01) → pgvector `vector(1024)` + HNSW. |
 | **Care plan → checklist** (Stage 2) | 06 | `POST /api/ai/care-plan` | `MODEL_REPORT` | `nvidia/nemotron-3-super-120b-a12b` | Structured JSON for times, doses, cautions from the owner's free text. |
-| **Handoff photo check** (Stage 4) | 06B | `POST /api/ai/handoff-check` | `MODEL_VISION` | `openbmb/MiniCPM-V-4_5` | **Vision:** pet visible, species match, crate / seatbelt in the car. Server decides ok / warning. |
-| **Feed auto-caption + album category** | 09 | `POST /api/ai/caption` | `MODEL_VISION` | `openbmb/MiniCPM-V-4_5` | **Vision:** reads the photo (pet, activity) and writes a short English caption + `meal`/`walk`/`nap`/`play`/`other`. Sitter does not type. |
-| **Treat safety — read label** | 08 | `POST /api/ai/safety-check` (step 1) | `MODEL_VISION` | `openbmb/MiniCPM-V-4_5` | **Vision/OCR:** ingredient label photo → structured ingredient list + product name. |
+| **Handoff photo check** (Stage 4) | 06B | `POST /api/ai/handoff-check` | `MODEL_VISION` | `nvidia/Nemotron-3.5-Super-VL` | **Vision:** pet visible, species match, crate / seatbelt in the car. Server decides ok / warning. |
+| **Feed auto-caption + album category** | 09 | `POST /api/ai/caption` | `MODEL_VISION` | `nvidia/Nemotron-3.5-Super-VL` | **Vision:** reads the photo (pet, activity) and writes a short English caption + `meal`/`walk`/`nap`/`play`/`other`. Sitter does not type. |
+| **Treat safety — read label** | 08 | `POST /api/ai/safety-check` (step 1) | `MODEL_VISION` | `nvidia/Nemotron-3.5-Super-VL` | **Vision/OCR:** ingredient label photo → structured ingredient list + product name. |
 | **Treat safety — reason** | 08 | same (step 2) | `MODEL_SAFETY` | `nvidia/Nemotron-3-Ultra-550b-a55b` | **Text reasoning:** allergens, hidden sources (e.g. poultry in “animal fat”), DANGER/WARNING/SAFE JSON. |
 | **Daily report draft** | 07 | `POST /api/ai/daily-report` | `MODEL_REPORT` | `nvidia/nemotron-3-super-120b-a12b` | **Long-form text:** warm end-of-day report from today’s logs + feed + the 5-second check (report photos described by `MODEL_VISION` first). |
-| **Report chips** (Stage 4) | 07 | `POST /api/ai/report-chips` | `MODEL_VISION` | `openbmb/MiniCPM-V-4_5` | **Vision:** 1–2 short episode chips per report photo. The day-record chips (meal, potty, walk, meds) come from the database with no model call; the sitter keeps or turns off each chip (D38). |
+| **Report chips** (Stage 4) | 07 | `POST /api/ai/report-chips` | `MODEL_VISION` | `nvidia/Nemotron-3.5-Super-VL` | **Vision:** 1–2 short episode chips per report photo. The day-record chips (meal, potty, walk, meds) come from the database with no model call; the sitter keeps or turns off each chip (D38). |
 | **Pet Life Record** (Stage 5) | 07C | `POST /api/ai/life-record` | `MODEL_REPORT` | `nvidia/nemotron-3-super-120b-a12b` | Long-context summary of a whole stay; only recorded facts, null when no evidence. |
 | **Booking chat chips** | 03D | `POST /api/ai/chat-chips` | `MODEL_CHAT_CHIPS` | `nvidia/nemotron-3-super-120b-a12b` | 2 to 3 short labels. Nano and Lightning chips were fine but the drafts and the chat they fed were not; Super chips needed the prompt line "under 30 characters, no digits" (4 of 20 turns fell back to the generic chips before it, 0 after). |
 | **Booking chat draft** | 03D | `POST /api/ai/chat-draft` | `MODEL_CHAT_OWNER` / `MODEL_CHAT_SITTER` | `nvidia/nemotron-3-super-120b-a12b` | One short message in the person's voice. Nano and Lightning looped on repeats and fell back to bare chip words in a 20 message run, Super did not. The chat AI does not use Nano. |
 | **Dev smoke / cheap tests** | 07.1 | `scripts/test_nebius.py` | `MODEL_FAST` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Fast, low-cost Nemotron for “hello world” and JSON/format checks before wiring Super/Ultra. |
 | **Optional: fast text** | — | (stretch) | — | `nvidia/Nemotron-3_5-Lightning` | Cheaper/faster text if we split caption **wording polish** from vision (P1 only if needed). |
 
-**Not on the shared API (do not rely on for demo):** `nvidia/nemotron-3-nano-omni` — dedicated endpoint only (2026-10-02, see the NVIDIA catalog check below); **vision stays MiniCPM-V-4_5** unless omni ever appears in your project’s model list. **Qwen-2.5-VL** (named in the team's Full Process scenario) is not in the catalog either (2026-10-01).
+**Not on the shared API (do not rely on for demo):** `nvidia/nemotron-3-nano-omni` — dedicated endpoint only (2026-10-02, see the NVIDIA catalog check below); **vision is `nvidia/Nemotron-3.5-Super-VL`** since 2026-10-27 (see the switch note below); MiniCPM-V-4_5 is the rollback. **Qwen-2.5-VL** (named in the team's Full Process scenario) is not in the catalog either (2026-10-01).
 
-**Image-input models in the catalog (2026-10-01, `architecture.modality = text+image->text`):** `openbmb/MiniCPM-V-4_5` (both base URLs) and `moonshotai/Kimi-K2.6` (both) — plus `moonshotai/Kimi-K3`, `zai-org/GLM-5.3-Flash`, `deepseek-ai/DeepSeek-V4.1-Flash` on the eu-north1 gateway only. Default stays MiniCPM-V-4.5 (smoke-tested); compare Kimi-K2.6 in the 6B.5 spike only if handoff checks are unreliable. No NVIDIA vision or embedding model is listed.
+**Image-input models in the catalog (2026-10-01, `architecture.modality = text+image->text`):** `openbmb/MiniCPM-V-4_5` (both base URLs) and `moonshotai/Kimi-K2.6` (both) — plus `moonshotai/Kimi-K3`, `zai-org/GLM-5.3-Flash`, `deepseek-ai/DeepSeek-V4.1-Flash` on the eu-north1 gateway only. On 2026-10-01 no NVIDIA vision or embedding model was listed; `Nemotron-3.5-Super-VL` appeared on the global base URL later (seen 2026-10-27). Still no NVIDIA embedding model.
 
 **Tavily:** not a Nebius model — web search for unknown ingredients/recalls (Phase 08.7 stretch, 11.3 fallback). See tavily.md.
 
 ---
 
 ## What is `openbmb/MiniCPM-V-4_5`?
+
+Since 2026-10-27 this is the rollback vision model; the live one is `nvidia/Nemotron-3.5-Super-VL` (switch note above). The numbers below are from when MiniCPM-V was live.
 
 OpenBMB **MiniCPM-V-4.5** is a **multimodal (vision) model** on the same Token Factory public API:
 
@@ -44,7 +46,7 @@ OpenBMB **MiniCPM-V-4.5** is a **multimodal (vision) model** on the same Token F
 
 Step 2 safety **judgment** is **Ultra** (text-only Nemotron), not MiniCPM — two-step pipeline in phase-08-safety.md.
 
-**Hackathon note:** Still **NVIDIA Nemotron on Token Factory** for core AI story; MiniCPM (OpenBMB, **not an NVIDIA model**) is an **additional** vision endpoint on the same Token Factory API; the hackathon rule (at least one NVIDIA model) is met by Nano (inquiry replies) and Super (checklists, reports, Life Records); Ultra runs only in the Phase 08 safety stretch. Mention Nemotron and MiniCPM in README feedback and the demo script.
+**Hackathon note:** Still **NVIDIA Nemotron on Token Factory** for core AI story; MiniCPM (OpenBMB, **not an NVIDIA model**) is an **additional** vision endpoint on the same Token Factory API; the hackathon rule (at least one NVIDIA model) is met by Nano (inquiry replies) and Super (checklists, reports, Life Records); Ultra runs only in the Phase 08 safety stretch. Mention Nemotron and MiniCPM in README feedback and the demo script. (Superseded 2026-10-27: vision is Nemotron-3.5-Super-VL, see the switch note below.)
 
 ---
 
@@ -67,7 +69,8 @@ Use the **exact** `id` string from `GET /v1/models` when calling `chat/completio
 | Nemotron-3-Ultra-550b-a55b | `nvidia/Nemotron-3-Ultra-550b-a55b` |
 | Nemotron-3-Super-120b-a12b | `nvidia/nemotron-3-super-120b-a12b` |
 | Nemotron-3-Nano-30B-A3B | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` |
-| MiniCPM-V-4.5 (Vision) | `openbmb/MiniCPM-V-4_5` |
+| Nemotron-3.5-Super-VL (Vision, global URL only) | `nvidia/Nemotron-3.5-Super-VL` |
+| MiniCPM-V-4.5 (Vision, rollback) | `openbmb/MiniCPM-V-4_5` |
 
 ---
 
@@ -106,6 +109,8 @@ Input: one fictional sentence ("Max is a Maltese who is allergic to chicken."). 
 | GLM-4.7-NVFP4, MiniMax-M2.5/M2.7-NVFP4, Qwen3.5-397B-A17B-NVFP4 | **Chinese originals**, only quantized by NVIDIA | text | not counted as NVIDIA models |
 
 **Decision (2026-10-02): keep `openbmb/MiniCPM-V-4_5` for vision.** The three NVIDIA vision/omni models can only be deployed as Dedicated Endpoints. An always-on endpoint costs L40S $2/GPU-hour (about $48/day; enough for the 12B model) or H100 $4.7/GPU-hour (about $113/day; needed for the 33B FP16 Cosmos model) — more than the $125 balance over the weeks the demo must stay up. A short-lived endpoint just to record the demo video is possible later (not planned).
+
+**Switch (2026-10-27): vision is `nvidia/Nemotron-3.5-Super-VL`.** It appeared in `GET /v1/models` on `https://api.tokenfactory.nebius.com/v1/` only (not on the us-central1 URL), so `MODEL_VISION_BASE_URL` moves to the global URL. Thinking is on by default and fills `max_tokens` before any answer (caption 0/6 right, 300 tokens, about 3.7 s), so `nebius.chat` sends `enable_thinking: false` for every non-`openbmb/` model. Same prompts and photos, thinking off, one run per call: caption category 4/6 for both models; breed guess 10/12 (Super VL) against 9/12 (MiniCPM-V); handoff photos not comparable (both read the demo images as placeholders); median 1.0 to 1.4 s for both. Treat labels: six sample labels in five versions (original, blur, 35% size at JPEG quality 35, rotated 7 degrees, right 40% cut off), two runs each, 60 calls per model: neither model missed an ingredient in the four readable versions, and neither disagreed with itself; on the cut-off labels MiniCPM-V said `complete: true` 10 of 10 times, Super VL 0 of 10. Clean sample labels and small samples, not real packaging. Rollback is two environment variables: `MODEL_VISION=openbmb/MiniCPM-V-4_5`, `MODEL_VISION_BASE_URL=https://api.tokenfactory.us-central1.nebius.com/v1/`.
 
 **Fine-tuning (11.7):** confirmed in the console — `google/gemma-4-E4B-it` appears in the fine-tuning wizard (LoRA or Full fine-tuning, $0.40 / 1M tokens, 8K context); **Nemotron models do not appear, and their model pages show Full / LoRA fine-tuning "Not available"** (the catalog's generic "Fine-tuning" badge is misleading). So the SFT candidate is **Gemma-4-E4B-it (LoRA)** — **showcase only, not wired into the app (D43)**. A tuned Gemma 4 most likely needs a Dedicated Endpoint (L40S $2/GPU-hour, H100 $4.7). Account balance on 2026-10-02: $125. RFT is not being pursued (no application).
 

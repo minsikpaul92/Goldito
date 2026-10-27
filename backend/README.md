@@ -63,7 +63,7 @@ App pick path: `pickMedia()` (`frontend/lib/media.ts`) opens the sample tray / f
 
 ### Images for the model (D12)
 
-`app.services.cloudinary.fetch_as_data_url(public_id, resource_type)` returns the 1024 px JPEG (a video gives its first frame) as `data:image/jpeg;base64,…` for MiniCPM-V. It raises `ValueError` for ids outside `goldito/…` and `MediaFetchError` when Cloudinary cannot deliver the image. It does not check who owns the media — the calling AI route must.
+`app.services.cloudinary.fetch_as_data_url(public_id, resource_type)` returns the 1024 px JPEG (a video gives its first frame) as `data:image/jpeg;base64,…` for the vision model. It raises `ValueError` for ids outside `goldito/…` and `MediaFetchError` when Cloudinary cannot deliver the image. It does not check who owns the media — the calling AI route must.
 
 ## Auth (who may call what)
 
