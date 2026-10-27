@@ -423,7 +423,10 @@ export function JudgePanel({ panes, accounts, onSettingUp }: Props) {
                   setLogoutOpen(false);
                   flow.current = null;
                   setPlaying(null);
-                  panes.forEach((pane) => void send(pane, { op: "logout" }, WAIT_MS.go).catch(() => undefined));
+                  // Once the phones are signed out, back to one phone on Welcome (not the split view).
+                  void Promise.all(panes.map((pane) => send(pane, { op: "logout" }, WAIT_MS.go).catch(() => undefined))).then(() =>
+                    window.location.assign("/welcome"),
+                  );
                 }}
                 style={styles.action}
                 testID="judge-logout-confirm"

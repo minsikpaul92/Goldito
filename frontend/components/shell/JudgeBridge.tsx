@@ -100,9 +100,9 @@ export function JudgeBridge() {
           playAndTell(command.script, color.current, command.pace ?? 1);
         } else if (command.op === "logout") {
           stopScript();
+          // Frees the seat (the other phone signs out with it), then answers, so the page can leave the split view.
+          await signOutRef.current().catch(() => undefined);
           reply(command.id, true);
-          // Frees the seat; the other phone signs out with it.
-          await signOutRef.current();
           router.replace("/welcome");
         } else if (command.op === "stop") {
           stopScript();
