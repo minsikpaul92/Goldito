@@ -6,7 +6,7 @@ import { Icon } from "../components/ui/Icon";
 import { BigInput } from "../components/ownerOnboarding/BigInput";
 import { BigOption } from "../components/ownerOnboarding/BigOption";
 import { PetGlanceCard } from "../components/PetGlanceCard";
-import { PetSprite } from "../components/pet/PetSprite";
+import { PetReveal } from "../components/ownerOnboarding/PetReveal";
 import { PetPhotosStep } from "../components/ownerOnboarding/PetPhotosStep";
 import { VoiceInterview } from "../components/ownerOnboarding/VoiceInterview";
 import { StepFrame } from "../components/ownerOnboarding/StepFrame";
@@ -102,10 +102,10 @@ export default function OwnerOnboarding() {
   }, [draft?.step]);
   // On the summary the card also shows what the typed breed needs (it fills in a moment after).
   const needs = useBreedNeeds(draft?.species ?? null, draft && draft.step === "summary" ? draft.breed : null);
-  /** The reveal screen shows the pet once Generate was tapped; later changes to breed, color or weight draw it again. */
-  const [generated, setGenerated] = useState(false);
+  /** The 8-bit pet of the reveal screen is drawn; Next waits for it. Leaving the screen resets it, so the pet is drawn again. */
+  const [made, setMade] = useState(false);
   useEffect(() => {
-    if (draft?.step === "species" || draft?.step === "name") setGenerated(false);
+    if (draft?.step !== "reveal") setMade(false);
   }, [draft?.step]);
   const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Cover photos a guess was already asked for, so a photo is looked at once.
@@ -519,7 +519,11 @@ export default function OwnerOnboarding() {
         />
         {heard(said, kg !== null && said !== null && Math.abs(kg - toKg(said.value, said.unit)) < 0.06, "weight")}
       </>,
-      nextButton(draft.weight.trim() === ""),
+      canReveal ? (
+        <Button label="Generate" onPress={next} testID="own-generate" />
+      ) : (
+        nextButton(draft.weight.trim() === "")
+      ),
       undefined,
       true,
     );
@@ -529,19 +533,16 @@ export default function OwnerOnboarding() {
     return frame(
       `Meet ${petName}`,
       <View style={styles.center}>
-        {generated ? (
-          <PetSprite
-            species={species}
-            breed={draft.breed}
-            coat={draft.coat}
-            weightKg={weightFromDraft(draft)}
-            mood="calm"
-            pixel={9}
-            testID="own-reveal-pet"
-          />
-        ) : null}
+        <PetReveal
+          species={species}
+          breed={draft.breed}
+          coat={draft.coat}
+          weightKg={weightFromDraft(draft)}
+          onDone={() => setMade(true)}
+          testID="own-reveal-pet"
+        />
       </View>,
-      generated ? nextButton() : <Button label="Generate" onPress={() => setGenerated(true)} testID="own-generate" />,
+      nextButton(!made),
     );
   }
 
