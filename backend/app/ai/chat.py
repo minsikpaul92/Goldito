@@ -80,7 +80,8 @@ def _clip(text: str, n: int = 240) -> str:
 
 def _when(iso: str, tz) -> str:
     moment = datetime.fromisoformat(str(iso).replace("Z", "+00:00")).astimezone(tz)
-    return f"{logic.MONTHS[moment.month - 1]} {moment.day} {moment.strftime('%-I:%M %p')}"
+    # %-I (no leading zero) is glibc-only; Windows strftime rejects it.
+    return f"{logic.MONTHS[moment.month - 1]} {moment.day} {moment.strftime('%I:%M %p').lstrip('0')}"
 
 
 _QUOTE_STATUS = {
