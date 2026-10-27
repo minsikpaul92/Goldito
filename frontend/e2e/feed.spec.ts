@@ -531,6 +531,37 @@ test.describe("Notification center", () => {
     expect(db.notifications).toHaveLength(0);
   });
 
+  test("day cards: notices grouped by day, no emoji, a day's check-ins of one pet fold into one row (Oct 27)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
+    const at = (min: number) => new Date(Date.now() - min * 60_000).toISOString();
+    const notice = (id: string, type: string, title: string, min: number, read = false) =>
+      db.notifications.push({ id, user_id: OWNER.id, type, title, body: null, pet_id: PET_ID, booking_id: null, ref_id: null, read_at: read ? at(min) : null, created_at: at(min) });
+    notice("n-meal", "care_checkin", "Max ate everything 🍽️", 3);
+    notice("n-walk", "care_checkin", "Max had a 20-minute walk 🦮", 2);
+    notice("n-potty", "care_checkin", "Potty update for Max: normal 💩", 1);
+    notice("n-report", "report_sent", "Chloe sent Max's daily page 📔", 24 * 60, true);
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/owner/notifications");
+    const screen = app(page);
+
+    const fold = screen.locator("[data-testid^='notification-fold-']");
+    await expect(fold).toContainText("3 check-ins for Max");
+    await expect(fold).toContainText("Meal, walk 20 min, potty");
+    await expect(screen.getByTestId("notification-n-meal")).toHaveCount(0);
+    await fold.click();
+    await expect(screen.getByTestId("notification-n-meal")).toHaveText(/Max ate everything/);
+    await expect(screen.getByTestId("notification-n-meal")).not.toContainText("🍽");
+
+    const report = screen.getByTestId("notification-n-report");
+    await expect(report).toContainText("Read");
+    await expect(report).not.toContainText("📔");
+    // Day labels are set in capitals, so match them case-blind.
+    await expect(screen.getByText(/^yesterday$/i)).toBeVisible();
+    await expect(screen.getByTestId("notifications-center").getByText(/^today$/i)).toBeVisible();
+  });
+
   test("empty state", async ({ page }) => {
     await mockSupabase(page, [OWNER, SITTER]);
     await signIn(page, OWNER);
