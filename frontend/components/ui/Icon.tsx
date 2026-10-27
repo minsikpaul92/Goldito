@@ -13,6 +13,7 @@ import Clock from "lucide-react-native/icons/clock";
 import ArrowLeft from "lucide-react-native/icons/arrow-left";
 import ChevronLeft from "lucide-react-native/icons/chevron-left";
 import ChevronRight from "lucide-react-native/icons/chevron-right";
+import ChevronsRight from "lucide-react-native/icons/chevrons-right";
 import Circle from "lucide-react-native/icons/circle";
 import CircleCheck from "lucide-react-native/icons/circle-check";
 import CircleDot from "lucide-react-native/icons/circle-dot";
@@ -89,6 +90,8 @@ const ICONS = {
   /** Back to the previous screen: the ← arrow, everywhere (U1, Mook Oct 25). `back` stays for calendar month arrows. */
   arrowBack: ArrowLeft,
   forward: ChevronRight,
+  /** A booking step both sides passed over (Skipped, Mook Oct 27). */
+  skipped: ChevronsRight,
   expand: ChevronDown,
   close: X,
   // actions

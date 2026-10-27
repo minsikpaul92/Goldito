@@ -14,7 +14,7 @@ import { Theme } from "../../../theme/themes";
 
 const goBack = () => (router.canGoBack() ? router.back() : router.replace("/sitter"));
 
-/** One pet's 5-second check-in (opened from the pet chips on Home), laid out as the Oct 25 design. */
+/** One pet's 5-second check-in (opened from the pet chips on Home); the check-in is the whole screen, with its dock. */
 export default function SitterCheckin() {
   const styles = useThemedStyles(makeStyles);
   const { petId } = useLocalSearchParams<{ petId: string }>();
@@ -35,19 +35,24 @@ export default function SitterCheckin() {
     );
   }
   return (
-    <Screen testID="sitter-checkin-screen">
-      <BackLink onPress={goBack} testID="checkin-back" />
-      <ScreenHeader
-        title={`${pet.name} · Check-in`}
-        subtitle="Tap what happened, then Send"
-        right={
-          <View style={styles.face} aria-hidden>
-            <Art name={pet.species === "cat" ? "owner/pet-cat" : "owner/pet-dog"} size={36} />
-          </View>
-        }
-      />
-      <QuickCheckIn pet={pet} onPhotos={() => router.push(`/sitter/feed/${pet.id}`)} />
-    </Screen>
+    <QuickCheckIn
+      pet={pet}
+      onPhotos={() => router.push(`/sitter/feed/${pet.id}`)}
+      header={
+        <>
+          <BackLink onPress={goBack} testID="checkin-back" />
+          <ScreenHeader
+            title={`${pet.name} · Check-in`}
+            subtitle="Tap what happened, then Send"
+            right={
+              <View style={styles.face} aria-hidden>
+                <Art name={pet.species === "cat" ? "owner/pet-cat" : "owner/pet-dog"} size={36} />
+              </View>
+            }
+          />
+        </>
+      }
+    />
   );
 }
 

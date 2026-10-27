@@ -80,7 +80,7 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
       dirty={other.trim() !== ""}
       discardTitle="Discard this place?"
       visible={visible}
-      title="Schedule Meet & Greet"
+      title="Schedule a meet"
       onClose={onClose}
       testID="meet-sheet"
       footer={
@@ -139,7 +139,7 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
       <View style={styles.row}>
         <Stepper
           style={styles.stepper}
-          label="Meet & Greet day"
+          label="Meet day"
           value={formatDay(day)}
           onDecrease={() => setDay(addDays(day, -1))}
           onIncrease={() => setDay(addDays(day, 1))}
@@ -150,7 +150,7 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
         />
         <Stepper
           style={styles.stepper}
-          label="Meet & Greet time"
+          label="Meet time"
           value={formatTime(time)}
           onDecrease={() => setTime(shiftTime(time, -TIME_STEP))}
           onIncrease={() => setTime(shiftTime(time, TIME_STEP))}
@@ -162,7 +162,7 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
 
       <DayPickerSheet
         visible={picker === "day"}
-        title="Meet & Greet day"
+        title="Meet day"
         value={day}
         minDay={appToday()}
         maxDay={lastDay}
@@ -175,7 +175,7 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
       />
       <TimePickerSheet
         visible={picker === "time"}
-        title="Meet & Greet time"
+        title="Meet time"
         value={time}
         onPick={(t) => {
           setTime(t);
