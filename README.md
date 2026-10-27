@@ -16,9 +16,7 @@ the server owns every fact, and a person approves every word.
 [![Tavily](https://img.shields.io/badge/search-Tavily-4f46e5?style=flat-square)](#tavily-live-answers-from-trusted-sites)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-<!-- TODO(image): hero GIF, about 360 px wide. The owner adds a photo of Max; the AI reads breed and coat color, and Goldito builds Max as an 8-bit pet from the preset, color, and weight.
-<img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner adds a photo of Max, the AI reads breed and coat color, and Goldito builds Max as an 8-bit pet" width="360">
--->
+<img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner adds a photo of Mumu, the AI reads breed and coat color, and Goldito builds Mumu as an 8-bit pet" width="340">
 
 **[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up) · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
 
@@ -30,15 +28,13 @@ the server owns every fact, and a person approves every word.
 
 ## Goldito in 30 seconds
 
-**The problem.** We have been pet sitters for three years. Apps connect owners and sitters, but the stay itself is still typed by hand: replies to "can you take her?", the pill schedule, the evening update, the photo the owner asks for twice. That is about **40 minutes a day** for us (about 10 with Goldito, our estimate), and when the stay ends, what the sitter learned about the pet is lost in a chat thread.
+**The insight.** *"The pet isn't anxious. The owner is."* That is Chloe, a pet sitter, and we have seen it for three years as sitters ourselves. With no news, owners text again, ask for a photo, and ask for it twice. Keeping owners in the loop takes us **at least 40 minutes a day**: the replies, the pill schedule, the evening update, the photos. Goldito cuts that by about **85%** (our estimate), and sending an update becomes the fun part: a tap, a photo, a sticker.
 
-**What Goldito does.** One chat per owner and sitter carries the whole stay: inquiry, Meet & Greet, booking, the trip, daily care, and the ride home.
+**What Goldito does.** Goldito cares for the owner too. One chat per owner and sitter carries the whole stay: inquiry, Meet & Greet, booking, the trip, daily care, and the ride home. While the pet is in care, the sitter sends small care messages with a tap, so the owner hears from the sitter before they have to ask.
 
-| | |
-| :--- | :--- |
-| **No typing** | The sitter taps a chip and gets a reply in their own voice, taps a few check-ins and gets the evening note, snaps a photo and it is captioned and filed. Owners describe their pet with a photo and a few spoken sentences. |
-| **AI you can check** | Prices, dates, availability, and door codes come from the server, never from the model. Nemotron writes only from the facts it is handed, and **nothing is sent until a person taps Send**. |
-| **Memory that follows the pet** | Each stay becomes the pet's Life Record, so the next stay, even with a new sitter, starts already knowing the pet. |
+- **Updates before the owner asks.** Check-ins, photos, and the evening note reach the owner on their own. The sitter taps a chip and gets a reply in their own voice, taps a few check-ins and gets the note, snaps a photo and it is captioned and filed.
+- **AI you can check.** Prices, dates, availability, and door codes come from the server, never from the model. Nemotron writes only from the facts it is handed, and **nothing is sent until a person taps Send**.
+- **Memory that follows the pet.** Each stay becomes the pet's Life Record, so the next stay, even with a new sitter, starts already knowing the pet.
 
 **AI is a tool here, not the sender.** Goldito never sends a message, a daily note, or a review on its own. A general chatbot cannot see the sitter's calendar, quote, or house rules, cannot be trusted with a lockbox code, and forgets the pet when the sitter changes. Here the facts come from the server, the words sound like the sitter, and the memory follows the pet.
 
@@ -69,9 +65,7 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 | A new owner registers a pet | Turns a photo and a few spoken sentences into profile suggestions and looks up breed needs | MiniCPM-V 4.5 · Groq Whisper → Nemotron 3 **Nano** | The owner confirms every suggestion |
 | The stay ends | Writes the pet's Life Record and indexes it | Nemotron 3 **Super** + Qwen3 Embedding | The owner reads it |
 
-<!-- TODO(image): chat GIF, about 360 px wide. Chloe taps a reply chip and a draft in her voice appears with the server's quote; she taps Send.
-<img src="docs/assets/readme/chat-draft.gif" alt="The sitter taps a reply chip and Nemotron drafts a message in her voice with the server's quote" width="360">
--->
+<img src="docs/assets/readme/chat-draft.gif" alt="Inquiry chat between owner Paul and sitter Peter: reply chips draft a message, then a Meet & Greet request, acceptance, quote, and payment" width="340">
 
 **Guardrails.** The model never writes a price, a date, or an entry code (a draft whose numbers do not match the server is rewritten once, then falls back to plain words). Entry codes never enter a prompt or the RAG index. Life Records and spoken profile facts need recorded evidence or a matching quote, and safety answers are never pre-filled. The treat verdict is never below the rule table. If a model is slow or down, the screen shows fixed chips or a plain list, never an error.
 
@@ -106,9 +100,7 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 - **Danger is loud:** a DANGER verdict opens a red screen that only "I understand" closes, and a sitter's DANGER also notifies the owner.
 - Code: [`services/tavily.py`](backend/app/services/tavily.py) · [`services/breed_needs.py`](backend/app/services/breed_needs.py) · [`routers/ai_safety_check.py`](backend/app/routers/ai_safety_check.py)
 
-<!-- TODO(image): treat check GIF, about 360 px wide. Snap a label for Max (allergic to chicken), "animal fat" is caught, the red DANGER screen shows with source links.
-<img src="docs/assets/readme/treat-check-danger.gif" alt="A treat label is checked for Max, chicken hidden in animal fat is caught, and a red DANGER screen shows the sources" width="360">
--->
+<img src="docs/assets/readme/treat-check.gif" alt="Two treat labels are checked for Biscuit, who is allergic to chicken: a label with hidden chicken sources gets a WARNING, and a label that names chicken and garlic powder gets a red DANGER screen" width="360">
 
 ---
 
@@ -166,7 +158,7 @@ Tap a stage for the details.
 
 </details>
 
-<details>
+<details open>
 <summary><b>④ Care & Pet Transit: live trips, the 8-bit pet room, 5-second checks, AI daily notes</b></summary>
 
 - **Uber-style trips, inside the chat.** Drop-off and pick-up are agreed as one pair. Whoever drives taps **Start trip** (after a clear location prompt); the chat shows *on the way*, *N min away*, and *arrived*, and the other side gets a live map and ETA. On arrival the owner gets the sitter's place card (visitor parking, lobby notes) and the sitter gets the entry-info card. Anyone can **start without sharing**: the other side then sees the meeting place with **Open in Google Maps**.
@@ -174,12 +166,18 @@ Tap a stage for the details.
 - **5-second check:** in the evening Goldito suggests chips from the day's check-ins and from up to two photos (MiniCPM-V 4.5 reads them): Meal · Potty · Walk 20 min · Meds · 🐿️ Squirrel at the park. The sitter turns off anything wrong and adds a short line if they want. **Nemotron 3 Super writes the daily note** in the sitter's voice from only those facts, and it is posted once the sitter approves it.
 - **Album and diary:** every photo gets an AI caption and is sorted into Meals · Walks · Naps · Play by day. Daily notes form a diary that both sides can decorate with pet stickers.
 
+**Care, played like a game.** The sitter taps **Feed**, **Walk**, **Poop**, or **Nap** on the pet's 8-bit room. The pet acts it out and the owner is told right away, so a care update feels like play instead of a chore.
+
+<img src="docs/assets/readme/care-room.gif" alt="The sitter taps Feed, Walk, Poop, and Nap on Biscuit's 8-bit room; the pet eats, walks, and sleeps, and each tap tells the owner" width="320">
+
+<img src="docs/assets/readme/care-checkin.gif" alt="The sitter taps check-ins and adds a photo for Biscuit while the owner's Home updates live: meals, potty, walks, and mood" width="560">
+
+<img src="docs/assets/readme/diary-page.gif" alt="The sitter writes the diary page from the day's chips and photo, adds stickers, and sends it to the owner" width="320">
+
 > *"Max took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited. It was adorable. Her potty was perfectly healthy, too. 🐶"*
 > From an AI daily note built from a few chips, two photos, and one short line from the sitter
 
-<!-- TODO(image): trip screenshot, about 300 px wide. The owner's live map with the sitter's car and ETA.
-<img src="docs/assets/readme/trip-map.png" alt="Live trip map with the ETA" width="300">
--->
+<img src="docs/assets/readme/trip-live.gif" alt="The owner starts a simulated drive and the sitter watches the live map and ETA until Peter has arrived" width="560">
 
 </details>
 
@@ -215,8 +213,8 @@ Tap a stage for the details.
 ## Who it's for
 
 - **Independent pet sitters and the owners they care for, starting in Canada** (consent forms, holidays, and the quote follow Ontario first).
-- **What a sitter gets back:** in our own work, about 30 minutes a day (40 minutes of messages, updates, reports, and schedule checks down to about 10, our estimate).
-- **How it pays (plan):** Goldito takes **no cut of the sitting fee**. The AI features come with a **subscription**, and optional extras are sold: **outfits for the 8-bit pet** and **sticker packs** for the diary.
+- **What a sitter gets back:** in our own work, the 40 minutes a day of messages, updates, reports, and schedule checks drop by about 85% (our estimate).
+- **What an owner gets:** peace of mind, since the owner is the one who worries, not the pet. Updates and alerts arrive without asking, so the owner always knows how the pet is doing now. The sitter keeps checking the care checklist and the allergy check.
 <!-- TODO(Q8): what real owners and sitters said, once they have tried it. -->
 
 ---
