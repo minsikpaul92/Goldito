@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { Button } from "../ui/Button";
+import { SegmentedControl } from "../ui/SegmentedControl";
 import { Tag } from "../ui/Tag";
 import { demoSetFor } from "../../lib/demo";
 import { Role } from "../../providers/SessionProvider";
@@ -9,6 +10,7 @@ import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { FrameAccount } from "./accountMessage";
 import { JUDGE_COMMAND, JudgeCommand, isJudgeDone, paneWindow } from "./judgeMessages";
+import { MAP_STAGES, MapFeature, filterFeatures } from "./judgeMap";
 import { RESET_SCENE, SCENES, Scene } from "./judgeScenes";
 
 /** Width the panel takes from the page (the phones scale to what is left). */
@@ -38,6 +40,10 @@ export function JudgePanel({ panes, accounts }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [more, setMore] = useState(false);
+  const [tab, setTab] = useState<"scenes" | "map">("scenes");
+  const [query, setQuery] = useState("");
+  const [who, setWho] = useState<"all" | Role>("all");
+  const [aiOnly, setAiOnly] = useState(false);
   const send = useCommands();
   const split = panes.length > 1;
 
@@ -70,6 +76,23 @@ export function JudgePanel({ panes, accounts }: Props) {
           send(pane, { op: "go", set: seat, role, path: scene[role].path, highlight: scene[role].highlight ?? null }, WAIT_MS.go),
         ),
       );
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Couldn't open it. Try again.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** A Map feature: its scene when it has one, else open its screen on the lead phone as the stay is now. */
+  async function openFeature(feature: MapFeature) {
+    const scene = feature.scene ? SCENES.find((s) => s.key === feature.scene) : undefined;
+    if (scene) return run(scene);
+    if (!seat || busy) return;
+    setBusy(`map-${feature.key}`);
+    setError(null);
+    setActive(null);
+    try {
+      await send(paneFor(feature.lead), { op: "go", set: seat, role: feature.lead, path: feature.path, highlight: null }, WAIT_MS.go);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Couldn't open it. Try again.");
     } finally {
@@ -128,6 +151,74 @@ export function JudgePanel({ panes, accounts }: Props) {
     );
   };
 
+  const found = filterFeatures(query, who, aiOnly);
+  const map = (
+    <View style={styles.map} testID="judge-map">
+      <TextInput
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search: treat, live trip, meds"
+        accessibilityLabel="Search features"
+        style={styles.search}
+        testID="judge-map-search"
+      />
+      <SegmentedControl
+        options={[
+          { value: "all", label: "Everyone" },
+          { value: "owner", label: "Owner" },
+          { value: "sitter", label: "Sitter" },
+        ]}
+        value={who}
+        onChange={setWho}
+        testID="judge-map-who"
+      />
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: aiOnly }}
+        onPress={() => setAiOnly((on) => !on)}
+        style={({ pressed }) => [styles.aiChip, aiOnly && styles.aiChipOn, pressed && styles.pressed]}
+        testID="judge-map-ai"
+      >
+        <Text style={[styles.aiLabel, aiOnly && styles.aiLabelOn]}>Uses AI only</Text>
+      </Pressable>
+      <Text style={styles.hint}>Scene cards set the stay up first; the others open as your stay is now.</Text>
+      {found.length === 0 ? (
+        <Text style={styles.hint} testID="judge-map-empty">
+          Nothing matches. Try treat, live trip or meds.
+        </Text>
+      ) : null}
+      {MAP_STAGES.map(({ key, label }) => {
+        const list = found.filter((f) => f.stage === key);
+        if (!list.length) return null;
+        return (
+          <View key={key} style={styles.group}>
+            <Text style={styles.groupLabel}>{label}</Text>
+            {list.map((feature) => (
+              <Pressable
+                key={feature.key}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !seat || busy !== null }}
+                onPress={() => void openFeature(feature)}
+                disabled={!seat || busy !== null}
+                style={({ pressed }) => [styles.scene, styles.sceneHead, pressed && styles.pressed]}
+                testID={`judge-map-${feature.key}`}
+              >
+                <Text style={styles.sceneTitle}>{busy === `map-${feature.key}` ? "Opening…" : feature.title}</Text>
+                <Text style={styles.hint}>{feature.line}</Text>
+                <View style={styles.tags}>
+                  {feature.scene ? <Tag label="Scene" tone="brand" /> : null}
+                  {feature.tags.map((tag) => (
+                    <Tag key={tag.label} label={tag.label} tone={tag.nvidia ? "brand" : "neutral"} />
+                  ))}
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        );
+      })}
+    </View>
+  );
+
   return (
     <ScrollView style={styles.panel} contentContainerStyle={styles.content} testID="judge-panel">
       <View style={styles.header}>
@@ -139,7 +230,18 @@ export function JudgePanel({ panes, accounts }: Props) {
           Take a Judge seat on the phone.
         </Text>
       ) : null}
-      {SCENES.filter((scene) => !scene.more).map((scene, index) => row(scene, index + 1))}
+      <SegmentedControl
+        options={[
+          { value: "scenes", label: "Scenes" },
+          { value: "map", label: "Map" },
+        ]}
+        value={tab}
+        onChange={setTab}
+        testID="judge-tabs"
+      />
+      {tab === "map" ? map : null}
+      {tab === "scenes" ? SCENES.filter((scene) => !scene.more).map((scene, index) => row(scene, index + 1)) : null}
+      {tab === "scenes" ? (
       <Pressable
         accessibilityRole="button"
         aria-expanded={more}
@@ -149,7 +251,8 @@ export function JudgePanel({ panes, accounts }: Props) {
       >
         <Text style={styles.moreLabel}>{more ? "More ▾" : "More ▸"}</Text>
       </Pressable>
-      {more ? SCENES.filter((scene) => scene.more).map((scene) => row(scene)) : null}
+      ) : null}
+      {tab === "scenes" && more ? SCENES.filter((scene) => scene.more).map((scene) => row(scene)) : null}
       <View style={styles.actions}>
         <Button
           label="Replay"
@@ -243,4 +346,30 @@ const makeStyles = (theme: Theme) =>
     actions: { flexDirection: "row", gap: theme.spacing.sm, marginTop: theme.spacing.xs },
     action: { flex: 1 },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },
+    // The Map (Mook, Oct 27).
+    map: { gap: theme.spacing.sm },
+    search: {
+      minHeight: 44,
+      borderWidth: 1,
+      borderColor: theme.color.borderStrong,
+      borderRadius: 999,
+      paddingHorizontal: theme.spacing.md,
+      fontSize: theme.fontSize.body,
+      color: theme.color.text,
+      backgroundColor: theme.color.background,
+    },
+    aiChip: {
+      alignSelf: "flex-start",
+      minHeight: 44,
+      justifyContent: "center",
+      paddingHorizontal: theme.spacing.md,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: theme.color.borderStrong,
+    },
+    aiChipOn: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },
+    aiLabel: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    aiLabelOn: { color: theme.color.background },
+    group: { gap: theme.spacing.xs + 2 },
+    groupLabel: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted, textTransform: "uppercase", letterSpacing: 0.6 },
   });
