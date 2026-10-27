@@ -589,7 +589,7 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-save").click();
     await expect(page).toHaveURL(/\/owner$/);
     const pet = db.pets.find((p) => p.owner_id === OWNER.id)!;
-    expect(pet).toMatchObject({ breed: "Maltese mix", weight_kg: 5.9 });
+    expect(pet).toMatchObject({ breed: "Maltese", weight_kg: 5.9 });
     expect(pet.profile).toMatchObject({ safety: { s1: "once", s6: "listed" } });
     expect((pet.profile as { answers: Record<string, number> }).answers).toEqual({});
     expect(pet.notes).toBe("He is a sweet boy\nWatch out: He gets nervous with thunder");
