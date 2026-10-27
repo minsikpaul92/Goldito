@@ -28,7 +28,7 @@ the server owns every fact, and a person approves every word.
 
 ## Goldito in 30 seconds
 
-**The insight.** *"The pet isn't anxious. The owner is."* That is Chloe, a pet sitter, and we have seen it for three years as sitters ourselves. With no news, owners text again, ask for a photo, and ask for it twice. Keeping owners in the loop takes us **at least 40 minutes a day**: the replies, the pill schedule, the evening update, the photos. Goldito cuts that by about **85%** (our estimate), and sending an update becomes the fun part: a tap, a photo, a sticker. And when the stay ends, what the sitter learned about the pet is lost in a chat thread.
+**The insight.** *"The pet isn't anxious. The owner is."* That is Chloe, a pet sitter, and we have seen it for three years as sitters ourselves. With no news, owners text again, ask for a photo, and ask for it twice. Keeping owners in the loop takes us **at least 40 minutes a day**: the replies, the pill schedule, the evening update, the photos. Goldito cuts that by about **85%** (our estimate), and sending an update becomes the fun part: a tap, a photo, a sticker.
 
 **What Goldito does.** Goldito cares for the owner too. One chat per owner and sitter carries the whole stay: inquiry, Meet & Greet, booking, the trip, daily care, and the ride home. While the pet is in care, the sitter sends small care messages with a tap, so the owner hears from the sitter before they have to ask.
 
