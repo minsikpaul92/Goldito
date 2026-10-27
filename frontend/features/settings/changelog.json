@@ -1,6 +1,19 @@
 [
   {
     "version": "Unreleased",
+    "title": "2026-10-27",
+    "sections": [
+      {
+        "heading": "Changed",
+        "items": [
+          "The 5-second check is shorter: a group you've answered folds to one line (tap it to change), the mood is picked on your pet's own 8-bit faces, and what's ready to send stays next to Send at any scroll.",
+          "Snap → Mood gives the answer first: your pet's face for its top mood, the one-line summary and the photo small, then the top three moods. See all shows the other five."
+        ]
+      }
+    ]
+  },
+  {
+    "version": "Unreleased",
     "title": "2026-10-25",
     "sections": [
       {

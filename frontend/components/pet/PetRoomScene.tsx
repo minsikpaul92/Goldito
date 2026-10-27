@@ -50,7 +50,8 @@ const FLOOR = 0.3;
 /**
  * The owner's pet room (Pet room tab on Home, Mook's room trial R1+, Oct 27): a wall with a window that follows the
  * clock, a floor with a rug, the bowl and a bed, and the 8-bit pet walking on the floor. It is a picture only: the
- * name, mood and today's numbers are under it in words, so nobody has to read pixel art. Tapping it opens the Diary.
+ * name, mood and today's numbers are under it in words, so nobody has to read pixel art. Without `onPress` it is a
+ * picture, not a button; the owner's room has none (Mook, Oct 27: no Diary shortcut there).
  */
 export function PetRoomScene({ species, coat, breed, weightKg, colors, hat, look, mood, event, label, onPress, testID, spriteTestID }: Props) {
   const styles = useThemedStyles(makeStyles);

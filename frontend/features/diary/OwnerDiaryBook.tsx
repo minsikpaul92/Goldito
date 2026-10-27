@@ -1,14 +1,16 @@
-import { router, useFocusEffect } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { Avatar } from "../../components/ui/Avatar";
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { Icon } from "../../components/ui/Icon";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { Screen } from "../../components/ui/Screen";
 import { useNotifications } from "../../providers/NotificationsProvider";
 import { useSession } from "../../providers/SessionProvider";
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { useMyPets } from "../pets/useMyPets";
 import { DiaryBook } from "./DiaryBook";
@@ -18,11 +20,14 @@ import { SentReport, listBookPages } from "./reportApi";
 
 /**
  * The owner's diary book (Diary book DB.3): every page the sitters sent about their pets, all or one pet, oldest →
- * newest, opening on the newest (or on `initialId` — a notice, a Feed card). Each page says who wrote it and the
- * day's tasks. The owner can write a page of their own too (014p, #186) and add their own stickers (12.3b).
+ * newest, opening on the newest (or on `initialId` — a notice, a Feed card). Above each page, who wrote it and when;
+ * under it, the day's tasks. The owner can write a page of their own too (014p, #186) and add their own stickers (12.3b).
+ * `linked`: the screen a chat card opens on one page. Its header ← is the way out, so no "‹ Diaries" and no Write a
+ * page there (diary audit, Oct 27: one Back per screen).
  */
-export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
+export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: string | null; linked?: boolean }) {
   const styles = useThemedStyles(makeStyles);
+  const theme = useTheme();
   const { pets } = useMyPets();
   const [pages, setPages] = useState<SentReport[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +65,7 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
       </Screen>
     );
   }
-  const write = pets.length > 0 ? <Button label="Write a page" variant="secondary" onPress={() => setWriting(true)} testID="diary-write" /> : null;
+  const write = pets.length > 0 && !linked ? <Button label="Write a page" variant="secondary" onPress={() => setWriting(true)} testID="diary-write" /> : null;
   const sheet = (
     <OwnerEntrySheet
       visible={writing}
@@ -79,8 +84,7 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
         <EmptyState
           emoji="📔"
           title="No diary yet"
-          message="When a stay is on, updates show up here live. Everything your sitter did is in History."
-          action={{ label: "Open History", onPress: () => router.push("/owner/history") }}
+          message="Your sitter's pages show up here during a stay, one for each day."
         />
         {write}
         {sheet}
@@ -95,21 +99,41 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
         pages={pages}
         initialId={openId}
         testID="diary-entry"
+        showCovers={!linked}
+        header={(page) => {
+          const mine = page.authorId === me;
+          const time = page.sentAt ? new Date(page.sentAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : null;
+          return (
+            <View style={styles.byline} testID={`diary-byline-${page.id}`}>
+              <Avatar kind="initial" name={mine ? session.status === "signedIn" ? session.profile.displayName || "You" : "You" : page.sitterName} size={24} />
+              <Text style={styles.bylineWho}>{mine ? "Your page" : `From ${page.sitterName}`}</Text>
+              {time ? <Text style={styles.bylineWhen}>{`· ${time}`}</Text> : null}
+            </View>
+          );
+        }}
         footer={(page) => (
           <View style={styles.footer}>
             {page.authorId === me ? (
-              <>
-                <Text style={styles.meta}>Your page</Text>
-                <PageActions reportId={page.id} action="delete" onDone={() => void load()} />
-              </>
+              <PageActions reportId={page.id} action="delete" onDone={() => void load()} />
             ) : (
               <>
-                <Text style={styles.meta}>{`From ${page.sitterName}`}</Text>
-                {page.tasks.map((t, i) => (
-                  <Text key={`${i}-${t.title}`} style={styles.task}>
-                    {`${t.status === "done" ? "✓" : "✗"} ${t.title}${t.status === "done" ? "" : " · missed"}`}
-                  </Text>
-                ))}
+                {page.tasks.length > 0 ? (
+                  <View style={styles.tasks} testID={`diary-tasks-${page.id}`}>
+                    <Text style={styles.tasksTitle}>{`What ${page.sitterName} did`}</Text>
+                    {page.tasks.map((t, i) => {
+                      const done = t.status === "done";
+                      return (
+                        <View key={`${i}-${t.title}`} style={[styles.task, i > 0 && styles.taskLine]}>
+                          <View style={[styles.mark, done ? styles.markDone : styles.markMissed]}>
+                            {done ? <Icon name="check" size={14} color={theme.color.primaryText} /> : null}
+                          </View>
+                          <Text style={styles.taskTitle}>{t.title}</Text>
+                          {done ? null : <Text style={styles.taskEnd}>Missed</Text>}
+                        </View>
+                      );
+                    })}
+                  </View>
+                ) : null}
                 <PageActions reportId={page.id} action="hide" other={page.sitterName} onDone={() => void load()} />
               </>
             )}
@@ -123,7 +147,27 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    footer: { gap: 2, paddingHorizontal: theme.spacing.xs },
-    meta: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    task: { fontSize: theme.fontSize.body, color: theme.color.text },
+    // Who wrote the page, above it: Avatar 24, name in text colour, time muted (small).
+    byline: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, paddingHorizontal: theme.spacing.xs, paddingBottom: theme.spacing.xs },
+    bylineWho: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    bylineWhen: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.textMuted },
+    footer: { gap: theme.spacing.sm, paddingTop: theme.spacing.xs },
+    // The day's tasks as read-only check rows in a card (the CheckRow look, without a control).
+    tasks: { backgroundColor: theme.color.surface, borderRadius: theme.radius.lg, paddingTop: theme.spacing.sm, overflow: "hidden" },
+    tasksTitle: {
+      fontSize: theme.fontSize.caption,
+      lineHeight: theme.lineHeight.caption,
+      fontWeight: theme.fontWeight.bold,
+      letterSpacing: 0.6,
+      textTransform: "uppercase",
+      color: theme.color.textMuted,
+      paddingHorizontal: theme.spacing.md,
+    },
+    task: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, minHeight: theme.layout.touchTarget, paddingHorizontal: theme.spacing.md },
+    taskLine: { borderTopWidth: 1, borderTopColor: theme.color.border },
+    mark: { width: theme.icon.sm, height: theme.icon.sm, borderRadius: theme.icon.sm / 2, alignItems: "center", justifyContent: "center" },
+    markDone: { backgroundColor: theme.color.success },
+    markMissed: { borderWidth: 2, borderColor: theme.color.borderStrong },
+    taskTitle: { flex: 1, fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.text },
+    taskEnd: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
   });

@@ -325,8 +325,11 @@ test.describe("daily report", () => {
     await expect(screen.getByText("From Chloe")).toBeVisible();
     await expect(screen.getByText("SECRET DRAFT")).toHaveCount(0);
     await expect(screen.getByTestId("diary-entry-body")).toContainText("Then we walked.");
-    await expect(screen.getByText("✓ Walk")).toBeVisible();
-    await expect(screen.getByText("Pill · missed")).toBeVisible();
+    // The day's tasks: read-only check rows under the page, a missed one says so.
+    const tasks = screen.getByTestId("diary-tasks-sent1");
+    await expect(tasks).toContainText("What Chloe did");
+    await expect(tasks).toContainText("Walk");
+    await expect(tasks).toContainText("PillMissed");
   });
 
   test("the top line sums up the day, and a recorded value can be corrected before the report is written", async ({ page }) => {
@@ -435,7 +438,7 @@ test.describe("daily report", () => {
     await signIn(page, OWNER);
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/owner/diary");
-    await expect(app(page).getByText("When a stay is on, updates show up here live", { exact: false })).toBeVisible();
+    await expect(app(page).getByText("Your sitter's pages show up here during a stay", { exact: false })).toBeVisible();
   });
 
   test("a long chip wraps inside the card and can still be turned off (Sitter-013)", async ({ page }) => {

@@ -63,7 +63,7 @@ function petTiles(status: PetStatus, species: Species): StatTile[] {
  * The top of the Pet room tab (Mook's room trial R1+, Oct 27): the room, then the same story in words (name, mood
  * Tag, one sentence, when it was last updated), the pet's own stat tiles in Today's style, and the next task.
  */
-export function OwnerPetRoom({ pet, onPress }: { pet: Pet; onPress?: () => void }) {
+export function OwnerPetRoom({ pet }: { pet: Pet }) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { status, event, updatedAt } = usePetRoom(pet.id);
@@ -82,7 +82,6 @@ export function OwnerPetRoom({ pet, onPress }: { pet: Pet; onPress?: () => void 
         mood={status?.mood ?? "calm"}
         event={event}
         label={`${pet.name}'s room. ${mood.label}.`}
-        onPress={onPress}
         testID={`pet-room-${pet.name}-open`}
         spriteTestID={`pet-room-${pet.name}-sprite`}
       />

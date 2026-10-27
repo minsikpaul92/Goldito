@@ -22,7 +22,7 @@ import { PetWardrobe } from "./PetWardrobe";
 /**
  * Owner Home, the Pet room tab (11.12; room trial R1+, Oct 27): one pet's room on one scroll in a fixed order, so
  * nothing hides behind a tab: the room and its story in words, the Wardrobe, two Action Rows, then the sitters' medals
- * and reviews. Which pet is picked by the pet chip in the tab row (Home owns `petId`). Tap the room: Diary.
+ * and reviews. Which pet is picked by the pet chip in the tab row (Home owns `petId`).
  * The pet is a preset for its breed and weight (photo colors are set on the pet profile's Pixel pet card); admins also
  * get Change look. `onChanged` reloads the pets after a save.
  */
@@ -52,7 +52,7 @@ export function PetPage({ pets, petId, onChanged }: { pets: Pet[]; petId?: strin
 
   return (
     <Screen contentStyle={styles.page} testID="pet-page">
-      <OwnerPetRoom key={pet.id} pet={look} onPress={() => router.push("/owner/feed?view=diary")} />
+      <OwnerPetRoom key={pet.id} pet={look} />
       <PetWardrobe items={ownedItems(pets.length)} worn={hat} onToggle={(id) => void toggleHat(id)} />
       {/* The Pet maker is for the team for now (11.12c); photo colors live on the pet profile's Pixel pet card. */}
       {admin ? (

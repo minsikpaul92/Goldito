@@ -727,10 +727,10 @@ test.describe("chat hub", () => {
     screen = await openChatAs(page, OWNER);
     await expect(screen.getByTestId("meet-accept")).toHaveText("Accept");
     await screen.getByTestId("meet-accept").click();
-    await expect(screen.getByTestId("meet-greet")).toContainText("Meet & Greet set");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Meet set");
     await screen.getByTestId("meet-done").click();
     await screen.getByTestId("meet-done-early-confirm").click();
-    await expect(screen.getByTestId("chat-mg-update").last()).toContainText("Meet & Greet done");
+    await expect(screen.getByTestId("chat-mg-update").last()).toContainText("Meet done");
     expect((await circles(screen)).label).toBe("Step 3 of 5");
 
     // Both say yes: the owner after reading the summary, the sitter with one tap, in either order.
@@ -1062,13 +1062,13 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("chat-waiting")).toHaveCount(0);
     await screen.getByTestId("meet-skip").click();
     await screen.getByTestId("meet-skip-confirm").click();
-    await expect(screen.getByTestId("meet-greet")).toContainText("You asked to skip the Meet & Greet.");
+    await expect(screen.getByTestId("meet-greet")).toContainText("You asked to skip the meet.");
 
     // Chloe answers on the card: Accept, and the booking moves on without a Meet & Greet.
     screen = await openChatAs(page, SITTER);
     await expect(screen.getByTestId("meet-skip-accept")).toHaveText("Accept");
     await screen.getByTestId("meet-skip-accept").click();
-    await expect(screen.getByTestId("meet-greet")).toContainText("Meet & Greet skipped");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Meet skipped");
     expect(db.bookings[0].sitter_interest_at).toBeTruthy();
     await expect(screen.getByTestId("chat-next-accept")).toHaveText("Accept");
   });
@@ -1088,14 +1088,14 @@ test.describe("chat hub", () => {
     await screen.getByTestId("meet-request").click();
     await screen.getByTestId("meet-mode-video").click();
     await screen.getByTestId("meet-send").click();
-    await expect(screen.getByTestId("chat-mg-update").last()).toContainText("You sent a Meet & Greet Request");
+    await expect(screen.getByTestId("chat-mg-update").last()).toContainText("You asked to meet");
     await expect(screen.getByTestId("chat-mg-update").last()).toContainText("Online");
 
     // Chloe: the newest thing in the list and in the chat is the update.
     screen = await openChatAs(page, SITTER);
-    await expect(screen.getByTestId("chat-mg-update").last()).toContainText("Robert sent a Meet & Greet Request");
+    await expect(screen.getByTestId("chat-mg-update").last()).toContainText("Robert asked to meet");
     await screen.getByTestId("meet-accept").click();
-    await expect(screen.getByTestId("chat-mg-update").last()).toContainText("You accepted the Meet & Greet");
+    await expect(screen.getByTestId("chat-mg-update").last()).toContainText("You agreed to meet");
     const last = db.chat_messages.at(-1);
     expect(last).toMatchObject({ sender_id: SITTER.id, card: { type: "meet_greet_update", event: "agreed" } });
 
@@ -1105,11 +1105,11 @@ test.describe("chat hub", () => {
     await expect(page).toHaveURL(/\/owner$/);
     screen = app(page);
     await screen.getByRole("tab").getByText("Chat", { exact: true }).click();
-    await expect(screen.getByTestId("chat-row-Chloe")).toContainText("Meet & Greet update");
+    await expect(screen.getByTestId("chat-row-Chloe")).toContainText("Meet update");
     await expect(screen.getByTestId("chat-unread-Chloe")).toBeVisible();
     await screen.getByTestId("chat-row-Chloe").click();
-    await expect(screen.getByTestId("chat-mg-update").last()).toContainText("Chloe accepted the Meet & Greet");
-    await expect(screen.getByTestId("meet-greet")).toContainText("Meet & Greet set");
+    await expect(screen.getByTestId("chat-mg-update").last()).toContainText("Chloe agreed to meet");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Meet set");
     expect(db.chat_messages.filter((m) => (m.card as { type?: string } | null)?.type === "meet_greet")).toHaveLength(1);
   });
 

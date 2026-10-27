@@ -10,6 +10,7 @@ import { SessionProvider } from "../providers/SessionProvider";
 import { TripProvider } from "../providers/TripProvider";
 import { ErrorDialogProvider } from "../providers/ErrorDialogProvider";
 import { headerOptions } from "../components/RoleTabs";
+import { useDiaryFont } from "../features/snap/DecoratedReport";
 import { ThemeProvider, useTheme } from "../providers/ThemeProvider";
 import { ToastProvider } from "../providers/ToastProvider";
 
@@ -43,6 +44,8 @@ export default function RootLayout() {
 
 /** Shared screens (profile, settings, chat, ...) get the same header as the role stacks. */
 function RootStack() {
+  // The Diary handwriting loads with the app, so a page never draws in the fallback font first (diary audit, Oct 27).
+  useDiaryFont();
   const theme = useTheme();
 
   // Keyboard focus ring colour for public/index.html's :focus-visible rule.

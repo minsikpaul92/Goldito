@@ -105,8 +105,12 @@ test.describe("snap mood", () => {
     // The picture with its boxes sits inside the phone frame (the table below it scrolls).
     expect(isInside(await box(screen.getByTestId("mood-image")), await box(page.locator(APP_FRAME)))).toBe(true);
     await expect(screen.getByTestId("mood-summary")).toHaveText("This pup looks excited to play.");
-    await expect(screen.locator('[data-testid^="mood-row-"]')).toHaveCount(8);
+    await expect(screen.getByTestId("mood-face")).toHaveAttribute("aria-label", "Pet 1 looks excited");
+    // The answer first: the top three bars, the rest behind See all.
+    await expect(screen.locator('[data-testid^="mood-row-"]')).toHaveCount(3);
     await expect(screen.getByTestId("mood-value-excited")).toHaveText("60%");
+    await screen.getByTestId("mood-more").click();
+    await expect(screen.locator('[data-testid^="mood-row-"]')).toHaveCount(8);
 
     // Click the other dog's box → its table; the tab brings the first back.
     await screen.getByTestId("mood-box-1").click();
@@ -129,6 +133,10 @@ test.describe("snap mood", () => {
     await pick(page, "mood_tongue");
     await expect(screen.getByTestId("mood-summary")).toHaveText("Max seems happy and a little relaxed.");
     expect(asked[0].pet_id).toBe(MAX);
+    await expect(screen.getByTestId("mood-face")).toHaveAttribute("aria-label", "Max looks happy");
+    // One pet: the photo is a thumbnail beside the answer; a tap shows it with its box.
+    await expect(screen.getByTestId("mood-box-0")).toHaveCount(0);
+    await screen.getByTestId("mood-photo").click();
     await expect(screen.getByTestId("mood-box-0")).toContainText("Max");
   });
 

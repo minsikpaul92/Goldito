@@ -7,5 +7,10 @@ export type TripMapProps = {
   dest: LatLng | null;
   /** What the traveller's pin says, e.g. "Chloe". */
   travelerLabel: string;
+  /** The name on the place pin, e.g. "Chloe's place". */
+  destLabel?: string;
+  /** Edge to edge with no frame (the top of the Trip screen); otherwise a framed box inside the page. */
+  flush?: boolean;
+  height?: number;
   testID?: string;
 };

@@ -2,17 +2,22 @@ import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { PetMoodFace } from "../../components/pet/PetMoodFace";
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { Screen } from "../../components/ui/Screen";
+import { Sheet } from "../../components/ui/Sheet";
+import { TextButton } from "../../components/ui/TextButton";
 import { ApiError } from "../../lib/api";
 import { pickMedia } from "../../lib/media";
+import { EMOTION_FACE } from "../pets/sprites/moodFaces";
+import { usePetLook } from "../pets/usePetLook";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { EMOTIONS, Emotion, MoodFrame, MoodResult, readMood } from "./moodApi";
-import { PetChips, PetsState, Role, SnapPets } from "./SnapPets";
+import { PetChips, PetOption, PetsState, Role, SnapPets } from "./SnapPets";
 import { PetBox, cropPet, detectPets, loadFrames } from "./vision";
 
 type Step = "preparing" | "finding" | "reading";
@@ -27,15 +32,18 @@ const PETS_IN_CLIP = 2;
 const pct = (fraction: number): `${number}%` => `${fraction * 100}%`;
 
 const LABELS: Record<Emotion, string> = {
-  happy: "😊 Happy",
-  relaxed: "😌 Relaxed",
-  excited: "🤩 Excited",
-  curious: "🧐 Curious",
-  sleepy: "😴 Sleepy",
-  anxious: "😟 Anxious",
-  angry: "😠 Angry",
-  sad: "😢 Sad",
+  happy: "Happy",
+  relaxed: "Relaxed",
+  excited: "Excited",
+  curious: "Curious",
+  sleepy: "Sleepy",
+  anxious: "Anxious",
+  angry: "Angry",
+  sad: "Sad",
 };
+
+/** The bars shown before See all (Oct 27 call: the answer first). */
+const TOP_ROWS = 3;
 
 const BUSY: Record<Step, string> = {
   preparing: "Getting your photo ready…",
@@ -45,8 +53,11 @@ const BUSY: Record<Step, string> = {
 
 /**
  * Snap → Mood (Phase 12.2b, D61 — for fun only): pick a photo or a short clip → MediaPipe boxes each pet in the
- * browser → the crops go to `POST /api/ai/pet-mood` → a box per pet on the picture and an eight-emotion table
- * (server percentages, sum 100). A clip uses four frames and shows the most typical one. Nothing is saved.
+ * browser → the crops go to `POST /api/ai/pet-mood` → the answer first (Oct 27 call, design site `collab-1027` item 3
+ * P1): the pet's tamagotchi face for its top mood with the one-line summary and the photo as a thumbnail, then the top
+ * three of the eight emotions (server percentages, sum 100), the rest behind See all. With more than one pet the
+ * picture stays big, a box per pet, so you can tell them apart. A clip uses four frames and shows the most typical
+ * one. Nothing is saved.
  */
 export function MoodScreen({ role }: { role: Role }) {
   if (Platform.OS !== "web") {
@@ -140,7 +151,7 @@ function Mood({ role, pets }: { role: Role; pets: PetsState }) {
   if (pets.status === "loading") return <LoadingView />;
 
   const petList = pets.status === "ready" ? pets.pets : [];
-  const named = petList.find((p) => p.id === petId)?.name ?? null;
+  const namedPet = petList.find((p) => p.id === petId) ?? null;
 
   return (
     <Screen contentStyle={styles.content} testID="mood">
@@ -173,10 +184,11 @@ function Mood({ role, pets }: { role: Role; pets: PetsState }) {
         </Text>
       ) : null}
 
-      {shown && !step ? <MoodResultView shown={shown} selected={selected} onSelect={setSelected} name={named} /> : null}
+      {shown && !step ? <MoodResultView shown={shown} selected={selected} onSelect={setSelected} pet={namedPet} petList={petList} /> : null}
 
       <Button
         label={shown || noPet ? "Try another photo" : "Pick a photo or clip"}
+        variant={shown ? "secondary" : "primary"}
         onPress={() => void analyze()}
         disabled={!!step}
         testID="mood-pick"
@@ -193,46 +205,59 @@ function MoodResultView({
   shown,
   selected,
   onSelect,
-  name,
+  pet: named,
+  petList,
 }: {
   shown: Shown;
   selected: number;
   onSelect: (index: number) => void;
-  name: string | null;
+  /** The pet the photo was named for, if any. */
+  pet: PetOption | null;
+  petList: PetOption[];
 }) {
   const styles = useThemedStyles(makeStyles);
+  const [all, setAll] = useState(false);
+  const [photoOpen, setPhotoOpen] = useState(false);
+  const { breed, look } = usePetLook(named?.id ?? null);
   const { pets } = shown.result;
   const pet = pets[Math.min(selected, pets.length - 1)];
   const many = pets.length > 1;
   const rows = [...EMOTIONS].sort((a, b) => pet.emotions[b] - pet.emotions[a]);
-  const tag = (index: number) => (many ? `Pet ${index + 1}` : (name ?? "Your pet"));
+  const tag = (index: number) => (many ? `Pet ${index + 1}` : (named?.name ?? "Your pet"));
+  // An unnamed pet takes the face of the kind of pet the person has (a dog when they have both or none).
+  const species = named?.species ?? (petList.length > 0 && petList.every((p) => p.species === "cat") ? "cat" : "dog");
+  const facePet = { name: many ? tag(selected) : (named?.name ?? "Your pet"), species, breed: named ? breed : null, look: named ? look : null };
+
+  // The frame the server picked for this pet, with every pet's box that is on it.
+  const picture = (
+    <View style={[styles.picture, { aspectRatio: shown.aspects[pet.frame] ?? 1 }]}>
+      <Image source={{ uri: shown.images[pet.frame] }} style={StyleSheet.absoluteFill} resizeMode="cover" testID="mood-image" />
+      {pets.map((p, index) =>
+        p.frame === pet.frame ? (
+          <Pressable
+            key={index}
+            accessibilityRole="button"
+            accessibilityLabel={`${tag(index)}: ${p.top}`}
+            onPress={() => onSelect(index)}
+            style={[
+              styles.box,
+              index === selected && styles.boxSelected,
+              { left: pct(p.box.x), top: pct(p.box.y), width: pct(p.box.w), height: pct(p.box.h) },
+            ]}
+            testID={`mood-box-${index}`}
+          >
+            <Text style={[styles.boxTag, index === selected && styles.boxTagSelected]}>
+              {tag(index)} · {p.emotions[p.top]}% {LABELS[p.top].toLowerCase()}
+            </Text>
+          </Pressable>
+        ) : null,
+      )}
+    </View>
+  );
 
   return (
     <View style={styles.section} testID="mood-result">
-      {/* The frame the server picked for this pet, with every pet's box that is on it. */}
-      <View style={[styles.picture, { aspectRatio: shown.aspects[pet.frame] ?? 1 }]}>
-        <Image source={{ uri: shown.images[pet.frame] }} style={StyleSheet.absoluteFill} resizeMode="cover" testID="mood-image" />
-        {pets.map((p, index) =>
-          p.frame === pet.frame ? (
-            <Pressable
-              key={index}
-              accessibilityRole="button"
-              accessibilityLabel={`${tag(index)}: ${p.top}`}
-              onPress={() => onSelect(index)}
-              style={[
-                styles.box,
-                index === selected && styles.boxSelected,
-                { left: pct(p.box.x), top: pct(p.box.y), width: pct(p.box.w), height: pct(p.box.h) },
-              ]}
-              testID={`mood-box-${index}`}
-            >
-              <Text style={[styles.boxTag, index === selected && styles.boxTagSelected]}>
-                {tag(index)} · {p.emotions[p.top]}% {LABELS[p.top].split(" ")[1].toLowerCase()}
-              </Text>
-            </Pressable>
-          ) : null,
-        )}
-      </View>
+      {many ? picture : null}
 
       {many ? (
         <View style={styles.tabs}>
@@ -253,9 +278,31 @@ function MoodResultView({
         </View>
       ) : null}
 
-      <Text style={styles.summary} testID="mood-summary">
-        {pet.summary}
-      </Text>
+      <View style={styles.hero} testID="mood-hero">
+        <PetMoodFace pet={facePet} mood={EMOTION_FACE[pet.top] ?? "idle"} label={LABELS[pet.top]} size={72} testID="mood-face" />
+        <View style={styles.heroText}>
+          <Text style={styles.summary} testID="mood-summary">
+            {pet.summary}
+          </Text>
+          <Text style={styles.note}>{`${pet.emotions[pet.top]}% ${LABELS[pet.top].toLowerCase()}`}</Text>
+        </View>
+        {many ? null : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="See the photo"
+            onPress={() => setPhotoOpen(true)}
+            style={({ pressed }) => [styles.thumb, pressed && styles.pressed]}
+            testID="mood-photo"
+          >
+            <Image source={{ uri: shown.images[pet.frame] }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityIgnoresInvertColors />
+          </Pressable>
+        )}
+      </View>
+      {many ? null : (
+        <Sheet visible={photoOpen} title="Photo" onClose={() => setPhotoOpen(false)} testID="mood-photo-view">
+          {picture}
+        </Sheet>
+      )}
       {pet.frames_used > 1 ? (
         <Text style={styles.note} testID="mood-frames">
           Average of {pet.frames_used} frames from the clip
@@ -263,7 +310,7 @@ function MoodResultView({
       ) : null}
 
       <View style={styles.table} testID="mood-table">
-        {rows.map((emotion) => {
+        {(all ? rows : rows.slice(0, TOP_ROWS)).map((emotion) => {
           const top = emotion === pet.top;
           return (
             <View key={emotion} style={styles.row} testID={`mood-row-${emotion}`}>
@@ -277,6 +324,12 @@ function MoodResultView({
             </View>
           );
         })}
+        <TextButton
+          label={all ? "Show the top 3" : `See all ${rows.length}`}
+          onPress={() => setAll((v) => !v)}
+          style={styles.more}
+          testID="mood-more"
+        />
       </View>
     </View>
   );
@@ -329,7 +382,20 @@ const makeStyles = (theme: Theme) =>
     },
     tabSelected: { borderColor: theme.color.primary, backgroundColor: theme.color.accent },
     tabLabel: { fontSize: theme.fontSize.small, color: theme.color.text },
-    summary: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    // The answer first: the face, the line, the photo small.
+    hero: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
+      padding: theme.spacing.md,
+      borderRadius: theme.radius.lg,
+      backgroundColor: theme.color.accent,
+    },
+    heroText: { flex: 1, minWidth: 0, gap: 2 },
+    thumb: { width: 56, height: 56, flexShrink: 0, overflow: "hidden", borderRadius: theme.radius.md, backgroundColor: theme.color.border },
+    pressed: { opacity: 0.6 },
+    more: { alignSelf: "center" },
+    summary: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     note: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     table: {
       gap: theme.spacing.xs,

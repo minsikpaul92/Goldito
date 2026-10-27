@@ -29,7 +29,7 @@ const EMPTY: Record<Bucket, { emoji: string; title: string; message: string }> =
   in_progress: {
     emoji: "🐾",
     title: "Nothing in progress",
-    message: "Meet & Greets, agreements and the stay itself show here.",
+    message: "Meets, agreements and the stay itself show here.",
   },
   upcoming: {
     emoji: "📅",

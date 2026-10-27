@@ -102,7 +102,7 @@ function firstSlot(detail: string | null): string | null {
 function actionError(error: unknown, owner: string): string {
   if (!(error instanceof BookingError)) return (error as Error).message;
   if (error.code === "handoff_pending") return `Waiting for ${owner} to confirm the new time.`;
-  if (error.code === "meet_greet_required") return `Meet ${owner} first, or agree to skip the Meet & Greet.`;
+  if (error.code === "meet_greet_required") return `Meet ${owner} first, or agree to skip the meet.`;
   if (error.code === "interest_required") return "Tap Next to hold these dates first.";
   if (error.code === "handoff_completed") return "That handoff already happened.";
   if (error.code === "sitter_unavailable") {
@@ -212,7 +212,7 @@ export default function SitterBookingDetail() {
     : requestExpired(booking)
       ? "The pick-up time has passed."
       : meetFirst
-        ? `Meet ${owner} first, or agree to skip the Meet & Greet.`
+        ? `Meet ${owner} first, or agree to skip the meet.`
         : null;
   // Received opens 2 h before the agreed drop-off (complete_handoff, 003).
   const checkInFrom = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
