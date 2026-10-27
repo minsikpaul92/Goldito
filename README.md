@@ -166,6 +166,10 @@ Tap a stage for the details.
 - **5-second check:** in the evening Goldito suggests chips from the day's check-ins and from up to two photos (MiniCPM-V 4.5 reads them): Meal · Potty · Walk 20 min · Meds · 🐿️ Squirrel at the park. The sitter turns off anything wrong and adds a short line if they want. **Nemotron 3 Super writes the daily note** in the sitter's voice from only those facts, and it is posted once the sitter approves it.
 - **Album and diary:** every photo gets an AI caption and is sorted into Meals · Walks · Naps · Play by day. Daily notes form a diary that both sides can decorate with pet stickers.
 
+**Care, played like a game.** The sitter taps **Feed**, **Walk**, **Poop**, or **Nap** on the pet's 8-bit room. The pet acts it out, its mood changes, and the owner is told right away, so a care update feels like play instead of a chore.
+
+<img src="docs/assets/readme/care-room.gif" alt="The sitter taps Feed, Walk, Poop, and Nap on Biscuit's 8-bit room; the pet eats, walks, and sleeps, its mood changes, and each tap tells the owner" width="320">
+
 <img src="docs/assets/readme/care-checkin.gif" alt="The sitter taps check-ins and adds a photo for Biscuit while the owner's Home updates live: meals, potty, walks, and mood" width="560">
 
 <img src="docs/assets/readme/diary-page.gif" alt="The sitter writes the diary page from the day's chips and photo, adds stickers, and sends it to the owner" width="320">
