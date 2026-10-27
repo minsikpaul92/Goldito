@@ -972,12 +972,21 @@ function handleChat(route: Route, fn: string, users: MockUser[], db: MockDb, me:
     ]);
   }
 
-  // list_my_chats
+  // list_my_chats (015w): count and preview only what the chat draws (chat_message_shown).
+  const shown = (m: Row): boolean => {
+    if (m.kind !== "card") return true;
+    const card = m.card as Row;
+    const b = db.bookings.find((x) => x.id === card.booking_id);
+    if (["stay", "quote", "meet_greet_update"].includes(String(card.type))) return true;
+    if (card.type === "meet_greet") return !!b && !(b.meet_greet_status === "required" && !b.sitter_interest_at);
+    if (card.type === "agreement" || card.type === "payment") return !!b;
+    return false;
+  };
   const rows = db.chat_threads
     .filter(mine)
     .flatMap((t) => {
       const all = messagesOf(t);
-      const last = all.at(-1);
+      const last = all.filter(shown).at(-1) ?? all.at(-1);
       const left = t[`${side(t)}_left_at`] as string | null;
       if (!last || (left && String(last.created_at) <= left)) return [];
       const read = t[`${side(t)}_read_at`] as string | null;
@@ -991,7 +1000,7 @@ function handleChat(route: Route, fn: string, users: MockUser[], db: MockDb, me:
           last_body: last.body,
           last_card_type: last.kind === "card" ? (last.card as Row).type : null,
           last_at: last.created_at,
-          unread_count: all.filter((m) => m.sender_id !== me && (!read || String(m.created_at) > read)).length,
+          unread_count: all.filter((m) => m.sender_id != null && m.sender_id !== me && (!read || String(m.created_at) > read) && shown(m)).length,
         },
       ];
     })
