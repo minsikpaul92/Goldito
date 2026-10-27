@@ -3043,7 +3043,7 @@ function renderHomeDynamic(){
     meds.length ? `💊 Meds ${meds.filter(t => t.done).length}/${meds.length}` : null,
     next ? `${next.icon} Next: ${next.title} · ${next.time}` : `✅ All done today`,
   ].filter(Boolean);
-  // Today joins the streak once fed; an unfinished day never shows as broken (pet-status-room.ko.md §2).
+  // Today joins the streak once fed; an unfinished day never shows as broken.
   const streak = state.streakPriorDays + (lastMeal ? 1 : 0);
   $("#hudRow").innerHTML = chips.map(c => `<span class="hud-chip">${esc(c)}</span>`).join("")
     + (streak >= 2 ? `<span class="streak-chip${state._streak !== undefined && streak > state._streak ? " grew" : ""}">🔥 On time ${streak} days running</span>` : "");

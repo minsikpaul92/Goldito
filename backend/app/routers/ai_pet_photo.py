@@ -18,7 +18,7 @@ from app.services import nebius
 
 router = APIRouter(prefix="/api/ai", tags=["ai"], dependencies=[Depends(limits.ai_calls)])
 
-TIMEOUT_S = 20.0  # the app stops waiting after 15 s (docs/plan/pet-profile-onboarding.ko.md §7)
+TIMEOUT_S = 20.0  # the app stops waiting after 15 s
 
 
 class PetPhotoRequest(BaseModel):

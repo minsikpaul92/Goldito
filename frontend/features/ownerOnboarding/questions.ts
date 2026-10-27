@@ -1,7 +1,7 @@
 import type { Species } from "../../types/db";
 
 /**
- * The owner sign-up questions (11.15, #185). Wording follows docs/plan/pet-profile-onboarding.ko.md §4. Every chart
+ * The owner sign-up questions (11.15, #185). This file is the source of the wording (rules: DESIGN.md §7.6). Every chart
  * question has four options ordered from the weaker to the stronger side of its axis, so the position (1 to 4) is the
  * score. Nothing here is a behaviour assessment: the owner describes their pet, the app shows it back.
  */
@@ -184,7 +184,7 @@ export const CAT_QUESTIONS: ChartQuestion[] = [
   },
 ];
 
-/** Where the ideas for the questions come from (we wrote the questions ourselves; see docs/plan/pet-profile-onboarding.ko.md §4). */
+/** Where the ideas for the questions come from (we wrote the questions ourselves). */
 export const QUESTION_SOURCES: Record<Species, { label: string; url: string }[]> = {
   dog: [
     { label: "MCPQ-R, dog personality", url: "https://wellbeingintlstudiesrepository.org/person/9" },
