@@ -32,11 +32,9 @@ the server owns every fact, and a person approves every word.
 
 **What Goldito does.** One chat per owner and sitter carries the whole stay: inquiry, Meet & Greet, booking, the trip, daily care, and the ride home.
 
-| | |
-| :--- | :--- |
-| **No typing** | The sitter taps a chip and gets a reply in their own voice, taps a few check-ins and gets the evening note, snaps a photo and it is captioned and filed. Owners describe their pet with a photo and a few spoken sentences. |
-| **AI you can check** | Prices, dates, availability, and door codes come from the server, never from the model. Nemotron writes only from the facts it is handed, and **nothing is sent until a person taps Send**. |
-| **Memory that follows the pet** | Each stay becomes the pet's Life Record, so the next stay, even with a new sitter, starts already knowing the pet. |
+- **No typing.** The sitter taps a chip and gets a reply in their own voice, taps a few check-ins and gets the evening note, snaps a photo and it is captioned and filed. Owners describe their pet with a photo and a few spoken sentences.
+- **AI you can check.** Prices, dates, availability, and door codes come from the server, never from the model. Nemotron writes only from the facts it is handed, and **nothing is sent until a person taps Send**.
+- **Memory that follows the pet.** Each stay becomes the pet's Life Record, so the next stay, even with a new sitter, starts already knowing the pet.
 
 **AI is a tool here, not the sender.** Goldito never sends a message, a daily note, or a review on its own. A general chatbot cannot see the sitter's calendar, quote, or house rules, cannot be trusted with a lockbox code, and forgets the pet when the sitter changes. Here the facts come from the server, the words sound like the sitter, and the memory follows the pet.
 
@@ -212,7 +210,7 @@ Tap a stage for the details.
 
 - **Independent pet sitters and the owners they care for, starting in Canada** (consent forms, holidays, and the quote follow Ontario first).
 - **What a sitter gets back:** in our own work, about 30 minutes a day (40 minutes of messages, updates, reports, and schedule checks down to about 10, our estimate).
-- **How it pays (plan):** Goldito takes **no cut of the sitting fee**. The AI features come with a **subscription**, and optional extras are sold: **outfits for the 8-bit pet** and **sticker packs** for the diary.
+- **What an owner gets:** peace of mind for owners who feel uneasy leaving a pet. Updates and alerts arrive without asking, so the owner always knows how the pet is doing now. The sitter keeps checking the care checklist and the allergy check.
 <!-- TODO(Q8): what real owners and sitters said, once they have tried it. -->
 
 ---
