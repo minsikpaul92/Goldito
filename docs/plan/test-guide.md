@@ -3,7 +3,7 @@
 > **Who is this for?** People building the app together (Minsik · Seulgi · Muk) and people who test it.
 > **What does it tell you?** ① What is built now and what is not yet ② How to check it ③ The results of checking.
 > **When is it updated?** Every time one task is done, fix the status table and the scenarios **in the same commit** ([CLAUDE.md](../../CLAUDE.md) §5).
-> Product flow: [full-process.md](full-process.md). Task queue: [GitHub issues](https://github.com/minsikpaul92/Goldito/issues).
+> Product flow: [the README, How Goldito works](../../README.md#how-goldito-works). Task queue: [GitHub issues](https://github.com/minsikpaul92/Goldito/issues).
 
 **Last updated:** 2026-10-09 · #60 merged (fixes FLOW-13 to 23 · REPORT-11 to 12 · RV-6 to 10) · tests run on **main = Vercel** (§1.1) · Seulgi's QA track [Phase Q](phases/phase-q-quality.md) · Earlier: first manual test results (§3.0), code review scenarios (§3.17)
 
@@ -56,7 +56,7 @@ On the sign-in screen, **Try the demo** → the **Demo owner** / **Demo sitter**
 - Drop-off done (10/4), **pick-up planned 10/7 05:37 UTC (Toronto 10/7 1:37 AM)**.
 - So **right now Chloe is "in care"** → the tasks · check-ins on the sitter Home show.
 - ⚠️ **Once the pick-up time has passed**, the sitter-side scenarios (TASK · CHK) are blocked with "Tasks open once the stay has started" and similar. Then make a new booking and mark the drop-off done, or use the seed script (Phase 10, 10.1).
-- **The state depends on who did what last.** To reset to the start state you want (`empty` · `pets` · `confirmed` · `ready` · `in_care`), see [test-run.md](test-run.md) §1 (`backend/scripts/reset_demo.py`, dry run first, on Minsik's PC; after the backend is deployed, Profile → Demo tools in the app).
+- **The state depends on who did what last.** To reset to the start state you want (`empty` · `pets` · `confirmed` · `ready` · `in_care`), see test-run.md §1 (`backend/scripts/reset_demo.py`, dry run first, on Minsik's PC; after the backend is deployed, Profile → Demo tools in the app).
 
 ### 1.4 Data that tests leave behind
 
@@ -461,7 +461,7 @@ Feedback and fix ideas: the 2026-10-08 feedback (removed; in git history).
 | CAP-6 | Owner → Feed → **Timeline / Album** toggle | Timeline = cards, newest first. Album = 3 columns per category under date headers ("Oct 9, 2026"), **empty categories do not show**, counts like "Meals · 2". Tapping a photo opens the viewer | 🤖 `caption` | ➖ |
 | CAP-7 | Finish tasks (meal · walk · nap · play) with photos | In the owner Album, the photo goes into Meals · Walks · Naps · Play by the task kind | **👤** | ➖ |
 
-### 3.13 Completion · review · Life Record (DONE): Phase 07C · *Before: for the Life Record, backend + `NEBIUS_API_KEY`, and a booking whose care has ended (Returned); how to make one: [test-run.md](test-run.md) §2*
+### 3.13 Completion · review · Life Record (DONE): Phase 07C · *Before: for the Life Record, backend + `NEBIUS_API_KEY`, and a booking whose care has ended (Returned); how to make one: test-run.md §2*
 
 | ID | Steps | Expected result | Auto | Status |
 | :--- | :--- | :--- | :--- | :--- |

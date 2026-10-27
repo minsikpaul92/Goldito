@@ -47,7 +47,7 @@ Two developers, ~4 weeks. Build in this order (the 5 stages first); P2 only if t
 
 The old P2 "Private Q&A with AI first reply" is now the Stage 1 inquiry AI (07B, P0).
 
-Demo priority: the **5-stage flow** in the main README (*How Goldito Works*; demo path in `full-process.md` §6) must work end-to-end.
+Demo priority: the **5-stage flow** in the main README (*How Goldito Works*; see the README) must work end-to-end.
 
 ### Post-hackathon roadmap (not built for the hackathon)
 

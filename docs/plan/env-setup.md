@@ -2,7 +2,7 @@
 
 **Source of truth for variable names:** [phases/architecture.md §4](phases/architecture.md#4-환경-변수-마스터-목록)
 
-**Tavily:** [tavily.md](tavily.md) · **Model roles:** [phases/notes/model-ids.md](phases/notes/model-ids.md) · **Onboarding:** [onboarding.md](onboarding.md) · **Devpost:** the Devpost submission doc (removed; in git history)
+**Tavily:** tavily.md · **Model roles:** [phases/notes/model-ids.md](phases/notes/model-ids.md) · **Onboarding:** onboarding.md · **Devpost:** the Devpost submission doc (removed; in git history)
 
 ---
 
@@ -29,7 +29,7 @@ The code reads `.env` from Phase 1 on. **If you fill in the values now**, they c
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary dashboard Product Environment |
 | `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | API Keys |
 | `NEBIUS_API_KEY` | Nebius Token Factory (inference API) |
-| `TAVILY_API_KEY` | [Tavily](https://tavily.com) dashboard ([tavily.md](tavily.md)). Builders & Brews Toronto **8,000 credits** |
+| `TAVILY_API_KEY` | [Tavily](https://tavily.com) dashboard (tavily.md). Builders & Brews Toronto **8,000 credits** |
 
 ### Deployed backend: Render (U0, 2026-10-09)
 
@@ -76,7 +76,7 @@ After you change a value, check Render → Environment → Save → **Manual Dep
 
 ### Vercel (frontend deploy: 10.4 moved up to 2026-10-02)
 
-**Production address: https://goldito-petcare.vercel.app**. Manual tests always happen here, on `main` ([test-run.md](test-run.md) §0).
+**Production address: https://goldito-petcare.vercel.app**. Manual tests always happen here, on `main` (test-run.md §0).
 
 The build settings live in [`frontend/vercel.json`](../../frontend/vercel.json): `npm ci` → `npx expo export -p web` → `dist/`, every path → `index.html` (refresh and deep links), `Content-Security-Policy: frame-ancestors 'self'` (the desktop phone frame is a same-domain iframe, so no `X-Frame-Options: DENY`, D25).
 

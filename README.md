@@ -24,8 +24,6 @@ the server owns every fact, and a person approves every word.
 
 </div>
 
-> No sign-up: open the demo and tap **Try the demo**. The backend is on a free plan, so the first load after a quiet spell can take 30 to 50 seconds. On a computer the app runs in a phone frame (click = tap).
-
 ---
 
 ## Goldito in 30 seconds

@@ -19,9 +19,9 @@ Every feature must pass:
 
 **Product benchmark:** **Rover** (booking, fast replies) × Korean **Kidsnote** (medication request, check-in/out, daily report 알림장, album) × **Uber** (live trips). We adapt that loop for **dogs and cats** + **NVIDIA Nemotron** on **Nebius Token Factory**.
 
-**Product flow (source of truth):** `docs/plan/full-process.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D47).
+**Product flow (source of truth):** root `README.md` (*How Goldito works*) and `docs/plan/phases/architecture.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D47).
 
-**Demo north star:** The 5-stage flow in root `README.md` — *How Goldito Works* (demo path: `docs/plan/full-process.md` §6) — must work end-to-end before hackathon submit.
+**Demo north star:** The 5-stage flow in root `README.md` — *How Goldito Works* — must work end-to-end before hackathon submit.
 
 **Hackathon hard rules:** Runtime on Token Factory; at least one **NVIDIA open-source model (Nemotron)**; public repo + MIT; demo stays up until judging ends; no real PII in repo or prompts.
 
@@ -44,13 +44,12 @@ Every feature must pass:
 
 - Product: `README.md`
 - **Feature status + test scenarios:** `docs/plan/test-guide.md`
-- **Product flow (5 stages, demo path):** `docs/plan/full-process.md`
+- **Product flow (5 stages):** root `README.md` (*How Goldito works*), decisions D27 to D47 in `docs/plan/phases/architecture.md`
 - Plan & data model: `docs/plan/README.md`
 - **Active task queue:** [GitHub issues](https://github.com/minsikpaul92/Goldito/issues): milestone = priority (P0 hackathon, P1, P2 after hackathon), assignee = owner. There is no TODO file: do not create or update one, read the assigned issue and update the issue (comment, checklist, PR `Closes #N`).
 - **Blueprint (decisions, repo layout, routes, env, API contract):** `docs/plan/phases/architecture.md`
 - **Design guide (tokens, components, UI patterns):** `DESIGN.md` — §0 maps Muk's Figma (source of truth) to the code; every screen and button: the screen map (`node frontend/scripts/screen-map.mjs` writes `docs/design/screen-map.md`; generated, not committed)
 - Phase goals & DoD: `docs/plan/phases/` (see `README.md` index)
-- AI prompt snippets: `docs/plan/P0-ai-prompt-playbook.md`
 - Hackathon rules: `docs/hackathon/README.md`
 - Discord MCP (`.mcp.json`, token in `backend/.env`): QA channel `qa` = `1560683683072180224`
 
@@ -227,8 +226,6 @@ Work in steps (§4.1a): when a step's checks pass, update test-guide (§5), make
 Before opening the PR and again when the phase is done: update the PR body and `Closes #N` (§4.2, §5). Report after each step: the commit, how it was verified, and the next step.
 ```
 
-Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.md` §1.
-
 ---
 
 ## 7. P0 feature → phase map
@@ -276,10 +273,10 @@ Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; c
 
 - Public demo URL + test owner/sitter accounts documented
 - Root README Getting Started runs the project
-- Video path matches the demo path (5 stages, `docs/plan/full-process.md` §6)
+- Video path matches the 5 stages in the README (*How Goldito works*)
 - Feedback on Token Factory / Nemotron filled in README log
 - Design feels like a **product**, not a single API demo page
 
 ---
 
-*Last aligned with repo docs: phases 00–12 (incl. 03C · 06B · 07B · 07C · 12 Snap), full-process.md, P0 playbook, **D47 / D47b · D61 · D63** both roles Home · Bookings · Chat · Feed · Snap. If you change process, update this file together with the docs it names.*
+*Last aligned with repo docs: phases 00–12 (incl. 03C · 06B · 07B · 07C · 12 Snap), **D47 / D47b · D61 · D63** both roles Home · Bookings · Chat · Feed · Snap. If you change process, update this file together with the docs it names.*

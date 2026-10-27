@@ -4,7 +4,7 @@
 
 ## Goal
 
-So that judges and the team can reproduce all of "A Stay with Goldito" (the **5 stages (Inquiry → Meet & Greet → Booking → Care & Transit → Completion)** of [full-process.md](../full-process.md)) **within 15 minutes**, finish the **seed data**, the **public demo URL**, the **test accounts**, and the **root README run guide**, and finish the operations prep so **the demo stays up until judging ends on 12/15**. Login UX·Welcome·Try demo are in **[onboarding.md](../onboarding.md)** (linked with OB.3·OB.5).
+So that judges and the team can reproduce all of "A Stay with Goldito" (the **5 stages (Inquiry → Meet & Greet → Booking → Care & Transit → Completion)** of [the README, How Goldito works](../../../README.md#how-goldito-works)) **within 15 minutes**, finish the **seed data**, the **public demo URL**, the **test accounts**, and the **root README run guide**, and finish the operations prep so **the demo stays up until judging ends on 12/15**. Login UX·Welcome·Try demo are in **onboarding.md** (linked with OB.3·OB.5).
 
 ### Goal met when
 
@@ -36,7 +36,7 @@ So that judges and the team can reproduce all of "A Stay with Goldito" (the **5 
 
 ---
 
-## "A Stay with Goldito" demo script (Goal scenario: [full-process.md §6](../full-process.md#6-demo-path-a-stay-with-goldito))
+## "A Stay with Goldito" demo script (Goal scenario: [the README, How Goldito works](../../../README.md#how-goldito-works))
 
 | # | Stage | Action | Check (the other side's screen) | Phase |
 | :--- | :--- | :--- | :--- | :--- |
@@ -60,7 +60,7 @@ Recording and judging must work at any time → `seed_demo.py --relative`: the p
 | 10.2 | README | The root README already has the 5-stage flow structure (2026-10-01) + **The Goldito Agent** table (trigger → action → human approval, D46; the video narration uses the same wording). Right before deploy, **compare it with the features actually built** and delete what does not work or move it to "What's Next" (especially the 08 stretch). Getting Started (copy-paste commands, both Windows and mac), update the "How we use Nemotron" table with the real model·latency (07.1·07B metrics), architecture diagram, **5 screenshots, one per stage**. Update the backend/frontend READMEs |
 | 10.3 | Deploy backend | **Moved up to U0 and done (2026-10-09), Render free plan**, https://goldito-backend.onrender.com. The Render Web Service watches GitHub `main` and builds·deploys with `backend/Dockerfile` (Root Directory `backend`, Health Check `/health`), env in Render → Environment ([env-setup.md](../env-setup.md) § deployed backend). CI (`ci.yml`) builds the same image on every PR and checks `/health`. **Nebius AI Cloud is not used** (D18: card registration + $25 prepayment, no event credits, about $128 to keep it always on until 12/15; the record of the attempt is in [notes/nebius-ai-cloud-feedback.md](notes/nebius-ai-cloud-feedback.md)). AI inference stays on Token Factory |
 | 10.4 | Deploy frontend | **The Vercel connection was moved up to 2026-10-02**: Production **https://goldito-petcare.vercel.app** (auto deploy on every main merge; manual testing also happens here since 2026-10-09), `frontend/vercel.json` + [env-setup.md § Vercel](../env-setup.md). `EXPO_PUBLIC_API_URL` was filled in at U0. Left in 10.4: empty `EXPO_PUBLIC_DEMO_TOOLS` before judging · check the final production env. `npx expo export -p web` → `dist/` → Vercel (SPA rewrite `/(.*) → /index.html`), env `EXPO_PUBLIC_*` production values. Add the Vercel domain to backend `CORS_ORIGINS`. **CD:** Vercel GitHub integration: Root Directory `frontend`, Build `npx expo export -p web`, Output `dist`. A Preview URL for every PR, production on main merge. Allow Preview domains (`*.vercel.app`) in CORS with a regex, or use Preview only to check the UI without a staging backend. **The phone frame is a same-domain iframe**, so when adding security headers do not use `X-Frame-Options: DENY`; CSP is `frame-ancestors 'self'` (D25) |
-| 10.5 | Demo account doc | `docs/DEMO_ACCOUNTS.md`: URL, 2 emails; the password is not written in the repo, only in the **Devpost submission field** and the deploy env (`DEMO_PASSWORD` for the seed, `EXPO_PUBLIC_DEMO_PASSWORD` for Try demo: values only for the demo accounts, [onboarding.md](../onboarding.md)) (the repo says "see submission"), 5 lines of demo order |
+| 10.5 | Demo account doc | `docs/DEMO_ACCOUNTS.md`: URL, 2 emails; the password is not written in the repo, only in the **Devpost submission field** and the deploy env (`DEMO_PASSWORD` for the seed, `EXPO_PUBLIC_DEMO_PASSWORD` for Try demo: values only for the demo accounts, onboarding.md) (the repo says "see submission"), 5 lines of demo order |
 | 10.6 | Feedback log | README feedback table: Token Factory, AI Cloud (why we tried it and stopped: [notes/nebius-ai-cloud-feedback.md](notes/nebius-ai-cloud-feedback.md)), per Nemotron model (use / what worked / what to improve / onboarding / would use again): organize the notes collected in `notes/` during development |
 | 10.7 | Keep-up plan (to 12/15) | ⓪ **Keep Render from sleeping (2026-10-09):** Render free sleeps after 15 minutes with no requests and the first request then takes 30-50 seconds → `.github/workflows/keepalive.yml` hits `/health` **every 10 minutes** + **cron-job.org `Goldito Keepalive`** every 10 minutes (registered 2026-10-09). **Before deploying · testing · recording video, check that the ping is alive** (Actions run interval ≤ 15 minutes, response within 1 second) · ① Keep Supabase free from pausing: once a day on the same cron → backend `GET /health/deep` (runs Supabase `select 1`; keep `/health` light) ② Check the Cloudinary·Nebius credit balance once a week (one screenshot ≈ a cost sheet) ③ If demo account data gets dirty, `seed_demo.py --reset` |
 | 10.8 | Internal deadline 10/28 checklist | All of the DoD below + video upload (YouTube public, < 3 minutes, English voice) + Devpost draft |
@@ -147,4 +147,4 @@ Example (EN): *"Between stays, Goldito keeps the pet's story: a photo album, a d
 
 ## Next
 
-→ [Phase 11: P1 features](phase-11-p1.md) (only after the P0 demo works at the deploy URL)
+→ Phase 11: P1 features (only after the P0 demo works at the deploy URL)
