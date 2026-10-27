@@ -3,7 +3,7 @@ import type { Page } from "@playwright/test";
 
 import { caring, mockUpload } from "./careFixtures";
 import { HOUR } from "./careFixtures";
-import { NOON_TORONTO, app, box, drag, signIn } from "./helpers";
+import { NOON_TORONTO, TODAY_TORONTO, app, box, drag, signIn } from "./helpers";
 import { OWNER, SITTER, mockFeedApi, mockSupabase } from "./supabaseMock";
 import type { MockDb, MockUser } from "./supabaseMock";
 
@@ -529,6 +529,62 @@ test.describe("Notification center", () => {
     await screen.getByTestId("clear-all-confirm").click();
     await expect(screen.getByText("You're all caught up.")).toBeVisible();
     expect(db.notifications).toHaveLength(0);
+  });
+
+  test("day cards: notices grouped by day, no emoji, a day's check-ins of one pet fold into one row (Oct 27)", async ({ page }) => {
+    await page.clock.setFixedTime(NOON_TORONTO);
+    const { db } = await mockSupabase(page, [OWNER, SITTER], { now: NOON_TORONTO });
+    db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
+    const at = (min: number) => new Date(NOON_TORONTO.getTime() - min * 60_000).toISOString();
+    const notice = (id: string, type: string, title: string, min: number, read = false) =>
+      db.notifications.push({ id, user_id: OWNER.id, type, title, body: null, pet_id: PET_ID, booking_id: null, ref_id: null, read_at: read ? at(min) : null, created_at: at(min) });
+    notice("n-meal", "care_checkin", "Max ate everything 🍽️", 3);
+    notice("n-walk", "care_checkin", "Max had a 20-minute walk 🦮", 2);
+    notice("n-potty", "care_checkin", "Potty update for Max: normal 💩", 1);
+    notice("n-report", "report_sent", "Chloe sent Max's daily page 📔", 24 * 60, true);
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/owner/notifications");
+    const screen = app(page);
+
+    const fold = screen.locator("[data-testid^='notification-fold-']");
+    await expect(fold).toContainText("3 check-ins for Max");
+    await expect(fold).toContainText("Meal, walk 20 min, potty");
+    await expect(screen.getByTestId("notification-n-meal")).toHaveCount(0);
+    await fold.click();
+    await expect(screen.getByTestId("notification-n-meal")).toHaveText(/Max ate everything/);
+    await expect(screen.getByTestId("notification-n-meal")).not.toContainText("🍽");
+
+    const report = screen.getByTestId("notification-n-report");
+    await expect(report).toContainText("Read");
+    await expect(report).not.toContainText("📔");
+    // Day labels are set in capitals, so match them case-blind.
+    await expect(screen.getByText(/^yesterday$/i)).toBeVisible();
+    await expect(screen.getByTestId("notifications-center").getByText(/^today$/i)).toBeVisible();
+  });
+
+  test("a notice 1h old is under Today and one 26h old under Yesterday, each with its day of the stay", async ({ page }) => {
+    await page.clock.setFixedTime(NOON_TORONTO);
+    const { db } = await mockSupabase(page, [OWNER, SITTER], { now: NOON_TORONTO });
+    // Dropped off yesterday at noon, picked up in two days: four days with Chloe.
+    caring(db, [{ id: PET_ID, name: "Max", species: "dog" }], NOON_TORONTO);
+    const at = (hours: number) => new Date(NOON_TORONTO.getTime() - hours * HOUR).toISOString();
+    for (const [id, hours] of [["n-1h", 1], ["n-26h", 26]] as const) {
+      db.notifications.push({ id, user_id: OWNER.id, type: "feed_post", title: `New photo of Max ${id}`, body: null, pet_id: PET_ID, booking_id: null, ref_id: null, read_at: null, created_at: at(hours) });
+    }
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/owner/notifications");
+    const screen = app(page);
+
+    const today = screen.getByTestId(`notice-day-${TODAY_TORONTO}`);
+    await expect(today).toContainText(/today · day 2 of 4 with chloe/i);
+    await expect(today.getByTestId("notification-n-1h")).toContainText("1h ago");
+    const yesterday = screen.locator("[data-testid^='notice-day-']").nth(1);
+    await expect(yesterday).toContainText(/yesterday/i);
+    await expect(yesterday.getByTestId("notification-n-26h")).toBeVisible();
+    // The older card names the day, so its rows give the time of day instead of "26h ago".
+    await expect(yesterday.getByTestId("notification-n-26h")).toContainText("10:00 AM");
   });
 
   test("empty state", async ({ page }) => {
