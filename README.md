@@ -105,23 +105,27 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 
 What we used, what worked, and what got in the way, written down as it happened. Details and numbers: [model-ids.md](docs/plan/phases/notes/model-ids.md) · [nebius-ai-cloud-feedback.md](docs/plan/phases/notes/nebius-ai-cloud-feedback.md).
 
-<!-- TODO(submission): each section still needs one line in the team's own words on "would we build with it again, and why" (only AI Cloud has one). Do not invent it. -->
+<!-- TODO(submission): MiniCPM-V 4.5 and Qwen3 Embedding 8B still need one line in the team's own words on "would we build with it again, and why". Do not invent it. -->
 
 **Nebius Token Factory**
 - *Onboarding:* the catalog check and the first answers on the same day (2026-09-29): a Nano text call and a MiniCPM-V image call through the OpenAI SDK, with only the base URL and key changed.
 - *Worked:* one OpenAI-compatible API for chat, vision, and embeddings; `GET /v1/models` for scripted checks; JSON mode and tool calling (`tools` + `tool_choice="auto"`) on Nano and Super, about 0.9 s per call; base64 data URLs as image input.
 - *Got in the way:* NVIDIA's vision models are dedicated-endpoint only (about $48 to $113 a day to keep one up), so a hackathon app cannot use NVIDIA for vision on the shared API. No speech-to-text and no NVIDIA embedding model in the catalog. The two base URLs list different models (25 vs 18 on 2026-10-10). The catalog shows a "Fine-tuning" badge on Nemotron, but the model pages say fine-tuning is not available. External image URLs can fail, so we send data URLs.
+- *Again?* Yes. We met NVIDIA models through this hackathon and Token Factory, and we plan to use both in our next projects. On list prices (public price trackers, 2026-10-27), Nemotron 3 Nano costs about 80% less on input and 90% less on output than Gemini 3.5 Flash-Lite, and Super's output costs about 64% less. We have not run the other models ourselves; in our own tests every Nemotron model met the bar we set for its job.
 
 **NVIDIA Nemotron 3 Nano**
 - *Worked:* fast enough for extraction in the flow of a screen; inquiry drafts over a 2k-token fact sheet took 3.2 s at the median (embedding included).
 - *Got in the way:* with a small `max_tokens`, reasoning can fill the budget before any content (we use at least 64). In 20 and 50 message simulated chats its drafts repeated themselves, fell back to the chip's bare words, and made up details, so the chat moved to Super.
+- *Again?* Yes. It met the quality, speed, and JSON reliability we needed for its job, at a price that suits a small product. We will keep Nemotron as our default for text.
 
 **NVIDIA Nemotron 3 Super**
 - *Worked:* the writing people read. In the same chat simulations it had no draft fallbacks, and about 1 s per chip set or draft. Reliable JSON for checklists and Life Records.
 - *Got in the way:* in long chats it still invents small details (a park name, a litter brand), so numbers stay server-side and drafts are checked. Chips needed an explicit "under 30 characters, no digits" line.
+- *Again?* Yes. It met the quality, speed, and JSON reliability we needed for its job, at a price that suits a small product. We will keep Nemotron as our default for text.
 
 **NVIDIA Nemotron 3 Ultra**
 - *Worked:* the treat check verdict in about 2.7 s with thinking on and JSON mode, 614 completion tokens, keeping both hidden sources in our test label. We also used it to rate whole simulated chats when choosing the chat model.
+- *Again?* Yes. It met the quality, speed, and JSON reliability we needed for its job, at a price that suits a small product. We will keep Nemotron as our default for text.
 
 **MiniCPM-V 4.5** (OpenBMB, on Token Factory)
 - *Worked:* all four sample labels read right (product and every ingredient, in order) in 0.9 to 1.4 s; photo categories 8 of 9 right at about 1.2 s once the prompt explained what a meal and a nap look like.
