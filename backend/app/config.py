@@ -32,10 +32,10 @@ class Settings(BaseSettings):
     nebius_api_key: str | None = Field(default=None, alias="NEBIUS_API_KEY")
 
     model_vision: str = Field(
-        default="openbmb/MiniCPM-V-4_5", alias="MODEL_VISION"
+        default="nvidia/Nemotron-3.5-Super-VL", alias="MODEL_VISION"
     )
     model_vision_base_url: str = Field(
-        default="https://api.tokenfactory.us-central1.nebius.com/v1/",
+        default="https://api.tokenfactory.nebius.com/v1/",
         alias="MODEL_VISION_BASE_URL",
     )
     model_safety: str = Field(

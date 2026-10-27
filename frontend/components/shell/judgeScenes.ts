@@ -5,7 +5,7 @@ import type { Role } from "../../providers/SessionProvider";
  * The judge panel's scenes (#413), in story order. Each one resets the judge's set to `state` (null: keeps the stay),
  * opens `owner` and `sitter` on their phones (one phone shows the `lead` side), and outlines the control to tap.
  * Paths may hold `{booking}` (the set's latest booking) or be `{chat}` (the owner's chat with the set's sitter).
- * Tags name what really runs: Nemotron models (NVIDIA) apart from MiniCPM-V (OpenBMB), Qwen3, Groq Whisper and Tavily.
+ * Tags name what really runs: Nemotron models (NVIDIA) apart from Qwen3, Groq Whisper and Tavily.
  */
 
 export type SceneTarget = { path: string; highlight?: string };
@@ -33,7 +33,7 @@ export type Scene = {
 export const NANO: SceneTag = { label: "Nemotron Nano", nvidia: true };
 export const SUPER: SceneTag = { label: "Nemotron Super", nvidia: true };
 export const ULTRA: SceneTag = { label: "Nemotron Ultra", nvidia: true };
-export const MINICPM: SceneTag = { label: "MiniCPM-V" };
+export const VISION: SceneTag = { label: "Nemotron Super VL", nvidia: true };
 export const TAVILY: SceneTag = { label: "Tavily" };
 
 const SITTER_HOME: SceneTarget = { path: "/sitter" };
@@ -49,7 +49,7 @@ export const SCENES: Scene[] = [
     // Add pet is the sign-up questions for one pet (#367): voice, photo, breed and coat, then breed needs.
     owner: { path: "/owner-onboarding?add=1", highlight: "own-species-dog" },
     sitter: SITTER_HOME,
-    tags: [{ label: "Groq Whisper" }, NANO, MINICPM, TAVILY],
+    tags: [{ label: "Groq Whisper" }, NANO, VISION, TAVILY],
   },
   {
     key: "treat",
@@ -59,7 +59,7 @@ export const SCENES: Scene[] = [
     lead: "owner",
     owner: { path: "/owner/snap/treat", highlight: "treat-snap" },
     sitter: SITTER_HOME,
-    tags: [MINICPM, { label: "Rule table" }, TAVILY, ULTRA],
+    tags: [VISION, { label: "Rule table" }, TAVILY, ULTRA],
   },
   {
     key: "chat",
@@ -80,7 +80,7 @@ export const SCENES: Scene[] = [
     lead: "sitter",
     owner: OWNER_HOME,
     sitter: { path: "/sitter", highlight: "checkin-tiles" },
-    tags: [SUPER, MINICPM],
+    tags: [SUPER, VISION],
   },
   {
     key: "home",
@@ -100,7 +100,7 @@ export const SCENES: Scene[] = [
     lead: "owner",
     owner: { path: "/owner/snap/mood", highlight: "mood-pick" },
     sitter: SITTER_HOME,
-    tags: [MINICPM, NANO],
+    tags: [VISION, NANO],
     more: true,
   },
   {

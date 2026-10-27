@@ -35,7 +35,7 @@ Goldito's AI works like an agent: each event in a stay triggers it, it gathers f
 - **NVIDIA Nemotron 3 Nano** — fast inquiry replies in the sitter's tone
 - **NVIDIA Nemotron 3 Super** — care-request checklists, daily notes, Life Records
 - **NVIDIA Nemotron 3 Ultra** — treat-label safety reasoning (stretch)
-- **MiniCPM-V 4.5** — handoff photo checks, captions, album sorting
+- **NVIDIA Nemotron 3.5 Super VL** — treat labels, photo captions, album sorting, breed guess, mood tags
 - **Qwen3-Embedding-8B** — RAG retrieval (Supabase pgvector)
 
 We worked from a single product-flow document (the 5 stages), a phase-by-phase plan with a definition of done for each phase, ordered SQL migrations, and a hosted smoke test, so the demo path and the code stayed in sync. Prices come from a server-side quote function; the model only writes the sentences around them.
@@ -43,7 +43,7 @@ We worked from a single product-flow document (the 5 stages), a phase-by-phase p
 ## Challenges we ran into
 
 - **Keeping the AI honest.** A wrong price or date in a booking reply is worse than a slow reply. We moved quotes, availability, and entry codes entirely to the server, so the model only writes around facts it is handed, and the reply and checkout always show the same numbers.
-- **No NVIDIA vision model on the shared API.** Nemotron's vision models are dedicated-endpoint only, and keeping one running through judging would cost more than our credits. We kept Nemotron for reasoning and writing and used MiniCPM-V on the shared API for vision.
+- **Vision on the shared API.** Nemotron's first vision models were dedicated-endpoint only, and keeping one running through judging would cost more than our credits, so we started with MiniCPM-V. When Nemotron 3.5 Super VL reached the shared API we measured it on our own photos and moved to it; the one catch was its default thinking, which we switch off per call.
 - **Sounding like the sitter, not like an AI.** Owner-facing text has to read as the sitter's voice. We built a style layer from anonymized past conversations plus few-shot examples, and kept safety warnings, quotes, and consent forms as fixed text outside it.
 - **Secrets that unlock on time.** Lockbox codes must be visible to the right person only inside a time window, then lock again, with an access log and an owner notification. That put the logic in RLS and server rules, not the UI.
 - **Scope vs. a five-stage journey.** The first version was a daily-report app. Covering the whole stay meant ordering work so the core scenario came first and the stretch features (treat safety guard) only if time remained.
