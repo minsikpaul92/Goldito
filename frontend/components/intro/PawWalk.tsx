@@ -14,25 +14,37 @@ const HEIGHT = 160;
 
 /**
  * Four paw prints walking up, left and right in turn (design site: intro-trial.html, delights.html). The same walk
- * opens the app (Boot) and closes setup (Finish); each print pops in, then settles to a faint trail.
+ * opens the app (Boot) and closes setup (Finish); each print pops in, then settles to a faint trail. `loop` walks
+ * again and again (a wait of unknown length, e.g. the judge panel resetting the stay). A looping walk is a loading
+ * sign, so it keeps walking with Reduce motion on, as a fade only (no pop).
  */
-export function PawWalk({ testID }: { testID?: string }) {
+export function PawWalk({ testID, loop = false }: { testID?: string; loop?: boolean }) {
   const theme = useTheme();
   const reduce = useReduceMotion();
+  const pop = !reduce;
   const steps = useRef(Array.from({ length: PRINTS }, () => new Animated.Value(0))).current;
 
   useEffect(() => {
-    if (reduce) {
+    if (reduce && !loop) {
       steps.forEach((s) => s.setValue(1));
       return;
     }
-    const walk = Animated.stagger(
+    const once = Animated.stagger(
       140,
       steps.map((s) => Animated.timing(s, { toValue: 1, duration: 1200, easing: Easing.bezier(0.2, 0.8, 0.2, 1), useNativeDriver: false })),
     );
+    const walk = loop
+      ? Animated.loop(
+          Animated.sequence([
+            once,
+            Animated.delay(200),
+            Animated.parallel(steps.map((s) => Animated.timing(s, { toValue: 0, duration: 250, useNativeDriver: false }))),
+          ]),
+        )
+      : once;
     walk.start();
     return () => walk.stop();
-  }, [reduce, steps]);
+  }, [reduce, steps, loop]);
 
   return (
     <View style={styles.walk} aria-hidden testID={testID}>
@@ -49,7 +61,7 @@ export function PawWalk({ testID }: { testID?: string }) {
                 opacity: s.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 1, 0.4] }),
                 transform: [
                   { rotate: `${side * 8}deg` },
-                  { scale: s.interpolate({ inputRange: [0, 0.2, 0.4, 1], outputRange: [0.3, 1.15, 1, 1] }) },
+                  { scale: pop ? s.interpolate({ inputRange: [0, 0.2, 0.4, 1], outputRange: [0.3, 1.15, 1, 1] }) : 1 },
                 ],
               },
             ]}

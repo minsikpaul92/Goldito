@@ -35,19 +35,6 @@ test.describe("welcome", () => {
     await expect(screen.getByTestId("login-email")).toBeVisible();
   });
 
-  test("Try the demo picks who to be and signs in to that demo account", async ({ page }) => {
-    const demoOwner = { ...OWNER, email: "demo-owner@goldito.test", password: "e2e-demo-password" };
-    await mockSupabase(page, [demoOwner, SITTER]);
-    await page.goto("/welcome");
-    const screen = app(page);
-
-    await screen.getByTestId("welcome-demo").click();
-    await expect(screen.getByTestId("demo-sheet")).toContainText("Robert, the owner");
-    await expect(screen.getByTestId("demo-sheet")).toContainText("Chloe, the sitter");
-    await screen.getByTestId("demo-sheet-owner").click();
-    await expect(page).toHaveURL(/\/owner$/);
-  });
-
   test("How it works steps through three pages and ends on the demo and Create account", async ({ page }) => {
     await mockSupabase(page, [OWNER, SITTER]);
     await page.goto("/welcome");

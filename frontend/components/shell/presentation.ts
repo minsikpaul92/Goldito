@@ -8,6 +8,40 @@ export function readSplitRequest(search: string): boolean {
   return new URLSearchParams(search).get("view") === "split";
 }
 
+const JUDGE_START_KEY = "goldito-judge-start";
+
+/**
+ * Try the demo took this Judge seat (#411): the page around the phone opens both phones, the owner left and the sitter
+ * right. The seat goes by sessionStorage (shared with the phones, same origin), not the URL, so a reload after log out
+ * never signs in again.
+ */
+export function openJudgeSplit(set: string): void {
+  try {
+    window.sessionStorage.setItem(JUDGE_START_KEY, set);
+  } catch {
+    // No storage: both phones open at Log in, where the seat is already this browser's.
+  }
+  (window.top ?? window).location.assign("/?view=split");
+}
+
+/** The Judge seat Try the demo just took (see openJudgeSplit), or null. */
+export function readJudgeStart(): string | null {
+  try {
+    const set = window.sessionStorage.getItem(JUDGE_START_KEY);
+    return set && /^judge\d+$/.test(set) ? set : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearJudgeStart(): void {
+  try {
+    window.sessionStorage.removeItem(JUDGE_START_KEY);
+  } catch {
+    // Nothing stored.
+  }
+}
+
 export type FrameOverride = "on" | "off" | null;
 
 /** Primary input is a finger (phones, tablets). Mouse and trackpad report `fine`. */

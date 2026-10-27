@@ -37,7 +37,8 @@ test.describe("demo tools", () => {
 
     await screen.getByTestId("demo-reset-confirm").click();
     await expect(screen.getByTestId("toast")).toContainText("Demo reset: In care");
-    expect(requests).toEqual([{ state: "in_care" }]);
+    // Every reset also sends this browser's judge seat holder id; the server ignores it for team sets.
+    expect(requests).toEqual([{ state: "in_care", holder: expect.stringMatching(/^[0-9a-f-]{36}$/) }]);
     await expect(page).toHaveURL(/\/owner$/);
   });
 

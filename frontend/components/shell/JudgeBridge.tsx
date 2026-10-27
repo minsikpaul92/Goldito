@@ -7,20 +7,25 @@ import { DEMO_PASSWORD, demoSetFor } from "../../lib/demo";
 import { resetDemo } from "../../lib/demoReset";
 import { holderId } from "../../lib/judgeSeat";
 import { getSupabase, isSupabaseConfigured } from "../../lib/supabase";
-import { Role } from "../../providers/SessionProvider";
+import { Role, useSession } from "../../providers/SessionProvider";
 import { useTheme } from "../../providers/ThemeProvider";
 import { useTrip } from "../../providers/TripProvider";
 import {
   JUDGE_DONE,
+  JUDGE_PLAYED,
   JudgeCommand,
   JudgeDone,
+  JudgePlayed,
   isJudgeCommand,
   isJudgeSignInMessage,
 } from "./judgeMessages";
+import { ScriptStep, clearSignals, playScript, queueScript, stopScript, takeScript } from "./judgeScript";
 
 // Per phone: the two phones of the split view share one sessionStorage.
 const highlightKey = () => `goldito-judge-highlight:${window.name}`;
 const HIGHLIGHT_STYLE_ID = "goldito-judge-highlight";
+/** The wait before a failed reset tries once more. */
+const RESET_RETRY_MS = 1_500;
 
 /**
  * Inside a phone frame, the page around it drives this phone for the judge (#411, #413):
@@ -34,11 +39,26 @@ export function JudgeBridge() {
   const { simulate } = useTrip();
   const simulateRef = useRef(simulate);
   simulateRef.current = simulate;
+  const color = useRef(theme.color.primary);
+  color.current = theme.color.primary;
+  const { signOut } = useSession();
+  const signOutRef = useRef(signOut);
+  signOutRef.current = signOut;
 
   // The outline survives the full load that opened the screen; the next command replaces it.
   useEffect(() => {
     showHighlight(readHighlight(), theme.color.primary);
   }, [theme.color.primary]);
+
+  // A scene that plays itself: the steps the panel queued run once the screen it opened has loaded.
+  useEffect(() => {
+    if (typeof window === "undefined" || window.parent === window) return;
+    const queued = takeScript();
+    if (!queued) return;
+    showHighlight(null, theme.color.primary);
+    playAndTell(queued.steps, theme.color.primary, queued.pace);
+    // Once per load.
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined" || window.parent === window || !isSupabaseConfigured) return;
@@ -49,14 +69,45 @@ export function JudgeBridge() {
     const run = async (command: JudgeCommand) => {
       try {
         if (command.op === "reset") {
-          await resetDemo(command.state, holderId());
+          // The hosted database now and then times out building the stay; a reset is safe to run again, so one retry.
+          await resetDemo(command.state, holderId()).catch(async () => {
+            await new Promise((resolve) => setTimeout(resolve, RESET_RETRY_MS));
+            await resetDemo(command.state, holderId());
+          });
+          // Drafts and "seen" marks this browser kept for the old stay would show the last run again.
+          clearStayMemory();
           reply(command.id, true);
         } else if (command.op === "go") {
           await signInAs(command.set, command.role);
           const path = await resolvePath(command.path, command.role);
-          writeHighlight(command.highlight);
+          // Both phones open at once, before either plays, so the last scene's signals go here.
+          clearSignals();
+          writeHighlight(command.script ? null : command.highlight);
+          // A screen the script opens later may name the stay or the pet too ({booking}, {pet}): fill them in now.
+          const steps = command.script
+            ? await Promise.all(
+                command.script.map(async (step) =>
+                  "open" in step && step.open.includes("{") ? { open: await resolvePath(step.open, command.role) } : step,
+                ),
+              )
+            : null;
+          queueScript(steps ? { steps, pace: command.pace ?? 1 } : null);
           reply(command.id, true);
           window.location.replace(path);
+        } else if (command.op === "run") {
+          showHighlight(null, color.current);
+          reply(command.id, true);
+          playAndTell(command.script, color.current, command.pace ?? 1);
+        } else if (command.op === "logout") {
+          stopScript();
+          // Frees the seat (the other phone signs out with it), then answers, so the page can leave the split view.
+          await signOutRef.current().catch(() => undefined);
+          reply(command.id, true);
+          router.replace("/welcome");
+        } else if (command.op === "stop") {
+          stopScript();
+          showHighlight(null, color.current);
+          reply(command.id, true);
         } else {
           // One phone: the other side's part runs as the set's other account, then the phone comes back.
           const set = demoSetFor(command.set);
@@ -91,6 +142,37 @@ export function JudgeBridge() {
   }, []);
 
   return null;
+}
+
+/** Plays a scene's steps and tells the panel how it ended. */
+function playAndTell(steps: ScriptStep[], color: string, pace: number): void {
+  const tell = (played: Omit<JudgePlayed, "type" | "pane">) => {
+    const message: JudgePlayed = { type: JUDGE_PLAYED, pane: window.name, ...played };
+    window.parent.postMessage(message, window.location.origin);
+  };
+  playScript(steps, color, pace).then(
+    (end) => {
+      if (end === "done") tell({ ok: true });
+      else if (end === "stopped") tell({ ok: true, stopped: true });
+    },
+    (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Try Replay.";
+      tell(message === "stopped" ? { ok: true, stopped: true } : { ok: false, error: message });
+    },
+  );
+}
+
+/** What the app keeps in this browser per stay or per account: drafts (Add pet, care request, sitter sign-up), the
+ * simulated drive, packed / received / paid-seen marks, reminder snoozes. Not the session, the seat or settings. */
+const STAY_MEMORY = /^goldito(\.(ownerOnboarding|sitterOnboarding|careRequest|simdrive)\.|:(packed|received|paid-seen):|:due-snoozes$)/;
+
+function clearStayMemory(): void {
+  try {
+    const keys = Array.from({ length: window.localStorage.length }, (_, i) => window.localStorage.key(i) ?? "");
+    keys.filter((key) => STAY_MEMORY.test(key)).forEach((key) => window.localStorage.removeItem(key));
+  } catch {
+    // Storage blocked: nothing was kept either.
+  }
 }
 
 /** Signs this phone in to one account of a judge set; true when it changed account. */

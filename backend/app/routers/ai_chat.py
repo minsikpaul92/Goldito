@@ -519,6 +519,8 @@ def chat_yes(body: ChatYesRequest, user: CurrentUser = Depends(get_current_user)
             YesOut,
             endpoint="chat-yes",
             max_tokens=40,
+            # The chips' model: the yes is read right after a chip's draft is sent, and the plain fast model can be slow.
+            model=agent_for(ctx["role"]).chips_model(),
         )
         yes = bool(out.yes) and (out.confidence or 0) >= YES_MIN_CONFIDENCE
     except (nebius.AIUnavailable, nebius.AIInvalidOutput) as exc:

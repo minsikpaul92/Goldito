@@ -7,7 +7,7 @@ import {
   Fix,
   LatLng,
   LocationError,
-  buildSimulatedRoute,
+  buildRoadRoute,
   getCurrentPosition,
   offsetPoint,
   startLocationSource,
@@ -169,7 +169,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
         const from = args.from ?? { lat: 43.6532, lng: -79.3832 };
         const trip = await startTrip(args.bookingId, args.kind, true, from);
         const to = trip.dest_lat != null && trip.dest_lng != null ? { lat: trip.dest_lat, lng: trip.dest_lng } : offsetPoint(from, 2000, 90);
-        runDrive(trip, buildSimulatedRoute(from, to).slice(1), 0, args.otherName); // the first point went with Start trip
+        // Along real roads when the router answers; the first point went with Start trip.
+        runDrive(trip, (await buildRoadRoute(from, to)).slice(1), 0, args.otherName);
         return { started: true, trip, sharing: true };
       } catch (error) {
         if (error instanceof LocationError && error.reason === "denied") {

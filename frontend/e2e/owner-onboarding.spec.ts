@@ -521,12 +521,9 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-voice-text").fill("Pip is a 4 year old Maltese, about 13 pounds, allergic to chicken. He gets nervous with thunder.");
     await screen.getByTestId("own-voice-fill").click();
 
-    // One box per question, filled with what was heard, to fix.
-    await expect(screen.getByTestId("own-voice-breed")).toHaveValue("Maltese");
-    await expect(screen.getByTestId("own-voice-age")).toHaveValue("4");
-    // The weight keeps the unit said (#396).
-    await expect(screen.getByTestId("own-voice-weight")).toHaveValue("13 lbs");
-    await expect(screen.getByTestId("own-voice-allergies")).toHaveValue("chicken");
+    // One box per question, filled with what was heard, to fix. Breed, age, weight and foods have their own screens
+    // next, so they have no box here; what was heard for them still fills those screens.
+    for (const key of ["breed", "age", "weight", "allergies"]) await expect(screen.getByTestId(`own-voice-${key}`)).toHaveCount(0);
     await expect(screen.getByTestId("own-voice-personality")).toHaveValue("He is a sweet boy");
     await expect(screen.getByTestId("own-voice-careful")).toHaveValue("He gets nervous with thunder");
     await expect(screen.getByTestId("own-voice-loves")).toHaveValue("");
@@ -535,11 +532,10 @@ test.describe("owner onboarding", () => {
     // Only the safety questions go along: the personality chart is tapped, not spoken.
     expect(asked!.questions.map((q) => q.key)).toEqual(expect.arrayContaining(["s1", "s5"]));
     expect(asked!.questions.some((q) => /^[dc]\d+$/.test(q.key))).toBe(false);
-    await screen.getByTestId("own-voice-breed").fill("Maltese mix");
     await screen.getByTestId("own-voice-use").click();
 
-    // What the owner kept fills the next screens.
-    await expect(screen.getByTestId("own-breed")).toHaveValue("Maltese mix");
+    // What was heard fills the next screens.
+    await expect(screen.getByTestId("own-breed")).toHaveValue("Maltese");
     await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-skip").click(); // color
     await expect(screen.getByTestId("own-age-value")).toHaveText("4 years");
@@ -593,7 +589,7 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-save").click();
     await expect(page).toHaveURL(/\/owner$/);
     const pet = db.pets.find((p) => p.owner_id === OWNER.id)!;
-    expect(pet).toMatchObject({ breed: "Maltese mix", weight_kg: 5.9 });
+    expect(pet).toMatchObject({ breed: "Maltese", weight_kg: 5.9 });
     expect(pet.profile).toMatchObject({ safety: { s1: "once", s6: "listed" } });
     expect((pet.profile as { answers: Record<string, number> }).answers).toEqual({});
     expect(pet.notes).toBe("He is a sweet boy\nWatch out: He gets nervous with thunder");
@@ -648,7 +644,7 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-voice-text")).toHaveValue("Mochi hides from visitors.");
     await screen.getByTestId("own-voice-fill").click();
     await expect(screen.getByTestId("own-voice-error")).toContainText("answer the questions yourself");
-    await expect(screen.getByTestId("own-voice-breed")).toHaveValue("");
+    await expect(screen.getByTestId("own-voice-personality")).toHaveValue("");
     await screen.getByTestId("own-voice-personality").fill("Mochi hides from visitors.");
     await screen.getByTestId("own-voice-use").click();
     await expect(screen.getByTestId("own-step-breed")).toBeVisible();
@@ -678,19 +674,15 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-skip").click();
     // No microphone here: the questions come as empty boxes to type in.
     await expect(screen.getByTestId("own-mic")).toHaveCount(0);
-    await expect(screen.getByTestId("own-voice-breed")).toHaveValue("");
-    await screen.getByTestId("own-voice-breed").fill("Siamese");
-    await screen.getByTestId("own-voice-age").fill("3 years");
-    await screen.getByTestId("own-voice-allergies").fill("Fish, Dairy");
+    await expect(screen.getByTestId("own-voice-breed")).toHaveCount(0);
     await screen.getByTestId("own-voice-personality").fill("Mochi hides from visitors.");
     await screen.getByTestId("own-voice-use").click();
-    // Typed answers need no reading: nothing was sent to the model.
-    await expect(screen.getByTestId("own-breed")).toHaveValue("Siamese");
+    // Typed answers need no reading: nothing was sent to the model. Breed is asked on its own screen.
     expect(readCalls).toBe(0);
+    await screen.getByTestId("own-breed").fill("Siamese");
     await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-skip").click(); // color
-    await expect(screen.getByTestId("own-age-value")).toHaveText("3 years");
-    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-next").click(); // age
     await screen.getByTestId("own-skip").click(); // weight
     await expect(screen.getByTestId("own-pet-intro")).toHaveValue("Mochi hides from visitors.");
   });

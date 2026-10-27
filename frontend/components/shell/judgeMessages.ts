@@ -1,5 +1,6 @@
 import type { DemoState } from "../../lib/demoReset";
 import type { Role } from "../../providers/SessionProvider";
+import type { ScriptStep } from "./judgeScript";
 
 /**
  * Judge seats (#411) between the app inside a phone frame and the page around it. Same origin only.
@@ -52,10 +53,36 @@ export const JUDGE_DONE = "goldito:judge-done";
 
 export type JudgeCommand =
   | { type: typeof JUDGE_COMMAND; id: string; op: "reset"; state: DemoState }
-  | { type: typeof JUDGE_COMMAND; id: string; op: "go"; set: string; role: Role; path: string; highlight: string | null }
-  | { type: typeof JUDGE_COMMAND; id: string; op: "play"; set: string; what: "reply" | "drive"; role: Role };
+  | {
+      type: typeof JUDGE_COMMAND;
+      id: string;
+      op: "go";
+      set: string;
+      role: Role;
+      path: string;
+      highlight: string | null;
+      /** Taps and typing the phone plays by itself once the screen is open (judgeScript); `pace` 2 is half speed. */
+      script: ScriptStep[] | null;
+      pace?: number;
+    }
+  | { type: typeof JUDGE_COMMAND; id: string; op: "play"; set: string; what: "reply" | "drive"; role: Role }
+  /** Play steps on the screen that is open now (the second phone of a scene, after the first). */
+  | { type: typeof JUDGE_COMMAND; id: string; op: "run"; script: ScriptStep[]; pace?: number }
+  /** Stop the steps playing now; the judge carries on by hand. */
+  | { type: typeof JUDGE_COMMAND; id: string; op: "stop" }
+  /** Log out (the seat frees for the next judge) and go to Welcome. */
+  | { type: typeof JUDGE_COMMAND; id: string; op: "logout" };
 
 export type JudgeDone = { type: typeof JUDGE_DONE; id: string; ok: boolean; error?: string };
+
+/** A phone finished playing a scene's script (after the full load that opened its screen). */
+export const JUDGE_PLAYED = "goldito:judge-played";
+
+export type JudgePlayed = { type: typeof JUDGE_PLAYED; pane: string; ok: boolean; stopped?: boolean; error?: string };
+
+export function isJudgePlayed(data: unknown): data is JudgePlayed {
+  return typed(data, JUDGE_PLAYED);
+}
 
 export function isJudgeCommand(data: unknown): data is JudgeCommand {
   return typed(data, JUDGE_COMMAND);

@@ -40,14 +40,14 @@ const DAILY: DemoSample[] = [
 ];
 
 // Expected with the seeded pets: DANGER for Max (chicken), WARNING for Max (animal fat), SAFE, DANGER for Mochi (lily).
-// The last two follow real ingredient lists (no brand): WARNING for Max (meat meal, animal fat, British "flavour"), DANGER for Max (chicken, chicken liver).
+// Each name is the product name printed on its label. The last two follow real ingredient lists (no brand): WARNING for Max (meat meal, animal fat, British "flavour"), DANGER for Max (chicken, chicken liver).
 const LABELS: DemoSample[] = [
-  { id: "chicken_jerky", label: "Chicken jerky", source: require("../assets/demo/labels/chicken_jerky.jpg"), category: "treat", subjectName: "Treats" },
-  { id: "animal_fat_biscuit", label: "Biscuit", source: require("../assets/demo/labels/animal_fat_biscuit.jpg"), category: "treat", subjectName: "Treats" },
-  { id: "sweet_potato_chew", label: "Sweet potato", source: require("../assets/demo/labels/sweet_potato_chew.jpg"), category: "treat", subjectName: "Treats" },
-  { id: "lily_scented_cat_treat", label: "Cat treat", source: require("../assets/demo/labels/lily_scented_cat_treat.jpg"), category: "treat", subjectName: "Treats" },
-  { id: "meat_meal_biscuit", label: "Meat meal biscuit", source: require("../assets/demo/labels/meat_meal_biscuit.jpg"), category: "treat", subjectName: "Treats" },
-  { id: "chicken_kabob", label: "Chicken kabob", source: require("../assets/demo/labels/chicken_kabob.jpg"), category: "treat", subjectName: "Treats" },
+  { id: "chicken_jerky", label: "Tender Strips", source: require("../assets/demo/labels/chicken_jerky.jpg"), category: "treat", subjectName: "Treats" },
+  { id: "animal_fat_biscuit", label: "Crunchy Bites", source: require("../assets/demo/labels/animal_fat_biscuit.jpg"), category: "treat", subjectName: "Treats" },
+  { id: "sweet_potato_chew", label: "Garden Chews", source: require("../assets/demo/labels/sweet_potato_chew.jpg"), category: "treat", subjectName: "Treats" },
+  { id: "lily_scented_cat_treat", label: "Meadow Nibbles", source: require("../assets/demo/labels/lily_scented_cat_treat.jpg"), category: "treat", subjectName: "Treats" },
+  { id: "meat_meal_biscuit", label: "Meaty Bites", source: require("../assets/demo/labels/meat_meal_biscuit.jpg"), category: "treat", subjectName: "Treats" },
+  { id: "chicken_kabob", label: "Chicken Kabobs", source: require("../assets/demo/labels/chicken_kabob.jpg"), category: "treat", subjectName: "Treats" },
 ];
 
 // Snap → Mood (12.2): one look each — playing, happy, sleeping, watchful — and a clip for the four-frame average.

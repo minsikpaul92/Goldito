@@ -24,7 +24,8 @@ import {
   isDemoRole,
   isDemoToolsBuild,
 } from "../../lib/demo";
-import { SeatStatus, fetchSeats, isJudgeSetKey, takeSeat } from "../../lib/judgeSeat";
+import { isJudgeSetKey, takeSeat } from "../../lib/judgeSeat";
+import { useJudgeSeats } from "../../lib/useJudgeSeats";
 import { postJudgeSeat } from "../../components/shell/judgeMessages";
 import { Role, useSession } from "../../providers/SessionProvider";
 import {
@@ -51,7 +52,7 @@ export default function LoginScreen() {
     return isJudgeSetKey(params.set ?? "") ? JUDGES : demoSetFor(params.set).key;
   });
   const judging = team === JUDGES;
-  const seats = useSeats(isDemoEnabled && isSupabaseConfigured && judging);
+  const seats = useJudgeSeats(isDemoEnabled && isSupabaseConfigured && judging);
   const [seatPick, setSeatPick] = useState<string | null>(() => (isJudgeSetKey(params.set ?? "") ? params.set! : null));
   // The picked seat, or the first free one.
   const seatKey = seatPick ?? seats?.find((s) => s.mine)?.set ?? seats?.find((s) => !s.inUse)?.set ?? null;
@@ -254,29 +255,6 @@ export default function LoginScreen() {
 
 const JUDGES = "judges";
 const BUSY = "All judge seats are busy. Try again in a few minutes.";
-const SEATS_POLL_MS = 15_000;
-
-/** The Judge seats and who holds them, read again every 15 seconds while the picker shows. Null until the first read. */
-function useSeats(on: boolean): SeatStatus[] | null {
-  const [seats, setSeats] = useState<SeatStatus[] | null>(null);
-  useEffect(() => {
-    if (!on) return;
-    let active = true;
-    const read = () =>
-      fetchSeats().then(
-        (next) => active && setSeats(next),
-        // Seats unknown (no 015t yet, offline): show every seat as free; taking one still asks the server.
-        () => active && setSeats(JUDGE_SETS.map((set) => ({ set: set.key, inUse: false, mine: false }))),
-      );
-    void read();
-    const timer = setInterval(read, SEATS_POLL_MS);
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
-  }, [on]);
-  return seats;
-}
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
