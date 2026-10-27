@@ -1011,7 +1011,13 @@ test.describe("Edit a photo", () => {
     await screen.getByTestId("feed-pet").click();
     const menu = await box(screen.getByTestId("feed-pet-menu"));
     expect(menu.y).toBeCloseTo(pill.y + pill.height + 4, 0);
-    expect(menu.x).toBeCloseTo(pill.x, 0);
+    // Lined up with one edge of the button, and inside the phone: a button near the right edge opens it leftward.
+    const phone = await box(page.locator('iframe[title="Goldito app"]'));
+    const leftAligned = Math.abs(menu.x - pill.x) < 1;
+    const rightAligned = Math.abs(menu.x + menu.width - (pill.x + pill.width)) < 1;
+    expect(leftAligned || rightAligned).toBe(true);
+    expect(menu.x).toBeGreaterThanOrEqual(phone.x);
+    expect(menu.x + menu.width).toBeLessThanOrEqual(phone.x + phone.width);
     // No bottom sheet: the menu is a small box, not a full-width panel.
     expect(menu.width).toBeLessThan(330);
     await screen.getByTestId("feed-pet-backdrop").click({ position: { x: 5, y: 600 } });

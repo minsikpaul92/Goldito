@@ -67,9 +67,9 @@ test.describe("pet look", () => {
   test("an owner who is not an admin sees the Wardrobe and the Pixel pet card, but cannot edit the look", async ({ page }) => {
     await start(page, (d) => d.pets.push(pet("pet-max", "Max", { breed: "Golden retriever" })), OWNER);
     const screen = app(page);
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("pet-wardrobe")).toBeVisible();
-    await expect(screen.getByTestId("pet-wardrobe-soon")).toBeVisible();
+    await expect(screen.getByTestId("pet-item-locked")).toBeVisible();
     await expect(screen.getByTestId("pet-look-open")).toHaveCount(0);
     await expect(screen.getByTestId("pet-colors-open")).toHaveCount(0); // moved to the pet profile
 
@@ -87,7 +87,7 @@ test.describe("pet look", () => {
     const db = await start(page, (d) => d.pets.push(pet("pet-max", "Max", { breed: "Golden retriever", profile: { coat: "golden", note: "keep me" } })));
     const screen = app(page);
     await screen.getByTestId("home-pager").waitFor();
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("pet-room-Max-sprite")).toBeVisible();
     const BLACK = "rgb(43, 37, 34)"; // the Dalmatian's spots and ears
     expect(await pixelsOf(screen, "pet-room-Max-sprite", BLACK)).toBe(0);
@@ -151,7 +151,7 @@ test.describe("pet look", () => {
   test("options change the preview right away", async ({ page }) => {
     await start(page, (d) => d.pets.push(pet("pet-max", "Max")));
     const screen = app(page);
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await screen.getByTestId("pet-look-open").click();
     const sprite = screen.getByTestId("look-sprite");
     await expect(sprite).toBeVisible();

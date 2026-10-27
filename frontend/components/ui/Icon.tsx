@@ -38,6 +38,8 @@ import Minus from "lucide-react-native/icons/minus";
 import PawPrint from "lucide-react-native/icons/paw-print";
 import NotebookPen from "lucide-react-native/icons/notebook-pen";
 import Pill from "lucide-react-native/icons/pill";
+import Palette from "lucide-react-native/icons/palette";
+import Lock from "lucide-react-native/icons/lock";
 import PartyPopper from "lucide-react-native/icons/party-popper";
 import Plus from "lucide-react-native/icons/plus";
 import RefreshCw from "lucide-react-native/icons/refresh-cw";
@@ -129,6 +131,9 @@ const ICONS = {
   nap: Moon,
   pill: Pill,
   treat: Bone,
+  // the pet room
+  palette: Palette,
+  lock: Lock,
   // moods
   moodHappy: FaceSlightlySmiling,
   moodPlayful: FaceGrinning,

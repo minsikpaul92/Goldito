@@ -3,34 +3,36 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Screen } from "../ui/Screen";
-import { asHat, itemName, ownedItems } from "../../features/pets/items";
+import { Icon, IconName } from "../ui/Icon";
+import { asHat, ownedItems } from "../../features/pets/items";
 import { savePetHat } from "../../features/pets/petApi";
 import type { HatId } from "../../features/pets/sprites/hats";
 import { asPetRecipe } from "../../features/pets/sprites/petLook";
 import { asPixelColors } from "../../features/pets/sprites/photoColors";
 import { useIsAdmin } from "../../lib/admins";
 import { useToast } from "../../providers/ToastProvider";
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import type { Pet } from "../../types/db";
+import { OwnerPetRoom } from "./OwnerPetRoom";
 import { PetMedals } from "./PetMedals";
 import { PetReviews } from "./PetReviews";
-import { PetRoom } from "./PetRoom";
-
+import { PetWardrobe } from "./PetWardrobe";
 
 /**
- * Owner Home, page two (11.12): the pet room of one pet, with a switch when there are several. Tap the pet: Diary.
- * The pet's look follows its profile (breed, coat, weight, photo colors; set on the pet profile). Under the room is the
- * Wardrobe (the hat now, more items later); admins also get Edit look. `onChanged` reloads the pets after a save.
+ * Owner Home, the Pet room tab (11.12; room trial R1+, Oct 27): one pet's room on one scroll in a fixed order, so
+ * nothing hides behind a tab: the room and its story in words, the Wardrobe, two Action Rows, then the sitters' medals
+ * and reviews. Which pet is picked by the pet chip in the tab row (Home owns `petId`). Tap the room: Diary.
+ * The pet is a preset for its breed and weight (photo colors are set on the pet profile's Pixel pet card); admins also
+ * get Change look. `onChanged` reloads the pets after a save.
  */
-export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => void }) {
+export function PetPage({ pets, petId, onChanged }: { pets: Pet[]; petId?: string; onChanged?: () => void }) {
   const styles = useThemedStyles(makeStyles);
-  const [selected, setSelected] = useState(pets[0]?.id);
   const toast = useToast();
   const admin = useIsAdmin();
   // The hat just put on or taken off, until the pets are reloaded.
   const [hats, setHats] = useState<Record<string, HatId | null>>({});
-  const pet = pets.find((p) => p.id === selected) ?? pets[0];
+  const pet = pets.find((p) => p.id === petId) ?? pets[0];
   if (!pet) return null;
   const colors = asPixelColors(pet.profile?.pixel_colors);
   const hat = pet.id in hats ? hats[pet.id] : asHat(pet.profile?.hat);
@@ -50,74 +52,57 @@ export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => vo
 
   return (
     <Screen contentStyle={styles.page} testID="pet-page">
-      {pets.length > 1 ? (
-        <View style={styles.switcher}>
-          {pets.map((p) => (
-            <Pressable
-              key={p.id}
-              accessibilityRole="button"
-              accessibilityState={{ selected: p.id === pet.id }}
-              onPress={() => setSelected(p.id)}
-              style={[styles.pill, p.id === pet.id && styles.pillOn]}
-              testID={`pet-switch-${p.name}`}
-            >
-              <Text style={[styles.pillText, p.id === pet.id && styles.pillTextOn]}>{p.name}</Text>
-            </Pressable>
-          ))}
+      <OwnerPetRoom key={pet.id} pet={look} onPress={() => router.push("/owner/feed?view=diary")} />
+      <PetWardrobe items={ownedItems(pets.length)} worn={hat} onToggle={(id) => void toggleHat(id)} />
+      {/* The Pet maker is for the team for now (11.12c); photo colors live on the pet profile's Pixel pet card. */}
+      {admin ? (
+        <View style={styles.actions}>
+          <ActionRow icon="palette" title="Change look" subtitle="Breed, shape and colors" onPress={() => router.push(`/owner/pets/${pet.id}/look`)} testID="pet-look-open" />
         </View>
       ) : null}
-      <PetRoom
-        pet={look}
-        onPress={() => router.push("/owner/feed?view=diary")}
-      />
-      <Text style={styles.label}>Wardrobe</Text>
-      <View style={styles.wardrobe} testID="pet-wardrobe">
-        {ownedItems(pets.length).map((item) => (
-          <Pressable
-            key={item.id}
-            accessibilityRole="button"
-            accessibilityLabel={`${itemName(item)} ${hat === item.id ? "on" : "off"}`}
-            aria-pressed={hat === item.id}
-            onPress={() => void toggleHat(item.id)}
-            style={[styles.pill, hat === item.id && styles.pillOn]}
-            testID={`pet-hat-${item.id}`}
-          >
-            <Text style={[styles.pillText, hat === item.id && styles.pillTextOn]}>{`${item.emoji} ${itemName(item)}`}</Text>
-          </Pressable>
-        ))}
-        <View accessibilityLabel="More items coming soon" aria-disabled style={[styles.pill, styles.pillLocked]} testID="pet-wardrobe-soon">
-          <Text style={[styles.pillText, styles.pillTextLocked]}>🔒 More soon</Text>
-        </View>
-        {admin ? (
-          <Pressable accessibilityRole="button" onPress={() => router.push(`/owner/pets/${pet.id}/look`)} style={styles.pill} testID="pet-look-open">
-            <Text style={styles.pillText}>Edit look</Text>
-          </Pressable>
-        ) : null}
-      </View>
       <PetMedals petId={pet.id} />
       <PetReviews petId={pet.id} />
     </Screen>
   );
 }
 
+/** DESIGN.md §6 Action Row: a 60 px row with an icon tile, a title and a line under it, and a chevron. */
+function ActionRow({ icon, title, subtitle, onPress, testID }: { icon: IconName; title: string; subtitle: string; onPress: () => void; testID?: string }) {
+  const theme = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <Pressable accessibilityRole="button" accessibilityHint={subtitle} onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.pressed]} testID={testID}>
+      <View style={styles.rowIcon}>
+        <Icon name={icon} size={20} color={theme.color.primary} />
+      </View>
+      <View style={styles.rowText}>
+        <Text style={styles.rowTitle}>{title}</Text>
+        <Text style={styles.rowSub}>{subtitle}</Text>
+      </View>
+      <Icon name="forward" size={20} color={theme.color.text} />
+    </Pressable>
+  );
+}
+
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    page: { gap: theme.spacing.md },
-    label: { textAlign: "center", fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
-    wardrobe: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: theme.spacing.sm },
-    switcher: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: theme.spacing.sm },
-    pill: {
-      minHeight: theme.layout.touchTarget,
+    page: { gap: 20 },
+    actions: { gap: 10 },
+    row: {
+      minHeight: 60,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.md,
+      paddingVertical: theme.spacing.sm,
       paddingHorizontal: theme.spacing.md,
-      justifyContent: "center",
-      borderRadius: theme.radius.pill,
+      borderRadius: theme.radius.lg,
       borderWidth: 1,
-      borderColor: theme.color.border,
+      borderColor: theme.color.borderStrong,
       backgroundColor: theme.color.surface,
     },
-    pillOn: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },
-    pillText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
-    pillTextOn: { color: theme.color.primaryText },
-    pillLocked: { borderStyle: "dashed", backgroundColor: "transparent" },
-    pillTextLocked: { color: theme.color.textMuted },
+    pressed: { opacity: 0.85 },
+    rowIcon: { width: 40, height: 40, borderRadius: theme.radius.md, alignItems: "center", justifyContent: "center", backgroundColor: theme.color.accent },
+    rowText: { flex: 1, minWidth: 0 },
+    rowTitle: { fontSize: theme.fontSize.body, lineHeight: theme.lineHeight.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    rowSub: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.textMuted },
   });
