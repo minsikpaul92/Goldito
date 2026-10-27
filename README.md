@@ -24,6 +24,8 @@ the server owns every fact, and a person approves every word.
 
 </div>
 
+> The backend runs on a free plan, so the first load after a quiet spell can take 30 to 50 seconds.
+
 ---
 
 ## Goldito in 30 seconds
