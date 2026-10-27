@@ -41,6 +41,11 @@ async function takeJudgeSeat(page: Page) {
   return resets;
 }
 
+/** A scene opens with a full load of the phone; wait until the app inside is up before the next tap on the panel. */
+async function phoneReady(page: Page) {
+  await expect(app(page).locator("[data-testid]:visible").first()).toBeVisible();
+}
+
 function phoneUrl(page: Page): string {
   return page.frames().find((frame) => frame !== page.mainFrame())?.url() ?? "";
 }
@@ -85,6 +90,7 @@ test.describe("judge panel", () => {
     await page.getByTestId("judge-scene-treat").click();
     await expect.poll(() => phoneUrl(page)).toMatch(/\/owner\/snap\/treat$/);
     await expect(page.getByTestId("judge-hint")).toHaveText("Pick the chicken jerky label for Max.");
+    await phoneReady(page);
     expect(resets).toHaveLength(1);
     expect(resets[0].state).toBe("pets");
     // The reset carries this browser's seat holder id: the backend resets only the seat it holds.
@@ -92,8 +98,13 @@ test.describe("judge panel", () => {
 
     // The panel is off while the phone reloads into the scene (no account for a moment), so wait for it to come back.
     await expect(page.getByTestId("judge-replay")).toBeEnabled();
+    const reloaded = page.waitForEvent("framenavigated", (frame) => frame !== page.mainFrame());
     await page.getByTestId("judge-replay").click();
     await expect.poll(() => resets.length).toBe(2);
+    await reloaded;
+    // The scene is open again once the hint is back (it reads "Getting it ready…" while the phone reloads).
+    await expect(page.getByTestId("judge-hint")).toHaveText("Pick the chicken jerky label for Max.");
+    await phoneReady(page);
 
     // Mood keeps the stay: no reset.
     await page.getByTestId("judge-more").click();
