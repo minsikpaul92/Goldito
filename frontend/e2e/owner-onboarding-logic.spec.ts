@@ -9,6 +9,7 @@ import {
   convertWeight,
   foodsFromDraft,
   profileFromDraft,
+  readWeight,
   weightFromDraft,
   weightText,
 } from "../features/ownerOnboarding/draft";
@@ -99,6 +100,17 @@ test.describe("owner onboarding logic", () => {
     expect(convertWeight("6.8", "kg", "kg")).toBe("6.8");
   });
 
+  test("a weight said with a unit keeps that unit, a bare number keeps the one chosen (#396)", () => {
+    expect(readWeight("20 lbs")).toEqual({ weight: "20", weightUnit: "lbs" });
+    expect(readWeight("about 20 pounds")).toEqual({ weight: "20", weightUnit: "lbs" });
+    expect(readWeight("9 kilos")).toEqual({ weight: "9", weightUnit: "kg" });
+    expect(readWeight("6,5kg")).toEqual({ weight: "6,5", weightUnit: "kg" });
+    expect(readWeight("6.5")).toEqual({ weight: "6.5" });
+    expect(readWeight("a lot")).toEqual({ weight: "a lot" });
+    // Saved the same as before: 20 lbs is 9.07 kg.
+    expect(weightFromDraft({ ...EMPTY_DRAFT, ...readWeight("20 lbs") })).toBe(9.07);
+  });
+
   test("age, weight and foods are cleaned up for saving", () => {
     expect(birthdateFromAge(4, new Date(2026, 9, 21))).toBe("2022-10-21");
     expect(weightFromDraft({ ...EMPTY_DRAFT, weight: "6,5" })).toBe(6.5);
@@ -112,7 +124,7 @@ test.describe("voice answers in the draft", () => {
   const facts = {
     breed: { value: "Maltese", quote: "a Maltese" },
     age_years: { value: 4, quote: "four years old" },
-    weight_kg: { value: 5.9, quote: "13 pounds" },
+    weight: { value: 13, unit: "lbs" as const, quote: "13 pounds" },
     foods: [
       { value: "chicken", quote: "allergic to chicken" },
       { value: "beef", quote: "allergic to chicken and beef" },
@@ -129,10 +141,10 @@ test.describe("voice answers in the draft", () => {
   };
 
   test("the form has one text per question, filled from what was heard", () => {
-    expect(formFromFacts(facts, "kg")).toEqual({
+    expect(formFromFacts(facts)).toEqual({
       breed: "Maltese",
       age: "4",
-      weight: "5.9",
+      weight: "13 lbs",
       personality: "she is a sweet girl",
       loves: "",
       scares: "",
@@ -142,8 +154,8 @@ test.describe("voice answers in the draft", () => {
       careful: "no jumping",
       more: "",
     });
-    expect(formFromFacts(facts, "lbs").weight).toBe("13");
-    expect(formFromFacts(NO_FACTS, "kg")).toMatchObject({ breed: "", age: "", weight: "", allergies: "" });
+    expect(formFromFacts({ ...facts, weight: { value: 9, unit: "kg", quote: "9 kilos" } }).weight).toBe("9 kg");
+    expect(formFromFacts(NO_FACTS)).toMatchObject({ breed: "", age: "", weight: "", allergies: "" });
   });
 
   test("the questions use the pet's name and the weight unit", () => {
@@ -165,11 +177,12 @@ test.describe("voice answers in the draft", () => {
   });
 
   test("the answers kept fill the draft: the intro is the owner's words, allergies are theirs, safety stays a suggestion", () => {
-    const patch = applyVoiceForm(EMPTY_DRAFT, formFromFacts(facts, "kg"), facts);
+    const patch = applyVoiceForm(EMPTY_DRAFT, formFromFacts(facts), facts);
     expect(patch).toMatchObject({
       breed: "Maltese",
       ageYears: 4,
-      weight: "5.9",
+      weight: "13",
+      weightUnit: "lbs",
       foods: ["chicken", "beef"],
       safety: { s6: "listed" },
       petIntro: "she is a sweet girl\nRoutine: wet food twice a day\nHealth: a joint pill each morning\nWatch out: no jumping",

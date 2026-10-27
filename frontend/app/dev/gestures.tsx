@@ -112,7 +112,7 @@ function GestureLabScreen() {
           </ScrollView>
         </View>
 
-        <Text style={styles.section}>Trip map (view only: ± and drag-to-scroll)</Text>
+        <Text style={styles.section}>Trip map (drag, pinch, ±, recenter)</Text>
         <TripMap
           traveler={{ lat: 43.6566, lng: -79.3911 }}
           dest={{ lat: 43.6477, lng: -79.4194 }}

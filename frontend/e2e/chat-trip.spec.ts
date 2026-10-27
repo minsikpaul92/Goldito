@@ -131,11 +131,13 @@ test.describe("trip in the chat", () => {
     // #250: the sitter answers the owner's hello, so hers waits until Robert has said his.
     await expect(screen.getByTestId("trip-greet")).toHaveCount(0);
 
-    // Robert's hello is a small quick reply, "Please take care of them".
+    // Robert's hello is a quick reply in the chip row above the box (not on the trip card), "Please take care of them".
     await page.evaluate(() => localStorage.clear());
     screen = await openChatAs(page, OWNER);
     await expect(screen.getByTestId("chat-trip-live")).toContainText("You've arrived");
     await expect(screen.getByTestId("trip-greet")).toHaveText("Please take care of them");
+    await expect(screen.getByTestId("chat-chips").getByTestId("trip-greet")).toBeVisible();
+    await expect(screen.getByTestId("chat-trip-live").getByTestId("trip-greet")).toHaveCount(0);
     await screen.getByTestId("trip-greet").click();
     await expect(screen.getByTestId("chat-bubble-me").filter({ hasText: "Please take care of them" })).toBeVisible();
     await expect(screen.getByTestId("trip-greet")).toHaveCount(0);

@@ -192,6 +192,7 @@ export function TripScreen({ role }: { role: Role }) {
           {`Last location ${lastSeenMin} min ago. Sharing pauses while the browser is in the background.`}
         </Text>
       ) : null}
+      {/* Arrived: the car sits on the place pin (the arrival circle is 150 m, so the last point is often a bit short). */}
       {shared && place ? <TripMap traveler={arrived ? place : position} dest={place} travelerLabel={travelerName === "You" ? "You" : other} /> : null}
       {!shared ? <MeetingPlaceCard booking={b} handoffKind={live.handoff_kind} address={places[live.handoff_kind]?.address ?? null} /> : null}
       {shared && !place && handoff?.note ? (

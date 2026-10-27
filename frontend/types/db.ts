@@ -171,6 +171,8 @@ export type Trip = {
   last_at: string | null;
   eta_at: string | null;
   distance_m: number | null;
+  /** Good readings in a row within 150 m of the place (015q); the second one makes the trip `arrived`. */
+  close_readings: number;
   simulated: boolean;
   /** false = started without sharing a live position: no map, no ETA (the meeting place is shown instead). */
   sharing: boolean;

@@ -99,6 +99,8 @@ export default function Chat() {
   const [error, setError] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  // The arrival hello the trip card offers right now (ChatTripCard), shown first in the chip row.
+  const [tripGreeting, setTripGreeting] = useState<string | null>(null);
   const [photos, setPhotos] = useState<ProfilePhoto[]>([]);
   const [viewing, setViewing] = useState(false);
   const [requesting, setRequesting] = useState(false);
@@ -477,6 +479,20 @@ export default function Chat() {
       : []),
   ];
 
+  /** The arrival hello (#250): one tap sends it as it is, like before; it sits first in the chip row above the box. */
+  const sendGreeting = async (body: string) => {
+    if (sending) return;
+    setSending(true);
+    try {
+      await sendChatMessage(threadId, body);
+      await load();
+    } catch (e) {
+      errorDialog.show({ title: "Not sent", message: (e as Error).message });
+    } finally {
+      setSending(false);
+    }
+  };
+
   const send = async () => {
     const body = text.trim();
     if (sending || !body) return;
@@ -571,7 +587,7 @@ export default function Chat() {
       ) : null}
       {booking && !["requested", "meet_greet"].includes(booking.stage) ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
       {booking ? <ChatCareCards booking={booking} viewer={header.myRole} askSignal={signals.photo} /> : null}
-      {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} startSignal={signals.trip} /> : null}
+      {booking ? <ChatTripCard booking={booking} viewer={header.myRole} messages={messages} onSent={() => void load()} onGreeting={setTripGreeting} startSignal={signals.trip} /> : null}
     </>
   );
   const renderMessage = (m: (typeof messages)[number]) =>
@@ -682,7 +698,7 @@ export default function Chat() {
           ) : null}
         </View>
       ) : null}
-      {typingChips || (!typing && (drafting || chips.length > 0 || shownAction || (key !== null && !chipsReady))) ? (
+      {typingChips || (!typing && (tripGreeting || drafting || chips.length > 0 || shownAction || (key !== null && !chipsReady))) ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled" testID="chat-chips">
           {typing ? (
             <>
@@ -701,6 +717,7 @@ export default function Chat() {
                       style={styles.chip}
                       testID={`chat-chip-${i + 1}`}
                     >
+                      <Icon name="ai" size={14} color={theme.color.primary} />
                       <Text style={styles.chipText}>{chip.label}</Text>
                     </Pressable>
                   ))
@@ -708,6 +725,18 @@ export default function Chat() {
             </>
           ) : (
             <>
+          {tripGreeting ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Send: ${tripGreeting}`}
+              disabled={sending}
+              onPress={() => void sendGreeting(tripGreeting)}
+              style={styles.chip}
+              testID="trip-greet"
+            >
+              <Text style={styles.chipText}>{tripGreeting}</Text>
+            </Pressable>
+          ) : null}
           {drafting || !chipsReady ? (
             <View style={styles.chipsBusy} testID="chat-chips-loading">
               <ActivityIndicator color={theme.color.primary} accessibilityLabel={drafting ? "Writing a draft" : "Writing replies"} />
@@ -734,6 +763,7 @@ export default function Chat() {
               style={[styles.chip, drafting && styles.sendOff]}
               testID={`chat-chip-${i + 1}`}
             >
+              <Icon name="ai" size={14} color={theme.color.primary} />
               <Text style={styles.chipText}>{chip.label}</Text>
             </Pressable>
           ))}

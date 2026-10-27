@@ -1,6 +1,6 @@
 import type { Trip } from "../types/db";
 import { apiPost } from "./api";
-import type { LatLng } from "./location";
+import type { Fix, LatLng } from "./location";
 import { getSupabase } from "./supabase";
 
 /**
@@ -58,12 +58,16 @@ export async function startTrip(
   return data as Trip;
 }
 
-/** Send the traveller's position; the answer is the trip row, so `status` says whether they have arrived. */
-export async function updateTripPosition(tripId: string, position: LatLng): Promise<Trip> {
+/**
+ * Send the traveller's position; the answer is the trip row, so `status` says whether they have arrived. A GPS fix
+ * carries its accuracy: the server only counts good readings for arrival (015q). A simulated point has none.
+ */
+export async function updateTripPosition(tripId: string, position: Fix): Promise<Trip> {
   const { data, error } = await getSupabase().rpc("update_trip_position", {
     p_trip: tripId,
     p_lat: position.lat,
     p_lng: position.lng,
+    ...(position.accuracy != null ? { p_accuracy: position.accuracy } : {}),
   });
   if (error || !data) fail(error?.message, "Couldn't send your location.");
   return data as Trip;

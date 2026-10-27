@@ -17,7 +17,7 @@ import {
 const CHLOE = { lat: 43.6477, lng: -79.4194 };
 const ROBERT = { lat: 43.6644, lng: -79.3573 };
 
-type Listener = (p: { coords: { latitude: number; longitude: number } }) => void;
+type Listener = (p: { coords: { latitude: number; longitude: number; accuracy?: number } }) => void;
 type Failure = (e: { code: number }) => void;
 
 /** A fake `navigator.geolocation` that counts every read and lets the test push fixes or errors. */
@@ -46,7 +46,7 @@ function fakeGeolocation() {
   return {
     calls,
     answerWith: (a: typeof currentAnswer) => (currentAnswer = a),
-    fix: (lat: number, lng: number) => onFix?.({ coords: { latitude: lat, longitude: lng } }),
+    fix: (lat: number, lng: number, accuracy?: number) => onFix?.({ coords: { latitude: lat, longitude: lng, accuracy } }),
     fail: (code: number) => onFail?.({ code }),
   };
 }
@@ -58,19 +58,22 @@ test.afterEach(() => {
 test.describe("the simulated drive", () => {
   test("starts at the traveller's home and stops inside the 150 m arrival circle, coming closer each step", () => {
     const route = buildSimulatedRoute(ROBERT, CHLOE);
-    expect(route).toHaveLength(25);
+    expect(route).toHaveLength(26); // 25 steps, then parked for one more
     expect(distanceMeters(route[0], ROBERT)).toBeLessThan(5);
     const last = distanceMeters(route[route.length - 1], CHLOE);
     expect(last).toBeGreaterThan(30);
     expect(last).toBeLessThan(100); // ~60 m short: arrival fires, but it is not on top of the door
     const distances = route.map((p) => distanceMeters(p, CHLOE));
-    for (let i = 1; i < distances.length; i++) expect(distances[i]).toBeLessThan(distances[i - 1]);
+    for (let i = 1; i < distances.length - 1; i++) expect(distances[i]).toBeLessThan(distances[i - 1]);
+    // Arrival needs two readings in a row inside 150 m (015q): the car stays parked for one more step.
+    expect(route[route.length - 1]).toEqual(route[route.length - 2]);
   });
 
   test("a trip that is already close still ends at the destination", () => {
     const near = offsetPoint(CHLOE, 40, 90);
     const route = buildSimulatedRoute(near, CHLOE, 5);
     expect(distanceMeters(route[route.length - 1], CHLOE)).toBeLessThan(150);
+    expect(distanceMeters(route[route.length - 2], CHLOE)).toBeLessThan(150);
   });
 
   test("a simulated source plays the points in order, one per interval, and then stops itself", async () => {
@@ -144,6 +147,15 @@ test.describe("the phone's GPS", () => {
     expect(sent).toEqual([43.1]);
     expect(geo.calls.cleared).toBe(1);
     expect(GPS_INTERVAL_MS).toBe(5000);
+  });
+
+  test("each fix carries the GPS accuracy, so the server can ignore a poor one for arrival (015q)", () => {
+    const geo = fakeGeolocation();
+    const sent: unknown[] = [];
+    const stop = startLocationSource({ mode: "gps", onPosition: (p) => sent.push(p), onError: () => undefined });
+    geo.fix(43.1, -79, 480);
+    expect(sent).toEqual([{ lat: 43.1, lng: -79, accuracy: 480 }]);
+    stop();
   });
 
   test("with no GPS in the browser the source reports it instead of throwing", () => {

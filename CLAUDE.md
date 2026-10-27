@@ -260,6 +260,7 @@ Implement in FastAPI; all call **Nebius Token Factory** — Nemotron for text, M
 | `POST /api/ai/report-chips` | Stage 4 — chip suggestions from the day's check-ins, tasks, and photos; the sitter keeps or turns off each (D38) |
 | `POST /api/ai/daily-report` | Stage 4 — report draft from the chips the sitter kept, an optional short note, and photos; posted only after the sitter approves |
 | `POST /api/ai/life-record` | Stage 5 — stay → Pet Life Record + RAG indexing |
+| `POST /api/ai/pet-review-chips` | Stage 5: chips for the sitter's review of each pet after a stay (stay check-ins + Life Record); the sitter picks, the app saves to `pet_reviews` (#407, D38) |
 | `POST /api/ai/safety-check` | Snap → Treat check (12.1) — label photo → JSON safety (+ Tavily sources on trusted sites) |
 | `POST /api/ai/pet-mood` | Snap → Mood (12.2) — pet crops from the browser → body-language tags (vision) → server-computed emotion % (sum 100) + one "seems" line; for fun only, nothing saved |
 | `POST /api/ai/pet-photo` | P1 (11.15) — pet photo → breed guesses (≤ 3, owner confirms) + coat color |

@@ -551,6 +551,7 @@ Always explain what will appear and who adds it.
 - Short, warm, specific. Use the pet's name ("Max had breakfast on time 🍽️").
 - At most **2 emoji** per message.
 - **Avoid the emoji AI text uses all the time**, in copy, buttons, rows, chips and empty states: ✨ 🚀 💡 🔥 ✅ ❌ ⚠️ 🎯 📌 🌟 🎉 👋 🙌 💪 🤖 🔍 📝 ⭐ 💬. Use plain words, a line icon, or nothing instead. Status and section labels use the line icons (`<Icon>` or `Tag icon`: check, clock, close, warning, meal, pill, paw, tip); emoji stay for content: empty-state art, pet species, album and badge names. Buttons are words, with no emoji.
+- **AI buttons:** a button that asks the AI to write or check carries the sparkles line icon before its label: `<Button ai />` (or `<Icon name="ai" />` on a chip), 18 px on buttons and 14 px on chips. Never the ✨ emoji.
 - Any other emoji is fine, in a button too, when it helps (📍 on a "use my current location" button, a pet's 🐶 / 🐱). Swapping one for a line icon is optional.
 - Times shown in the app timezone (America/Toronto) with AM/PM.
 - **Questions and choices** (sign-up and onboarding; the wording itself lives in `frontend/features/onboarding/questions.ts` and `frontend/features/ownerOnboarding/questions.ts`):

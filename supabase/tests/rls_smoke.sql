@@ -4064,6 +4064,18 @@ begin
   perform _t_as(null);
   update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
   perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6602, -79.3832, 500);
+  perform _t_ok(v_trip.last_lat = 43.6602 and v_trip.near_notified_at is null,
+    '015q: a reading with 500 m accuracy moves the map but never sends "about 5 minutes away"');
+  begin
+    perform update_trip_position(v_trip.id, 43.6602, -79.3832, -1);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_position', '015q: an accuracy below 0 is refused');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
   v_trip := update_trip_position(v_trip.id, 43.6602, -79.3832);
   perform _t_ok(v_trip.last_lat = 43.6602 and v_trip.status = 'en_route' and v_trip.distance_m between 770 and 790,
     'L: a later position replaces the last one; still far → en route');
@@ -4080,13 +4092,39 @@ begin
         and title like 'Robert is about 5 minutes away%') = 1
       and (select near_notified_at is not null from public.trips where id = v_trip.id),
     '014r: within 5 minutes of the ETA → one "about 5 minutes away" notice for the other person');
-  -- Within 150 m → arrived, both told once, no more positions stored
+  -- 015q (#381): within 150 m → arrived only after two good readings in a row; both told once, no more positions stored
   perform _t_as(null);
   update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
   perform _t_as(robert);
-  v_trip := update_trip_position(v_trip.id, 43.6542, -79.3832);
+  v_trip := update_trip_position(v_trip.id, 43.6542, -79.3832, 500);
+  perform _t_ok(v_trip.status = 'en_route' and v_trip.last_lat = 43.6542 and v_trip.close_readings = 0,
+    '015q: one reading at about 110 m with 500 m accuracy → still en route');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6542, -79.3832, 20);
+  perform _t_ok(v_trip.status = 'en_route' and v_trip.close_readings = 1, '015q: one good reading within 150 m is not enough');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6602, -79.3832, 20);
+  perform _t_ok(v_trip.status = 'en_route' and v_trip.close_readings = 0, '015q: a good reading farther out starts the count again');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6542, -79.3832, 20);
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6541, -79.3832, 500);
+  perform _t_ok(v_trip.status = 'en_route' and v_trip.close_readings = 1,
+    '015q: a poor reading in between neither counts nor breaks the run');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6542, -79.3832, 20);
   perform _t_ok(v_trip.status = 'arrived' and v_trip.arrived_at is not null and v_trip.distance_m between 100 and 120,
-    'L: within 150 m of the destination → arrived');
+    '015q: two good readings in a row within 150 m of the destination → arrived');
   perform _t_as(null);
   update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
   perform _t_as(robert);
@@ -7486,6 +7524,95 @@ begin
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', '015r: care_checkin_write is not callable by clients');
+  perform _t_as(null);
+end;
+$$;
+
+
+-- ---------------------------------------------------------------------------
+-- 015u (#407): a review per pet from the sitter after a stay
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  v_pet uuid;
+  v_other uuid;
+  v_b uuid;
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Review') returning id into v_pet;
+  insert into public.pets (owner_id, species, name) values (robert, 'cat', 'NotInStay') returning id into v_other;
+  v_b := _t_booking(robert, chloe, array[v_pet], now() + interval '410 days', now() + interval '412 days', 'confirmed', true);
+
+  perform _t_as(chloe);
+  begin
+    insert into public.pet_reviews (pet_id, booking_id, sitter_id, chips) values (v_pet, v_b, chloe, array['So sweet']);
+    v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '42501', '015u: no review before the pets are back');
+
+  perform complete_handoff(v_b, 'pick_up');
+  insert into public.pet_reviews (pet_id, booking_id, sitter_id, chips, note)
+    values (v_pet, v_b, chloe, array['Loved our walks', 'Ate every meal'], 'A joy to look after.');
+  perform _t_ok((select stay_to is not null and stay_from is not null from public.pet_reviews where booking_id = v_b and pet_id = v_pet),
+    '015u: the sitter writes the review, with the stay dates from the booking');
+  update public.pet_reviews set chips = array['Loved our walks'], note = null where booking_id = v_b and pet_id = v_pet;
+  perform _t_ok((select chips = array['Loved our walks'] and note is null from public.pet_reviews where booking_id = v_b and pet_id = v_pet),
+    '015u: the sitter edits their review');
+  begin
+    insert into public.pet_reviews (pet_id, booking_id, sitter_id, chips) values (v_pet, v_b, chloe, array['Again']);
+    v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '23505', '015u: one review per pet and stay');
+  begin
+    insert into public.pet_reviews (pet_id, booking_id, sitter_id, chips) values (v_other, v_b, chloe, array['Hi']);
+    v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '42501', '015u: only a pet that was in the stay');
+  begin
+    insert into public.pet_reviews (pet_id, booking_id, sitter_id) values (v_pet, v_b, chloe)
+      on conflict (booking_id, pet_id) do update set chips = '{}', note = null;
+    v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '23514', '015u: an empty review is refused');
+
+  perform _t_as(paul);
+  perform _t_ok((select count(*) from public.pet_reviews where pet_id = v_pet) = 1, '015u: another sitter reads it');
+  begin
+    insert into public.pet_reviews (pet_id, booking_id, sitter_id, chips) values (v_pet, v_b, paul, array['Mine']);
+    v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '42501', '015u: another sitter cannot write one');
+  update public.pet_reviews set note = 'Not mine' where pet_id = v_pet;
+  perform _t_as(null);
+  perform _t_ok((select note is null from public.pet_reviews where pet_id = v_pet), '015u: another sitter cannot edit it');
+
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.pet_reviews where pet_id = v_pet) = 1, '015u: the owner reads their pet''s review');
+  begin
+    insert into public.pet_reviews (pet_id, booking_id, sitter_id, chips) values (v_pet, v_b, robert, array['Owner']);
+    v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '42501', '015u: the owner cannot write one');
+  begin
+    delete from public.pet_reviews;
+    v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '42501', '015u: nobody deletes a review');
+
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.pet_reviews where pet_id = v_pet) = 0, '015u: another owner reads no review');
+  perform _t_as(null, 'anon');
+  begin
+    perform count(*) from public.pet_reviews;
+    v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '42501', '015u: signed-out visitors cannot read');
   perform _t_as(null);
 end;
 $$;

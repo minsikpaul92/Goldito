@@ -149,6 +149,7 @@ Goldito/
 │  │  │  ├─ ai_handoff_check.py # POST /api/ai/handoff-check (06B)
 │  │  │  ├─ ai_inquiry.py     # POST /api/ai/inquiry-reply (07B)
 │  │  │  ├─ ai_life_record.py # POST /api/ai/life-record (07C)
+│  │  │  ├─ ai_pet_review.py  # POST /api/ai/pet-review-chips (#407, D38)
 │  │  │  ├─ ai_pet_mood.py    # POST /api/ai/pet-mood (12.2 Mood: tags → rule %)
 │  │  │  └─ ai_safety_check.py # POST /api/ai/safety-check (12.1 Treat check: the 08 design)
 │  │  ├─ schemas/             # pydantic request/response models (one file per router)
@@ -296,7 +297,7 @@ Put these in `.env.example` **with exactly these names**. (Real values go in `.e
 - Base: `/health` (no auth); every other `/api/*` **requires `Authorization: Bearer <supabase access_token>`**.
 - Authorization: a router that reaches the DB with the service role must first call `assert_on_duty_for` (sitter: today is inside a confirmed booking) / `assert_owner_of` from `services/authz.py` (the service role bypasses RLS).
 - Error format: `{"detail": "<human message>", "code": "<snake_case>"}`. Example codes: `unauthorized` (401), `forbidden` (403), `not_found` (404), `invalid_input` (422), `ai_timeout` (504), `ai_invalid_output` (502), `upstream_error` (502).
-- Timeouts (server → Nebius): caption 20s, handoff-check 20s, inquiry-reply 45s (for making the draft; target p50 < 10s; the D37 human-pace delay is separate from this timeout), care-plan 45s, report-chips 30s, daily-report 60s, life-record 60s, safety 90s (vision 30 + reasoning 60). Server → Google Calendar (meet video-link) 15s. Frontend fetch timeouts are these +5s.
+- Timeouts (server → Nebius): caption 20s, handoff-check 20s, inquiry-reply 45s (for making the draft; target p50 < 10s; the D37 human-pace delay is separate from this timeout), care-plan 45s, report-chips 30s, daily-report 60s, life-record 60s, pet-review-chips 20s, safety 90s (vision 30 + reasoning 60). Server → Google Calendar (meet video-link) 15s. Frontend fetch timeouts are these +5s.
 - Per-booking permissions: `services/authz.py` has `assert_booking_party(booking_id)` (owner or sitter) / `assert_booked_sitter(booking_id, from_hours_before=2)` (handoff photo: from 2 hours before drop-off).
 - Every AI response includes `model` (the model id used) and `latency_ms` → used in the feedback log and demo explanation.
 

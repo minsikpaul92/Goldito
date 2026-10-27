@@ -20,8 +20,27 @@ function seedBori(db: MockDb) {
   db.pet_allergies.push({ id: "allergy-chicken", pet_id: "pet-max", allergen: "chicken" });
 }
 
+/** Every optional question skipped until the summary; the foods screen gets `foods` (or none). */
+async function answerToSummary(page: import("@playwright/test").Page, foods: string[] = []) {
+  const screen = app(page);
+  const skip = screen.getByTestId("own-skip");
+  const summary = screen.getByTestId("own-step-summary");
+  const about = screen.getByTestId("own-step-about");
+  const foodsStep = screen.getByTestId("own-step-foods");
+  for (let i = 0; i < 80; i++) {
+    await expect(skip.or(summary).or(about).or(foodsStep)).toBeVisible();
+    if (await summary.isVisible()) return;
+    if (await about.isVisible()) await screen.getByTestId("own-next").click();
+    else if (await foodsStep.isVisible()) {
+      for (const food of foods) await screen.getByTestId(`own-food-${food}`).click();
+      await screen.getByTestId("own-next").click();
+      await screen.getByTestId("own-foods-confirm").click();
+    } else await skip.click();
+  }
+}
+
 test.describe("owner pets", () => {
-  test("adds Max (dog, chicken allergy) and Mochi (cat) and shows both on Home", async ({ page }) => {
+  test("Add pet asks the sign-up questions for one pet and comes back to Home (#367)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER]);
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
@@ -29,19 +48,24 @@ test.describe("owner pets", () => {
 
     await screen.getByText("No pets yet").waitFor();
     await screen.getByRole("button", { name: "Add pet" }).click();
-    await expect(page).toHaveURL(/\/owner\/pets\/new$/);
-    await screen.getByTestId("pet-species-dog").click();
-    // Screen readers must hear which species is selected.
-    await expect(screen.getByTestId("pet-species-dog")).toHaveAttribute("aria-checked", "true");
-    await expect(screen.getByTestId("pet-species-cat")).toHaveAttribute("aria-checked", "false");
-    await screen.getByTestId("pet-name").fill("Max");
-    await screen.getByTestId("pet-breed").fill("Maltese");
-    await screen.getByTestId("pet-birthdate").fill("2022-04-15");
-    await screen.getByTestId("pet-weight").fill("3.2");
-    await screen.getByTestId("pet-allergy-input").fill(" Chicken ");
-    await screen.getByTestId("pet-allergy-add").click();
-    await expect(screen.getByTestId("allergy-chicken")).toBeVisible();
-    await screen.getByTestId("pet-save").click();
+    await expect(page).toHaveURL(/\/owner-onboarding\?add=1$/);
+    // One pet: its kind, then its name. No counts, no "Add a pet later".
+    await expect(screen.getByTestId("own-step-species")).toBeVisible();
+    await expect(screen.getByTestId("own-count-dog")).toHaveCount(0);
+    await expect(screen.getByTestId("own-later")).toHaveCount(0);
+    await screen.getByTestId("own-species-dog").click();
+    await expect(screen.getByTestId("own-title")).toHaveText("What's your dog's name?");
+    await screen.getByTestId("own-name").fill("Max");
+    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-skip").click(); // photos
+    await screen.getByTestId("own-skip").click(); // voice
+    await screen.getByTestId("own-breed").fill("Maltese");
+    await screen.getByTestId("own-next").click();
+    await answerToSummary(page, ["chicken"]);
+    // The owner's own questions were asked at sign-up, not again here.
+    await expect(screen.getByTestId("own-row-about-you")).toHaveCount(0);
+    await expect(screen.getByTestId("own-row-home")).toHaveCount(0);
+    await screen.getByTestId("own-save").click();
 
     await expect(page).toHaveURL(/\/owner$/);
     await expect(screen.getByTestId("toast")).toContainText("Max is added");
@@ -49,19 +73,35 @@ test.describe("owner pets", () => {
     await expect(max).toContainText("Maltese");
     await expect(max).toContainText("chicken");
 
-    await screen.getByRole("button", { name: "Add pet" }).click();
-    await screen.getByTestId("pet-species-cat").click();
-    await screen.getByTestId("pet-name").fill("Mochi");
-    await screen.getByTestId("pet-breed").fill("Domestic Shorthair");
-    await screen.getByTestId("pet-save").click();
+    // A second pet starts fresh, and Back on the first question goes back to Home with nothing saved.
+    await screen.getByTestId("add-pet").click();
+    await expect(screen.getByTestId("own-species-dog")).not.toHaveAttribute("aria-pressed", "true");
+    await screen.getByTestId("own-back").click();
+    await expect(page).toHaveURL(/\/owner$/);
+
+    await screen.getByTestId("add-pet").click();
+    await screen.getByTestId("own-species-cat").click();
+    await screen.getByTestId("own-name").fill("Mochi");
+    await screen.getByTestId("own-next").click();
+    await answerToSummary(page);
+    await screen.getByTestId("own-save").click();
 
     await expect(page).toHaveURL(/\/owner$/);
-    await expect(screen.getByTestId("pet-card-Mochi")).toContainText("Domestic Shorthair");
+    await expect(screen.getByTestId("pet-card-Mochi")).toBeVisible();
     expect(db.pets.map((pet) => [pet.name, pet.species, pet.owner_id])).toEqual([
       ["Max", "dog", OWNER.id],
       ["Mochi", "cat", OWNER.id],
     ]);
     expect(db.pet_allergies.map((a) => a.allergen)).toEqual(["chicken"]);
+  });
+
+  test("an old link to the add form opens the questions", async ({ page }) => {
+    await mockSupabase(page, [OWNER]);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto("/owner/pets/new");
+    await expect(page).toHaveURL(/\/owner-onboarding\?add=1$/);
+    await expect(app(page).getByTestId("own-step-species")).toBeVisible();
   });
 
   test("editing keeps the species locked and updates allergies", async ({ page }) => {
@@ -87,30 +127,6 @@ test.describe("owner pets", () => {
     await expect(screen.getByTestId("pet-card-Max")).toContainText("beef");
     expect(db.pets[0].species).toBe("dog");
     expect(db.pet_allergies.map((a) => a.allergen)).toEqual(["beef"]);
-  });
-
-  test("the form explains what is missing and saves nothing", async ({ page }) => {
-    const { db } = await mockSupabase(page, [OWNER]);
-    await signIn(page, OWNER);
-    const screen = app(page);
-    await screen.getByRole("button", { name: "Add pet" }).click();
-
-    await screen.getByTestId("pet-birthdate").fill("2022-13-40");
-    await screen.getByTestId("pet-weight").fill("heavy");
-    await screen.getByTestId("pet-save").click();
-    await expect(screen.getByText("Choose dog or cat.")).toBeVisible();
-    await expect(screen.getByText("Enter your pet's name.")).toBeVisible();
-    await expect(screen.getByText("Use YYYY-MM-DD, e.g. 2022-04-15.")).toBeVisible();
-    await expect(screen.getByText("Enter the weight in kg, e.g. 3.2.")).toBeVisible();
-
-    await screen.getByTestId("pet-allergy-input").fill("chicken");
-    await screen.getByTestId("pet-allergy-add").click();
-    await screen.getByTestId("pet-allergy-input").fill("CHICKEN");
-    await screen.getByTestId("pet-allergy-add").click();
-    await expect(screen.getByText("chicken is already on the list.")).toBeVisible();
-
-    await expect(page).toHaveURL(/\/owner\/pets\/new$/);
-    expect(db.pets).toEqual([]);
   });
 
   test("a pet profile opened by link survives a refresh", async ({ page }) => {
