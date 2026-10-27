@@ -60,6 +60,7 @@ export function JudgePanel({ panes, accounts, onSettingUp }: Props) {
   const [playing, setPlaying] = useState<string | null>(null);
   const [autoPlay, setAutoPlay] = useState<Scene | null>(null);
   const [intro, setIntro] = useState<Scene | null>(null);
+  const [tryAsk, setTryAsk] = useState<Scene | null>(null);
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -84,6 +85,7 @@ export function JudgePanel({ panes, accounts, onSettingUp }: Props) {
       }
       now.finale.forEach((side) => void send(side.pane, { op: "run", script: side.steps, pace }, WAIT_MS.go).catch(() => undefined));
       if (now.scene.autoPlay) setAutoPlay(now.scene);
+      if (now.scene.tryIt) setTryAsk(now.scene.tryIt);
       flow.current = null;
       setPlaying(null);
     };
@@ -359,6 +361,17 @@ export function JudgePanel({ panes, accounts, onSettingUp }: Props) {
       </Pressable>
       ) : null}
       {tab === "scenes" && more ? SCENES.filter((scene) => scene.more).map((scene) => row(scene)) : null}
+      {/* A try-it run (not one of the cards): the judge taps along with the outlines. */}
+      {active && playing === active.key && !SCENES.some((scene) => scene.key === active.key) ? (
+        <View style={[styles.scene, styles.sceneOn, styles.sceneBody, styles.tryRow]} testID="judge-try-playing">
+          <Text style={styles.sceneTitle}>{active.title}</Text>
+          <Text style={styles.hint}>{active.hint}</Text>
+          <View style={styles.playingRow}>
+            <Text style={styles.playing}>Your turn on the phone.</Text>
+            <Button label="Stop" variant="secondary" onPress={() => void stop()} testID="judge-try-stop" />
+          </View>
+        </View>
+      ) : null}
       <View style={styles.actions}>
         <Button
           label="Replay"
@@ -382,6 +395,27 @@ export function JudgePanel({ panes, accounts, onSettingUp }: Props) {
           {error}
         </Text>
       ) : null}
+      <Modal visible={tryAsk !== null} transparent animationType="fade" onRequestClose={() => setTryAsk(null)}>
+        <View style={styles.backdrop}>
+          <View style={styles.introCard} testID="judge-try">
+            <Text style={styles.introTitle}>Want to try it yourself?</Text>
+            <Text style={styles.introBody}>{tryAsk?.hint}</Text>
+            <View style={styles.introActions}>
+              <Button label="No" variant="secondary" onPress={() => setTryAsk(null)} style={styles.action} testID="judge-try-no" />
+              <Button
+                label="Yes"
+                onPress={() => {
+                  const scene = tryAsk;
+                  setTryAsk(null);
+                  if (scene) void run(scene);
+                }}
+                style={styles.action}
+                testID="judge-try-yes"
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
       <Modal visible={intro !== null} transparent animationType="fade" onRequestClose={() => setIntro(null)}>
         <View style={styles.backdrop}>
           <View style={styles.introCard} testID="judge-intro">
@@ -482,6 +516,7 @@ const makeStyles = (theme: Theme) =>
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     playing: { flex: 1, fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     playingRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
+    tryRow: { paddingTop: theme.spacing.sm + 4, gap: theme.spacing.xs + 2 },
     backdrop: { flex: 1, alignItems: "center", justifyContent: "center", padding: theme.spacing.lg, backgroundColor: "rgba(0,0,0,0.4)" },
     introCard: {
       width: "100%",

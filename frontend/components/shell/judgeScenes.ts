@@ -41,6 +41,8 @@ export type Scene = {
   intro?: { title: string; body: string; note?: string };
   /** Above 1 plays the scripts slower (2: half speed). */
   pace?: number;
+  /** When the scene ends, "Want to try it yourself?"; Yes runs this scene (a fresh start with the first taps outlined). */
+  tryIt?: Scene;
 };
 
 export const NANO: SceneTag = { label: "Nemotron Nano", nvidia: true };
@@ -292,6 +294,24 @@ export const SCENES: Scene[] = [
     owner: { path: "/owner/bookings", script: CHAT_OWNER_SCRIPT },
     sitter: { path: "/sitter/chat", script: CHAT_SITTER_SCRIPT },
     tags: [SUPER, NANO],
+    tryIt: {
+      key: "chat-try",
+      title: "Book in chat, by hand",
+      hint: "Tap Bookings, then Chloe, then Start chat.",
+      state: "pets",
+      lead: "owner",
+      // Each tap is outlined in turn; after Start chat the judge chats on their own.
+      owner: {
+        path: "/owner",
+        script: [
+          { invite: "tab:Bookings", text: "Tap Bookings", await: true },
+          { invite: "sitter-tile-Chloe", text: "Tap Chloe", await: true },
+          { invite: "start-chat", text: "Tap Start chat", await: true },
+        ],
+      },
+      sitter: SITTER_HOME,
+      tags: [],
+    },
   },
   {
     key: "care",

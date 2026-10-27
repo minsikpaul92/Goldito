@@ -23,8 +23,11 @@ export type ScriptStep =
   | { pause: number }
   /** Open another screen (a full load); the rest plays there. */
   | { open: string }
-  /** The end: a pulsing outline and a note on a control, asking the judge to try it (until it is tapped). */
-  | { invite: string; text: string }
+  /**
+   * A pulsing outline and a note on a control, asking the judge to tap it (until it is tapped). With `await`, the next
+   * step waits for that tap (a guided try: one control after another).
+   */
+  | { invite: string; text: string; await?: boolean }
   /** Tap a control only if it shows within a moment (an optional choice, e.g. a nearby meeting spot). */
   | { tapIf: string }
   /** Tap the first of these controls whose words match `prefer` (a pattern, any case), else the first one (an AI chip). */
@@ -97,6 +100,11 @@ function visible(el: HTMLElement): boolean {
 }
 
 function query(testID: string): HTMLElement | null {
+  // "tab:Bookings": a tab bar button, found by its role and words (the tab bar has no testIDs).
+  if (testID.startsWith("tab:")) {
+    const name = testID.slice(4);
+    return Array.from(document.querySelectorAll<HTMLElement>('[role="tab"]')).find((el) => visible(el) && el.innerText.includes(name)) ?? null;
+  }
   return Array.from(document.querySelectorAll<HTMLElement>(selector(testID))).find(visible) ?? null;
 }
 
@@ -256,6 +264,14 @@ export async function playScript(steps: ScriptStep[], color: string, pace = 1): 
     } else if ("invite" in step) {
       const el = await until(() => query(step.invite), FIND_MS, step.invite);
       invite(el, step.text, color);
+      if (step.await) {
+        let tapped = false;
+        // Mouse in the frame comes as touch emulation, so a press counts as well as a click.
+        for (const type of ["click", "pointerdown", "touchstart"]) el.addEventListener(type, () => (tapped = true), { once: true, capture: true });
+        // The judge takes their time: no limit but Stop.
+        await until(() => (tapped ? true : null), 24 * 60 * 60 * 1000, step.invite);
+        clearInvite();
+      }
     } else if ("wait" in step) {
       await until(() => query(step.wait), step.timeout ?? FIND_MS, step.wait);
     } else if ("count" in step) {
