@@ -17,7 +17,8 @@ type Props = {
 };
 
 const FADE_MS = 900;
-const ROOM_HEIGHT = 380;
+// Short enough that title, room and button fit a 704 px phone without scrolling.
+const ROOM_HEIGHT = 320;
 
 /** The pet room of sign-up: the same screen as the pet's page, with the pet walking, turning and lying down. Mount it again to play it again. */
 export function PetReveal({ name, species, breed, coat, weightKg, onDone, testID }: Props) {
@@ -36,7 +37,7 @@ export function PetReveal({ name, species, breed, coat, weightKg, onDone, testID
     <View
       accessibilityRole="image"
       accessibilityLabel={`${species} in 8-bit, build ${recipe.build ?? 0}, coat ${recipe.colors?.coat ?? "default"}`}
-      style={{ alignSelf: "stretch", height: ROOM_HEIGHT }}
+      style={{ alignSelf: "stretch", height: ROOM_HEIGHT, marginTop: -8 }}
       testID={testID}
     >
       <Animated.View style={{ flex: 1, opacity: fade, transform: [{ scale: fade.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] }) }] }}>

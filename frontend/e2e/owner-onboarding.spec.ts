@@ -137,6 +137,9 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-generate").click();
     await expect(screen.getByTestId("own-title")).toHaveText("Meet Pip");
     await expect(screen.getByTestId("own-next")).toBeEnabled();
+    // Title, room and button fit one screen: no scrolling.
+    const scroller = screen.getByTestId("own-step-reveal");
+    expect(await scroller.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
     const heavy = await screen.getByTestId("own-reveal-pet").getAttribute("aria-label");
     // Changing the weight draws it again.
     await screen.getByTestId("own-back").click();

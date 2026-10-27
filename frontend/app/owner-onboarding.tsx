@@ -532,7 +532,7 @@ export default function OwnerOnboarding() {
   if (step === "reveal" && species) {
     return frame(
       `Meet ${petName}`,
-      <View style={styles.center}>
+      <View style={styles.reveal}>
         <PetReveal
           name={petName}
           species={species}
@@ -917,6 +917,7 @@ export default function OwnerOnboarding() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     center: { alignItems: "center", paddingVertical: theme.spacing.lg },
+    reveal: { alignItems: "center" },
     grid: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
     half: { flexBasis: "47%", flexGrow: 1 },
     row: { flexDirection: "row", gap: theme.spacing.sm, alignItems: "center" },
