@@ -81,6 +81,7 @@ STAY_PET_TABLES = (
     ("Life Records", "pet_life_records"),
 )
 OWNER_PET_TABLES = (
+    ("treat checks", "safety_checks"),
     ("care tasks", "care_tasks"),
     ("care requests", "care_requests"),
     ("care change requests", "care_change_requests"),
@@ -98,6 +99,7 @@ def plan(
     scope: Scope = "both",
     pair_message_ids: list[str] | None = None,
     keep_schedule: bool = False,
+    extra_pet_ids: list[str] | None = None,
 ) -> list[Step]:
     """What to delete, in order. `scope` says whose own data goes: the owner's (pets and their care data), the
     sitter's (schedule), or both. Either way the pair's own bookings and inquiries go, with what a stay left on the
@@ -153,6 +155,9 @@ def plan(
         steps.append(Step("schedule rows", "sitter_availability", {"sitter_id": [sitter_id]}))
     if owner_side and state == "empty":
         steps.append(Step("pets", "pets", {"owner_id": [owner_id]}))
+    elif owner_side and extra_pet_ids:
+        # A pet the owner added on top of the set's own is removed, so the stay books the set's pets only.
+        steps.append(Step("added pets", "pets", {"id": extra_pet_ids}))
     return steps
 
 
@@ -229,6 +234,13 @@ def sitter_has_other_bookings(client: Client, owner_id: str, sitter_id: str) -> 
 def owner_pet_ids(client: Client, owner_id: str) -> list[str]:
     rows = client.table("pets").select("id").eq("owner_id", owner_id).execute().data
     return [row["id"] for row in rows]
+
+
+def added_pet_ids(client: Client, owner_id: str, pets=PETS) -> list[str]:
+    """The owner's pets that are not one of the set's own (by name): the ones the owner added."""
+    names = {pet[0] for pet in pets}
+    rows = client.table("pets").select("id, name").eq("owner_id", owner_id).execute().data
+    return [row["id"] for row in rows if row["name"] not in names]
 
 
 def ensure_pets(client: Client, owner_id: str, today: date, pets=PETS) -> list[str]:
@@ -618,6 +630,7 @@ def reset(
         scope=scope,
         pair_message_ids=pair_message_ids(client, owner_id, sitter_id),
         keep_schedule=keep_schedule,
+        extra_pet_ids=added_pet_ids(client, owner_id, demo_set.pets),
     )
     for step in steps:
         report.append((step.label, count_rows(client, step)))
