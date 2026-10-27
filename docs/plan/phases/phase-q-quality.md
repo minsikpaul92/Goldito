@@ -68,7 +68,7 @@ When judges follow the demo path (inquiry → meeting → booking → care · tr
 
 > If you want to change the order, talk to Minsik first (in particular, Q.6 does not start before R1b is merged).
 
-> **Q.1 areas (2026-10-19):** the hand test is split into four areas, posted as issues. **1 Booking · 2 Care & Pet Transit · 3 Completion · 4 Sign-up** (the matching sections of the test-guide). JeonBeomGu-S takes the fixes for incoming QA issues first ([phase-03d § QA issues to clean up together](phase-03d-booking-chat.md)).
+> **Q.1 areas (2026-10-19):** the hand test is split into four areas, posted as issues. **1 Booking · 2 Care & Pet Transit · 3 Completion · 4 Sign-up** (the matching sections of the test-guide). JeonBeomGu-S takes the fixes for incoming QA issues first (phase-03d § QA issues to clean up together).
 
 ---
 
