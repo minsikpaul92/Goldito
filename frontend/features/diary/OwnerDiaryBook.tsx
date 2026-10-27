@@ -2,7 +2,6 @@ import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { Avatar } from "../../components/ui/Avatar";
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Icon } from "../../components/ui/Icon";
@@ -104,11 +103,10 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
           const mine = page.authorId === me;
           const time = page.sentAt ? new Date(page.sentAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : null;
           return (
-            <View style={styles.byline} testID={`diary-byline-${page.id}`}>
-              <Avatar kind="initial" name={mine ? session.status === "signedIn" ? session.profile.displayName || "You" : "You" : page.sitterName} size={24} />
-              <Text style={styles.bylineWho}>{mine ? "Your page" : `From ${page.sitterName}`}</Text>
-              {time ? <Text style={styles.bylineWhen}>{`· ${time}`}</Text> : null}
-            </View>
+            // The photo viewer's meta line (small, muted), above the page instead of under it.
+            <Text style={styles.byline} testID={`diary-byline-${page.id}`}>
+              {[mine ? "Your page" : `From ${page.sitterName}`, time].filter(Boolean).join(" · ")}
+            </Text>
           );
         }}
         footer={(page) => (
@@ -119,14 +117,13 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
               <>
                 {page.tasks.length > 0 ? (
                   <View style={styles.tasks} testID={`diary-tasks-${page.id}`}>
-                    <Text style={styles.tasksTitle}>{`What ${page.sitterName} did`}</Text>
+                    <Text style={styles.tasksTitle}>{`What ${page.sitterName} did · ${page.tasks.filter((t) => t.status === "done").length} of ${page.tasks.length}`}</Text>
                     {page.tasks.map((t, i) => {
                       const done = t.status === "done";
                       return (
                         <View key={`${i}-${t.title}`} style={[styles.task, i > 0 && styles.taskLine]}>
-                          <View style={[styles.mark, done ? styles.markDone : styles.markMissed]}>
-                            {done ? <Icon name="check" size={14} color={theme.color.primaryText} /> : null}
-                          </View>
+                          {/* TodayTasks' done list: a green ✓; a missed task gets an empty circle and says so. */}
+                          {done ? <Icon name="check" size={18} strokeWidth={2.5} color={theme.color.success} /> : <View style={styles.missed} />}
                           <Text style={styles.taskTitle}>{t.title}</Text>
                           {done ? null : <Text style={styles.taskEnd}>Missed</Text>}
                         </View>
@@ -147,12 +144,10 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    // Who wrote the page, above it: Avatar 24, name in text colour, time muted (small).
-    byline: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, paddingHorizontal: theme.spacing.xs, paddingBottom: theme.spacing.xs },
-    bylineWho: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
-    bylineWhen: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.textMuted },
+    // Who wrote the page, above it: the photo viewer's meta line.
+    byline: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.textMuted, paddingHorizontal: theme.spacing.xs, paddingBottom: theme.spacing.xs },
     footer: { gap: theme.spacing.sm, paddingTop: theme.spacing.xs },
-    // The day's tasks as read-only check rows in a card (the CheckRow look, without a control).
+    // The day's tasks in a card, like TodayTasks' "Done today".
     tasks: { backgroundColor: theme.color.surface, borderRadius: theme.radius.lg, paddingTop: theme.spacing.sm, overflow: "hidden" },
     tasksTitle: {
       fontSize: theme.fontSize.caption,
@@ -165,9 +160,7 @@ const makeStyles = (theme: Theme) =>
     },
     task: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, minHeight: theme.layout.touchTarget, paddingHorizontal: theme.spacing.md },
     taskLine: { borderTopWidth: 1, borderTopColor: theme.color.border },
-    mark: { width: theme.icon.sm, height: theme.icon.sm, borderRadius: theme.icon.sm / 2, alignItems: "center", justifyContent: "center" },
-    markDone: { backgroundColor: theme.color.success },
-    markMissed: { borderWidth: 2, borderColor: theme.color.borderStrong },
+    missed: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: theme.color.borderStrong },
     taskTitle: { flex: 1, fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.text },
     taskEnd: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
   });

@@ -414,9 +414,26 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
           />
         </View>
       ) : (
-        <View style={styles.row}>
-          <TextButton label="Decorate" onPress={() => void start()} testID="decor-start" />
-          {reportId && !writing ? <TextButton label="↗ Share" onPress={() => setSharing(true)} testID="decor-share" /> : null}
+        // The page's actions as the design system's secondary Buttons with their icons, side by side (diary audit, Oct 27).
+        <View style={styles.actionsRow}>
+          <Button
+            label="Decorate"
+            variant="secondary"
+            icon={<Icon name="sticker" size={18} color={theme.color.primary} />}
+            onPress={() => void start()}
+            style={styles.action}
+            testID="decor-start"
+          />
+          {reportId && !writing ? (
+            <Button
+              label="Share"
+              variant="secondary"
+              icon={<Icon name="share" size={18} color={theme.color.primary} />}
+              onPress={() => setSharing(true)}
+              style={styles.action}
+              testID="decor-share"
+            />
+          ) : null}
         </View>
       )}
       {reportId && !writing && Platform.OS === "web" ? (
@@ -462,6 +479,8 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.text,
       backgroundColor: theme.color.accent,
     },
+    actionsRow: { flexDirection: "row", gap: theme.spacing.sm },
+    action: { flex: 1 },
     pictureEmpty: { alignItems: "center", gap: theme.spacing.xs },
     pictureEmptyText: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     pictureActions: { position: "absolute", bottom: theme.spacing.sm, flexDirection: "row", gap: theme.spacing.sm },
