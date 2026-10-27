@@ -15,7 +15,7 @@
 | 1 | Root [README.md](../../../README.md): *How Goldito Works* | One-page product summary, the 5-stage flow |
 | 2 | [the README, How Goldito works](../../../README.md#how-goldito-works) | The 5-stage flow · decisions D27 to D47 · §9 open questions (Seulgi's: #1 delay formula, #5 tone data, #8 zero-retention, #9 mood meter data) |
 | 3 | The 2026-10-09 work split (removed; in git history) | Who does what, §4 rules to avoid conflicts |
-| 4 | **This doc** | My task list Q.0 to Q.10 |
+| 4 | **This doc** | My task list Q.0 to Q.8 |
 | 5 | [test-guide.md](../test-guide.md) §2 · §3 · §4 | Feature status table, scenarios (ID · expected result), known limits |
 | 6 | test-run.md | Starting point for hand tests · demo reset states (`empty` · `pets` · `confirmed` · `ready` · `in_care`) |
 | 7 | The GitHub issue form **QA feedback** (`.github/ISSUE_TEMPLATE/qa-feedback.yml`) · earlier examples in the 2026-10-08 feedback (removed; in git history) | Where to post feedback and in what format |
@@ -65,8 +65,6 @@ When judges follow the demo path (inquiry → meeting → booking → care · tr
 | **Q.6** | **R3 Medium: inquiry AI M-1 to M-11** (**after R1b `fix/review-inquiry` is merged**: same files). Especially M-4 (another owner's text · contact info mixed into the tone examples: the same work as anonymization) | Same way | Same way | 3 days |
 | **Q.7** | **Evaluation (needs keys)**: re-measure the default path with `scripts/measure_inquiry.py` (M-1), compare with and without the tone card with `scripts/measure_caption.py` (M-19), Life Record hallucination test 3 times (07C DoD) | Update the `phases/notes/model-ids.md` table | Numbers · date · one-line conclusion | 1 day |
 | **Q.8** | **Final QA (10/27 to 29)**: the whole demo path at the deploy URL, two accounts, **mouse only** (desktop phone frame) + phone width + **a real phone camera** (Take photo / Choose from library, at the Vercel address) | test-guide ✅, remaining FB | The demo video path finishes with nothing blocking | 1 day |
-| Q.9 | (if time) **R4 Low** L-1 to L-6 bundle, FB-1 · FB-3 · FB-4 | One commit per bundle | review §6 | If time |
-| Q.10 | (P2, if time) **11.7 SFT showcase**: not used in the app runtime (D43) | phase-11-p1.md 11.7 | | If time |
 
 > If you want to change the order, talk to Minsik first (in particular, Q.6 does not start before R1b is merged).
 
