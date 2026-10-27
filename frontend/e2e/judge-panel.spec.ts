@@ -110,12 +110,13 @@ test.describe("judge panel", () => {
     await expect(page.getByTestId("judge-hint")).toHaveText("Max is allergic to chicken. The owner checks a treat, then the sitter.");
     await phoneReady(page);
 
-    // Mood keeps the stay: no reset.
+    // Mood starts in care, so the sitter can try it too.
     await page.getByTestId("judge-more").click();
     await expect(page.getByTestId("judge-scene-mood")).toBeEnabled();
     await page.getByTestId("judge-scene-mood").click();
     await expect.poll(() => phoneUrl(page)).toMatch(/\/owner\/snap\/mood$/);
-    expect(resets).toHaveLength(2);
+    await expect.poll(() => resets.length).toBe(3);
+    expect(resets[2].state).toBe("in_care");
   });
 
   test("the Map finds a feature by search; a scene card runs its scene, the others only open the screen", async ({ page }) => {

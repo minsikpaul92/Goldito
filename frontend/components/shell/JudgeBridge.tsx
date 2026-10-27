@@ -74,7 +74,15 @@ export function JudgeBridge() {
           // Both phones open at once, before either plays, so the last scene's signals go here.
           clearSignals();
           writeHighlight(command.script ? null : command.highlight);
-          queueScript(command.script ? { steps: command.script, pace: command.pace ?? 1 } : null);
+          // A screen the script opens later may name the stay or the pet too ({booking}, {pet}): fill them in now.
+          const steps = command.script
+            ? await Promise.all(
+                command.script.map(async (step) =>
+                  "open" in step && step.open.includes("{") ? { open: await resolvePath(step.open, command.role) } : step,
+                ),
+              )
+            : null;
+          queueScript(steps ? { steps, pace: command.pace ?? 1 } : null);
           reply(command.id, true);
           window.location.replace(path);
         } else if (command.op === "run") {

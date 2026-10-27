@@ -240,25 +240,149 @@ const CHAT_SITTER_SCRIPT: ScriptStep[] = [
   { reveal: "chat-payment-card", timeout: 30_000 },
 ];
 
-/** Feed, walk, potty, nap from the pet room, then the day's page written from the chips and sent. */
+/** A sticker of Max cut out of a photo in the browser, then saved to his sticker box (owner or sitter). */
+const MAKE_STICKER: ScriptStep[] = [
+  { tapBest: "sticker-pet-*", prefer: "Max" },
+  { tap: "sticker-pick" },
+  { tap: "sample-mood_tug" },
+  { wait: "sticker-preview", timeout: AI_MS },
+  { pause: 1_500 },
+  { tap: "sticker-save" },
+  { wait: "sticker-tile", timeout: 30_000 },
+  { pause: 1_500 },
+];
+
+/**
+ * A day of care on Chloe's phone, Max first: check-in tiles on Home, two taps in the pixel pet room, the 5-second
+ * check (a few picks, a note and a photo at once), a sticker of Max, Moments with today's photos, then the diary page:
+ * a line of her own, the page written from the chips, a heart and the sticker on it, Send.
+ */
 const CARE_SCRIPT: ScriptStep[] = [
+  { tapBest: "caring-pet-*", prefer: "Max" },
+  { tap: "tile-ate" },
+  { tap: "tile-option-ate-all" },
+  // The tiles refresh after a send; the next one waits for the check mark.
+  { wait: "tile-sent-ate", timeout: 30_000 },
+  { pause: 2_000 },
+  { tap: "tile-potty" },
+  { tap: "tile-option-potty-normal" },
+  { wait: "tile-sent-potty", timeout: 30_000 },
+  { pause: 1_500 },
   { tap: "home-pager-tab-1" },
-  { tap: "pet-action-*-feed" },
-  { pause: 800 },
   { tap: "pet-action-*-walk" },
   { pause: 800 },
-  { tap: "pet-action-*-potty" },
-  { pause: 800 },
   { tap: "pet-action-*-nap" },
+  { pause: 1_200 },
+  { tap: "home-pager-tab-0" },
+  // The 5-second check: several picks, a note and a photo, sent at once.
+  { tap: "action-five-second" },
+  { wait: "sitter-checkin-screen", timeout: 30_000 },
+  { tap: "checkin-*-walk-30" },
+  { tap: "checkin-*-mood-playful" },
+  { type: "checkin-memo-*", text: "Loved the park today" },
+  { tap: "checkin-photo-*" },
+  { tap: "sample-walk" },
+  { tap: "media-confirm-use" },
+  { wait: "checkin-photo-preview-*", timeout: 30_000 },
+  { tap: "checkin-send-*" },
+  { wait: "checkin-sent-*", timeout: 30_000 },
   { pause: 1_500 },
-  { open: "/sitter/feed?view=diary" },
+  { open: "/sitter/snap/sticker" },
+  ...MAKE_STICKER,
+  // Moments: today's photos, the check-in photo among them.
+  { open: "/sitter/feed" },
+  { wait: "feed-card-*", timeout: 30_000 },
+  { pause: 3_000 },
+  // The diary page, with a line in her own words first (it goes into the page).
+  // Max is the first pet, so his page is the one open.
+  { tap: "feed-view-diary" },
   { wait: "report-chip-*", timeout: AI_MS },
-  { pause: 1_500 },
+  { tap: "report-custom-open-*" },
+  { type: "report-custom-input-*", text: "Chased a squirrel at the park" },
+  { tap: "report-custom-add-*" },
+  { pause: 1_000 },
   { tap: "report-generate-*" },
   { filled: "report-body-*", timeout: AI_MS },
-  { pause: 2_000 },
+  { pause: 2_500 },
+  { tap: "decor-start" },
+  { tap: "decor-preset-heart" },
+  { tap: "decor-add" },
+  { pause: 1_000 },
+  { tap: "decor-save" },
+  { pause: 1_000 },
   { tap: "report-send-*" },
-  { wait: "report-sent-*" },
+  { wait: "report-sent-*", timeout: 30_000 },
+  { signal: "diary-sent" },
+];
+
+/** Robert's side of the day: once the page is sent, his Moments and the diary page. */
+const CARE_OWNER_SCRIPT: ScriptStep[] = [
+  { until: "diary-sent", timeout: 600_000 },
+  { open: "/owner/feed" },
+  { wait: "feed-card-*", timeout: 30_000 },
+  { pause: 3_000 },
+  { tap: "feed-view-diary" },
+  { tap: "diary-entry-cover-*", timeout: 30_000 },
+  { pause: 4_000 },
+];
+
+/** Before Chloe brings them home, a few check-ins, so the Life Record has a stay to write from. */
+const HOME_SITTER_SCRIPT: ScriptStep[] = [
+  { tapBest: "caring-pet-*", prefer: "Max" },
+  { tap: "tile-ate" },
+  { tap: "tile-option-ate-most" },
+  { wait: "tile-sent-ate", timeout: 30_000 },
+  { pause: 2_000 },
+  { tap: "tile-walk" },
+  { tap: "tile-option-walk-30" },
+  { wait: "tile-sent-walk", timeout: 30_000 },
+  { pause: 2_000 },
+  { tap: "tile-mood" },
+  { tap: "tile-option-mood-happy" },
+  { wait: "tile-sent-mood", timeout: 30_000 },
+  { pause: 1_500 },
+  { open: "/sitter/bookings/{booking}" },
+  { tap: "handoff-returned", timeout: 30_000 },
+  { pause: 1_500 },
+  { tap: "return-confirm" },
+  { signal: "returned" },
+  // How was Max? AI chips from the stay; Chloe keeps one and saves.
+  { tap: "pet-review-start-*", timeout: 30_000 },
+  { gone: "pet-review-loading-*", timeout: AI_MS },
+  { tap: "pet-review-chip-*", timeout: AI_MS },
+  { pause: 1_000 },
+  { tap: "pet-review-save-*" },
+];
+
+/** Robert sees Home safe, the Life Record being written and the record itself, then Max's record page. */
+const HOME_OWNER_SCRIPT: ScriptStep[] = [
+  { until: "returned", timeout: 300_000 },
+  { wait: "home-safe", timeout: AI_MS },
+  { pause: 2_000 },
+  { wait: "life-record-*", timeout: 120_000 },
+  { pause: 4_000 },
+  { open: "/owner/pets/{pet}/record" },
+  { wait: "record-latest", timeout: 30_000 },
+  { pause: 3_000 },
+];
+
+const MOOD_SCRIPT: ScriptStep[] = [{ tap: "mood-pick" }, { tap: "sample-mood_tug" }, { wait: "mood-result", timeout: AI_MS }];
+
+/** From the chat: Start trip, the simulated drive (no location prompt), and the live map on both phones. */
+const TRIP_OWNER_SCRIPT: ScriptStep[] = [
+  { tap: "chat-trip-start-button", timeout: 30_000 },
+  { tap: "share-trip-sheet-simulate" },
+  { wait: "trip-map", timeout: 30_000 },
+  { signal: "driving" },
+  { wait: "trip-place-card", timeout: 180_000 },
+  { pause: 2_000 },
+];
+
+const TRIP_SITTER_SCRIPT: ScriptStep[] = [
+  { until: "driving", timeout: 120_000 },
+  { tap: "chat-trip-open", timeout: 30_000 },
+  { wait: "trip-map", timeout: 30_000 },
+  { wait: "trip-arrived-card", timeout: 180_000 },
 ];
 
 export const SCENES: Scene[] = [
@@ -324,66 +448,64 @@ export const SCENES: Scene[] = [
   {
     key: "care",
     title: "A day of care",
-    hint: "Tap feed, walk, potty, nap. Then write the page from the chips.",
+    hint: "Check-ins, the 5-second check, a sticker, Moments, then the diary page.",
     state: "in_care",
     lead: "sitter",
-    owner: OWNER_HOME,
+    owner: { path: "/owner", script: CARE_OWNER_SCRIPT },
     sitter: { path: "/sitter", highlight: "checkin-tiles", script: CARE_SCRIPT },
     tags: [SUPER, VISION],
   },
   {
     key: "home",
     title: "Home safe",
-    hint: "Tap Returned. The owner sees Home safe and the Life Record.",
+    hint: "Chloe brings them home. Robert gets Home safe and each pet's Life Record.",
     state: "in_care",
     lead: "sitter",
-    owner: {
-      path: "/owner/bookings/{booking}",
-      highlight: "home-safe",
-      script: [{ wait: "home-safe", timeout: AI_MS }, { wait: "life-record-*", timeout: AI_MS }],
-    },
-    sitter: {
-      path: "/sitter/bookings/{booking}",
-      highlight: "handoff-returned",
-      script: [{ pause: 1_500 }, { tap: "handoff-returned" }, { tap: "return-confirm" }],
-    },
+    owner: { path: "/owner/bookings/{booking}", highlight: "home-safe", script: HOME_OWNER_SCRIPT },
+    sitter: { path: "/sitter", highlight: "handoff-returned", script: HOME_SITTER_SCRIPT },
     tags: [SUPER, { label: "Qwen3 Embedding" }],
+    intro: {
+      title: "Home safe",
+      body: "Chloe brings Max and Mochi home. Robert is told they are home safe, and Goldito writes each pet's Life Record from the stay: what they ate, potty, behavior and tips for the next sitter. The record is saved so the next booking starts from it.",
+      note: "AI can make mistakes. Always double-check.",
+    },
   },
   {
     key: "mood",
     title: "Mood",
     hint: "Pick a pet photo.",
-    state: null,
+    // In care, so Chloe can read a mood on her phone too.
+    state: "in_care",
     lead: "owner",
     owner: {
       path: "/owner/snap/mood",
       highlight: "mood-pick",
-      script: [{ tap: "mood-pick" }, { tap: "sample-mood_tug" }, { wait: "mood-result", timeout: AI_MS }],
+      script: MOOD_SCRIPT,
+      finale: [{ invite: "mood-pick", text: "Try another photo" }],
     },
-    sitter: SITTER_HOME,
+    sitter: { path: "/sitter/snap/mood", finale: [{ invite: "mood-pick", text: "Try one on Chloe's phone" }] },
     tags: [VISION, NANO],
     more: true,
   },
   {
     key: "trip",
     title: "Live trip",
-    hint: "Watch the drive and the ETA.",
+    hint: "Start trip in the chat, then watch the drive and the ETA.",
+    // Ready for drop-off: Robert drives Max and Mochi to Chloe.
     state: "ready",
     lead: "owner",
-    owner: { path: "/owner/bookings/{booking}/trip" },
-    sitter: { path: "/sitter/bookings/{booking}/trip" },
+    owner: { path: "{chat}", script: TRIP_OWNER_SCRIPT },
+    sitter: { path: "{chat}", script: TRIP_SITTER_SCRIPT },
     tags: [{ label: "No AI" }],
-    play: { label: "Play the drive", role: "owner", what: "drive" },
-    autoPlay: true,
     more: true,
   },
   {
     key: "sticker",
     title: "Sticker",
-    hint: "Pick a photo and cut the pet out.",
+    hint: "Pick a photo, the pet is cut out in the browser, Save.",
     state: null,
     lead: "owner",
-    owner: { path: "/owner/snap/sticker" },
+    owner: { path: "/owner/snap/sticker", script: MAKE_STICKER, finale: [{ invite: "sticker-pick", text: "Pick a photo and make one" }] },
     sitter: SITTER_HOME,
     tags: [{ label: "MediaPipe, in the browser" }],
     more: true,

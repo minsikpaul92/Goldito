@@ -67,6 +67,51 @@ export function buildSimulatedRoute(from: LatLng, to: LatLng, steps = 25): LatLn
   return [...route, route[route.length - 1]];
 }
 
+/** OSRM's public demo router (OpenStreetMap roads). Used only for the simulated demo drive between demo homes. */
+const ROAD_ROUTER = "https://router.project-osrm.org/route/v1/driving";
+const ROAD_TIMEOUT_MS = 4000;
+
+/** Points along a path, evenly spaced by distance, from the start to `reach` of its length. */
+function resample(path: LatLng[], count: number, reach: number): LatLng[] {
+  const legs = path.slice(1).map((p, i) => distanceMeters(path[i], p));
+  const total = legs.reduce((a, b) => a + b, 0) * reach;
+  return Array.from({ length: count }, (_, k) => {
+    let left = (total * k) / (count - 1);
+    for (let i = 0; i < legs.length; i += 1) {
+      if (left <= legs[i] || i === legs.length - 1) {
+        const t = legs[i] > 0 ? Math.min(1, left / legs[i]) : 0;
+        return { lat: path[i].lat + (path[i + 1].lat - path[i].lat) * t, lng: path[i].lng + (path[i + 1].lng - path[i].lng) * t };
+      }
+      left -= legs[i];
+    }
+    return path[path.length - 1];
+  });
+}
+
+/**
+ * The simulated drive along real roads (OSRM), stopping ~60 m short like the bowed line, with the same parked last
+ * step. Falls back to buildSimulatedRoute when the router is slow, down or finds no road.
+ */
+export async function buildRoadRoute(from: LatLng, to: LatLng, steps = 30): Promise<LatLng[]> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ROAD_TIMEOUT_MS);
+    const url = `${ROAD_ROUTER}/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
+    const response = await fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+    if (!response.ok) throw new Error("no route");
+    const body = (await response.json()) as { routes?: { distance: number; geometry: { coordinates: [number, number][] } }[] };
+    const route = body.routes?.[0];
+    const coords = route?.geometry.coordinates ?? [];
+    if (!route || coords.length < 2) throw new Error("no route");
+    const path = coords.map(([lng, lat]) => ({ lat, lng }));
+    const reach = route.distance > SIM_STOP_SHORT_M ? 1 - SIM_STOP_SHORT_M / route.distance : 1;
+    const points = resample(path, steps, reach);
+    return [...points, points[points.length - 1]];
+  } catch {
+    return buildSimulatedRoute(from, to);
+  }
+}
+
 type GeolocationLike = Pick<Geolocation, "getCurrentPosition" | "watchPosition" | "clearWatch">;
 
 function toFix(p: { coords: { latitude: number; longitude: number; accuracy?: number | null } }): Fix {
