@@ -69,7 +69,7 @@ export const MAP_FEATURES: MapFeature[] = [
   { key: "record", stage: "home", title: "Pet Life Record", line: "Eats, meds, behaviour and tips, with sources.", who: "owner", lead: "owner", path: "/owner/pets/{pet}/record", tags: [SUPER, QWEN], words: "life record memory history rag" },
   { key: "history", stage: "home", title: "History", line: "Every past stay.", who: "owner", lead: "owner", path: "/owner/history", tags: [], words: "past stays" },
 
-  { key: "treat", stage: "snap", title: "Treat check", line: "Chicken jerky for Max shows a red DANGER screen.", who: "both", lead: "owner", path: "/owner/snap/treat", scene: "treat", tags: [VISION, { label: "Rule table" }, TAVILY, ULTRA], words: "safety allergy food ingredient scan label danger" },
+  { key: "treat", stage: "snap", title: "Treat check", line: "Tender Strips (chicken jerky) for Max shows a red DANGER screen.", who: "both", lead: "owner", path: "/owner/snap/treat", scene: "treat", tags: [VISION, { label: "Rule table" }, TAVILY, ULTRA], words: "safety allergy food ingredient scan label danger" },
   { key: "mood", stage: "snap", title: "Mood from a photo", line: "A face and one sentence about the pet.", who: "both", lead: "owner", path: "/owner/snap/mood", scene: "mood", tags: [VISION, NANO], words: "emotion feeling photo" },
   { key: "sticker", stage: "snap", title: "Stickers", line: "Cut the pet out of a photo.", who: "both", lead: "owner", path: "/owner/snap/sticker", scene: "sticker", tags: [{ label: "MediaPipe, in the browser" }], words: "decorate cutout sticker fun" },
 ];

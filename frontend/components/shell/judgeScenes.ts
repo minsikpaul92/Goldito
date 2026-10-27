@@ -123,7 +123,7 @@ const MEET_SCRIPT: ScriptStep[] = [
   { invite: "add-pet", text: "Now add a pet yourself" },
 ];
 
-/** The owner checks chicken jerky for Max (allergic to chicken): the red DANGER screen. */
+/** The owner checks Tender Strips (chicken jerky) for Max, allergic to chicken: the red DANGER screen. */
 const TREAT_OWNER_SCRIPT: ScriptStep[] = [
   { tap: "treat-pet-*" },
   { tap: "treat-snap" },
@@ -136,7 +136,7 @@ const TREAT_OWNER_SCRIPT: ScriptStep[] = [
   { pause: 3_000 },
 ];
 
-/** Then the sitter checks a biscuit with animal fat for Max: a WARNING. */
+/** Then the sitter checks Crunchy Bites (animal fat) for Max: a WARNING. */
 const TREAT_SITTER_SCRIPT: ScriptStep[] = [
   { tap: "treat-pet-*" },
   { tap: "treat-snap" },
@@ -279,7 +279,8 @@ export const SCENES: Scene[] = [
       body: "Max is allergic to chicken. Snap the ingredients on a treat or food, and Goldito catches what is easy to miss. The owner checks one, then the sitter.",
       note: "AI can make mistakes. Always double-check.",
     },
-    pace: 2,
+    // 50% faster than half speed (2): still slow enough to follow.
+    pace: 4 / 3,
   },
   {
     key: "chat",
