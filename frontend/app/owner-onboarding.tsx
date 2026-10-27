@@ -6,6 +6,7 @@ import { Icon } from "../components/ui/Icon";
 import { BigInput } from "../components/ownerOnboarding/BigInput";
 import { BigOption } from "../components/ownerOnboarding/BigOption";
 import { PetGlanceCard } from "../components/PetGlanceCard";
+import { PetSprite } from "../components/pet/PetSprite";
 import { PetPhotosStep } from "../components/ownerOnboarding/PetPhotosStep";
 import { VoiceInterview } from "../components/ownerOnboarding/VoiceInterview";
 import { StepFrame } from "../components/ownerOnboarding/StepFrame";
@@ -101,6 +102,11 @@ export default function OwnerOnboarding() {
   }, [draft?.step]);
   // On the summary the card also shows what the typed breed needs (it fills in a moment after).
   const needs = useBreedNeeds(draft?.species ?? null, draft && draft.step === "summary" ? draft.breed : null);
+  /** The reveal screen shows the pet once Generate was tapped; later changes to breed, color or weight draw it again. */
+  const [generated, setGenerated] = useState(false);
+  useEffect(() => {
+    if (draft?.step === "species" || draft?.step === "name") setGenerated(false);
+  }, [draft?.step]);
   const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Cover photos a guess was already asked for, so a photo is looked at once.
   const guessed = useRef<Set<string>>(new Set());
@@ -131,7 +137,8 @@ export default function OwnerOnboarding() {
   if (session.status !== "signedIn" || session.profile.role !== "owner") return <Redirect href="/" />;
   if (!draft) return <LoadingView />;
 
-  const ids = stepIds(draft.species, draft.ownerDone, !draft.ownerDone || draft.adding);
+  const canReveal = draft.breed.trim() !== "" && draft.coat !== "" && weightFromDraft(draft) !== null;
+  const ids = stepIds(draft.species, draft.ownerDone, !draft.ownerDone || draft.adding, canReveal);
   const index = stepIndex(ids, draft.step);
   const step = ids[index];
   const petName = draft.name.trim();
@@ -515,6 +522,26 @@ export default function OwnerOnboarding() {
       nextButton(draft.weight.trim() === ""),
       undefined,
       true,
+    );
+  }
+
+  if (step === "reveal" && species) {
+    return frame(
+      `Meet ${petName}`,
+      <View style={styles.center}>
+        {generated ? (
+          <PetSprite
+            species={species}
+            breed={draft.breed}
+            coat={draft.coat}
+            weightKg={weightFromDraft(draft)}
+            mood="calm"
+            pixel={9}
+            testID="own-reveal-pet"
+          />
+        ) : null}
+      </View>,
+      generated ? nextButton() : <Button label="Generate" onPress={() => setGenerated(true)} testID="own-generate" />,
     );
   }
 

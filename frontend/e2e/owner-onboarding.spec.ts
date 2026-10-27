@@ -132,6 +132,23 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-weight").fill("6,5");
     await screen.getByTestId("own-next").click();
+
+    // The 8-bit pet: drawn from breed, color and weight once Generate is tapped, and again when one of them changes.
+    await expect(screen.getByTestId("own-title")).toHaveText("Meet Pip");
+    await expect(screen.getByTestId("own-reveal-pet")).toHaveCount(0);
+    await screen.getByTestId("own-generate").click();
+    await expect(screen.getByTestId("own-reveal-pet")).toBeVisible();
+    const white = await screen.getByTestId("own-reveal-pet").innerHTML();
+    await screen.getByTestId("own-back").click();
+    await screen.getByTestId("own-weight").fill("1");
+    await screen.getByTestId("own-next").click();
+    await expect(screen.getByTestId("own-reveal-pet")).not.toHaveJSProperty("innerHTML", white);
+    await screen.getByTestId("own-back").click();
+    await screen.getByTestId("own-weight").fill("6,5");
+    await screen.getByTestId("own-next").click();
+    await expect(screen.getByTestId("own-reveal-pet")).toBeVisible();
+    await screen.getByTestId("own-next").click();
+
     await expect(screen.getByTestId("own-title")).toHaveText("Tell us about Pip");
     await screen.getByTestId("own-pet-intro").fill("Loves the sofa.");
     await screen.getByTestId("own-next").click();
