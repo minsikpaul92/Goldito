@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Icon } from "../components/ui/Icon";
 import { BigInput } from "../components/ownerOnboarding/BigInput";
 import { BigOption } from "../components/ownerOnboarding/BigOption";
+import { BreedField } from "../components/ownerOnboarding/BreedField";
 import { PetGlanceCard } from "../components/PetGlanceCard";
 import { PetReveal } from "../components/ownerOnboarding/PetReveal";
 import { PetPhotosStep } from "../components/ownerOnboarding/PetPhotosStep";
@@ -391,6 +392,8 @@ export default function OwnerOnboarding() {
       `Tell us about ${petName}`,
       <VoiceInterview
         items={voiceItems(petName, draft.weightUnit, species ?? "dog")}
+        // Breed, age, weight and foods have their own screens next; the boxes skip them.
+        notOnForm={["breed", "age", "weight", "allergies"]}
         parse={parse}
         onSubmit={(values) => {
           update(applyVoiceForm(draft, values, spoken));
@@ -424,12 +427,11 @@ export default function OwnerOnboarding() {
             <BigOption label="Not sure" onPress={() => pick({ breed: "" })} style={styles.half} testID="own-breed-unsure" />
           </View>
         ) : null}
-        <BigInput
+        <BreedField
+          species={species ?? "dog"}
           value={draft.breed}
-          onChangeText={(breed) => update({ breed })}
-          onSubmitEditing={next}
-          returnKeyType="next"
-          accessibilityLabel="Breed"
+          onChange={(breed) => update({ breed })}
+          onSubmit={next}
           testID="own-breed"
         />
         {heard(draft.voice.breed, draft.breed.trim() === draft.voice.breed?.value, "breed")}

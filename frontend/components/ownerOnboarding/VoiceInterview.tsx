@@ -21,6 +21,8 @@ type Props = {
   parse: (text: string) => Promise<Record<string, string>>;
   /** The answers the person kept, one text per item key. */
   onSubmit: (values: Record<string, string>) => void;
+  /** Items asked aloud but left off the boxes, because a later screen asks them anyway (what was heard still counts). */
+  notOnForm?: string[];
 };
 
 type Phase = "idle" | "recording" | "reading" | "transcript" | "parsing" | "form";
@@ -47,7 +49,7 @@ const clock = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.floor((m
  * text is shown, then one box per question with what was heard in it, to fix. Typing is the same boxes, empty.
  * The recording goes to a speech-to-text service once and is not kept.
  */
-export function VoiceInterview({ items, parse, onSubmit }: Props) {
+export function VoiceInterview({ items, parse, onSubmit, notOnForm = [] }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { height: screenHeight } = useWindowDimensions();
@@ -196,7 +198,7 @@ export function VoiceInterview({ items, parse, onSubmit }: Props) {
       <View style={styles.root} testID="own-voice-form">
         {problem ? <Banner tone="warning" body={problem} testID="own-voice-problem" /> : null}
         {parseError ? <Banner tone="warning" body={parseError} testID="own-voice-error" /> : null}
-        {items.map((item) => (
+        {items.filter((item) => !notOnForm.includes(item.key)).map((item) => (
           <View key={item.key} style={styles.field}>
             <Text style={styles.label}>{item.question}</Text>
             <BigInput

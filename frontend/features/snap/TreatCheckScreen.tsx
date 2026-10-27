@@ -188,7 +188,17 @@ function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
     step === "uploading" || step === "reading" ? "Reading the label…" : step === "checking" ? `Checking for ${name}…` : null;
 
   return (
-    <Screen contentStyle={styles.content} testID="treat-check">
+    <Screen
+      contentStyle={styles.content}
+      // Always in view, not at the end of a long result.
+      footer={
+        <Text style={styles.disclaimer} testID="treat-disclaimer">
+          {DISCLAIMER}
+        </Text>
+      }
+      footerSolid
+      testID="treat-check"
+    >
       <View style={styles.section}>
         <Text style={styles.label}>{role === "sitter" ? "Which pet in your care?" : "Which pet?"}</Text>
         <PetChips
@@ -263,10 +273,6 @@ function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
           ))}
         </View>
       ) : null}
-
-      <Text style={styles.disclaimer} testID="treat-disclaimer">
-        {DISCLAIMER}
-      </Text>
 
       <AlertModal
         visible={!!result && danger && !result.acknowledgedAt && !step}
