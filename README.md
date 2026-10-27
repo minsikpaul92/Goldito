@@ -16,8 +16,8 @@ the server owns every fact, and a person approves every word.
 [![Tavily](https://img.shields.io/badge/search-Tavily-4f46e5?style=flat-square)](#tavily-live-answers-from-trusted-sites)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-<!-- TODO(image): hero GIF, about 360 px wide. The owner adds a photo of Max and Goldito draws Max as an 8-bit pet on Home.
-<img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner adds a photo of Max, and Goldito draws Max as an 8-bit pet on Home" width="360">
+<!-- TODO(image): hero GIF, about 360 px wide. The owner adds a photo of Max; the AI reads breed and coat color, and Goldito builds Max as an 8-bit pet from the preset, color, and weight.
+<img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner adds a photo of Max, the AI reads breed and coat color, and Goldito builds Max as an 8-bit pet" width="360">
 -->
 
 **[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up) · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
@@ -195,7 +195,7 @@ Tap a stage for the details.
 <details>
 <summary><b>Sign-up by photo and voice, and the 8-bit pet</b> (owners and sitters)</summary>
 
-- One question per screen, with big buttons. A **pet photo** gives up to three breed guesses and a coat color (MiniCPM-V 4.5); the owner confirms. Goldito then draws the pet as an **8-bit pet** from its breed, size, and the colors in its photo, and it lives on the owner's Home.
+- One question per screen, with big buttons. A **pet photo** goes to MiniCPM-V 4.5, which reads up to three breed guesses and a coat color; the owner confirms them and adds the weight. Goldito then builds the **8-bit pet** from a library of breed presets: the breed picks the shape, the coat color paints it, and the weight sets the build. It lives on the owner's Home, and **Match colors from photo** can repaint it with the photo's own colors later.
 - **Speak instead of typing:** the recording becomes text (Groq Whisper), the owner can fix it, and Nemotron 3 Nano pulls out profile facts, each with the sentence it came from. The server drops any value without a matching quote, and safety answers are never pre-filled. Sitters can answer their onboarding questions the same way.
 - The pet gets an **at a glance** card (five traits, such as sociability and energy) and a **breed needs** line found with Tavily on trusted breed and vet sites.
 
