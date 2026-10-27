@@ -128,12 +128,24 @@ async function latestBooking(role: Role): Promise<{ id: string; other: string }>
   return { id: row.id, other: role === "owner" ? row.sitter_id : row.owner_id };
 }
 
+/** The owner's first pet (the set's Max). */
+async function firstPet(): Promise<string> {
+  const me = await myId();
+  const { data } = await getSupabase().from("pets").select("id").eq("owner_id", me).order("created_at", { ascending: true }).limit(1);
+  const row = (data ?? [])[0] as { id: string } | undefined;
+  if (!row) throw new Error("No pet yet. Try Reset.");
+  return row.id;
+}
+
 async function resolvePath(path: string, role: Role): Promise<string> {
   if (path === "{chat}") {
     const booking = await latestBooking(role);
     return `/chat/${await openChatThread(booking.other)}`;
   }
-  if (path.includes("{booking}")) return path.replace("{booking}", (await latestBooking(role)).id);
+  if (path.includes("{booking}")) path = path.replace("{booking}", (await latestBooking(role)).id);
+  // The Map's other screens (Mook, Oct 27): the booking's sitter, and the owner's first pet.
+  if (path.includes("{sitter}")) path = path.replace("{sitter}", (await latestBooking("owner")).other);
+  if (path.includes("{pet}")) path = path.replace("{pet}", await firstPet());
   return path;
 }
 

@@ -30,11 +30,11 @@ export type Scene = {
   more?: boolean;
 };
 
-const NANO: SceneTag = { label: "Nemotron Nano", nvidia: true };
-const SUPER: SceneTag = { label: "Nemotron Super", nvidia: true };
-const ULTRA: SceneTag = { label: "Nemotron Ultra", nvidia: true };
-const MINICPM: SceneTag = { label: "MiniCPM-V" };
-const TAVILY: SceneTag = { label: "Tavily" };
+export const NANO: SceneTag = { label: "Nemotron Nano", nvidia: true };
+export const SUPER: SceneTag = { label: "Nemotron Super", nvidia: true };
+export const ULTRA: SceneTag = { label: "Nemotron Ultra", nvidia: true };
+export const MINICPM: SceneTag = { label: "MiniCPM-V" };
+export const TAVILY: SceneTag = { label: "Tavily" };
 
 const SITTER_HOME: SceneTarget = { path: "/sitter" };
 const OWNER_HOME: SceneTarget = { path: "/owner" };
