@@ -28,7 +28,7 @@ the server owns every fact, and a person approves every word.
 
 ## Goldito in 30 seconds
 
-**The insight.** *"The pet isn't anxious. The owner is."* That is Chloe, a pet sitter, and we have seen it for three years as sitters ourselves. With no news, owners text again, ask for a photo, and ask for it twice. Answering that, plus the replies, the pill schedule, and the evening update, is about **40 minutes a day** for us (about 10 with Goldito, our estimate). And when the stay ends, what the sitter learned about the pet is lost in a chat thread.
+**The insight.** *"The pet isn't anxious. The owner is."* That is Chloe, a pet sitter, and we have seen it for three years as sitters ourselves. With no news, owners text again, ask for a photo, and ask for it twice. Keeping owners in the loop takes us **at least 40 minutes a day**: the replies, the pill schedule, the evening update, the photos. Goldito cuts that by about **85%** (our estimate), and sending an update becomes the fun part: a tap, a photo, a sticker. And when the stay ends, what the sitter learned about the pet is lost in a chat thread.
 
 **What Goldito does.** Goldito cares for the owner too. One chat per owner and sitter carries the whole stay: inquiry, Meet & Greet, booking, the trip, daily care, and the ride home. While the pet is in care, the sitter sends small care messages with a tap, so the owner hears from the sitter before they have to ask.
 
@@ -209,7 +209,7 @@ Tap a stage for the details.
 ## Who it's for
 
 - **Independent pet sitters and the owners they care for, starting in Canada** (consent forms, holidays, and the quote follow Ontario first).
-- **What a sitter gets back:** in our own work, about 30 minutes a day (40 minutes of messages, updates, reports, and schedule checks down to about 10, our estimate).
+- **What a sitter gets back:** in our own work, the 40 minutes a day of messages, updates, reports, and schedule checks drop by about 85% (our estimate).
 - **What an owner gets:** peace of mind, since the owner is the one who worries, not the pet. Updates and alerts arrive without asking, so the owner always knows how the pet is doing now. The sitter keeps checking the care checklist and the allergy check.
 <!-- TODO(Q8): what real owners and sitters said, once they have tried it. -->
 
