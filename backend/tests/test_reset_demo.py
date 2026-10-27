@@ -44,6 +44,7 @@ def world() -> FakeDB:
         daily_reports=[{"id": "r1", "pet_id": MAX, "sitter_id": SITTER}],
         feed_posts=[{"id": "f1", "pet_id": MAX}, {"id": "f2", "pet_id": "other-pet"}],
         pet_life_records=[{"id": "l1", "pet_id": MAX}],
+        safety_checks=[{"id": "s1", "pet_id": MAX}, {"id": "s-other", "pet_id": "other-pet"}],
         knowledge_chunks=[
             {
                 "id": "k-life",
@@ -131,6 +132,8 @@ def test_apply_removes_only_the_demo_accounts_stay_data():
     assert ids(db, "daily_reports") == set()
     assert ids(db, "feed_posts") == {"f2"}
     assert ids(db, "pet_life_records") == set()
+    # The Treat check's Recent checks go with the owner's pets; another owner's stay.
+    assert ids(db, "safety_checks") == {"s-other"}
     # The sitter's policy text and the seeded voice stay; what her approvals taught goes.
     assert ids(db, "knowledge_chunks") == {"k-policy", "k-other"}
     assert ids(db, "tone_samples") == {"t-history"}
@@ -663,3 +666,23 @@ def test_the_demo_answers_use_real_question_keys():
     assert set(demo_accounts.DEMO_PET_PROFILES["Mochi"]["answers"]) == cat
     for profile in demo_accounts.DEMO_PET_PROFILES.values():
         assert all(1 <= v <= 4 for v in profile["answers"].values())
+
+
+def test_a_pet_the_owner_added_is_removed_and_the_sets_own_pets_stay():
+    """Reset puts the owner back to the set's pets, so a stay books Max and Mochi and not a third pet."""
+    db = world()
+    db.tables["pets"].append({"id": "added", "owner_id": OWNER, "name": "Rex"})
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+
+    assert sorted(p["name"] for p in db.tables["pets"] if p["owner_id"] == OWNER) == ["Max", "Mochi"]
+    assert "other-pet" in ids(db, "pets")
+
+
+def test_a_sitter_reset_keeps_a_pet_the_owner_added():
+    db = world()
+    db.tables["pets"].append({"id": "added", "owner_id": OWNER, "name": "Rex"})
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True, scope="sitter")
+
+    assert "added" in ids(db, "pets")
