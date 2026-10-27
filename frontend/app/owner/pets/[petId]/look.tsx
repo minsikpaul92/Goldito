@@ -1,24 +1,24 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { PetSprite } from "../../../../components/pet/PetSprite";
 import { Button } from "../../../../components/ui/Button";
+import { Icon } from "../../../../components/ui/Icon";
 import { ChoiceChips } from "../../../../components/ui/ChoiceChips";
 import { EmptyState } from "../../../../components/ui/EmptyState";
 import { LoadingView } from "../../../../components/ui/LoadingView";
 import { Screen } from "../../../../components/ui/Screen";
 import { SegmentedControl } from "../../../../components/ui/SegmentedControl";
 import { TextButton } from "../../../../components/ui/TextButton";
-import { TextField } from "../../../../components/ui/TextField";
 import { asHat } from "../../../../features/pets/items";
 import { getPet, savePetLook } from "../../../../features/pets/petApi";
-import { PET_BASES, asPetRecipe, recipeFor, type ColorKey, type PetRecipe } from "../../../../features/pets/sprites/petLook";
+import { PET_BASES, asPetRecipe, presetFor, recipeFor, type ColorKey, type PetRecipe } from "../../../../features/pets/sprites/petLook";
 import { PET_PRESETS, type PetPreset } from "../../../../features/pets/sprites/petPresets";
 import { asPixelColors } from "../../../../features/pets/sprites/photoColors";
 import { useIsAdmin } from "../../../../lib/admins";
 import type { Pose } from "../../../../features/pets/sprites/scene";
-import { useThemedStyles } from "../../../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../../../providers/ThemeProvider";
 import { useToast } from "../../../../providers/ToastProvider";
 import { Theme } from "../../../../theme/themes";
 import type { Pet } from "../../../../types/db";
@@ -31,12 +31,21 @@ const SWAP = ["dog", "blacklab", "beagle", "dalmatian", "maltese", "shiba", "jin
 const FUR = ["#F6F1EA", "#EBD3B0", "#E8B886", "#E3A94F", "#E58A3C", "#B8622E", "#CDB394", "#8A5A3B", "#5C3A24", "#1E1A1A", "#7C8590", "#A0A4AA", "#C9CCD1", "#F2D2C6"]; // tokens-ok: pet fur swatches, not UI colors
 const COLOR_NAMES: Partial<Record<ColorKey, string>> = { coat: "Coat", light: "Coat light", muzzle: "Muzzle", ear: "Ears", white: "White markings", dark: "Dark markings", tan: "Tan", patch: "Patch" };
 
-const POSES: { value: string; label: string; pose: (f: number) => Pose }[] = [
-  { value: "front", label: "Front", pose: (f) => ({ view: "front", action: "idle", frame: f % 2 }) },
-  { value: "side", label: "Side", pose: (f) => ({ view: "side", action: "idle", frame: f % 2 }) },
-  { value: "walk", label: "Walk", pose: (f) => ({ view: "side", action: "walk", frame: f % 4 }) },
-  { value: "back", label: "Back", pose: (f) => ({ view: "back", action: "idle", frame: f % 2 }) },
+/** What the preview shows; tapping it moves to the next. Turn goes round: front, side, back, the other side. */
+const TURN: { pose: Pose; facing: "left" | "right" }[] = [
+  { pose: { view: "front", action: "idle", frame: 0 }, facing: "right" },
+  { pose: { view: "side", action: "idle", frame: 0 }, facing: "right" },
+  { pose: { view: "back", action: "idle", frame: 0 }, facing: "right" },
+  { pose: { view: "side", action: "idle", frame: 0 }, facing: "left" },
 ];
+const POSES: { label: string; ms: number; at: (f: number) => { pose: Pose; facing: "left" | "right" } }[] = [
+  { label: "Turn", ms: 700, at: (f) => TURN[f % 4] },
+  { label: "Walk", ms: 180, at: (f) => ({ pose: { view: "side", action: "walk", frame: f % 4 }, facing: "right" }) },
+  { label: "Front", ms: 600, at: (f) => ({ pose: { view: "front", action: "idle", frame: f % 2 }, facing: "right" }) },
+  { label: "Back", ms: 600, at: (f) => ({ pose: { view: "back", action: "idle", frame: f % 2 }, facing: "right" }) },
+];
+const MIN_TILE = 80;
+const GAP = 8;
 
 /** The Pet maker (11.12c), admins only: start from a breed, change the looks, save to `pets.profile.pixel_look`. */
 export default function PetLookScreen() {
@@ -45,11 +54,14 @@ export default function PetLookScreen() {
   const admin = useIsAdmin();
   const { petId } = useLocalSearchParams<{ petId: string }>();
   const [pet, setPet] = useState<Pet | null | undefined>(undefined);
-  const [recipe, setRecipe] = useState<PetRecipe | null>(null);
+  // The look and the looks before it (Undo); `first` is the look the screen opened with (Start over).
+  const [look, setLook] = useState<{ recipe: PetRecipe; history: PetRecipe[]; first: PetRecipe } | null>(null);
   const [startedFrom, setStartedFrom] = useState<string | null>(null);
   const [tab, setTab] = useState<"shape" | "marks" | "colors">("shape");
-  const [pose, setPose] = useState("front");
+  const [pose, setPose] = useState(0);
   const [frame, setFrame] = useState(0);
+  const [gridWidth, setGridWidth] = useState(0);
+  const theme = useTheme();
   const [query, setQuery] = useState("");
   const [allBreeds, setAllBreeds] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -60,28 +72,35 @@ export default function PetLookScreen() {
         setPet(p);
         if (p) {
           const colors = asPixelColors(p.profile?.pixel_colors);
-          setRecipe(recipeFor({ species: p.species, breed: p.breed, coat: p.profile?.coat, colors, weightKg: p.weight_kg, look: asPetRecipe(p.profile?.pixel_look) }));
+          const r = recipeFor({ species: p.species, breed: p.breed, coat: p.profile?.coat, colors, weightKg: p.weight_kg, look: asPetRecipe(p.profile?.pixel_look) });
+          setLook({ recipe: r, history: [], first: r });
         }
       })
       .catch(() => setPet(null));
   }, [petId]);
 
   useEffect(() => {
-    const t = setInterval(() => setFrame((f) => f + 1), pose === "walk" ? 180 : 600);
+    const t = setInterval(() => setFrame((f) => f + 1), POSES[pose].ms);
     return () => clearInterval(t);
   }, [pose]);
 
   const cat = pet?.species === "cat";
+  // The pet's own breed first (marked on its tile), then the rest of its species.
+  const own = pet ? presetFor(pet.species, pet.breed) : null;
   const breeds = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return PET_PRESETS.filter((p) => PET_BASES[p.base].cat === cat && (!q || p.name.toLowerCase().includes(q)));
-  }, [cat, query]);
+    const list = PET_PRESETS.filter((p) => PET_BASES[p.base].cat === cat && (!q || p.name.toLowerCase().includes(q)));
+    return own ? [...list.filter((p) => p.name === own.name), ...list.filter((p) => p.name !== own.name)] : list;
+  }, [cat, query, own]);
 
   if (!admin) return <Screen><EmptyState emoji="🐾" title="Looks are set by the Goldito team" message="Your pet's look comes from its profile." /></Screen>;
-  if (pet === undefined || (pet && !recipe)) return <LoadingView />;
-  if (!pet || !recipe) return <Screen><EmptyState emoji="🐾" title="Pet not found" message="It may have been removed." /></Screen>;
+  if (pet === undefined || (pet && !look)) return <LoadingView />;
+  if (!pet || !look) return <Screen><EmptyState emoji="🐾" title="Pet not found" message="It may have been removed." /></Screen>;
 
-  const set = (patch: Partial<PetRecipe>) => setRecipe({ ...recipe, ...patch });
+  const recipe = look.recipe;
+  const change = (next: PetRecipe) => setLook((s) => (s ? { ...s, recipe: next, history: [...s.history.slice(-40), s.recipe] } : s));
+  const undo = () => setLook((s) => (s && s.history.length ? { ...s, recipe: s.history[s.history.length - 1], history: s.history.slice(0, -1) } : s));
+  const set = (patch: Partial<PetRecipe>) => change({ ...recipe, ...patch });
   const setColor = (key: ColorKey, hex: string) => {
     const colors = { ...(recipe.colors ?? {}), [key]: hex };
     if (key === "coat") colors.outline = shade(hex, 0.38);
@@ -89,9 +108,10 @@ export default function PetLookScreen() {
   };
   const usePreset = (p: PetPreset) => {
     const { name, ...r } = p;
-    setRecipe({ ...r, colors: { ...(r.colors ?? {}) } });
+    change({ ...r, colors: { ...(r.colors ?? {}) } });
     setStartedFrom(name);
-    toast.show(`Started from ${name}`);
+    // A breed replaces every edit, so the toast can take it back.
+    toast.show(`Started from ${name}`, { undo: () => { undo(); setStartedFrom(null); } });
   };
   const save = async (look: PetRecipe | null) => {
     setSaving(true);
@@ -111,29 +131,58 @@ export default function PetLookScreen() {
   const pickOne = (key: keyof PetRecipe, numeric = false) => (v: string[]) => v.length && set({ [key]: numeric ? Number(v[0]) : v[0] } as Partial<PetRecipe>);
   const shown = query || allBreeds ? breeds : breeds.slice(0, 12);
   const colorKeys = colorSlots(recipe, up);
-  const current = POSES.find((p) => p.value === pose) ?? POSES[0];
+  const preview = POSES[pose].at(frame);
+  const cols = gridWidth ? Math.max(3, Math.floor((gridWidth + GAP) / (MIN_TILE + GAP))) : 4;
+  const tile = gridWidth ? Math.floor((gridWidth - GAP * (cols - 1)) / cols) : MIN_TILE;
 
   return (
-    <Screen contentStyle={styles.page}>
-      <View style={styles.stage} testID="look-preview">
-        <PetSprite species={pet.species} look={recipe} mood="calm" pose={current.pose(frame)} hat={asHat(pet.profile?.hat)} pixel={6} testID="look-sprite" />
+    <View style={styles.root}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${pet.name}, ${POSES[pose].label}. Tap to change the pose`}
+        onPress={() => { setPose((i) => (i + 1) % POSES.length); setFrame(0); }}
+        style={styles.stage}
+        testID="look-preview"
+      >
+        <PetSprite species={pet.species} look={recipe} mood="calm" pose={preview.pose} facing={preview.facing} hat={asHat(pet.profile?.hat)} pixel={4} testID="look-sprite" />
+        <Text style={styles.poseLabel} testID="look-pose">{`${POSES[pose].label} · tap to change`}</Text>
+      </Pressable>
+      <Screen
+        contentStyle={styles.page}
+        footer={
+          <View style={styles.bar}>
+            <Button label="Undo" variant="secondary" onPress={undo} disabled={!look.history.length} style={styles.barButton} testID="look-undo" />
+            <Button label="Start over" variant="secondary" onPress={() => { change(look.first); setStartedFrom(null); }} style={styles.barButton} testID="look-start-over" />
+            <Button label="Save" onPress={() => void save(recipe)} disabled={saving} style={styles.barButton} testID="look-save" />
+          </View>
+        }
+      >
+      <Step n={1} title="Pick the closest breed" />
+      <View style={styles.search}>
+        <Icon name="search" size={20} color={theme.color.textMuted} />
+        <TextInput
+          accessibilityLabel="Search breeds"
+          placeholder={cat ? "Tabby, ragdoll, siamese" : "Golden, husky, corgi"}
+          placeholderTextColor={theme.color.placeholder}
+          value={query}
+          onChangeText={setQuery}
+          style={styles.searchInput}
+          testID="look-breed-search"
+        />
       </View>
-      <SegmentedControl options={POSES.map(({ value, label }) => ({ value, label }))} value={pose} onChange={setPose} testID="look-pose" />
-
-      <Text style={styles.h2}>Start from a breed</Text>
-      <TextField label="Search breeds" value={query} onChangeText={setQuery} soft testID="look-breed-search" />
-      <View style={styles.breeds}>
+      <View style={styles.breeds} onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}>
         {shown.map((p) => (
           <Pressable
             key={p.name}
             accessibilityRole="button"
             accessibilityState={{ selected: startedFrom === p.name }}
             onPress={() => usePreset(p)}
-            style={[styles.breed, startedFrom === p.name && styles.breedOn]}
+            style={[styles.breed, { width: tile }, startedFrom === p.name && styles.breedOn]}
             testID={`look-breed-${p.name}`}
           >
             <PetSprite species={pet.species} look={p} mood="calm" pixel={2} />
             <Text style={styles.breedName} numberOfLines={2}>{p.name}</Text>
+            {own?.name === p.name ? <Text style={styles.own} testID="look-breed-own">{`${pet.name}'s breed`}</Text> : null}
           </Pressable>
         ))}
       </View>
@@ -141,7 +190,7 @@ export default function PetLookScreen() {
         <TextButton label={allBreeds ? "Show fewer" : `Show all ${breeds.length} ${cat ? "cats" : "dogs"}`} onPress={() => setAllBreeds(!allBreeds)} style={styles.center} testID="look-breed-more" />
       ) : null}
 
-      <Text style={styles.h2}>Change the looks</Text>
+      <Step n={2} title="Change the looks" />
       <SegmentedControl
         options={[{ value: "shape", label: "Shape" }, { value: "marks", label: "Markings" }, { value: "colors", label: "Colors" }]}
         value={tab}
@@ -230,9 +279,19 @@ export default function PetLookScreen() {
         </View>
       ) : null}
 
-      <Button label="Save look" onPress={() => void save(recipe)} disabled={saving} testID="look-save" />
       <TextButton label="Use the breed look again" onPress={() => void save(null)} style={styles.center} testID="look-reset" />
-    </Screen>
+      </Screen>
+    </View>
+  );
+}
+
+function Step({ n, title }: { n: number; title: string }) {
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <View style={styles.stepRow} accessibilityRole="header">
+      <View style={styles.stepDot}><Text style={styles.stepNum}>{n}</Text></View>
+      <Text style={styles.h2}>{title}</Text>
+    </View>
   );
 }
 
@@ -267,11 +326,21 @@ function shade(hex: string, k: number): string {
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
+    root: { flex: 1, backgroundColor: theme.color.background },
     page: { gap: theme.spacing.md },
-    stage: { alignItems: "center", justifyContent: "center", paddingVertical: theme.spacing.sm, borderRadius: theme.radius.lg, backgroundColor: theme.color.surface },
-    h2: { fontSize: theme.fontSize.section, fontWeight: theme.fontWeight.bold, color: theme.color.text, marginTop: theme.spacing.sm },
-    breeds: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
-    breed: { width: 92, alignItems: "center", gap: 4, padding: theme.spacing.xs, borderRadius: theme.radius.md, borderWidth: 2, borderColor: "transparent", backgroundColor: theme.color.surface },
+    stage: { alignItems: "center", justifyContent: "center", paddingTop: theme.spacing.sm, paddingBottom: theme.spacing.xs, backgroundColor: theme.color.surface, borderBottomWidth: 1, borderBottomColor: theme.color.border },
+    poseLabel: { fontSize: theme.fontSize.small, color: theme.color.textMuted, minHeight: 20 },
+    stepRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, marginTop: theme.spacing.sm },
+    stepDot: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: theme.color.primary },
+    stepNum: { color: theme.color.primaryText, fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold },
+    h2: { flex: 1, fontSize: theme.fontSize.section, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    search: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, minHeight: 48, paddingHorizontal: theme.spacing.md, borderRadius: theme.radius.pill, borderWidth: 1, borderColor: theme.color.border, backgroundColor: theme.color.surface },
+    searchInput: { flex: 1, minWidth: 0, minHeight: 44, fontSize: theme.fontSize.body, color: theme.color.text },
+    breeds: { flexDirection: "row", flexWrap: "wrap", gap: GAP },
+    breed: { minHeight: 44, alignItems: "center", gap: 4, padding: theme.spacing.xs, borderRadius: theme.radius.md, borderWidth: 2, borderColor: "transparent", backgroundColor: theme.color.surface },
+    own: { fontSize: theme.fontSize.caption, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
+    bar: { flexDirection: "row", gap: theme.spacing.sm },
+    barButton: { flex: 1 },
     breedOn: { borderColor: theme.color.primary },
     breedName: { fontSize: theme.fontSize.small, color: theme.color.text, textAlign: "center" },
     center: { alignSelf: "center" },
@@ -279,6 +348,6 @@ const makeStyles = (theme: Theme) =>
     field: { gap: theme.spacing.xs },
     label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     swatches: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
-    swatch: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: theme.color.border },
+    swatch: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: theme.color.border },
     swatchOn: { borderWidth: 3, borderColor: theme.color.primary },
   });

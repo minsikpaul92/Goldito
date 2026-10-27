@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react-native";
 import ArrowUp from "lucide-react-native/icons/arrow-up";
 import Bell from "lucide-react-native/icons/bell";
 import Bone from "lucide-react-native/icons/bone";
+import Search from "lucide-react-native/icons/search";
 import BookOpen from "lucide-react-native/icons/book-open";
 import Calendar from "lucide-react-native/icons/calendar";
 import Camera from "lucide-react-native/icons/camera";
@@ -96,6 +97,7 @@ const ICONS = {
   mic: Mic,
   stop: Square,
   refresh: RefreshCw,
+  search: Search,
   // choices
   check: Check,
   clock: Clock,
