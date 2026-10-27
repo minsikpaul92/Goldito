@@ -73,10 +73,11 @@ export default defineConfig({
       use: { ...devices["Pixel 7"] },
     },
     {
-      // App flows — logic, not layout, so one desktop browser is enough.
+      // App flows — logic, not layout, so one desktop browser is enough. Tall enough that the phone frame is not scaled
+      // down (it needs about 970 px), so sizes measured on the page are the design sizes.
       name: "flows",
       testMatch: FLOW_SPECS,
-      use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 1000 } },
     },
   ],
 });
