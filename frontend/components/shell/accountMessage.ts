@@ -7,7 +7,8 @@ export const ACCOUNT_MESSAGE = "goldito:account";
 /** `judge`: the Judge seat's set key when the account belongs to one (#411), so the judge panel knows the seat. */
 export type FrameAccount = { name: string; role: "owner" | "sitter"; judge?: string | null } | null;
 
-export type AccountMessage = { type: typeof ACCOUNT_MESSAGE; pane: string; account: FrameAccount };
+/** `signedOut`: no one is signed in (an account of null while the app is still loading is not signed out). */
+export type AccountMessage = { type: typeof ACCOUNT_MESSAGE; pane: string; account: FrameAccount; signedOut?: boolean };
 
 export function isAccountMessage(data: unknown): data is AccountMessage {
   return typeof data === "object" && data !== null && (data as { type?: unknown }).type === ACCOUNT_MESSAGE;

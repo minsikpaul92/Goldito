@@ -120,7 +120,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           }
         : null;
     try {
-      window.parent.postMessage({ type: "goldito:account", pane: window.name, account }, window.location.origin);
+      window.parent.postMessage(
+        { type: "goldito:account", pane: window.name, account, signedOut: state.status === "signedOut" },
+        window.location.origin,
+      );
     } catch {
       // The page around us is not ours.
     }

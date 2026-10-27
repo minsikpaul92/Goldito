@@ -4,9 +4,10 @@ import type { Page } from "@playwright/test";
 import { app } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
-// The judge panel (#413): left of the phone on a wide computer window, only while a phone holds a Judge seat (this is
-// the team build; the judging build shows it always). A scene resets the judge's own set with the seat's holder id
-// and opens the screen on the phone. The backend's seat check is covered by pytest (test_demo_reset_api).
+// The judge panel (#413): left of the phone on a computer at any window width, only while a phone holds a Judge seat;
+// log out takes it away. A scene resets the judge's own set with the seat's holder id, opens the screen on the phone
+// and plays itself there (the AI answers are not faked here, so the plays themselves are checked by hand). The
+// backend's seat check is covered by pytest (test_demo_reset_api).
 
 test.use({ viewport: { width: 1440, height: 900 } });
 
@@ -70,11 +71,11 @@ test.describe("judge panel", () => {
     for (const [i, key] of ["meet", "treat", "chat", "care", "home"].entries()) {
       await expect(page.getByTestId(`judge-scene-${key}`)).toContainText(titles[i]);
     }
-    // Tavily on scenes 1 and 2 only; MiniCPM-V is never called an NVIDIA model.
-    await expect(page.getByTestId("judge-scene-meet")).toContainText("Tavily");
-    await expect(page.getByTestId("judge-scene-treat")).toContainText("Tavily");
+    // Tavily (its logo) on scenes 1 and 2 only; MiniCPM-V is never called an NVIDIA model.
+    await expect(page.getByTestId("judge-scene-meet").getByTestId("judge-tag-tavily")).toBeVisible();
+    await expect(page.getByTestId("judge-scene-treat").getByTestId("judge-tag-tavily")).toBeVisible();
     await expect(page.getByTestId("judge-scene-treat")).toContainText("Nemotron Ultra");
-    for (const key of ["chat", "care", "home"]) await expect(page.getByTestId(`judge-scene-${key}`)).not.toContainText("Tavily");
+    for (const key of ["chat", "care", "home"]) await expect(page.getByTestId(`judge-scene-${key}`).getByTestId("judge-tag-tavily")).toHaveCount(0);
     await expect(panel).not.toContainText("NVIDIA MiniCPM");
 
     // More is folded until opened.
@@ -87,12 +88,15 @@ test.describe("judge panel", () => {
     await mockSupabase(page, [judgeOwner, judgeSitter]);
     const resets = await takeJudgeSeat(page);
 
+    // Treat check explains itself first; Play starts it.
     await page.getByTestId("judge-scene-treat").click();
+    await expect(page.getByTestId("judge-intro")).toContainText("Max is allergic to chicken.");
+    await page.getByTestId("judge-intro-play").click();
     await expect.poll(() => phoneUrl(page)).toMatch(/\/owner\/snap\/treat$/);
-    await expect(page.getByTestId("judge-hint")).toHaveText("Pick the chicken jerky label for Max.");
+    await expect(page.getByTestId("judge-hint")).toHaveText("Max is allergic to chicken. The owner checks a treat, then the sitter.");
     await phoneReady(page);
     expect(resets).toHaveLength(1);
-    expect(resets[0].state).toBe("pets");
+    expect(resets[0].state).toBe("in_care");
     // The reset carries this browser's seat holder id: the backend resets only the seat it holds.
     expect(resets[0].holder).toMatch(/^[0-9a-f-]{36}$/);
 
@@ -103,7 +107,7 @@ test.describe("judge panel", () => {
     await expect.poll(() => resets.length).toBe(2);
     await reloaded;
     // The scene is open again once the hint is back (it reads "Getting it ready…" while the phone reloads).
-    await expect(page.getByTestId("judge-hint")).toHaveText("Pick the chicken jerky label for Max.");
+    await expect(page.getByTestId("judge-hint")).toHaveText("Max is allergic to chicken. The owner checks a treat, then the sitter.");
     await phoneReady(page);
 
     // Mood keeps the stay: no reset.
@@ -126,6 +130,7 @@ test.describe("judge panel", () => {
 
     // Treat check is a scene: it resets the set and opens the screen.
     await page.getByTestId("judge-map-treat").click();
+    await page.getByTestId("judge-intro-play").click();
     await expect.poll(() => phoneUrl(page)).toMatch(/\/owner\/snap\/treat$/);
     await phoneReady(page);
     expect(resets).toHaveLength(1);
@@ -142,10 +147,29 @@ test.describe("judge panel", () => {
     await expect(page.getByTestId("judge-map-empty")).toBeVisible();
   });
 
-  test("the panel hides on a narrow window", async ({ page }) => {
+  test("the panel stays on a narrow window, and log out takes it away", async ({ page }) => {
     await page.setViewportSize({ width: 1000, height: 900 });
     await mockSupabase(page, [judgeOwner, judgeSitter]);
+    await page.route("**/rpc/release_judge_seat", (route) => route.fulfill({ status: 204, body: "" }));
     await takeJudgeSeat(page);
+    await expect(page.getByTestId("judge-panel")).toBeVisible();
+
+    await app(page).getByTestId("open-menu").click();
+    await app(page).getByTestId("log-out").click();
     await expect(page.getByTestId("judge-panel")).toHaveCount(0);
+  });
+
+  test("a scene shows the paw walk on the phone while it resets the stay", async ({ page }) => {
+    await mockSupabase(page, [judgeOwner, judgeSitter]);
+    await takeJudgeSeat(page);
+    // A slow reset, so the paw walk can be seen.
+    await page.route("**/api/demo/reset", async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1_500));
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ state: "pets", deleted: {} }) });
+    });
+    await page.getByTestId("judge-scene-treat").click();
+    await page.getByTestId("judge-intro-play").click();
+    await expect(page.getByTestId("frame-loading")).toBeVisible();
+    await expect(page.getByTestId("frame-loading")).toHaveCount(0, { timeout: 15_000 });
   });
 });
