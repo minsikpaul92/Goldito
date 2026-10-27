@@ -175,9 +175,7 @@ Tap a stage for the details.
 > *"Max took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited. It was adorable. Her potty was perfectly healthy, too. 🐶"*
 > From an AI daily note built from a few chips, two photos, and one short line from the sitter
 
-<!-- TODO(image): trip screenshot, about 300 px wide. The owner's live map with the sitter's car and ETA.
-<img src="docs/assets/readme/trip-map.png" alt="Live trip map with the ETA" width="300">
--->
+<img src="docs/assets/readme/trip-live.gif" alt="The owner starts a simulated drive and the sitter watches the live map and ETA until Peter has arrived" width="560">
 
 </details>
 
