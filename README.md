@@ -28,9 +28,9 @@ the server owns every fact, and a person approves every word.
 
 ## Goldito in 30 seconds
 
-**The insight.** We have been pet sitters for three years, and the pet is rarely the anxious one. The owner is. With no news, owners text again, ask for a photo, and ask for it twice. Answering that, plus the replies, the pill schedule, and the evening update, is about **40 minutes a day** for us (about 10 with Goldito, our estimate). And when the stay ends, what the sitter learned about the pet is lost in a chat thread.
+**The insight.** *"The pet isn't anxious. The owner is."* That is Chloe, a pet sitter, and we have seen it for three years as sitters ourselves. With no news, owners text again, ask for a photo, and ask for it twice. Answering that, plus the replies, the pill schedule, and the evening update, is about **40 minutes a day** for us (about 10 with Goldito, our estimate). And when the stay ends, what the sitter learned about the pet is lost in a chat thread.
 
-**What Goldito does.** Goldito is built to put the owner at ease. One chat per owner and sitter carries the whole stay: inquiry, Meet & Greet, booking, the trip, daily care, and the ride home. While the pet is in care, the sitter sends small care messages with a tap, so the owner hears from the sitter before they have to ask.
+**What Goldito does.** Goldito cares for the owner too. One chat per owner and sitter carries the whole stay: inquiry, Meet & Greet, booking, the trip, daily care, and the ride home. While the pet is in care, the sitter sends small care messages with a tap, so the owner hears from the sitter before they have to ask.
 
 - **Updates before the owner asks.** Check-ins, photos, and the evening note reach the owner on their own. The sitter taps a chip and gets a reply in their own voice, taps a few check-ins and gets the note, snaps a photo and it is captioned and filed.
 - **AI you can check.** Prices, dates, availability, and door codes come from the server, never from the model. Nemotron writes only from the facts it is handed, and **nothing is sent until a person taps Send**.
@@ -210,7 +210,7 @@ Tap a stage for the details.
 
 - **Independent pet sitters and the owners they care for, starting in Canada** (consent forms, holidays, and the quote follow Ontario first).
 - **What a sitter gets back:** in our own work, about 30 minutes a day (40 minutes of messages, updates, reports, and schedule checks down to about 10, our estimate).
-- **What an owner gets:** peace of mind for owners who feel uneasy leaving a pet. Updates and alerts arrive without asking, so the owner always knows how the pet is doing now. The sitter keeps checking the care checklist and the allergy check.
+- **What an owner gets:** peace of mind, since the owner is the one who worries, not the pet. Updates and alerts arrive without asking, so the owner always knows how the pet is doing now. The sitter keeps checking the care checklist and the allergy check.
 <!-- TODO(Q8): what real owners and sitters said, once they have tried it. -->
 
 ---
