@@ -6,6 +6,7 @@ import { Icon } from "../components/ui/Icon";
 import { BigInput } from "../components/ownerOnboarding/BigInput";
 import { BigOption } from "../components/ownerOnboarding/BigOption";
 import { PetGlanceCard } from "../components/PetGlanceCard";
+import { PetReveal } from "../components/ownerOnboarding/PetReveal";
 import { PetPhotosStep } from "../components/ownerOnboarding/PetPhotosStep";
 import { VoiceInterview } from "../components/ownerOnboarding/VoiceInterview";
 import { StepFrame } from "../components/ownerOnboarding/StepFrame";
@@ -101,6 +102,11 @@ export default function OwnerOnboarding() {
   }, [draft?.step]);
   // On the summary the card also shows what the typed breed needs (it fills in a moment after).
   const needs = useBreedNeeds(draft?.species ?? null, draft && draft.step === "summary" ? draft.breed : null);
+  /** The 8-bit pet of the reveal screen is drawn; Next waits for it. Leaving the screen resets it, so the pet is drawn again. */
+  const [made, setMade] = useState(false);
+  useEffect(() => {
+    if (draft?.step !== "reveal") setMade(false);
+  }, [draft?.step]);
   const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Cover photos a guess was already asked for, so a photo is looked at once.
   const guessed = useRef<Set<string>>(new Set());
@@ -131,7 +137,8 @@ export default function OwnerOnboarding() {
   if (session.status !== "signedIn" || session.profile.role !== "owner") return <Redirect href="/" />;
   if (!draft) return <LoadingView />;
 
-  const ids = stepIds(draft.species, draft.ownerDone, !draft.ownerDone || draft.adding);
+  const canReveal = draft.breed.trim() !== "" && draft.coat !== "" && weightFromDraft(draft) !== null;
+  const ids = stepIds(draft.species, draft.ownerDone, !draft.ownerDone || draft.adding, canReveal);
   const index = stepIndex(ids, draft.step);
   const step = ids[index];
   const petName = draft.name.trim();
@@ -512,9 +519,31 @@ export default function OwnerOnboarding() {
         />
         {heard(said, kg !== null && said !== null && Math.abs(kg - toKg(said.value, said.unit)) < 0.06, "weight")}
       </>,
-      nextButton(draft.weight.trim() === ""),
+      canReveal ? (
+        <Button label="Generate" onPress={next} testID="own-generate" />
+      ) : (
+        nextButton(draft.weight.trim() === "")
+      ),
       undefined,
       true,
+    );
+  }
+
+  if (step === "reveal" && species) {
+    return frame(
+      `Meet ${petName}`,
+      <View style={styles.reveal}>
+        <PetReveal
+          name={petName}
+          species={species}
+          breed={draft.breed}
+          coat={draft.coat}
+          weightKg={weightFromDraft(draft)}
+          onDone={() => setMade(true)}
+          testID="own-reveal-pet"
+        />
+      </View>,
+      nextButton(!made),
     );
   }
 
@@ -888,6 +917,7 @@ export default function OwnerOnboarding() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     center: { alignItems: "center", paddingVertical: theme.spacing.lg },
+    reveal: { alignItems: "center" },
     grid: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
     half: { flexBasis: "47%", flexGrow: 1 },
     row: { flexDirection: "row", gap: theme.spacing.sm, alignItems: "center" },

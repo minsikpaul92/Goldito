@@ -61,6 +61,14 @@ test.describe("owner pets", () => {
     await screen.getByTestId("own-skip").click(); // voice
     await screen.getByTestId("own-breed").fill("Maltese");
     await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-coat-white").click();
+    await screen.getByTestId("own-next").click(); // age
+    await screen.getByTestId("own-weight").fill("6");
+    // Add pet shows the 8-bit pet too.
+    await screen.getByTestId("own-generate").click();
+    await expect(screen.getByTestId("own-title")).toHaveText("Meet Max");
+    await expect(screen.getByTestId("own-next")).toBeEnabled();
+    await screen.getByTestId("own-next").click();
     await answerToSummary(page, ["chicken"]);
     // The owner's own questions were asked at sign-up, not again here.
     await expect(screen.getByTestId("own-row-about-you")).toHaveCount(0);
