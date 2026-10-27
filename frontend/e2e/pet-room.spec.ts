@@ -136,12 +136,13 @@ test.describe("pet room", () => {
     await expect(screen.getByTestId("pet-card-photo-Mochi")).toHaveCount(0);
   });
 
-  test("tapping the pet opens the Diary", async ({ page }) => {
+  test("the room is a picture, not a button: tapping it stays on Home", async ({ page }) => {
     await setup(page, (db) => db.pets.push(pet("pet-max", "Max", "dog")));
     const screen = app(page);
     await screen.getByTestId("home-pager-tab-1").click();
+    await expect(screen.getByTestId("pet-room-Max-open")).toHaveAttribute("role", "img");
     await screen.getByTestId("pet-room-Max-open").click();
-    await expect(page).toHaveURL(/\/owner\/feed\?view=diary$/);
+    await expect(page).toHaveURL(/\/owner$/);
   });
 
   test("the breed picks the head and the weight the size: a small dog takes less of the screen", async ({ page }) => {
