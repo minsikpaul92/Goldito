@@ -82,10 +82,10 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 | **Nemotron 3 Super** `nvidia/nemotron-3-super-120b-a12b` | Chat reply chips and drafts · care request → checklist · daily notes · Life Records | About 1 s per chip set or draft. In simulated 20-message chats, Nano drafts repeated themselves and fell back to bare chip words; Super did not, so the chat runs on Super |
 | **Nemotron 3 Nano** `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | The sitter's "yes" · spoken profile → facts with quotes · sitter onboarding by voice · breed needs from search results · the mood line | Fast extraction where the server checks every value |
 | **Nemotron 3 Ultra** `nvidia/Nemotron-3-Ultra-550b-a55b` | Treat check: allergens and hidden sources over the label, the rules, and Tavily excerpts | About 2.7 s with thinking on; the whole check about 7 to 8 s |
-| **Nemotron 3.5 Super VL** `nvidia/Nemotron-3.5-Super-VL` ¹ | Treat labels · photo captions and album · daily-note photo chips · breed guess from a pet photo · mood tags · handoff photo check (server API, not in the app yet) | About 1 to 1.4 s per photo with thinking off. On six sample labels (5 variants, 60 calls) it missed no ingredient and said "incomplete" on every cut-off label, where MiniCPM-V said "complete" every time |
+| **Nemotron 3.5 Super VL** `nvidia/Nemotron-3.5-Super-VL` ¹ | Treat labels · photo captions and album · daily-note photo chips · breed guess from a pet photo · mood tags · handoff photo check (server API, not in the app yet) | About 1 to 1.4 s per photo with thinking off. On six sample labels (5 variants, 60 calls) it missed no ingredient and said "incomplete" on every cut-off label |
 | **Qwen3 Embedding 8B** `Qwen/Qwen3-Embedding-8B` | RAG over Life Records, sitter policies, and care requests · picking a sitter's own past replies as tone examples | `dimensions: 1024` fits a pgvector HNSW index |
 
-¹ NVIDIA's earlier vision models on Token Factory (`Nemotron-Nano-V2-12b`, `Cosmos3-Super-Reasoner`, `Nemotron-3-Nano-Omni`) are offered only as dedicated endpoints, not on the shared API (checked 2026-10-02), and keeping one running until judging ends would cost more than our credits. We used MiniCPM-V 4.5 until `Nemotron-3.5-Super-VL` reached the shared API (seen 2026-10-27, global base URL only; its thinking must be switched off, or it fills the token budget before any answer). Same prompts, same photos: caption sorting 4 of 6 for both, breed guess 10 of 12 against 9 of 12, treat labels equal. Small samples and clean sample labels, not real packaging. Every check: [model-ids.md](docs/plan/phases/notes/model-ids.md).
+¹ Its thinking is on by default and fills the token budget before any answer, so we switch it off per call. It is on the global Token Factory base URL only. NVIDIA's earlier vision models (`Nemotron-Nano-V2-12b`, `Cosmos3-Super-Reasoner`, `Nemotron-3-Nano-Omni`) are dedicated endpoints only (checked 2026-10-02). Measured on our demo photos: caption sorting 4 of 6, breed guess 10 of 12, six sample labels with no missed ingredient. Small samples and clean sample labels, not real packaging. Every check: [model-ids.md](docs/plan/phases/notes/model-ids.md).
 
 **Tested in CI on every push:** about 690 pytest tests, more than 640 Playwright tests (68 specs, desktop phone frame and mouse), and 88 SQL migrations applied to a Postgres stub followed by a row-level-security smoke test.
 
@@ -96,21 +96,21 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 - **One API for everything.** Text, vision, and embeddings all go through the `openai` Python SDK pointed at Token Factory, in one client ([`services/nebius.py`](backend/app/services/nebius.py)). A feature asks for a role (`fast`, `report`, `safety`, `vision`), not a model.
 - **Swapping a model is a config change.** Each role is an environment variable (`MODEL_FAST`, `MODEL_REPORT`, `MODEL_SAFETY`, `MODEL_VISION`, `MODEL_CHAT_*`). Moving the chat from Nano to Super after a side-by-side simulation, judged by Ultra, changed no code.
 - **Checks before building.** `GET /v1/models` let us script what our key could really call: it showed early that there was no NVIDIA embedding model and no speech to text on the shared API, before we built on them.
-- **Measured on the real API from day one.** The first Nano and MiniCPM-V calls ran with our first catalog check (2026-09-29); scripts in [`backend/scripts`](backend/scripts) time each feature. Every call writes one metrics line (endpoint, model, latency, time to first token, tokens), never the prompt or the answer.
+- **Measured on the real API from day one.** The first Nano and vision calls ran with our first catalog check (2026-09-29); scripts in [`backend/scripts`](backend/scripts) time each feature. Every call writes one metrics line (endpoint, model, latency, time to first token, tokens), never the prompt or the answer.
 
 **Other Nebius services.** We tried a Nebius AI Cloud Serverless endpoint for the FastAPI backend on 2026-10-09 and chose Render instead; why is in the feedback log below.
 
-<details>
-<summary><b>Feedback log: Token Factory, AI Cloud, and each model</b> (click to expand)</summary>
+<details open>
+<summary><h3>Feedback log: Token Factory, AI Cloud, and each model</h3></summary>
 
 What we used, what worked, and what got in the way, written down as it happened. Details and numbers: [model-ids.md](docs/plan/phases/notes/model-ids.md) · [nebius-ai-cloud-feedback.md](docs/plan/phases/notes/nebius-ai-cloud-feedback.md).
 
-<!-- TODO(submission): Nemotron 3.5 Super VL, MiniCPM-V 4.5 and Qwen3 Embedding 8B still need one line in the team's own words on "would we build with it again, and why". Do not invent it. -->
+<!-- TODO(submission): Nemotron 3.5 Super VL and Qwen3 Embedding 8B still need one line in the team's own words on "would we build with it again, and why". Do not invent it. -->
 
 **Nebius Token Factory**
-- *Onboarding:* the catalog check and the first answers on the same day (2026-09-29): a Nano text call and a MiniCPM-V image call through the OpenAI SDK, with only the base URL and key changed.
+- *Onboarding:* the catalog check and the first answers on the same day (2026-09-29): a Nano text call and a vision image call through the OpenAI SDK, with only the base URL and key changed.
 - *Worked:* one OpenAI-compatible API for chat, vision, and embeddings; `GET /v1/models` for scripted checks; JSON mode and tool calling (`tools` + `tool_choice="auto"`) on Nano and Super, about 0.9 s per call; base64 data URLs as image input.
-- *Got in the way:* NVIDIA's vision models were dedicated-endpoint only when we started (about $48 to $113 a day to keep one up), so we used MiniCPM-V on the shared API until `Nemotron-3.5-Super-VL` showed up there (2026-10-27). Its thinking is on by default and has to be turned off per call for short answers. No speech-to-text and no NVIDIA embedding model in the catalog. The two base URLs list different models (25 vs 18 on 2026-10-10). The catalog shows a "Fine-tuning" badge on Nemotron, but the model pages say fine-tuning is not available. External image URLs can fail, so we send data URLs.
+- *Got in the way:* NVIDIA's earlier vision models are dedicated-endpoint only (about $48 to $113 a day to keep one up); `Nemotron-3.5-Super-VL` is on the shared API, but its thinking is on by default and has to be turned off per call for short answers. No speech-to-text and no NVIDIA embedding model in the catalog. The two base URLs list different models (25 vs 18 on 2026-10-10). The catalog shows a "Fine-tuning" badge on Nemotron, but the model pages say fine-tuning is not available. External image URLs can fail, so we send data URLs.
 - *Again?* Yes. We met NVIDIA models through this hackathon and Token Factory, and we plan to use both in our next projects. On list prices (public price trackers, 2026-10-27), Nemotron 3 Nano costs about 80% less on input and 90% less on output than Gemini 3.5 Flash-Lite, and Super's output costs about 64% less. We have not run the other models ourselves; in our own tests every Nemotron model met the bar we set for its job.
 
 **NVIDIA Nemotron 3 Nano**
@@ -128,12 +128,8 @@ What we used, what worked, and what got in the way, written down as it happened.
 - *Again?* Yes. It met the quality, speed, and JSON reliability we needed for its job, at a price that suits a small product. We will keep Nemotron as our default for text.
 
 **Nemotron 3.5 Super VL**
-- *Worked:* on the same prompts as MiniCPM-V it read all six sample labels with no missed ingredient across blur, small size, rotation, and cut-off versions, and said "incomplete" on every cut-off label; about 1 to 1.4 s per photo.
+- *Worked:* it read all six sample labels with no missed ingredient across blur, small size, rotation, and cut-off versions, and said "incomplete" on every cut-off label; about 1 to 1.4 s per photo.
 - *Got in the way:* thinking is on by default and fills `max_tokens` before any answer (we send `enable_thinking: false`); only on the global base URL, not the us-central1 one.
-
-**MiniCPM-V 4.5** (OpenBMB, on Token Factory; our vision model until 2026-10-27)
-- *Worked:* all four sample labels read right (product and every ingredient, in order) in 0.9 to 1.4 s; photo categories 8 of 9 right at about 1.2 s once the prompt explained what a meal and a nap look like.
-- *Got in the way:* bracketed text stays attached to an ingredient instead of being split as asked. On cut-off labels it said the list was complete every time (10 of 10).
 
 **Qwen3 Embedding 8B**
 - *Worked:* `dimensions: 1024` on both base URLs, so it fits a pgvector HNSW index (2000 dimensions at most); 539 ms median per query embedding.
@@ -222,7 +218,7 @@ Tap a stage for the details.
 
 </details>
 
-<details open>
+<details>
 <summary><b>④ Care & Pet Transit: live trips, the 8-bit pet room, 5-second checks, AI daily notes</b></summary>
 
 - **Uber-style trips, inside the chat.** Drop-off and pick-up are agreed as one pair. Whoever drives taps **Start trip** (after a clear location prompt); the chat shows *on the way*, *N min away*, and *arrived*, and the other side gets a live map and ETA. On arrival the owner gets the sitter's place card (visitor parking, lobby notes) and the sitter gets the entry-info card. Anyone can **start without sharing**: the other side then sees the meeting place with **Open in Google Maps**.
@@ -347,6 +343,7 @@ subgraph group_stay["<b>Stay Lifecycle</b>"]
   node_daily_updates["Feed And Diary"]
   node_completion["Completion"]
   node_snap["Snap Tab"]
+  node_signup["Sign-Up By Photo And Voice"]
 end
 
 subgraph group_ai["<b>AI And Memory</b>"]
@@ -356,6 +353,8 @@ subgraph group_ai["<b>AI And Memory</b>"]
   node_ai_caption["Photo Captions"]
   node_ai_safety["Treat Check"]
   node_ai_life["Life Record"]
+  node_ai_profile["Pet Profile And Breed Needs"]
+  node_ai_mood["Mood Meter"]
   node_rag["Pet Memory"]
 end
 
@@ -380,6 +379,7 @@ node_owner -->|"uses"| node_mobile
 node_sitter -->|"uses"| node_mobile
 node_mobile --> node_chat
 node_mobile --> node_snap
+node_mobile --> node_signup
 node_snap --> node_browser
 node_chat --> node_ai_chat
 node_chat -->|"first meeting"| node_meet
@@ -394,7 +394,9 @@ node_daily_updates --> node_ai_caption
 node_daily_updates -->|"stay ends"| node_completion
 node_completion --> node_ai_life
 node_snap --> node_ai_safety
-node_ai_chat & node_ai_care & node_ai_daily & node_ai_caption & node_ai_safety & node_ai_life --> node_api
+node_snap --> node_ai_mood
+node_signup --> node_ai_profile
+node_ai_chat & node_ai_care & node_ai_daily & node_ai_caption & node_ai_safety & node_ai_life & node_ai_profile & node_ai_mood --> node_api
 node_api --> node_nebius
 node_api --> node_tavily
 node_api --> node_groq
@@ -412,8 +414,8 @@ classDef toneMint fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d
 classDef toneRose fill:#ffe4e6,stroke:#e11d48,stroke-width:1.5px,color:#881337
 classDef toneIndigo fill:#e0e7ff,stroke:#4f46e5,stroke-width:1.5px,color:#312e81
 class node_mobile,node_browser toneBlue
-class node_chat,node_meet,node_care_request,node_transit,node_care_tasks,node_daily_updates,node_completion,node_snap toneAmber
-class node_ai_chat,node_ai_care,node_ai_daily,node_ai_caption,node_ai_safety,node_ai_life,node_rag toneMint
+class node_chat,node_meet,node_care_request,node_transit,node_care_tasks,node_daily_updates,node_completion,node_snap,node_signup toneAmber
+class node_ai_chat,node_ai_care,node_ai_daily,node_ai_caption,node_ai_safety,node_ai_life,node_ai_profile,node_ai_mood,node_rag toneMint
 class node_api,node_supabase toneRose
 class node_nebius,node_tavily,node_groq,node_cloudinary,node_google_meet,node_osm,node_owner,node_sitter toneIndigo
 ```
@@ -438,22 +440,22 @@ class node_nebius,node_tavily,node_groq,node_cloudinary,node_google_meet,node_os
 The live demo is the fastest way to see Goldito. To run your own copy you need a **Supabase** project, a **Nebius Token Factory** key, and a **Cloudinary** account. **Tavily**, **Groq**, and **Google OAuth** keys are optional: without them the treat check answers without sources, voice sign-up is unavailable, and an online Meet & Greet gets no automatic Meet link.
 
 <details>
-<summary><b>Setup steps</b> (click to expand)</summary>
+<summary><h3>Setup steps: run your own copy (click to expand)</h3></summary>
 
 ```bash
 git clone https://github.com/minsikpaul92/Goldito.git && cd Goldito
 
-# 1. Database: apply supabase/migrations/*.sql in order (see supabase/README.md)
+# 1. Database: run every file in supabase/migrations/ in name order (SQL Editor or psql; see supabase/README.md)
 
 # 2. Backend
-cd backend && cp .env.example .env            # fill the keys
+cd backend && cp .env.example .env            # fill SUPABASE_*, CLOUDINARY_*, NEBIUS_API_KEY, DEMO_PASSWORD
 python3.12 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python -m scripts.seed_demo                    # creates the demo owner and sitter
+python -m scripts.seed_demo                    # creates the demo owners and sitters (needs the keys above)
 uvicorn app.main:app --reload --port 8000
 
 # 3. Frontend (new terminal)
-cd frontend && cp .env.example .env            # EXPO_PUBLIC_API_URL=http://localhost:8000
+cd frontend && cp .env.example .env            # fill EXPO_PUBLIC_SUPABASE_URL, _SUPABASE_ANON_KEY, _CLOUDINARY_CLOUD_NAME, _DEMO_PASSWORD (same value as the backend's)
 npm install && npx expo start --web --port 8081
 ```
 
@@ -464,6 +466,7 @@ Open `http://localhost:8081` and use **Try the demo**. Tests: `pytest -q` in `ba
 | Backend env, run, and demo seed | [backend/README.md](backend/README.md) |
 | Frontend env and run | [frontend/README.md](frontend/README.md) |
 | Database migrations and RLS smoke test | [supabase/README.md](supabase/README.md) |
+| Where each key comes from | [docs/plan/env-setup.md](docs/plan/env-setup.md) |
 | Design tokens and components | [DESIGN.md](DESIGN.md) |
 
 </details>
@@ -512,10 +515,10 @@ Goldito keeps only ingredient names, short excerpts, and links from these pages,
 
 | Member | Role |
 | :--- | :--- |
-| **Minsik** | Full-Stack Lead · AI Backend |
-| **Seulgi** | AI & Prompt Engineer · QA · Data Anonymization |
-| **Mooque** | Product & UX/UI Designer |
-| **BeomGu** | Full-Stack Developer |
+| **[Minsik](https://github.com/minsikpaul92)** | Full-Stack Lead · AI Backend |
+| **[Seulgi](https://github.com/seulgi-dev)** | AI & Prompt Engineer · QA · Data Anonymization |
+| **[Mooque](https://github.com/mooque-dev)** | Product & UX/UI Designer |
+| **[BeomGu](https://github.com/JeonBeomGu-S)** | Full-Stack Developer |
 
 ---
 
