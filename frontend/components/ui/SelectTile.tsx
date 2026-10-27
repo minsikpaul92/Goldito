@@ -12,7 +12,7 @@ type Props = {
   label: string;
   selected?: boolean;
   onPress: () => void;
-  /** A short read-only note on the tile ("Max's breed"), as a brand Tag on its own row under the rest. */
+  /** A short read-only note on the tile ("Max's breed"), as a brand Tag (under the name on a wide tile, under the rest otherwise). */
   tag?: string;
   /** Two columns wide, the picture beside the text (the one tile that should stand out). */
   wide?: boolean;
@@ -27,6 +27,7 @@ type Props = {
  */
 export function SelectTile({ art, label, selected, onPress, tag, wide, style, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
+  const tagView = tag ? <Tag label={tag} tone="brand" style={wide ? styles.wideTag : styles.tag} testID={testID ? `${testID}-tag` : undefined} /> : null;
   return (
     <Pressable
       accessibilityRole="button"
@@ -36,11 +37,24 @@ export function SelectTile({ art, label, selected, onPress, tag, wide, style, te
       style={({ pressed }) => [styles.tile, wide && styles.wide, selected && styles.on, pressed && styles.pressed, style]}
       testID={testID}
     >
-      <View style={[styles.body, wide && styles.wideBody]}>
-        {art}
-        <Text style={[styles.label, !wide && styles.twoLines, wide && styles.wideLabel]} numberOfLines={3}>{label}</Text>
-      </View>
-      {tag ? <Tag label={tag} tone="brand" style={styles.tag} testID={testID ? `${testID}-tag` : undefined} /> : null}
+      {wide ? (
+        // Picture | name with the tag under it, in one text column.
+        <View style={[styles.body, styles.wideBody]}>
+          {art}
+          <View style={styles.wideText}>
+            <Text style={[styles.label, styles.wideLabel]} numberOfLines={3}>{label}</Text>
+            {tagView}
+          </View>
+        </View>
+      ) : (
+        <>
+          <View style={styles.body}>
+            {art}
+            <Text style={[styles.label, styles.twoLines]} numberOfLines={3}>{label}</Text>
+          </View>
+          {tagView}
+        </>
+      )}
     </Pressable>
   );
 }
@@ -58,7 +72,7 @@ const makeStyles = (theme: Theme) => {
       borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
     },
-    wide: { paddingHorizontal: theme.spacing.sm },
+    wide: { justifyContent: "center", paddingHorizontal: theme.spacing.sm },
     on: { borderWidth: cardOn.borderWidth, borderColor: cardOn.borderColor, backgroundColor: cardOn.backgroundColor },
     pressed: { opacity: theme.motion.pressOpacity },
     body: { alignSelf: "stretch", alignItems: "center", gap: theme.spacing.xs },
@@ -66,6 +80,8 @@ const makeStyles = (theme: Theme) => {
     tag: { alignSelf: "center" },
     label: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text, textAlign: "center" },
     twoLines: { alignSelf: "stretch", minHeight: theme.lineHeight.small * 2 },
-    wideLabel: { flex: 1, minWidth: 0, textAlign: "left" },
+    wideText: { flex: 1, minWidth: 0, alignItems: "flex-start", gap: theme.spacing.xs },
+    wideTag: { alignSelf: "flex-start" },
+    wideLabel: { alignSelf: "stretch", textAlign: "left" },
   });
 };

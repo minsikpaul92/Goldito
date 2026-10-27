@@ -165,7 +165,7 @@ export default function PetLookScreen() {
           </ActionBar>
         }
       >
-      <Step n={1} title="Pick the closest breed" />
+      <Step n={1} title="Pick the closest breed" first />
       <View style={styles.search}>
         <Icon name="search" size={20} color={theme.color.textMuted} />
         <TextInput
@@ -296,10 +296,11 @@ export default function PetLookScreen() {
   );
 }
 
-function Step({ n, title }: { n: number; title: string }) {
+/** A numbered step title; `first` adds room under the pinned preview's bottom line. */
+function Step({ n, title, first }: { n: number; title: string; first?: boolean }) {
   const styles = useThemedStyles(makeStyles);
   return (
-    <View style={styles.stepRow} accessibilityRole="header">
+    <View style={[styles.stepRow, first && styles.stepFirst]} accessibilityRole="header">
       <View style={styles.stepDot}><Text style={styles.stepNum}>{n}</Text></View>
       <Text style={styles.h2}>{title}</Text>
     </View>
@@ -340,8 +341,9 @@ const makeStyles = (theme: Theme) =>
     root: { flex: 1, backgroundColor: theme.color.background },
     page: { gap: theme.spacing.md },
     stage: { alignItems: "center", justifyContent: "center", paddingTop: theme.spacing.sm, paddingBottom: theme.spacing.xs, backgroundColor: theme.color.surface, borderBottomWidth: 1, borderBottomColor: theme.color.border },
-    poseLabel: { fontSize: theme.fontSize.small, color: theme.color.textMuted, minHeight: 20 },
+    poseLabel: { marginTop: theme.spacing.sm, fontSize: theme.fontSize.small, color: theme.color.textMuted, minHeight: 20 },
     stepRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, marginTop: theme.spacing.sm },
+    stepFirst: { marginTop: theme.spacing.md + theme.spacing.xs },
     stepDot: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: theme.color.primary },
     stepNum: { color: theme.color.primaryText, fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold },
     h2: { flex: 1, fontSize: theme.fontSize.section, fontWeight: theme.fontWeight.bold, color: theme.color.text },
