@@ -22,7 +22,8 @@ type Props = {
 
 /**
  * A picture plus a name you pick from a grid (breeds on the Look screen). Same picked look as every chip and card
- * (`selectable`); the name wraps to 3 lines at one type size instead of shrinking or cutting off.
+ * (`selectable`); the name wraps to 3 lines at one type size instead of shrinking or cutting off. The picture sits at the
+ * top and the name area is always 2 lines high, so names line up across a grid.
  */
 export function SelectTile({ art, label, selected, onPress, tag, wide, style, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
@@ -37,7 +38,7 @@ export function SelectTile({ art, label, selected, onPress, tag, wide, style, te
     >
       <View style={[styles.body, wide && styles.wideBody]}>
         {art}
-        <Text style={[styles.label, wide && styles.wideLabel]} numberOfLines={3}>{label}</Text>
+        <Text style={[styles.label, !wide && styles.twoLines, wide && styles.wideLabel]} numberOfLines={3}>{label}</Text>
       </View>
       {tag ? <Tag label={tag} tone="brand" style={styles.tag} testID={testID ? `${testID}-tag` : undefined} /> : null}
     </Pressable>
@@ -64,6 +65,7 @@ const makeStyles = (theme: Theme) => {
     wideBody: { flexDirection: "row", gap: theme.spacing.sm },
     tag: { alignSelf: "center" },
     label: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text, textAlign: "center" },
+    twoLines: { alignSelf: "stretch", minHeight: theme.lineHeight.small * 2 },
     wideLabel: { flex: 1, minWidth: 0, textAlign: "left" },
   });
 };

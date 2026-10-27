@@ -46,7 +46,8 @@ const POSES: { label: string; ms: number; at: (f: number) => { pose: Pose; facin
   { label: "Front", ms: 600, at: (f) => ({ pose: { view: "front", action: "idle", frame: f % 2 }, facing: "right" }) },
   { label: "Back", ms: 600, at: (f) => ({ pose: { view: "back", action: "idle", frame: f % 2 }, facing: "right" }) },
 ];
-const MIN_TILE = 80;
+// 3 tiles a row up to 402 wide, 4 from 440: a name like "Labrador (chocolate)" never breaks inside a word.
+const MIN_TILE = 90;
 const GAP = 8;
 
 /** The Pet maker (11.12c), admins only: start from a breed, change the looks, save to `pets.profile.pixel_look`. */
@@ -131,11 +132,15 @@ export default function PetLookScreen() {
   const up = recipe.earType ? recipe.earType === "up" : UP_HEADS(recipe.base);
   const one = (key: keyof PetRecipe, fallback: string | number) => [String(recipe[key] ?? fallback)];
   const pickOne = (key: keyof PetRecipe, numeric = false) => (v: string[]) => v.length && set({ [key]: numeric ? Number(v[0]) : v[0] } as Partial<PetRecipe>);
-  const shown = query || allBreeds ? breeds : breeds.slice(0, 12);
+  // 12 slots fill whole rows of 3 or 4; the pet's own breed is a wide tile and takes two of them.
+  const firstPage = breeds.slice(0, 12).some((p) => p.name === own?.name) ? 11 : 12;
+  const shown = query || allBreeds ? breeds : breeds.slice(0, firstPage);
   const colorKeys = colorSlots(recipe, up);
   const preview = POSES[pose].at(frame);
   const cols = gridWidth ? Math.max(3, Math.floor((gridWidth + GAP) / (MIN_TILE + GAP))) : 4;
-  const tile = gridWidth ? Math.floor((gridWidth - GAP * (cols - 1)) / cols) : MIN_TILE;
+  // Not rounded down to whole px: the tiles fill the row edge to edge, so both gutters match (less 0.01 px so subpixel
+  // rounding never pushes the last tile to the next row).
+  const tile = gridWidth ? (gridWidth - GAP * (cols - 1)) / cols - 0.01 : MIN_TILE;
 
   return (
     <View style={styles.root}>
@@ -154,9 +159,9 @@ export default function PetLookScreen() {
         footerSolid
         footer={
           <ActionBar>
-            <Button label="Undo" variant="secondary" onPress={undo} disabled={!look.history.length} testID="look-undo" />
-            <Button label="Start over" variant="secondary" onPress={() => { change(look.first); setStartedFrom(null); }} testID="look-start-over" />
-            <Button label="Save" onPress={() => void save(recipe)} loading={saving} testID="look-save" />
+            <Button label="Undo" variant="secondary" onPress={undo} disabled={!look.history.length} testID="look-undo" style={styles.barButton} />
+            <Button label="Start over" variant="secondary" onPress={() => { change(look.first); setStartedFrom(null); }} testID="look-start-over" style={styles.barButton} />
+            <Button label="Save" onPress={() => void save(recipe)} loading={saving} testID="look-save" style={styles.barButton} />
           </ActionBar>
         }
       >
@@ -192,7 +197,7 @@ export default function PetLookScreen() {
           );
         })}
       </View>
-      {!query && breeds.length > 12 ? (
+      {!query && breeds.length > firstPage ? (
         <TextButton label={allBreeds ? "Show fewer" : `Show all ${breeds.length} ${cat ? "cats" : "dogs"}`} onPress={() => setAllBreeds(!allBreeds)} style={styles.center} testID="look-breed-more" />
       ) : null}
 
@@ -344,6 +349,8 @@ const makeStyles = (theme: Theme) =>
     searchInput: { flex: 1, minWidth: 0, minHeight: 44, fontSize: theme.fontSize.body, color: theme.color.text },
     breeds: { flexDirection: "row", flexWrap: "wrap", gap: GAP },
     center: { alignSelf: "center" },
+    // Three buttons share a 360 px row: less side padding keeps "Start over" on one line.
+    barButton: { paddingHorizontal: theme.spacing.sm },
     group: { gap: theme.spacing.md },
     field: { gap: theme.spacing.xs },
     label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },

@@ -114,19 +114,23 @@ test.describe("pet look", () => {
     await expect(screen.getByTestId("pet-colors-open")).toBeVisible();
   });
 
-  test("the pet's own breed comes first, breeds fill 4 columns, a breed can be undone and the preview turns on tap", async ({ page }) => {
+  test("the pet's own breed comes first, breeds fill the row edge to edge, a breed can be undone and the preview turns on tap", async ({ page }) => {
     await start(page, (d) => d.pets.push(pet("pet-max", "Max", { breed: "Beagle" })));
     const screen = app(page);
     await page.goto("/owner/pets/pet-max/look");
     await expect(screen.getByTestId("look-breed-Beagle-tag")).toHaveText("Max's breed");
     const tiles = screen.locator('[data-testid^="look-breed-"][role="button"]');
     await expect(tiles.first()).toHaveAttribute("data-testid", "look-breed-Beagle");
-    // Four even columns at phone width, the own breed two wide: it and two tiles share the first row, then four a row.
-    const boxes = await Promise.all([0, 1, 2, 3, 4, 5, 6].map(async (i) => (await tiles.nth(i).boundingBox())!));
+    // Three even columns at 402 wide, the own breed two wide: it and one tile share the first row, then three a row.
+    const boxes = await Promise.all([0, 1, 2, 3, 4].map(async (i) => (await tiles.nth(i).boundingBox())!));
     const tops = boxes.map((b) => Math.round(b.y));
-    expect(new Set(tops.slice(0, 3)).size).toBe(1);
-    expect(new Set(tops.slice(3, 7)).size).toBe(1);
-    expect(tops[3]).toBeGreaterThan(tops[0]);
+    expect(new Set(tops.slice(0, 2)).size).toBe(1);
+    expect(new Set(tops.slice(2, 5)).size).toBe(1);
+    expect(tops[2]).toBeGreaterThan(tops[0]);
+    // Both rows end at the same edge (no empty strip on the right), and the tiles of a row are the same height.
+    expect(Math.abs(boxes[1].x + boxes[1].width - (boxes[4].x + boxes[4].width))).toBeLessThan(1);
+    expect(Math.abs(boxes[0].x - boxes[2].x)).toBeLessThan(1);
+    expect(new Set(boxes.slice(2, 5).map((b) => Math.round(b.height))).size).toBe(1);
     // Every tile is a full touch target, and long names wrap instead of being cut off.
     for (const b of boxes) expect(Math.min(b.width, b.height)).toBeGreaterThanOrEqual(44);
 
