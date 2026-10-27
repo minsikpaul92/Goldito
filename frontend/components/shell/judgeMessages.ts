@@ -69,7 +69,9 @@ export type JudgeCommand =
   /** Play steps on the screen that is open now (the second phone of a scene, after the first). */
   | { type: typeof JUDGE_COMMAND; id: string; op: "run"; script: ScriptStep[]; pace?: number }
   /** Stop the steps playing now; the judge carries on by hand. */
-  | { type: typeof JUDGE_COMMAND; id: string; op: "stop" };
+  | { type: typeof JUDGE_COMMAND; id: string; op: "stop" }
+  /** Log out (the seat frees for the next judge) and go to Welcome. */
+  | { type: typeof JUDGE_COMMAND; id: string; op: "logout" };
 
 export type JudgeDone = { type: typeof JUDGE_DONE; id: string; ok: boolean; error?: string };
 

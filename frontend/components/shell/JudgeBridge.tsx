@@ -7,7 +7,7 @@ import { DEMO_PASSWORD, demoSetFor } from "../../lib/demo";
 import { resetDemo } from "../../lib/demoReset";
 import { holderId } from "../../lib/judgeSeat";
 import { getSupabase, isSupabaseConfigured } from "../../lib/supabase";
-import { Role } from "../../providers/SessionProvider";
+import { Role, useSession } from "../../providers/SessionProvider";
 import { useTheme } from "../../providers/ThemeProvider";
 import { useTrip } from "../../providers/TripProvider";
 import {
@@ -41,6 +41,9 @@ export function JudgeBridge() {
   simulateRef.current = simulate;
   const color = useRef(theme.color.primary);
   color.current = theme.color.primary;
+  const { signOut } = useSession();
+  const signOutRef = useRef(signOut);
+  signOutRef.current = signOut;
 
   // The outline survives the full load that opened the screen; the next command replaces it.
   useEffect(() => {
@@ -95,6 +98,12 @@ export function JudgeBridge() {
           showHighlight(null, color.current);
           reply(command.id, true);
           playAndTell(command.script, color.current, command.pace ?? 1);
+        } else if (command.op === "logout") {
+          stopScript();
+          reply(command.id, true);
+          // Frees the seat; the other phone signs out with it.
+          await signOutRef.current();
+          router.replace("/welcome");
         } else if (command.op === "stop") {
           stopScript();
           showHighlight(null, color.current);

@@ -66,6 +66,7 @@ export function JudgePanel({ panes, accounts, onSettingUp }: Props) {
   const [intro, setIntro] = useState<Scene | null>(null);
   const [tryAsk, setTryAsk] = useState<Scene | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -397,11 +398,40 @@ export function JudgePanel({ panes, accounts, onSettingUp }: Props) {
           testID="judge-reset"
         />
       </View>
+      <Button
+        label="Log out"
+        variant="secondary"
+        onPress={() => setLogoutOpen(true)}
+        disabled={!seat || busy !== null}
+        testID="judge-logout"
+      />
       {error ? (
         <Text style={styles.error} accessibilityRole="alert" testID="judge-panel-error">
           {error}
         </Text>
       ) : null}
+      <Modal visible={logoutOpen} transparent animationType="fade" onRequestClose={() => setLogoutOpen(false)}>
+        <View style={styles.backdrop}>
+          <View style={styles.introCard} testID="judge-logout-sheet">
+            <Text style={styles.introTitle}>Log out?</Text>
+            <Text style={styles.introBody}>{seat ? `${demoSetFor(seat).label} frees for the next judge.` : ""}</Text>
+            <View style={styles.introActions}>
+              <Button label="Cancel" variant="secondary" onPress={() => setLogoutOpen(false)} style={styles.action} testID="judge-logout-cancel" />
+              <Button
+                label="Log out"
+                onPress={() => {
+                  setLogoutOpen(false);
+                  flow.current = null;
+                  setPlaying(null);
+                  panes.forEach((pane) => void send(pane, { op: "logout" }, WAIT_MS.go).catch(() => undefined));
+                }}
+                style={styles.action}
+                testID="judge-logout-confirm"
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
       <Modal visible={resetOpen} transparent animationType="fade" onRequestClose={() => setResetOpen(false)}>
         <View style={styles.backdrop}>
           <View style={styles.introCard} testID="judge-reset-sheet">
