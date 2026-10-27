@@ -114,6 +114,32 @@ test.describe("pet look", () => {
     await expect(screen.getByTestId("pet-colors-open")).toBeVisible();
   });
 
+  test("the pet's own breed comes first, breeds fill 4 columns, a breed can be undone and the preview turns on tap", async ({ page }) => {
+    await start(page, (d) => d.pets.push(pet("pet-max", "Max", { breed: "Beagle" })));
+    const screen = app(page);
+    await page.goto("/owner/pets/pet-max/look");
+    await expect(screen.getByTestId("look-breed-own")).toHaveText("Max's breed");
+    const tiles = screen.locator('[data-testid^="look-breed-"][role="button"]');
+    await expect(tiles.first()).toHaveAttribute("data-testid", "look-breed-Beagle");
+    // Four even columns at phone width: the first four tiles share a row, the fifth starts the next.
+    const tops = await Promise.all([0, 1, 2, 3, 4].map(async (i) => Math.round((await tiles.nth(i).boundingBox())!.y)));
+    expect(new Set(tops.slice(0, 4)).size).toBe(1);
+    expect(tops[4]).toBeGreaterThan(tops[0]);
+
+    const sprite = screen.getByTestId("look-sprite");
+    await expect(screen.getByTestId("look-undo")).toBeDisabled();
+    const before = await sprite.innerHTML();
+    await screen.getByTestId("look-breed-Dalmatian").click();
+    await expect(screen.getByTestId("toast-undo")).toBeVisible();
+    await screen.getByTestId("toast-undo").click();
+    await expect(screen.getByTestId("look-undo")).toBeDisabled();
+
+    await expect(screen.getByTestId("look-pose")).toContainText("Turn");
+    await screen.getByTestId("look-preview").click();
+    await expect(screen.getByTestId("look-pose")).toContainText("Walk");
+    expect(before.length).toBeGreaterThan(0);
+  });
+
   test("options change the preview right away", async ({ page }) => {
     await start(page, (d) => d.pets.push(pet("pet-max", "Max")));
     const screen = app(page);
