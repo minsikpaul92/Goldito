@@ -1,5 +1,6 @@
 import { ApiError, apiPost } from "./api";
 import { findDemoAccount } from "./demo";
+import { holderId } from "./judgeSeat";
 
 /**
  * Temporary testing reset (backend `POST /api/demo/reset`): puts the caller's own demo account back into
@@ -30,10 +31,13 @@ export function isDemoAccount(email: string | undefined): boolean {
   return findDemoAccount(email) !== null;
 }
 
-/** `holder`: the browser's Judge seat holder id (#411); a judge set resets only for the browser that holds it. */
-export async function resetDemo(state: DemoState, holder?: string): Promise<void> {
+/**
+ * `holder`: the browser's Judge seat holder id (#411); a judge set resets only for the browser that holds it, so every
+ * reset sends it (Profile's demo tools too; the server ignores it for team sets).
+ */
+export async function resetDemo(state: DemoState, holder: string = holderId()): Promise<void> {
   try {
-    await apiPost("/api/demo/reset", holder ? { state, holder } : { state });
+    await apiPost("/api/demo/reset", { state, holder });
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
       throw new Error("Demo reset is switched off on this backend (set DEMO_RESET_ENABLED=1).");

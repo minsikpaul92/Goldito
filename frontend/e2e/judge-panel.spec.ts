@@ -100,14 +100,17 @@ test.describe("judge panel", () => {
     // The reset carries this browser's seat holder id: the backend resets only the seat it holds.
     expect(resets[0].holder).toMatch(/^[0-9a-f-]{36}$/);
 
-    // The panel is off while the phone reloads into the scene (no account for a moment), so wait for it to come back.
-    await expect(page.getByTestId("judge-replay")).toBeEnabled();
+    // Reset asks which state: the list of demo states, and the one picked is the one reset to.
+    // The scene may still be playing on the phone (the AI is not faked here): stop it first.
+    if (await page.getByTestId("judge-stop").isVisible()) await page.getByTestId("judge-stop").click();
+    await expect(page.getByTestId("judge-reset")).toBeEnabled();
+    await page.getByTestId("judge-reset").click();
+    await expect(page.getByTestId("judge-reset-sheet")).toContainText("Ready for drop-off");
     const reloaded = page.waitForEvent("framenavigated", (frame) => frame !== page.mainFrame());
-    await page.getByTestId("judge-replay").click();
+    await page.getByTestId("judge-reset-confirmed").click();
     await expect.poll(() => resets.length).toBe(2);
+    expect(resets[1].state).toBe("confirmed");
     await reloaded;
-    // The scene is open again once the hint is back (it reads "Getting it ready…" while the phone reloads).
-    await expect(page.getByTestId("judge-hint")).toHaveText("Max is allergic to chicken. The owner checks a treat, then the sitter.");
     await phoneReady(page);
 
     // Mood starts in care, so the sitter can try it too.

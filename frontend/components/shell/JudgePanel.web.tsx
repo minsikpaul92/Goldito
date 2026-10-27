@@ -5,6 +5,7 @@ import { Button } from "../ui/Button";
 import { SegmentedControl } from "../ui/SegmentedControl";
 import { Tag } from "../ui/Tag";
 import { demoSetFor } from "../../lib/demo";
+import { demoStates } from "../../lib/demoReset";
 import { Role } from "../../providers/SessionProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
@@ -12,7 +13,7 @@ import { FrameAccount } from "./accountMessage";
 import { JUDGE_COMMAND, JudgeCommand, isJudgeDone, isJudgePlayed, paneWindow } from "./judgeMessages";
 import type { ScriptStep } from "./judgeScript";
 import { MAP_STAGES, MapFeature, filterFeatures } from "./judgeMap";
-import { RESET_SCENE, SCENES, Scene, SceneTag, TAVILY } from "./judgeScenes";
+import { RESET_SCENE, SCENES, Scene, SceneTag, TAVILY, TUTORIAL } from "./judgeScenes";
 import { TavilyLogo } from "./TavilyLogo";
 
 /** Width the panel takes from the page (the phones scale to what is left). */
@@ -64,6 +65,7 @@ export function JudgePanel({ panes, accounts, onSettingUp }: Props) {
   const [autoPlay, setAutoPlay] = useState<Scene | null>(null);
   const [intro, setIntro] = useState<Scene | null>(null);
   const [tryAsk, setTryAsk] = useState<Scene | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -140,7 +142,7 @@ export function JudgePanel({ panes, accounts, onSettingUp }: Props) {
     flow.current = null;
     setPlaying(null);
     setAutoPlay(null);
-    setActive(scene === RESET_SCENE ? null : scene);
+    setActive(scene.key === RESET_SCENE.key ? null : scene);
     if (scene.state) onSettingUp?.(true);
     try {
       if (scene.state) {
@@ -372,24 +374,24 @@ export function JudgePanel({ panes, accounts, onSettingUp }: Props) {
           <Text style={styles.sceneTitle}>{active.title}</Text>
           <Text style={styles.hint}>{active.hint}</Text>
           <View style={styles.playingRow}>
-            <Text style={styles.playing}>Your turn on the phone.</Text>
+            <Text style={styles.playing}>{active.key === TUTORIAL.key ? "Playing on the phone…" : "Your turn on the phone."}</Text>
             <Button label="Stop" variant="secondary" onPress={() => void stop()} testID="judge-try-stop" />
           </View>
         </View>
       ) : null}
       <View style={styles.actions}>
         <Button
-          label="Replay"
+          label="Tutorial"
           variant="secondary"
-          onPress={() => active && void run(active)}
-          disabled={!seat || !active || busy !== null}
+          onPress={() => void run(TUTORIAL)}
+          disabled={!seat || busy !== null}
           style={styles.action}
-          testID="judge-replay"
+          testID="judge-tutorial"
         />
         <Button
           label={busy === RESET_SCENE.key ? "Resetting…" : "Reset"}
           variant="secondary"
-          onPress={() => void run(RESET_SCENE)}
+          onPress={() => setResetOpen(true)}
           disabled={!seat || busy !== null}
           style={styles.action}
           testID="judge-reset"
@@ -400,6 +402,31 @@ export function JudgePanel({ panes, accounts, onSettingUp }: Props) {
           {error}
         </Text>
       ) : null}
+      <Modal visible={resetOpen} transparent animationType="fade" onRequestClose={() => setResetOpen(false)}>
+        <View style={styles.backdrop}>
+          <View style={styles.introCard} testID="judge-reset-sheet">
+            <Text style={styles.introTitle}>Reset to</Text>
+            {seat
+              ? demoStates("owner", demoSetFor(seat).sitter.name, demoSetFor(seat).pets).map((state) => (
+                  <Pressable
+                    key={state.value}
+                    accessibilityRole="button"
+                    onPress={() => {
+                      setResetOpen(false);
+                      void run({ ...RESET_SCENE, state: state.value });
+                    }}
+                    style={({ pressed }) => [styles.resetRow, pressed && styles.pressed]}
+                    testID={`judge-reset-${state.value}`}
+                  >
+                    <Text style={styles.sceneTitle}>{state.label}</Text>
+                    <Text style={styles.hint}>{state.hint}</Text>
+                  </Pressable>
+                ))
+              : null}
+            <Button label="Cancel" variant="secondary" onPress={() => setResetOpen(false)} testID="judge-reset-cancel" />
+          </View>
+        </View>
+      </Modal>
       <Modal visible={tryAsk !== null} transparent animationType="fade" onRequestClose={() => setTryAsk(null)}>
         <View style={styles.backdrop}>
           <View style={styles.introCard} testID="judge-try">
@@ -521,6 +548,16 @@ const makeStyles = (theme: Theme) =>
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     playing: { flex: 1, fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     playingRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
+    resetRow: {
+      minHeight: 44,
+      justifyContent: "center",
+      gap: 2,
+      paddingVertical: theme.spacing.xs + 2,
+      paddingHorizontal: theme.spacing.sm,
+      borderRadius: theme.radius.lg,
+      borderWidth: 1,
+      borderColor: theme.color.border,
+    },
     tryRow: { paddingTop: theme.spacing.sm + 4, gap: theme.spacing.xs + 2 },
     backdrop: { flex: 1, alignItems: "center", justifyContent: "center", padding: theme.spacing.lg, backgroundColor: "rgba(0,0,0,0.4)" },
     introCard: {

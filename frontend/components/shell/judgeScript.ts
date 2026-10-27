@@ -30,6 +30,8 @@ export type ScriptStep =
    * step waits for that tap (a guided try: one control after another).
    */
   | { invite: string; text: string; await?: boolean }
+  /** Outline a control with a note for a few seconds, then go on (a tour that explains the screens). */
+  | { explain: string; text: string; ms?: number }
   /** Tap a control only if it shows within a moment (an optional choice, e.g. a nearby meeting spot). */
   | { tapIf: string }
   /** Tap the first of these controls whose words match `prefer` (a pattern, any case), else the first one (an AI chip). */
@@ -43,6 +45,8 @@ const FIND_MS = 20_000;
 const BEAT_MS = 700;
 const KEY_MS = 45;
 const INVITE_ID = "goldito-judge-invite";
+/** How long a tour note stays on one control. */
+const EXPLAIN_MS = 4_000;
 
 // Signals between the two phones go through sessionStorage, which both phones of the page share (same origin), so a
 // signal sent before the other side waits for it, or across its reload, is not lost.
@@ -183,7 +187,67 @@ export function takeScript(): QueuedScript | null {
   }
 }
 
+/**
+ * The tour's spotlight: the rest of the screen dims, the control stays lit with an outline, and a speech bubble next
+ * to it says what it is (above the control when there is room, else below). Gone with clearInvite.
+ */
+function spotlight(el: HTMLElement, text: string, color: string): void {
+  clearInvite();
+  el.scrollIntoView({ block: "center" });
+  const box = el.getBoundingClientRect();
+  const pad = 6;
+  const hole = document.createElement("div");
+  hole.id = `${INVITE_ID}-hole`;
+  Object.assign(hole.style, {
+    position: "fixed",
+    left: `${box.left - pad}px`,
+    top: `${box.top - pad}px`,
+    width: `${box.width + pad * 2}px`,
+    height: `${box.height + pad * 2}px`,
+    borderRadius: "14px",
+    border: `3px solid ${color}`,
+    boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.55)",
+    zIndex: "9998",
+    pointerEvents: "none",
+  });
+  const above = box.top > window.innerHeight / 2;
+  const bubble = document.createElement("div");
+  bubble.id = INVITE_ID;
+  bubble.textContent = text;
+  const left = Math.min(Math.max(12, box.left + box.width / 2 - 140), window.innerWidth - 292);
+  Object.assign(bubble.style, {
+    position: "fixed",
+    left: `${left}px`,
+    width: "280px",
+    boxSizing: "border-box",
+    padding: "12px 14px",
+    borderRadius: "16px",
+    background: "#fff", // tokens-ok: a plain DOM bubble outside the app's theme
+    color: "#1F2A24", // tokens-ok: a plain DOM bubble outside the app's theme
+    font: "600 15px/1.35 system-ui, sans-serif",
+    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.3)",
+    zIndex: "9999",
+    pointerEvents: "none",
+    ...(above ? { bottom: `${window.innerHeight - box.top + pad + 14}px` } : { top: `${box.bottom + pad + 14}px` }),
+  });
+  // The bubble's tail points at the control.
+  const tail = document.createElement("div");
+  const tailX = Math.min(Math.max(16, box.left + box.width / 2 - left - 8), 248);
+  Object.assign(tail.style, {
+    position: "absolute",
+    left: `${tailX}px`,
+    width: "16px",
+    height: "16px",
+    background: "#fff", // tokens-ok: the bubble's tail, same as the bubble
+    transform: "rotate(45deg)",
+    ...(above ? { bottom: "-7px" } : { top: "-7px" }),
+  });
+  bubble.appendChild(tail);
+  document.body.append(hole, bubble);
+}
+
 function clearInvite(): void {
+  document.getElementById(`${INVITE_ID}-hole`)?.remove();
   document.getElementById(INVITE_ID)?.remove();
   document.getElementById(`${INVITE_ID}-style`)?.remove();
   document.querySelectorAll("[data-judge-invite]").forEach((el) => el.removeAttribute("data-judge-invite"));
@@ -243,6 +307,11 @@ export async function playScript(steps: ScriptStep[], color: string, pace = 1): 
       sendSignal(step.signal);
     } else if ("until" in step) {
       await until(() => (hasSignal(step.until) ? true : null), step.timeout ?? UNTIL_MS, `the other phone (${step.until})`);
+    } else if ("explain" in step) {
+      const el = await until(() => query(step.explain), FIND_MS, step.explain);
+      spotlight(el, step.text, color);
+      await wait(step.ms ?? EXPLAIN_MS);
+      clearInvite();
     } else if ("tapBest" in step) {
       const pattern = new RegExp(step.prefer, "i");
       const el = await until(() => {

@@ -512,6 +512,53 @@ export const SCENES: Scene[] = [
   },
 ];
 
+/** The tour of one phone's tabs and its Pet room, a note on each for a few seconds. */
+function tour(home: string, petRoom: string, bookings: string, chat: string, moments: string, snap: string): ScriptStep[] {
+  return [
+    { explain: "tab:Home", text: home },
+    { tap: "home-pager-tab-1" },
+    { explain: "home-pager-tab-1", text: petRoom, ms: 5_000 },
+    { tap: "home-pager-tab-0" },
+    { explain: "tab:Bookings", text: bookings },
+    { explain: "tab:Chat", text: chat },
+    { explain: "tab:Moments", text: moments },
+    { explain: "tab:Snap", text: snap },
+  ];
+}
+
+/** Tutorial: in care, Robert's phone first, then Chloe's, each tab and the Pet room explained in one line. */
+export const TUTORIAL: Scene = {
+  key: "tutorial",
+  title: "Tutorial",
+  hint: "Each tab and the Pet room, Robert's phone first, then Chloe's.",
+  state: "in_care",
+  lead: "owner",
+  owner: {
+    path: "/owner",
+    script: tour(
+      "Home: today's stay and the latest from Chloe",
+      "Pet room: Max and Mochi as pixel pets, moving with each check-in",
+      "Bookings: find a sitter, requests and stays",
+      "Chat: talk with Chloe, AI chips write the reply",
+      "Moments: the photos and the daily diary",
+      "Snap: treat check, mood and stickers",
+    ),
+  },
+  sitter: {
+    path: "/sitter",
+    after: true,
+    script: tour(
+      "Home: pets in your care, check-ins and the 5-second check",
+      "Pet room: tap feed, walk, potty or nap and Robert is told",
+      "Bookings: requests, Meet & Greets and past stays",
+      "Chat: talk with Robert, AI chips write the reply",
+      "Moments: the photos you sent and the diary you write",
+      "Snap: treat check, mood and stickers",
+    ),
+  },
+  tags: [],
+};
+
 /** Reset: the clean stay a judge starts from, both phones home. */
 export const RESET_SCENE: Scene = {
   key: "reset",
