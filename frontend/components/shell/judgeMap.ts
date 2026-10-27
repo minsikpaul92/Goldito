@@ -1,5 +1,5 @@
 import type { Role } from "../../providers/SessionProvider";
-import { MINICPM, NANO, SUPER, SceneTag, TAVILY, ULTRA } from "./judgeScenes";
+import { VISION, NANO, SUPER, SceneTag, TAVILY, ULTRA } from "./judgeScenes";
 
 /**
  * The judge panel's Map (Mook, Oct 27): every feature a judge can open, by stage of the stay, so they can search
@@ -41,7 +41,7 @@ const QWEN: SceneTag = { label: "Qwen3 Embedding" };
 const WHISPER: SceneTag = { label: "Groq Whisper" };
 
 export const MAP_FEATURES: MapFeature[] = [
-  { key: "addpet", stage: "start", title: "Add a pet by voice or photo", line: "Breed, coat and needs fill in, with sources.", who: "owner", lead: "owner", path: "/owner-onboarding?add=1", scene: "meet", tags: [WHISPER, NANO, MINICPM, TAVILY], words: "pet profile breed voice speak photo" },
+  { key: "addpet", stage: "start", title: "Add a pet by voice or photo", line: "Breed, coat and needs fill in, with sources.", who: "owner", lead: "owner", path: "/owner-onboarding?add=1", scene: "meet", tags: [WHISPER, NANO, VISION, TAVILY], words: "pet profile breed voice speak photo" },
   { key: "pet", stage: "start", title: "Your pet and its 8-bit twin", line: "The pet's profile, needs and pixel look.", who: "owner", lead: "owner", path: "/owner/pets/{pet}", tags: [], words: "tamagotchi pixel room look profile" },
 
   { key: "profile", stage: "ask", title: "Sitter profile and openings", line: "Reviews, policies and the next open dates.", who: "owner", lead: "owner", path: "/owner/sitters/{sitter}", tags: [], words: "find sitter search calendar rates" },
@@ -56,10 +56,10 @@ export const MAP_FEATURES: MapFeature[] = [
   { key: "entry", stage: "book", title: "Entry info that unlocks on time", line: "The door code opens for the sitter 2 hours before.", who: "owner", lead: "owner", path: "/owner/home-access", tags: [], words: "door code key lock safety home access" },
   { key: "schedule", stage: "book", title: "Sitter schedule and rules", line: "Open days and the rules quotes come from.", who: "sitter", lead: "sitter", path: "/sitter/schedule", tags: [], words: "calendar availability rules" },
 
-  { key: "day", stage: "care", title: "A day of care", line: "Tap meal, walk, potty, nap; the Diary page writes itself.", who: "both", lead: "sitter", path: "/sitter", scene: "care", tags: [SUPER, MINICPM], words: "check in 5-second quick diary daily report page" },
+  { key: "day", stage: "care", title: "A day of care", line: "Tap meal, walk, potty, nap; the Diary page writes itself.", who: "both", lead: "sitter", path: "/sitter", scene: "care", tags: [SUPER, VISION], words: "check in 5-second quick diary daily report page" },
   { key: "trip", stage: "care", title: "Live trip with ETA", line: "Watch the drive and the arrival.", who: "both", lead: "owner", path: "/owner/bookings/{booking}/trip", scene: "trip", tags: [{ label: "No AI" }], words: "map uber drive transport eta location handoff" },
   { key: "meds", stage: "care", title: "Meds and tasks", line: "Tick each med on time; the owner sees it.", who: "sitter", lead: "sitter", path: "/sitter/tasks", tags: [], words: "medication pill task checklist" },
-  { key: "moments", stage: "care", title: "Moments: photos by day", line: "Photos with a caption and a category.", who: "owner", lead: "owner", path: "/owner/feed", tags: [MINICPM], words: "photo album feed caption gallery" },
+  { key: "moments", stage: "care", title: "Moments: photos by day", line: "Photos with a caption and a category.", who: "owner", lead: "owner", path: "/owner/feed", tags: [VISION], words: "photo album feed caption gallery" },
   { key: "diary", stage: "care", title: "The Diary", line: "Each day's page from the sitter.", who: "owner", lead: "owner", path: "/owner/diary", tags: [SUPER], words: "daily report page journal" },
   { key: "home", stage: "care", title: "Home during a stay", line: "Where your pet is and how the day went.", who: "owner", lead: "owner", path: "/owner", tags: [], words: "owner home dashboard" },
   { key: "notif", stage: "care", title: "Notifications", line: "Every update, by day of the stay.", who: "owner", lead: "owner", path: "/owner/notifications", tags: [], words: "alerts updates bell" },
@@ -69,8 +69,8 @@ export const MAP_FEATURES: MapFeature[] = [
   { key: "record", stage: "home", title: "Pet Life Record", line: "Eats, meds, behaviour and tips, with sources.", who: "owner", lead: "owner", path: "/owner/pets/{pet}/record", tags: [SUPER, QWEN], words: "life record memory history rag" },
   { key: "history", stage: "home", title: "History", line: "Every past stay.", who: "owner", lead: "owner", path: "/owner/history", tags: [], words: "past stays" },
 
-  { key: "treat", stage: "snap", title: "Treat check", line: "Chicken jerky for Max shows a red DANGER screen.", who: "both", lead: "owner", path: "/owner/snap/treat", scene: "treat", tags: [MINICPM, { label: "Rule table" }, TAVILY, ULTRA], words: "safety allergy food ingredient scan label danger" },
-  { key: "mood", stage: "snap", title: "Mood from a photo", line: "A face and one sentence about the pet.", who: "both", lead: "owner", path: "/owner/snap/mood", scene: "mood", tags: [MINICPM, NANO], words: "emotion feeling photo" },
+  { key: "treat", stage: "snap", title: "Treat check", line: "Chicken jerky for Max shows a red DANGER screen.", who: "both", lead: "owner", path: "/owner/snap/treat", scene: "treat", tags: [VISION, { label: "Rule table" }, TAVILY, ULTRA], words: "safety allergy food ingredient scan label danger" },
+  { key: "mood", stage: "snap", title: "Mood from a photo", line: "A face and one sentence about the pet.", who: "both", lead: "owner", path: "/owner/snap/mood", scene: "mood", tags: [VISION, NANO], words: "emotion feeling photo" },
   { key: "sticker", stage: "snap", title: "Stickers", line: "Cut the pet out of a photo.", who: "both", lead: "owner", path: "/owner/snap/sticker", scene: "sticker", tags: [{ label: "MediaPipe, in the browser" }], words: "decorate cutout sticker fun" },
 ];
 

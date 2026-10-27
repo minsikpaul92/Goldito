@@ -61,12 +61,12 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 
 | When this happens | The agent | Model | A person decides |
 | :--- | :--- | :--- | :--- |
-| A new owner registers a pet | Turns a photo and a few spoken sentences into profile suggestions and looks up breed needs | MiniCPM-V 4.5 · Groq Whisper → Nemotron 3 **Nano** | The owner confirms every suggestion |
+| A new owner registers a pet | Turns a photo and a few spoken sentences into profile suggestions and looks up breed needs | Nemotron 3.5 **Super VL** · Groq Whisper → Nemotron 3 **Nano** | The owner confirms every suggestion |
 | A message arrives in the chat | Suggests reply chips and drafts a message in my voice, from the calendar, quote, policy, pet profile, and Life Record; points at the next step only if the code allows it | Nemotron 3 **Super** + Qwen3 Embedding | Taps a chip, edits, and taps **Send** |
 | The sitter says yes | Recognizes it and brings up the Meet & Greet card | Nemotron 3 **Nano** | Either side requests, accepts, or skips |
 | The owner writes a care request | Turns it into timed tasks and Heads-up cards | Nemotron 3 **Super** | The owner reviews and saves |
-| The day ends | Suggests chips from check-ins and photos, then writes the daily note | MiniCPM-V 4.5 → Nemotron 3 **Super** | The sitter fixes the chips and approves |
-| A treat label is photographed | Reads it, applies the rule table, searches trusted sites (Tavily), and reasons about hidden sources | MiniCPM-V 4.5 → Nemotron 3 **Ultra** | Danger needs an explicit "I understand" |
+| The day ends | Suggests chips from check-ins and photos, then writes the daily note | Nemotron 3.5 **Super VL** → Nemotron 3 **Super** | The sitter fixes the chips and approves |
+| A treat label is photographed | Reads it, applies the rule table, searches trusted sites (Tavily), and reasons about hidden sources | Nemotron 3.5 **Super VL** → Nemotron 3 **Ultra** | Danger needs an explicit "I understand" |
 | The stay ends | Writes the pet's Life Record and indexes it | Nemotron 3 **Super** + Qwen3 Embedding | The owner reads it |
 
 <img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner adds a photo of Mumu, the AI reads breed and coat color, and Goldito builds Mumu as an 8-bit pet" width="340">
@@ -82,10 +82,10 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 | **Nemotron 3 Super** `nvidia/nemotron-3-super-120b-a12b` | Chat reply chips and drafts · care request → checklist · daily notes · Life Records | About 1 s per chip set or draft. In simulated 20-message chats, Nano drafts repeated themselves and fell back to bare chip words; Super did not, so the chat runs on Super |
 | **Nemotron 3 Nano** `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | The sitter's "yes" · spoken profile → facts with quotes · sitter onboarding by voice · breed needs from search results · the mood line | Fast extraction where the server checks every value |
 | **Nemotron 3 Ultra** `nvidia/Nemotron-3-Ultra-550b-a55b` | Treat check: allergens and hidden sources over the label, the rules, and Tavily excerpts | About 2.7 s with thinking on; the whole check about 7 to 8 s |
-| **MiniCPM-V 4.5** `openbmb/MiniCPM-V-4_5` ¹ | Treat labels · photo captions and album · daily-note photo chips · breed guess from a pet photo · mood tags · handoff photo check (server API, not in the app yet) | A label in 0.9 to 1.4 s; a caption in about 1.2 s, 8 of 9 sample photos sorted right |
+| **Nemotron 3.5 Super VL** `nvidia/Nemotron-3.5-Super-VL` ¹ | Treat labels · photo captions and album · daily-note photo chips · breed guess from a pet photo · mood tags · handoff photo check (server API, not in the app yet) | About 1 to 1.4 s per photo with thinking off. On six sample labels (5 variants, 60 calls) it missed no ingredient and said "incomplete" on every cut-off label, where MiniCPM-V said "complete" every time |
 | **Qwen3 Embedding 8B** `Qwen/Qwen3-Embedding-8B` | RAG over Life Records, sitter policies, and care requests · picking a sitter's own past replies as tone examples | `dimensions: 1024` fits a pgvector HNSW index |
 
-¹ NVIDIA's vision models on Token Factory (`Nemotron-Nano-V2-12b`, `Cosmos3-Super-Reasoner`, `Nemotron-3-Nano-Omni`) are offered only as dedicated endpoints, not on the shared API (checked 2026-10-02). Keeping one running until judging ends would cost more than our credits, so vision uses MiniCPM-V 4.5 on the shared API, and all reasoning and writing stay on Nemotron. `Nemotron-3.5-Super-VL` reached the shared API later (seen 2026-10-27, global base URL only); we have not measured it for our photos yet. Every check: [model-ids.md](docs/plan/phases/notes/model-ids.md).
+¹ NVIDIA's earlier vision models on Token Factory (`Nemotron-Nano-V2-12b`, `Cosmos3-Super-Reasoner`, `Nemotron-3-Nano-Omni`) are offered only as dedicated endpoints, not on the shared API (checked 2026-10-02), and keeping one running until judging ends would cost more than our credits. We used MiniCPM-V 4.5 until `Nemotron-3.5-Super-VL` reached the shared API (seen 2026-10-27, global base URL only; its thinking must be switched off, or it fills the token budget before any answer). Same prompts, same photos: caption sorting 4 of 6 for both, breed guess 10 of 12 against 9 of 12, treat labels equal. Small samples and clean sample labels, not real packaging. Every check: [model-ids.md](docs/plan/phases/notes/model-ids.md).
 
 **Tested in CI on every push:** about 690 pytest tests, more than 640 Playwright tests (68 specs, desktop phone frame and mouse), and 88 SQL migrations applied to a Postgres stub followed by a row-level-security smoke test.
 
@@ -105,12 +105,12 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 
 What we used, what worked, and what got in the way, written down as it happened. Details and numbers: [model-ids.md](docs/plan/phases/notes/model-ids.md) · [nebius-ai-cloud-feedback.md](docs/plan/phases/notes/nebius-ai-cloud-feedback.md).
 
-<!-- TODO(submission): MiniCPM-V 4.5 and Qwen3 Embedding 8B still need one line in the team's own words on "would we build with it again, and why". Do not invent it. -->
+<!-- TODO(submission): Nemotron 3.5 Super VL, MiniCPM-V 4.5 and Qwen3 Embedding 8B still need one line in the team's own words on "would we build with it again, and why". Do not invent it. -->
 
 **Nebius Token Factory**
 - *Onboarding:* the catalog check and the first answers on the same day (2026-09-29): a Nano text call and a MiniCPM-V image call through the OpenAI SDK, with only the base URL and key changed.
 - *Worked:* one OpenAI-compatible API for chat, vision, and embeddings; `GET /v1/models` for scripted checks; JSON mode and tool calling (`tools` + `tool_choice="auto"`) on Nano and Super, about 0.9 s per call; base64 data URLs as image input.
-- *Got in the way:* NVIDIA's vision models were dedicated-endpoint only when we started (about $48 to $113 a day to keep one up), so we used MiniCPM-V on the shared API; `Nemotron-3.5-Super-VL` showed up on the shared API later. No speech-to-text and no NVIDIA embedding model in the catalog. The two base URLs list different models (25 vs 18 on 2026-10-10). The catalog shows a "Fine-tuning" badge on Nemotron, but the model pages say fine-tuning is not available. External image URLs can fail, so we send data URLs.
+- *Got in the way:* NVIDIA's vision models were dedicated-endpoint only when we started (about $48 to $113 a day to keep one up), so we used MiniCPM-V on the shared API until `Nemotron-3.5-Super-VL` showed up there (2026-10-27). Its thinking is on by default and has to be turned off per call for short answers. No speech-to-text and no NVIDIA embedding model in the catalog. The two base URLs list different models (25 vs 18 on 2026-10-10). The catalog shows a "Fine-tuning" badge on Nemotron, but the model pages say fine-tuning is not available. External image URLs can fail, so we send data URLs.
 - *Again?* Yes. We met NVIDIA models through this hackathon and Token Factory, and we plan to use both in our next projects. On list prices (public price trackers, 2026-10-27), Nemotron 3 Nano costs about 80% less on input and 90% less on output than Gemini 3.5 Flash-Lite, and Super's output costs about 64% less. We have not run the other models ourselves; in our own tests every Nemotron model met the bar we set for its job.
 
 **NVIDIA Nemotron 3 Nano**
@@ -127,9 +127,13 @@ What we used, what worked, and what got in the way, written down as it happened.
 - *Worked:* the treat check verdict in about 2.7 s with thinking on and JSON mode, 614 completion tokens, keeping both hidden sources in our test label. We also used it to rate whole simulated chats when choosing the chat model.
 - *Again?* Yes. It met the quality, speed, and JSON reliability we needed for its job, at a price that suits a small product. We will keep Nemotron as our default for text.
 
-**MiniCPM-V 4.5** (OpenBMB, on Token Factory)
+**Nemotron 3.5 Super VL**
+- *Worked:* on the same prompts as MiniCPM-V it read all six sample labels with no missed ingredient across blur, small size, rotation, and cut-off versions, and said "incomplete" on every cut-off label; about 1 to 1.4 s per photo.
+- *Got in the way:* thinking is on by default and fills `max_tokens` before any answer (we send `enable_thinking: false`); only on the global base URL, not the us-central1 one.
+
+**MiniCPM-V 4.5** (OpenBMB, on Token Factory; our vision model until 2026-10-27)
 - *Worked:* all four sample labels read right (product and every ingredient, in order) in 0.9 to 1.4 s; photo categories 8 of 9 right at about 1.2 s once the prompt explained what a meal and a nap look like.
-- *Got in the way:* bracketed text stays attached to an ingredient instead of being split as asked.
+- *Got in the way:* bracketed text stays attached to an ingredient instead of being split as asked. On cut-off labels it said the list was complete every time (10 of 10).
 
 **Qwen3 Embedding 8B**
 - *Worked:* `dimensions: 1024` on both base URLs, so it fits a pgvector HNSW index (2000 dimensions at most); 539 ms median per query embedding.
@@ -223,7 +227,7 @@ Tap a stage for the details.
 
 - **Uber-style trips, inside the chat.** Drop-off and pick-up are agreed as one pair. Whoever drives taps **Start trip** (after a clear location prompt); the chat shows *on the way*, *N min away*, and *arrived*, and the other side gets a live map and ETA. On arrival the owner gets the sitter's place card (visitor parking, lobby notes) and the sitter gets the entry-info card. Anyone can **start without sharing**: the other side then sees the meeting place with **Open in Google Maps**.
 - **Care, snap, tap.** The sitter ticks timed tasks (the pill, with a photo), taps meal, walk, potty, or nap on the pet's **8-bit room**, and sends quick check-ins. The owner sees each update live, and their 8-bit pet on Home reflects the day. **Ask for a photo** sends the sitter a request that their next photo answers.
-- **5-second check:** in the evening Goldito suggests chips from the day's check-ins and from up to two photos (MiniCPM-V 4.5 reads them): Meal · Potty · Walk 20 min · Meds · 🐿️ Squirrel at the park. The sitter turns off anything wrong and adds a short line if they want. **Nemotron 3 Super writes the daily note** in the sitter's voice from only those facts, and it is posted once the sitter approves it.
+- **5-second check:** in the evening Goldito suggests chips from the day's check-ins and from up to two photos (Nemotron 3.5 Super VL reads them): Meal · Potty · Walk 20 min · Meds · 🐿️ Squirrel at the park. The sitter turns off anything wrong and adds a short line if they want. **Nemotron 3 Super writes the daily note** in the sitter's voice from only those facts, and it is posted once the sitter approves it.
 - **Album and diary:** every photo gets an AI caption and is sorted into Meals · Walks · Naps · Play by day. Daily notes form a diary that both sides can decorate with pet stickers.
 
 **Care, played like a game.** The sitter taps **Feed**, **Walk**, **Poop**, or **Nap** on the pet's 8-bit room. The pet acts it out and the owner is told right away, so a care update feels like play instead of a chore.
@@ -261,7 +265,7 @@ Tap a stage for the details.
 <details>
 <summary><b>Sign-up by photo and voice, and the 8-bit pet</b> (owners and sitters)</summary>
 
-- One question per screen, with big buttons. A **pet photo** goes to MiniCPM-V 4.5, which reads up to three breed guesses and a coat color; the owner confirms them and adds the weight. Goldito then builds the **8-bit pet** from a library of breed presets: the breed picks the shape, the coat color paints it, and the weight sets the build. It lives on the owner's Home, and **Match colors from photo** can repaint it with the photo's own colors later.
+- One question per screen, with big buttons. A **pet photo** goes to Nemotron 3.5 Super VL, which reads up to three breed guesses and a coat color; the owner confirms them and adds the weight. Goldito then builds the **8-bit pet** from a library of breed presets: the breed picks the shape, the coat color paints it, and the weight sets the build. It lives on the owner's Home, and **Match colors from photo** can repaint it with the photo's own colors later.
 - **Speak instead of typing:** the recording becomes text (Groq Whisper), the owner can fix it, and Nemotron 3 Nano pulls out profile facts, each with the sentence it came from. The server drops any value without a matching quote, and safety answers are never pre-filled. Sitters can answer their onboarding questions the same way.
 - The pet gets an **at a glance** card (five traits, such as sociability and energy) and a **breed needs** line found with Tavily on trusted breed and vet sites.
 
@@ -270,7 +274,7 @@ Tap a stage for the details.
 <details>
 <summary><b>Snap tab: treat check, pet mood, stickers</b> (owners and sitters)</summary>
 
-- **Treat check:** pick the pet, snap the label. MiniCPM-V 4.5 reads the ingredients; a rule table checks the pet's allergens and species toxins; Tavily searches trusted vet and FDA pages; Nemotron 3 Ultra reasons about hidden sources (for example, chicken in "animal fat"). The answer is **SAFE · WARNING · DANGER** with sources, never below what the rule table says.
+- **Treat check:** pick the pet, snap the label. Nemotron 3.5 Super VL reads the ingredients; a rule table checks the pet's allergens and species toxins; Tavily searches trusted vet and FDA pages; Nemotron 3 Ultra reasons about hidden sources (for example, chicken in "animal fat"). The answer is **SAFE · WARNING · DANGER** with sources, never below what the rule table says.
 - **Mood** *(for fun only)*: MediaPipe finds each pet in the browser, the vision model picks only visible body-language tags, and a fixed server rule table turns them into eight emotion percentages, so the same photo always gives the same numbers. Nemotron 3 Nano writes one "seems" line.
 - **Sticker:** the pet is cut out in the browser (MediaPipe) into a transparent sticker with a white outline, ready to decorate a diary page.
 
@@ -291,7 +295,7 @@ Tap a stage for the details.
 
 | Layer | What we use |
 | :--- | :--- |
-| AI | **NVIDIA Nemotron 3** (Nano · Super · Ultra), MiniCPM-V 4.5, and Qwen3 Embedding 8B on **Nebius Token Factory** · **Tavily** search · Groq Whisper (speech to text; Token Factory has no speech model) |
+| AI | **NVIDIA Nemotron 3** (Nano · Super · Ultra), Nemotron 3.5 Super VL, and Qwen3 Embedding 8B on **Nebius Token Factory** · **Tavily** search · Groq Whisper (speech to text; Token Factory has no speech model) |
 | App | Expo (React Native for Web), one app for owners and sitters in a phone frame on desktop · MediaPipe in the browser · hosted on **Vercel** |
 | Backend | FastAPI (Python 3.12), Docker on **Render**: AI endpoints, media signing, Google Meet links |
 | Data | **Supabase**: Postgres with row-level security, Auth, Realtime (chat, notifications, live trips), pgvector for RAG |
@@ -310,7 +314,7 @@ Tap a stage for the details.
           │     ├── Nemotron 3 Nano   → chat "yes", voice → profile facts, breed needs, mood line
           │     ├── Nemotron 3 Super  → chat chips and drafts, checklists, daily notes, Life Records
           │     ├── Nemotron 3 Ultra  → treat check reasoning
-          │     ├── MiniCPM-V 4.5     → labels, captions, album, photo chips, breed guess, mood tags
+          │     ├── Nemotron 3.5 Super VL → labels, captions, album, photo chips, breed guess, mood tags
           │     └── Qwen3 Embedding   → RAG and tone examples
           ├── Tavily       → trusted vet, FDA, and breed pages
           ├── Groq Whisper → speech to text for voice sign-up
@@ -361,7 +365,7 @@ subgraph group_platform["<b>Backend And State</b>"]
 end
 
 subgraph group_integrations["<b>External Services</b>"]
-  node_nebius{{"Nebius Token Factory<br/>Nemotron · MiniCPM-V · Qwen3"}}
+  node_nebius{{"Nebius Token Factory<br/>Nemotron · Qwen3"}}
   node_tavily{{"Tavily"}}
   node_groq{{"Groq Whisper"}}
   node_cloudinary{{"Cloudinary"}}
