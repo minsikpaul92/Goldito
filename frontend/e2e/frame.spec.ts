@@ -3,13 +3,17 @@ import { expect, test } from "@playwright/test";
 import { APP_FRAME, app, box, center, drag, isInside, scrollOffset } from "./helpers";
 
 test.describe("desktop phone frame", () => {
-  test("shows the app in a 402 px phone that fits the window", async ({ page }) => {
+  test("shows the app in a 402 x 874 phone, scaled down as a whole to fit the window", async ({ page }) => {
     await page.goto("/");
     await expect(app(page).getByTestId("welcome")).toBeVisible();
 
     const frame = await box(page.locator(APP_FRAME));
     const viewport = page.viewportSize()!;
-    expect(Math.round(frame.width)).toBe(402);
+    // The app lays out at the design size (402 wide, 874 minus the status bar and home indicator)...
+    const size = await page.locator(APP_FRAME).evaluate((el: HTMLElement) => [el.offsetWidth, el.offsetHeight]);
+    expect(size).toEqual([402, 802]);
+    // ...and a short window scales the whole phone, so it keeps that shape on screen.
+    expect(frame.width / frame.height).toBeCloseTo(402 / 802, 2);
     expect(frame.y).toBeGreaterThanOrEqual(0);
     expect(frame.y + frame.height).toBeLessThanOrEqual(viewport.height);
     // The app inside knows it is embedded and does not frame itself again.

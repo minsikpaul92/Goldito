@@ -185,6 +185,7 @@ Legend: ✅ built · 🟡 partly · ⬜ not yet · 🤖 has automated tests · �
 | **Profile stays put after Save** (saving only shows a "Profile saved" toast and does not go to Home or the previous screen, the same for owner · sitter) | 🟡 waiting for a human check | - |
 | **Profile cleanup (#180)**: optional input cards fold (▸ ▾, a closed card shows its value on one line) · Home address card (address · current location button · Address details · Postal code) · service area set automatically · owner packing list and sitter handover check · meeting spots removed · Your answers card · sitter Packing list removed | 🟡 DB (`015g` · `015h`, applied to the hosted DB 10/23) · app built 🤖 e2e (`profile` · `home-location` · `checkout` · `sitter-badges` · `profile-photos` · `sitter-onboarding` and others, 108 passed on local chromium 10/23) · SQL smoke (first run in CI; local Postgres cannot run it) · waiting for a human check | #180 |
 | Desktop phone frame · mouse = finger | ✅ 🤖 | 01 |
+| Desktop phone frame keeps the phone's shape: a short or narrow window scales the whole phone down (402 x 874, no cut-off screen) | 🟡 🤖 `frame.spec.ts` · waiting for a human check (FRAME-1) | 01 |
 | Desktop Split view, two phones side by side (`?view=split`, width ≥ 900), each phone starts at the sign-in screen and the signed-in account shows above the phone | ✅ 🤖 `split.spec.ts` · the human check SPLIT-1 waits for a recheck, SPLIT-2 to 5 are ✅ (2026-10-15 Minsik) | 10 / 10.10 |
 
 ---
@@ -684,6 +685,7 @@ Feedback and fix ideas: the 2026-10-08 feedback (removed; in git history).
 
 | ID | Step | Expected result | Auto | Status |
 | :--- | :--- | :--- | :--- | :--- |
+| FRAME-1 | Computer → the app in the phone frame, at 1440 × 900 and in a shorter window (a laptop browser, about 1440 × 780) | The phone keeps a real phone's shape (402 × 874 design size), the whole phone scales down to fit, nothing in the screen is cut off and the page does not scroll | 🤖 `frame.spec.ts` (design size inside, shape on screen, fits the window) | Waiting for a person to check |
 | SPLIT-1 | Computer (1440 × 900) → `/?view=split` | Two phones side by side, both with "Not signed in" on top. **No auto sign-in**: each phone starts at the sign-in screen, and after Demo owner / Demo sitter (or a normal sign-in) the name above the phone changes to something like "Robert · Owner". The address bar stays `/?view=split` | 🤖 `split.spec.ts` | Waiting for a person to check (auto sign-in removed 2026-10-18) |
 | SPLIT-2 | **Log out** on the sitter phone → refresh the owner phone | Only the sitter phone goes to Welcome; the owner phone stays signed in (a storage key per phone, `goldito-auth-pane-left` · `goldito-auth-pane-right`) | 🤖 `split.spec.ts` | ✅ 2026-10-15 Minsik (Chrome full screen, local app + hosted DB) |
 | SPLIT-3 | **Show both phones** under the one-phone view → **Show one phone** under the split view | Switches between two phones ↔ one phone | 🤖 `split.spec.ts` | ✅ 2026-10-15 Minsik (Chrome full screen, local app + hosted DB) |
