@@ -67,9 +67,7 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 | A new owner registers a pet | Turns a photo and a few spoken sentences into profile suggestions and looks up breed needs | MiniCPM-V 4.5 · Groq Whisper → Nemotron 3 **Nano** | The owner confirms every suggestion |
 | The stay ends | Writes the pet's Life Record and indexes it | Nemotron 3 **Super** + Qwen3 Embedding | The owner reads it |
 
-<!-- TODO(image): chat GIF, about 360 px wide. Chloe taps a reply chip and a draft in her voice appears with the server's quote; she taps Send.
-<img src="docs/assets/readme/chat-draft.gif" alt="The sitter taps a reply chip and Nemotron drafts a message in her voice with the server's quote" width="360">
--->
+<img src="docs/assets/readme/chat-draft.gif" alt="Inquiry chat between owner Paul and sitter Peter: reply chips draft a message, then a Meet & Greet request, acceptance, quote, and payment" width="340">
 
 **Guardrails.** The model never writes a price, a date, or an entry code (a draft whose numbers do not match the server is rewritten once, then falls back to plain words). Entry codes never enter a prompt or the RAG index. Life Records and spoken profile facts need recorded evidence or a matching quote, and safety answers are never pre-filled. The treat verdict is never below the rule table. If a model is slow or down, the screen shows fixed chips or a plain list, never an error.
 
