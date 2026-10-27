@@ -33,10 +33,10 @@ export function ActiveTripCard({ role }: { role: Role }) {
         const line = mine
           ? trip.status === "arrived"
             ? "You've arrived 📍"
-            : `You're on the way 🚗${eta}`
+            : `You're on the way 🐾${eta}`
           : trip.status === "arrived"
-            ? `${name} has arrived 🚗`
-            : `${name} is on the way 🚗${eta}`;
+            ? `${name} has arrived 🐾`
+            : `${name} is on the way 🐾${eta}`;
         return (
           <Pressable
             key={trip.id}

@@ -142,14 +142,14 @@ export function ChatTripCard({ booking, viewer, messages, onSent, onGreeting, st
       live.status === "arrived"
         ? mine
           ? `You've arrived 📍${at}`
-          : `${traveler} has arrived 🚗${at}`
+          : `${traveler} has arrived 🐾${at}`
         : mins !== null
           ? mine
-            ? `You're ${mins < 1 ? "almost there" : `${mins} min away`} 🚗`
-            : `${traveler} is ${mins < 1 ? "almost there" : `${mins} min away`} 🚗`
+            ? `You're ${mins < 1 ? "almost there" : `${mins} min away`} 🐾`
+            : `${traveler} is ${mins < 1 ? "almost there" : `${mins} min away`} 🐾`
           : mine
-            ? `You're on the way 🚗${eta}`
-            : `${traveler} is on the way 🚗${eta}`;
+            ? `You're on the way 🐾${eta}`
+            : `${traveler} is on the way 🐾${eta}`;
     return (
       <View style={styles.wrap}>
         <Card tone="blush" style={styles.card} testID="chat-trip-live">
