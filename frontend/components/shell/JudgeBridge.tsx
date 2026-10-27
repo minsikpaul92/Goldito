@@ -24,6 +24,8 @@ import { ScriptStep, clearSignals, playScript, queueScript, stopScript, takeScri
 // Per phone: the two phones of the split view share one sessionStorage.
 const highlightKey = () => `goldito-judge-highlight:${window.name}`;
 const HIGHLIGHT_STYLE_ID = "goldito-judge-highlight";
+/** The wait before a failed reset tries once more. */
+const RESET_RETRY_MS = 1_500;
 
 /**
  * Inside a phone frame, the page around it drives this phone for the judge (#411, #413):
@@ -64,7 +66,11 @@ export function JudgeBridge() {
     const run = async (command: JudgeCommand) => {
       try {
         if (command.op === "reset") {
-          await resetDemo(command.state, holderId());
+          // The hosted database now and then times out building the stay; a reset is safe to run again, so one retry.
+          await resetDemo(command.state, holderId()).catch(async () => {
+            await new Promise((resolve) => setTimeout(resolve, RESET_RETRY_MS));
+            await resetDemo(command.state, holderId());
+          });
           // Drafts and "seen" marks this browser kept for the old stay would show the last run again.
           clearStayMemory();
           reply(command.id, true);

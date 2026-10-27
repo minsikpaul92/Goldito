@@ -555,8 +555,9 @@ const makeStyles = (theme: Theme) =>
       paddingVertical: theme.spacing.xs + 2,
       paddingHorizontal: theme.spacing.sm,
       borderRadius: theme.radius.lg,
-      borderWidth: 1,
-      borderColor: theme.color.border,
+      // The same line as the Cancel button under the list (a secondary button).
+      borderWidth: theme.ui.button.secondaryBorder,
+      borderColor: theme.ui.button.secondaryInk ? theme.color.text : theme.color.borderStrong,
     },
     tryRow: { paddingTop: theme.spacing.sm + 4, gap: theme.spacing.xs + 2 },
     backdrop: { flex: 1, alignItems: "center", justifyContent: "center", padding: theme.spacing.lg, backgroundColor: "rgba(0,0,0,0.4)" },
