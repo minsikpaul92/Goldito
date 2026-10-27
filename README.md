@@ -18,6 +18,8 @@ the server owns every fact, and a person approves every word.
 
 <img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner adds a photo of Mumu, the AI reads breed and coat color, and Goldito builds Mumu as an 8-bit pet" width="340">
 
+<sub><i>Sign-up: a photo becomes your pet as an 8-bit character</i></sub>
+
 **[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up) · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
 
 </div>
@@ -66,6 +68,8 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 | The stay ends | Writes the pet's Life Record and indexes it | Nemotron 3 **Super** + Qwen3 Embedding | The owner reads it |
 
 <img src="docs/assets/readme/chat-draft.gif" alt="Inquiry chat between owner Paul and sitter Peter: reply chips draft a message, then a Meet & Greet request, acceptance, quote, and payment" width="340">
+
+<sub><i>Booking chat: reply chips, Meet &amp; Greet, quote, and payment in one thread</i></sub>
 
 **Guardrails.** The model never writes a price, a date, or an entry code (a draft whose numbers do not match the server is rewritten once, then falls back to plain words). Entry codes never enter a prompt or the RAG index. Life Records and spoken profile facts need recorded evidence or a matching quote, and safety answers are never pre-filled. The treat verdict is never below the rule table. If a model is slow or down, the screen shows fixed chips or a plain list, never an error.
 
@@ -150,6 +154,8 @@ What we used, what worked, and what got in the way, written down as it happened.
 
 <img src="docs/assets/readme/treat-check.gif" alt="Two treat labels are checked for Biscuit, who is allergic to chicken: a label with hidden chicken sources gets a WARNING, and a label that names chicken and garlic powder gets a red DANGER screen" width="360">
 
+<sub><i>Treat check: one label gets a WARNING, another a red DANGER</i></sub>
+
 ---
 
 ## How Goldito works
@@ -218,14 +224,22 @@ Tap a stage for the details.
 
 <img src="docs/assets/readme/care-room.gif" alt="The sitter taps Feed, Walk, Poop, and Nap on Biscuit's 8-bit room; the pet eats, walks, and sleeps, and each tap tells the owner" width="320">
 
+<sub><i>The 8-bit care room: the sitter taps Feed, Walk, Poop, or Nap</i></sub>
+
 <img src="docs/assets/readme/care-checkin.gif" alt="The sitter taps check-ins and adds a photo for Biscuit while the owner's Home updates live: meals, potty, walks, and mood" width="560">
 
+<sub><i>Check-ins and photos: the sitter taps, the owner's Home updates live</i></sub>
+
 <img src="docs/assets/readme/diary-page.gif" alt="The sitter writes the diary page from the day's chips and photo, adds stickers, and sends it to the owner" width="320">
+
+<sub><i>Diary: a page written from the day's chips and a photo, with stickers</i></sub>
 
 > *"Max took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited. It was adorable. Her potty was perfectly healthy, too. 🐶"*
 > From an AI daily note built from a few chips, two photos, and one short line from the sitter
 
 <img src="docs/assets/readme/trip-live.gif" alt="The owner starts a simulated drive and the sitter watches the live map and ETA until Peter has arrived" width="560">
+
+<sub><i>Live trip: the owner's map and ETA until the sitter arrives</i></sub>
 
 </details>
 
