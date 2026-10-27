@@ -118,13 +118,17 @@ test.describe("pet look", () => {
     await start(page, (d) => d.pets.push(pet("pet-max", "Max", { breed: "Beagle" })));
     const screen = app(page);
     await page.goto("/owner/pets/pet-max/look");
-    await expect(screen.getByTestId("look-breed-own")).toHaveText("Max's breed");
+    await expect(screen.getByTestId("look-breed-Beagle-tag")).toHaveText("Max's breed");
     const tiles = screen.locator('[data-testid^="look-breed-"][role="button"]');
     await expect(tiles.first()).toHaveAttribute("data-testid", "look-breed-Beagle");
-    // Four even columns at phone width: the first four tiles share a row, the fifth starts the next.
-    const tops = await Promise.all([0, 1, 2, 3, 4].map(async (i) => Math.round((await tiles.nth(i).boundingBox())!.y)));
-    expect(new Set(tops.slice(0, 4)).size).toBe(1);
-    expect(tops[4]).toBeGreaterThan(tops[0]);
+    // Four even columns at phone width, the own breed two wide: it and two tiles share the first row, then four a row.
+    const boxes = await Promise.all([0, 1, 2, 3, 4, 5, 6].map(async (i) => (await tiles.nth(i).boundingBox())!));
+    const tops = boxes.map((b) => Math.round(b.y));
+    expect(new Set(tops.slice(0, 3)).size).toBe(1);
+    expect(new Set(tops.slice(3, 7)).size).toBe(1);
+    expect(tops[3]).toBeGreaterThan(tops[0]);
+    // Every tile is a full touch target, and long names wrap instead of being cut off.
+    for (const b of boxes) expect(Math.min(b.width, b.height)).toBeGreaterThanOrEqual(44);
 
     const sprite = screen.getByTestId("look-sprite");
     await expect(screen.getByTestId("look-undo")).toBeDisabled();

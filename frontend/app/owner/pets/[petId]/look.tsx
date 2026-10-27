@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { PetSprite } from "../../../../components/pet/PetSprite";
+import { ActionBar } from "../../../../components/ui/ActionBar";
 import { Button } from "../../../../components/ui/Button";
 import { Icon } from "../../../../components/ui/Icon";
 import { ChoiceChips } from "../../../../components/ui/ChoiceChips";
@@ -10,6 +11,7 @@ import { EmptyState } from "../../../../components/ui/EmptyState";
 import { LoadingView } from "../../../../components/ui/LoadingView";
 import { Screen } from "../../../../components/ui/Screen";
 import { SegmentedControl } from "../../../../components/ui/SegmentedControl";
+import { SelectTile } from "../../../../components/ui/SelectTile";
 import { TextButton } from "../../../../components/ui/TextButton";
 import { asHat } from "../../../../features/pets/items";
 import { getPet, savePetLook } from "../../../../features/pets/petApi";
@@ -144,17 +146,18 @@ export default function PetLookScreen() {
         style={styles.stage}
         testID="look-preview"
       >
-        <PetSprite species={pet.species} look={recipe} mood="calm" pose={preview.pose} facing={preview.facing} hat={asHat(pet.profile?.hat)} pixel={4} testID="look-sprite" />
+        <PetSprite species={pet.species} look={recipe} mood="calm" pose={preview.pose} facing={preview.facing} hat={asHat(pet.profile?.hat)} pixel={5} testID="look-sprite" />
         <Text style={styles.poseLabel} testID="look-pose">{`${POSES[pose].label} · tap to change`}</Text>
       </Pressable>
       <Screen
         contentStyle={styles.page}
+        footerSolid
         footer={
-          <View style={styles.bar}>
-            <Button label="Undo" variant="secondary" onPress={undo} disabled={!look.history.length} style={styles.barButton} testID="look-undo" />
-            <Button label="Start over" variant="secondary" onPress={() => { change(look.first); setStartedFrom(null); }} style={styles.barButton} testID="look-start-over" />
-            <Button label="Save" onPress={() => void save(recipe)} disabled={saving} style={styles.barButton} testID="look-save" />
-          </View>
+          <ActionBar>
+            <Button label="Undo" variant="secondary" onPress={undo} disabled={!look.history.length} testID="look-undo" />
+            <Button label="Start over" variant="secondary" onPress={() => { change(look.first); setStartedFrom(null); }} testID="look-start-over" />
+            <Button label="Save" onPress={() => void save(recipe)} loading={saving} testID="look-save" />
+          </ActionBar>
         }
       >
       <Step n={1} title="Pick the closest breed" />
@@ -171,20 +174,23 @@ export default function PetLookScreen() {
         />
       </View>
       <View style={styles.breeds} onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}>
-        {shown.map((p) => (
-          <Pressable
-            key={p.name}
-            accessibilityRole="button"
-            accessibilityState={{ selected: startedFrom === p.name }}
-            onPress={() => usePreset(p)}
-            style={[styles.breed, { width: tile }, startedFrom === p.name && styles.breedOn]}
-            testID={`look-breed-${p.name}`}
-          >
-            <PetSprite species={pet.species} look={p} mood="calm" pixel={2} />
-            <Text style={styles.breedName} numberOfLines={2}>{p.name}</Text>
-            {own?.name === p.name ? <Text style={styles.own} testID="look-breed-own">{`${pet.name}'s breed`}</Text> : null}
-          </Pressable>
-        ))}
+        {shown.map((p) => {
+          // The pet's own breed is a wide tile with a tag, so it stands out at the start of the grid.
+          const mine = own?.name === p.name;
+          return (
+            <SelectTile
+              key={p.name}
+              art={<PetSprite species={pet.species} look={p} mood="calm" pixel={2} />}
+              label={p.name}
+              tag={mine ? `${pet.name}'s breed` : undefined}
+              wide={mine}
+              selected={startedFrom === p.name}
+              onPress={() => usePreset(p)}
+              style={{ width: mine ? tile * 2 + GAP : tile }}
+              testID={`look-breed-${p.name}`}
+            />
+          );
+        })}
       </View>
       {!query && breeds.length > 12 ? (
         <TextButton label={allBreeds ? "Show fewer" : `Show all ${breeds.length} ${cat ? "cats" : "dogs"}`} onPress={() => setAllBreeds(!allBreeds)} style={styles.center} testID="look-breed-more" />
@@ -337,12 +343,6 @@ const makeStyles = (theme: Theme) =>
     search: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, minHeight: 48, paddingHorizontal: theme.spacing.md, borderRadius: theme.radius.pill, borderWidth: 1, borderColor: theme.color.border, backgroundColor: theme.color.surface },
     searchInput: { flex: 1, minWidth: 0, minHeight: 44, fontSize: theme.fontSize.body, color: theme.color.text },
     breeds: { flexDirection: "row", flexWrap: "wrap", gap: GAP },
-    breed: { minHeight: 44, alignItems: "center", gap: 4, padding: theme.spacing.xs, borderRadius: theme.radius.md, borderWidth: 2, borderColor: "transparent", backgroundColor: theme.color.surface },
-    own: { fontSize: theme.fontSize.caption, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
-    bar: { flexDirection: "row", gap: theme.spacing.sm },
-    barButton: { flex: 1 },
-    breedOn: { borderColor: theme.color.primary },
-    breedName: { fontSize: theme.fontSize.small, color: theme.color.text, textAlign: "center" },
     center: { alignSelf: "center" },
     group: { gap: theme.spacing.md },
     field: { gap: theme.spacing.xs },
