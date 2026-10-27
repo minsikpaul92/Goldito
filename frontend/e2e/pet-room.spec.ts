@@ -50,16 +50,17 @@ test.describe("pet room", () => {
     await expect(screen.getByTestId("pet-card-Max")).toBeVisible();
     await expect(screen.getByTestId("pet-room-Max")).toHaveCount(0);
 
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("pet-room-Max")).toBeVisible();
     await expect(screen.getByTestId("pet-room-Max-sprite")).toBeVisible();
     // Nothing logged today: calm, no HUD.
     await expect(screen.getByTestId("pet-room-Max-mood")).toHaveText("Calm");
-    await screen.getByTestId("home-pager-flip").click();
+    await expect(screen.getByTestId("pet-room-Max")).toContainText("No updates on Max yet today.");
+    await screen.getByTestId("home-pager-tab-0").click();
     await expect(screen.getByTestId("pet-card-Max")).toBeVisible();
   });
 
-  test("today's check-ins set the mood and the HUD", async ({ page }) => {
+  test("today's check-ins set the mood, the sentence and the pet's tiles", async ({ page }) => {
     await setup(page, (db) => {
       db.pets.push(pet("pet-max", "Max", "dog"));
       db.care_checkins.push(
@@ -70,24 +71,26 @@ test.describe("pet room", () => {
       );
     });
     const screen = app(page);
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     const room = screen.getByTestId("pet-room-Max");
     await expect(screen.getByTestId("pet-room-Max-mood")).toHaveText("Happy");
-    await expect(room).toContainText("🍽️ Fed");
-    await expect(room).toContainText("💩 Done");
-    await expect(room).toContainText("🦮 30 min");
+    await expect(room).toContainText("Max is in a playful mood.");
+    await expect(screen.getByTestId("stat-tile-meal")).toContainText("Fed");
+    await expect(screen.getByTestId("stat-tile-potty")).toContainText("Done");
+    await expect(screen.getByTestId("stat-tile-walks")).toContainText("30m");
+    await expect(room).toContainText("Updated");
   });
 
-  test("a skipped meal makes the pet hungry; a cat has no walk chip", async ({ page }) => {
+  test("a skipped meal makes the pet hungry; a cat has no walks tile", async ({ page }) => {
     await setup(page, (db) => {
       db.pets.push(pet("pet-mochi", "Mochi", "cat"));
       db.care_checkins.push(checkin("pet-mochi", "meal", "none", 1), checkin("pet-mochi", "walk", "20", 1));
     });
     const screen = app(page);
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("pet-room-Mochi-mood")).toHaveText("Hungry");
-    await expect(screen.getByTestId("pet-room-Mochi")).toContainText("🍽️ Hungry");
-    await expect(screen.getByTestId("pet-room-Mochi")).not.toContainText("🦮");
+    await expect(screen.getByTestId("stat-tile-meal")).toContainText("Hungry");
+    await expect(screen.getByTestId("stat-tile-walks")).toHaveCount(0);
   });
 
   test("several pets: switch between them", async ({ page }) => {
@@ -96,14 +99,15 @@ test.describe("pet room", () => {
       db.care_checkins.push(checkin("pet-mochi", "mood", "tired", 1), checkin("pet-mochi", "meal", "all", 1));
     });
     const screen = app(page);
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("pet-room-Max")).toBeVisible();
-    await screen.getByTestId("pet-switch-Mochi").click();
+    await screen.getByTestId("pet-switch").click();
+    await screen.getByTestId("pet-switch-menu").getByText("Mochi", { exact: true }).click();
     await expect(screen.getByTestId("pet-room-Mochi-mood")).toHaveText("Tired");
     await expect(screen.getByTestId("pet-room-Max")).toHaveCount(0);
   });
 
-  test("the card flips with the button, a mouse drag and a sideways wheel", async ({ page }) => {
+  test("the card flips with the tabs, a mouse drag and a sideways wheel", async ({ page }) => {
     await setup(page, (db) => db.pets.push(pet("pet-max", "Max", "dog")));
     const screen = app(page);
     const clip = await box(screen.getByTestId("home-pager-page-0"));
@@ -111,9 +115,9 @@ test.describe("pet room", () => {
     const from = { x: clip.x + clip.width * 0.85, y: clip.y + clip.height * 0.8 };
     await drag(page, from, { x: clip.x + clip.width * 0.15, y: from.y });
     await expect(screen.getByTestId("pet-room-Max")).toBeVisible();
-    await expect(screen.getByTestId("home-pager-flip")).toHaveAccessibleName("Flip to Today");
+    await expect(screen.getByTestId("home-pager-tab-1")).toHaveAttribute("aria-selected", "true");
 
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-0").click();
     await expect(screen.getByTestId("pet-card-Max")).toBeVisible();
 
     const c = center(await box(screen.getByTestId("home-pager-page-0")));
@@ -135,7 +139,7 @@ test.describe("pet room", () => {
   test("tapping the pet opens the Diary", async ({ page }) => {
     await setup(page, (db) => db.pets.push(pet("pet-max", "Max", "dog")));
     const screen = app(page);
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await screen.getByTestId("pet-room-Max-open").click();
     await expect(page).toHaveURL(/\/owner\/feed\?view=diary$/);
   });
@@ -146,26 +150,28 @@ test.describe("pet room", () => {
       db.pets.push(pet("pet-rex", "Rex", "dog", { breed: "German Shepherd", weight_kg: 32, created_at: "2026-10-02T09:00:00Z" }));
     });
     const screen = app(page);
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await page.waitForTimeout(600); // the flip changes the box size until it ends
     const small = await box(screen.getByTestId("pet-room-Max-sprite"));
-    const roomMax = await box(screen.getByTestId("pet-room-Max"));
-    await screen.getByTestId("pet-switch-Rex").click();
+    const roomMax = await box(screen.getByTestId("pet-room-Max-open"));
+    await screen.getByTestId("pet-switch").click();
+    await screen.getByTestId("pet-switch-menu").getByText("Rex", { exact: true }).click();
     const big = await box(screen.getByTestId("pet-room-Rex-sprite"));
     expect(small.width).toBeLessThan(big.width * 0.8);
     // The screen keeps its height, so switching pets doesn't jump the page.
-    expect((await box(screen.getByTestId("pet-room-Rex"))).height).toBeCloseTo(roomMax.height, -1);
+    expect((await box(screen.getByTestId("pet-room-Rex-open"))).height).toBeCloseTo(roomMax.height, -1);
   });
 
-  test("the room fills the Pet page without scrolling, and the pet is the biggest thing on it", async ({ page }) => {
+  test("the room tops the Pet room in full view, and the pet is the biggest thing in it", async ({ page }) => {
     await setup(page, (db) => db.pets.push(pet("pet-rex", "Rex", "dog", { breed: "German Shepherd", weight_kg: 32 })));
     const screen = app(page);
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
+    await page.waitForTimeout(600); // the flip changes the box size until it ends
     const page1 = await box(screen.getByTestId("home-pager-page-1"));
-    const room = await box(screen.getByTestId("pet-room-Rex"));
+    const room = await box(screen.getByTestId("pet-room-Rex-open"));
     expect(room.y + room.height).toBeLessThanOrEqual(page1.y + page1.height + 1);
-    expect(room.height).toBeGreaterThan(page1.height * 0.5);
-    expect((await box(screen.getByTestId("pet-room-Rex-sprite"))).height).toBeGreaterThan(page1.height * 0.25);
+    expect(room.height).toBeGreaterThan(page1.height * 0.3);
+    expect((await box(screen.getByTestId("pet-room-Rex-sprite"))).height).toBeGreaterThan(room.height * 0.4);
   });
 
   test("Match colors from photo: the colors are saved to the pet, and Use the coat color takes them back", async ({ page }) => {
@@ -174,7 +180,7 @@ test.describe("pet room", () => {
       db.pets.push(pet("pet-max", "Max", "dog", { breed: "Maltese", profile: { coat: "white", v: 1, pixel_head: { v: 1 } } })),
     );
     const screen = app(page);
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     const sprite = screen.getByTestId("pet-room-Max-sprite");
     const coat = await colorsOf(sprite);
 
