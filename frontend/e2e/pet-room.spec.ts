@@ -175,15 +175,16 @@ test.describe("pet room", () => {
     expect((await box(screen.getByTestId("pet-room-Rex-sprite"))).height).toBeGreaterThan(room.height * 0.4);
   });
 
-  test("Match colors from photo: the colors are saved to the pet, and Use the coat color takes them back", async ({ page }) => {
+  test("Match colors from photo (pet profile): the colors are saved to the pet, and Use the coat color takes them back", async ({ page }) => {
     test.setTimeout(60_000);
     await fakePetPhoto(page);
     const db = await setup(page, (db) =>
       db.pets.push(pet("pet-max", "Max", "dog", { breed: "Maltese", profile: { coat: "white", v: 1, pixel_head: { v: 1 } } })),
     );
     const screen = app(page);
-    await screen.getByTestId("home-pager-tab-1").click();
-    const sprite = screen.getByTestId("pet-room-Max-sprite");
+    await screen.getByTestId("pet-card-Max").click();
+    const sprite = screen.getByTestId("pet-pixel-sprite");
+    await expect(sprite).toBeVisible();
     const coat = await steadyColorsOf(sprite);
 
     await screen.getByTestId("pet-colors-open").click();

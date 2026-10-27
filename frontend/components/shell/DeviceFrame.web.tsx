@@ -7,7 +7,6 @@ const BEZEL = 12;
 const STATUS_BAR_HEIGHT = 44;
 const HOME_INDICATOR_HEIGHT = 28;
 const PAGE_MARGIN = tokens.spacing.md;
-const MIN_SCREEN_HEIGHT = 600;
 const MIN_SCALE = 0.5;
 const BODY_WIDTH = tokens.layout.frameWidth + BEZEL * 2;
 
@@ -29,18 +28,17 @@ const FOOTER_HEIGHT = 40;
 
 /**
  * Generic CSS phone (no device images or brand marks).
- * The app inside always lays out at the design width. Short windows shrink the
- * screen height; windows narrower than the phone scale the whole phone down
+ * The app inside always lays out at the design size (402 x 874). Windows that are
+ * too narrow or too short scale the whole phone down, so it keeps a phone's shape
  * (safe because the app lives in an iframe with its own coordinates).
  */
 export function DeviceFrame({ children, columns = 1, label, footer, reserve = 0 }: Props) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const scale = Math.max(MIN_SCALE, Math.min(1, ((windowWidth - reserve) / columns - PAGE_MARGIN * 2) / BODY_WIDTH));
   const extras = (label ? LABEL_HEIGHT : 0) + (footer ? FOOTER_HEIGHT : 0);
-  const screenHeight = Math.min(
-    tokens.layout.frameHeight,
-    Math.max(MIN_SCREEN_HEIGHT, (windowHeight - PAGE_MARGIN * 2 - extras) / scale - BEZEL * 2),
-  );
+  const fitWidth = ((windowWidth - reserve) / columns - PAGE_MARGIN * 2) / BODY_WIDTH;
+  const fitHeight = (windowHeight - PAGE_MARGIN * 2 - extras) / (tokens.layout.frameHeight + BEZEL * 2);
+  const scale = Math.max(MIN_SCALE, Math.min(1, fitWidth, fitHeight));
+  const screenHeight = tokens.layout.frameHeight;
   const bodyHeight = screenHeight + BEZEL * 2;
 
   return (

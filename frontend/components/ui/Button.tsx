@@ -53,7 +53,7 @@ export function Button({ label, onPress, disabled, variant = "primary", size = "
         secondary && styles.secondary,
         danger && styles.danger,
         dangerOutline && styles.dangerOutline,
-        off && styles.disabled,
+        off && (secondary ? styles.secondaryDisabled : styles.disabled),
         pressed && !off && !loading && styles.pressed,
         style,
       ]}
@@ -109,6 +109,11 @@ const makeStyles = (theme: Theme) =>
     // Disabled is a flat gray button, not a faded primary, so it never reads as tappable.
     disabled: {
       backgroundColor: theme.color.border,
+      borderColor: theme.color.border,
+    },
+    // A secondary button keeps its white fill when off, only its line and label go quiet (same family as its neighbours).
+    secondaryDisabled: {
+      backgroundColor: theme.color.surface,
       borderColor: theme.color.border,
     },
     label: {
