@@ -100,11 +100,12 @@ test.describe("pet medals", () => {
     await signIn(page, OWNER);
     const screen = app(page);
     await screen.getByTestId("home-pager").waitFor();
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("pet-room-Max")).toBeVisible();
     await expect(screen.getByTestId("medal-medal-1")).toContainText("Chloe");
     await expect(screen.getByTestId("medal-medal-1")).toContainText("Oct 6 to Oct 9");
-    await screen.getByTestId("pet-switch-Mochi").click();
+    await screen.getByTestId("pet-switch").click();
+    await screen.getByTestId("pet-switch-menu").getByText("Mochi", { exact: true }).click();
     await expect(screen.getByTestId("pet-room-Mochi")).toBeVisible();
     await expect(screen.getByTestId("pet-medals")).toHaveCount(0);
   });

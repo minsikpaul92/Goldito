@@ -64,7 +64,7 @@ test.describe("pet look", () => {
     const db = await start(page, (d) => d.pets.push(pet("pet-max", "Max", { breed: "Golden retriever", profile: { coat: "golden", note: "keep me" } })));
     const screen = app(page);
     await screen.getByTestId("home-pager").waitFor();
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("pet-room-Max-sprite")).toBeVisible();
     const BLACK = "rgb(43, 37, 34)"; // the Dalmatian's spots and ears
     expect(await pixelsOf(screen, "pet-room-Max-sprite", BLACK)).toBe(0);
@@ -92,7 +92,7 @@ test.describe("pet look", () => {
   test("options change the preview right away", async ({ page }) => {
     await start(page, (d) => d.pets.push(pet("pet-max", "Max")));
     const screen = app(page);
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await screen.getByTestId("pet-look-open").click();
     const sprite = screen.getByTestId("look-sprite");
     await expect(sprite).toBeVisible();

@@ -36,7 +36,9 @@ const makeStyles = (theme: Theme) =>
       alignSelf: "flex-start",
       width: 44,
       height: 44,
-      marginLeft: -10,
+      // The arrow's drawn edge, not its button, lines up with the screen's text: half the room around the icon plus
+      // Lucide's own inset (the stroke starts 4 of 24 units in).
+      marginLeft: -((44 - theme.icon.md) / 2 + (theme.icon.md * 4) / 24),
     },
     pressed: { opacity: theme.opacity.pressed },
   });

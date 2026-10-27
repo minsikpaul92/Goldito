@@ -5,10 +5,12 @@ import { StyleSheet, Text, View } from "react-native";
 import { EntryInfoCard } from "../../components/EntryInfoCard";
 import { OpenInMapsButton } from "../../components/OpenInMapsButton";
 import { TripMap } from "../../components/TripMap";
+import { Avatar } from "../../components/ui/Avatar";
 import { Banner } from "../../components/ui/Banner";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { IconAction } from "../../components/ui/IconAction";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { Screen } from "../../components/ui/Screen";
 import { TextButton } from "../../components/ui/TextButton";
@@ -148,52 +150,83 @@ export function TripScreen({ role }: { role: Role }) {
     }
   };
 
+  const step = arrived ? 2 : position ? 1 : 0;
+  const placeName =
+    handoff?.locationType === "sitter_home" ? (role === "sitter" ? "Your place" : `${b.sitterName}'s place`)
+    : handoff?.locationType === "owner_home" ? (role === "owner" ? "Your place" : `${b.ownerName}'s place`)
+    : "Meeting place";
+  const petNames = b.pets.map((p) => p.name);
+  const withPets = petNames.length ? ` · with ${petNames.length > 1 ? `${petNames.slice(0, -1).join(", ")} and ${petNames[petNames.length - 1]}` : petNames[0]}` : "";
+
   return (
     <Screen contentStyle={styles.content} testID="trip-screen">
-      {mine && !arrived && shared ? (
-        <Banner
-          testID="trip-sharing-banner"
-          body={
-            here
-              ? `📡 Sharing your location with ${other} until you arrive`
-              : `This device isn't sharing. ${other} sees your last spot.`
-          }
-        />
+      {/* Arrived: the car sits on the place pin (the arrival circle is 150 m, so the last point is often a bit short). */}
+      {shared && place ? (
+        <View style={styles.bleed}>
+          <TripMap traveler={arrived ? place : position} dest={place} travelerLabel={travelerName === "You" ? "You" : other} destLabel={placeName} flush height={300} />
+        </View>
       ) : null}
+
+      <Card style={styles.sheet}>
+        <View style={styles.head} testID="trip-status">
+          <Text style={styles.eta} testID="trip-eta">
+            {!shared
+              ? `${travelerName === "You" ? "You're" : `${travelerName} is`} on the way`
+              : arrived
+              ? `${travelerName === "You" ? "You've" : `${travelerName} has`} arrived 🚗`
+              : live.eta_at
+                ? `ETA ${clock(live.eta_at)}${live.distance_m != null ? ` · ${formatDistance(live.distance_m)}` : ""}`
+                : position
+                  ? "On the way"
+                  : `Waiting for ${mine ? "your" : `${other}'s`} first location…`}
+          </Text>
+          <Text style={styles.muted} testID="trip-substatus">
+            {!shared
+              ? mine
+                ? "Not sharing a live location"
+                : `${other} isn't sharing a live location`
+              : arrived
+              ? `Arrived at ${live.arrived_at ? clock(live.arrived_at) : "-"}`
+              : `${mine ? "You're" : `${other} is`} on the way${live.simulated ? " (simulated drive)" : ""}`}
+          </Text>
+        </View>
+
+        {shared ? <TripProgress step={step} /> : null}
+
+        {mine && !arrived && shared ? (
+          <View style={styles.live} testID="trip-sharing-banner">
+            <View style={[styles.dot, !here && styles.dotOff]} />
+            <Text style={styles.liveText}>
+              {here ? `Sharing your location with ${other} until you arrive` : `This device isn't sharing. ${other} sees your last spot.`}
+            </Text>
+          </View>
+        ) : null}
+        {lastSeenMin >= 1 ? (
+          <Text style={styles.muted} testID="trip-last-seen">
+            {`Last location ${lastSeenMin} min ago. Sharing pauses while the browser is in the background.`}
+          </Text>
+        ) : null}
+
+        <View style={styles.person}>
+          <Avatar kind="initial" name={other} />
+          <View style={styles.personText}>
+            <Text style={styles.title}>{other}</Text>
+            <Text style={styles.muted}>{`${live.handoff_kind === "drop_off" ? "Drop-off" : "Pick-up"} at ${placeName.replace("Your place", "your place")}${withPets}`}</Text>
+          </View>
+        </View>
+
+        <View style={styles.actions}>
+          <OpenInMapsButton place={mapsPlace} travelling={mine} style="tile" testID="trip-maps" />
+          <IconAction icon="calendar" label="Booking" accessibilityLabel="Open booking" onPress={openBooking} testID="trip-open-booking" />
+        </View>
+        {mine && !arrived ? (
+          <TextButton label={cancelling ? "Cancelling…" : "Cancel trip"} danger onPress={() => void cancel()} disabled={cancelling} style={styles.center} testID="trip-cancel" />
+        ) : null}
+      </Card>
+
       {mine && !shared ? (
         <Banner testID="trip-not-sharing-banner" body={`You're not sharing your location. ${other} sees the meeting place.`} />
       ) : null}
-
-      <View style={styles.head} testID="trip-status">
-        <Text style={styles.eta} testID="trip-eta">
-          {!shared
-            ? `${travelerName === "You" ? "You're" : `${travelerName} is`} on the way`
-            : arrived
-            ? `${travelerName === "You" ? "You've" : `${travelerName} has`} arrived 🚗`
-            : live.eta_at
-              ? `ETA ${clock(live.eta_at)}${live.distance_m != null ? ` · ${formatDistance(live.distance_m)}` : ""}`
-              : position
-                ? "On the way"
-                : `Waiting for ${mine ? "your" : `${other}'s`} first location…`}
-        </Text>
-        <Text style={styles.muted} testID="trip-substatus">
-          {!shared
-            ? mine
-              ? "Not sharing a live location"
-              : `${other} isn't sharing a live location`
-            : arrived
-            ? `Arrived at ${live.arrived_at ? clock(live.arrived_at) : "-"}`
-            : `${mine ? "You're" : `${other} is`} on the way${live.simulated ? " (simulated drive)" : ""}`}
-        </Text>
-      </View>
-
-      {lastSeenMin >= 1 ? (
-        <Text style={styles.muted} testID="trip-last-seen">
-          {`Last location ${lastSeenMin} min ago. Sharing pauses while the browser is in the background.`}
-        </Text>
-      ) : null}
-      {/* Arrived: the car sits on the place pin (the arrival circle is 150 m, so the last point is often a bit short). */}
-      {shared && place ? <TripMap traveler={arrived ? place : position} dest={place} travelerLabel={travelerName === "You" ? "You" : other} /> : null}
       {!shared ? <MeetingPlaceCard booking={b} handoffKind={live.handoff_kind} address={places[live.handoff_kind]?.address ?? null} /> : null}
       {shared && !place && handoff?.note ? (
         <Card style={styles.card}>
@@ -214,13 +247,26 @@ export function TripScreen({ role }: { role: Role }) {
           <Text style={styles.muted}>Head out and meet them, then check the handoff in the booking.</Text>
         </Card>
       ) : null}
-
-      <OpenInMapsButton place={mapsPlace} travelling={mine} testID="trip-maps" />
-      {mine && !arrived ? (
-        <TextButton label={cancelling ? "Cancelling…" : "Cancel trip"} danger onPress={() => void cancel()} disabled={cancelling} testID="trip-cancel" />
-      ) : null}
-      <Button label="Open booking" variant="secondary" onPress={openBooking} testID="trip-open-booking" />
     </Screen>
+  );
+}
+
+const STEPS = ["Left", "On the way", "Arrived"];
+
+/** Where the trip is, Uber style: three bars filling left to right, the current step named in bold. */
+function TripProgress({ step }: { step: number }) {
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <View style={styles.progress} accessibilityRole="progressbar" accessibilityLabel={STEPS[step]} testID="trip-progress">
+      <View style={styles.bars}>
+        {STEPS.map((label, i) => <View key={label} style={[styles.bar, i <= step && styles.barOn]} />)}
+      </View>
+      <View style={styles.bars}>
+        {STEPS.map((label, i) => (
+          <Text key={label} style={[styles.stepLabel, i === 1 && styles.stepMid, i === 2 && styles.stepEnd, i === step && styles.stepOn]}>{label}</Text>
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -256,6 +302,25 @@ const PLACEHOLDER = { id: "", ownerName: "", sitterName: "" } as BookingSummary;
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: { gap: theme.spacing.md },
+    // The map runs edge to edge under the header: the page's own padding is taken back.
+    bleed: { marginHorizontal: -theme.spacing.md, marginTop: -theme.spacing.md },
+    sheet: { gap: theme.spacing.md },
+    progress: { gap: theme.spacing.xs },
+    bars: { flexDirection: "row", gap: theme.spacing.xs },
+    bar: { flex: 1, height: 6, borderRadius: 3, backgroundColor: theme.color.track },
+    barOn: { backgroundColor: theme.color.primary },
+    stepLabel: { flex: 1, fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    stepMid: { textAlign: "center" },
+    stepEnd: { textAlign: "right" },
+    stepOn: { color: theme.color.text, fontWeight: theme.fontWeight.semibold },
+    live: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, alignSelf: "flex-start", paddingVertical: theme.spacing.xs, paddingHorizontal: theme.spacing.sm, borderRadius: theme.radius.pill, backgroundColor: theme.color.successSurface },
+    dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: theme.color.success },
+    dotOff: { backgroundColor: theme.color.textMuted },
+    liveText: { flexShrink: 1, fontSize: theme.fontSize.small, color: theme.color.text },
+    person: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, paddingTop: theme.spacing.md, borderTopWidth: 1, borderTopColor: theme.color.border },
+    personText: { flex: 1, minWidth: 0, gap: 2 },
+    actions: { flexDirection: "row", gap: theme.spacing.sm },
+    center: { alignSelf: "center" },
     card: { gap: theme.spacing.sm },
     head: { gap: theme.spacing.xs },
     eta: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },

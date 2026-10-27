@@ -105,7 +105,7 @@ export function nextStep(i: Input): NextStep {
   const none: NextStep = { primary: null, quote: false, wait: null };
 
   if (!booking || ["completed", "declined", "cancelled"].includes(booking.stage)) {
-    if (role === "owner") return { primary: { kind: "meet_start", label: "Meet & Greet" }, quote: false, wait: null };
+    if (role === "owner") return { primary: { kind: "meet_start", label: "Meet" }, quote: false, wait: null };
     return none;
   }
 

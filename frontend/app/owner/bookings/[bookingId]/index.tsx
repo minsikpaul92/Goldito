@@ -234,7 +234,7 @@ export default function OwnerBookingDetail() {
           <Card style={blocks ? { ...styles.block, ...styles.bare } : styles.block}>
             <BookingStageBar booking={booking} viewer="owner" />
             {passing ? (
-              <Text style={styles.muted} testID="hold-note">{`${sitter} is holding your dates while you arrange the Meet & Greet.`}</Text>
+              <Text style={styles.muted} testID="hold-note">{`${sitter} is holding your dates while you arrange to meet.`}</Text>
             ) : null}
           </Card>
         ) : null}

@@ -19,8 +19,8 @@ async function setup(page: import("@playwright/test").Page, maxProfile: object =
   caring(db, [MAX, MOCHI], NOON_TORONTO);
   db.pets.find((p) => p.id === MAX.id)!.profile = maxProfile;
   await signIn(page, SITTER);
-  // The pixel pet room is the back of the Home card: flip to it.
-  await app(page).getByTestId("home-pager-flip").click();
+  // The pixel pet room is the back of the Home card: open its tab.
+  await app(page).getByTestId("home-pager-tab-1").click();
   await app(page).getByTestId("pet-room-Max").waitFor();
   return db;
 }
@@ -49,8 +49,8 @@ test.describe("sitter pet room", () => {
     expect(room.y + room.height).toBeLessThanOrEqual(home.y + home.height + 1);
     expect(room.height).toBeGreaterThan(home.height * 0.45);
     expect((await box(screen.getByTestId("pet-room-Max-sprite"))).height).toBeGreaterThan(home.height * 0.15);
-    // The front is the default: flip back and the Quick check-in is there.
-    await screen.getByTestId("home-pager-flip").click();
+    // The front is the default: back to Today and the Quick check-in is there.
+    await screen.getByTestId("home-pager-tab-0").click();
     await expect(screen.getByTestId("quick-heading")).toBeVisible();
   });
 

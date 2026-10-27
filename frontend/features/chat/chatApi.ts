@@ -117,9 +117,9 @@ export function previewOf(item: Pick<ChatListItem, "lastKind" | "lastBody" | "la
     case "request":
       return "Booking request";
     case "meet_greet":
-      return "Meet & Greet";
+      return "Meet";
     case "meet_greet_update":
-      return "Meet & Greet update";
+      return "Meet update";
     case "agreement":
       return "Booking";
     case "payment":

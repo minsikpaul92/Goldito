@@ -52,7 +52,7 @@ export default function OwnerForSitterScreen() {
       </View>
       <View>
         <SummaryRow label="Area" value={contact.area ?? "Not set"} testID="owner-view-area" />
-        <SummaryRow label="Phone" value={contact.phone ?? "After the Meet & Greet is set"} testID="owner-view-phone" />
+        <SummaryRow label="Phone" value={contact.phone ?? "After the meet is set"} testID="owner-view-phone" />
       </View>
       <OwnerReviews ownerId={ownerId} title="Reviews from sitters" />
     </Screen>

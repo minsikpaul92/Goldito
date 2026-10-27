@@ -21,8 +21,12 @@ export type DiaryBookProps = {
   pages: SentReport[];
   /** Open on this page (a notice, a Feed card); otherwise on the newest. */
   initialId?: string | null;
-  /** Under each page: who wrote it, or the day's tasks (owner). */
+  /** Above each page: who wrote it and when (owner). */
+  header?: (page: SentReport) => React.ReactNode;
+  /** Under each page: the day's tasks and the page's actions (owner). */
   footer?: (page: SentReport) => React.ReactNode;
+  /** False when the screen was opened on one page (a chat card): its header ← is the way out, so no "‹ Diaries". */
+  showCovers?: boolean;
   testID?: string;
 };
 
@@ -38,7 +42,7 @@ export function bookOrder(pages: SentReport[]): SentReport[] {
  * the next or the previous day; ‹ › do the same (DESIGN.md §7.7: never gesture-only). While a page is being
  * decorated the book holds still, so dragging a sticker never turns the page.
  */
-export function DiaryBook({ pages, initialId, footer, testID = "diary-book" }: DiaryBookProps) {
+export function DiaryBook({ pages, initialId, header, footer, showCovers = true, testID = "diary-book" }: DiaryBookProps) {
   const styles = useThemedStyles(makeStyles);
   const session = useSession();
   const me = session.status === "signedIn" ? session.profile.id : null;
@@ -207,7 +211,9 @@ export function DiaryBook({ pages, initialId, footer, testID = "diary-book" }: D
 
   return (
     <View style={styles.wrap} testID={testID}>
-      <TextButton label="‹ Diaries" onPress={() => setPet(null)} disabled={turning != null || decorating} testID={`${testID}-covers`} />
+      {showCovers ? (
+        <TextButton label="‹ Diaries" onPress={() => setPet(null)} disabled={turning != null || decorating} testID={`${testID}-covers`} />
+      ) : null}
 
       <View style={styles.bar}>
         <NavButton label="‹" hint="Previous page" disabled={!hasPrev || turning != null || decorating} onPress={() => turn("prev")} testID={`${testID}-prev`} />
@@ -215,7 +221,6 @@ export function DiaryBook({ pages, initialId, footer, testID = "diary-book" }: D
           <Text style={styles.whereTitle} numberOfLines={1} testID={`${testID}-where`}>
             {`${current.petName} · ${formatDay(current.day)}`}
           </Text>
-          <Text style={styles.whereCount}>{`Page ${index + 1} of ${shown.length}`}</Text>
         </View>
         <NavButton label="›" hint="Next page" disabled={!hasNext || turning != null || decorating} onPress={() => turn("next")} testID={`${testID}-next`} />
       </View>
@@ -246,6 +251,7 @@ export function DiaryBook({ pages, initialId, footer, testID = "diary-book" }: D
               ]}
             >
               <View style={styles.page}>
+                {header ? header(p) : null}
                 <DecoratedReport
                   reportId={p.id}
                   petId={p.petId}
@@ -293,7 +299,6 @@ const makeStyles = (theme: Theme) =>
     bar: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
     where: { flex: 1, alignItems: "center" },
     whereTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    whereCount: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     nav: {
       width: 44,
       height: 44,

@@ -59,7 +59,7 @@ test.describe("sitter home dashboard", () => {
     await expect(screen.getByTestId("tile-nap")).toBeVisible();
 
     // The pixel pet room is the other side of the card.
-    await screen.getByTestId("home-pager-flip").click();
+    await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("today-caring")).toContainText("Max");
   });
 

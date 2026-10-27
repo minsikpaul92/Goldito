@@ -1,8 +1,9 @@
 import { router } from "expo-router";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { Image, LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { Button } from "../../components/ui/Button";
+import { Icon } from "../../components/ui/Icon";
 import { TextButton } from "../../components/ui/TextButton";
 import { deliveryUrl, thumbUrl, videoPosterUrl } from "../../lib/cloudinary";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
@@ -139,6 +140,8 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
 
   // The picture box: the page's own photo; without one, the day's first shared photo, if there is one.
   const shownPicture = pictureUrl || picture;
+  // Until the photo arrives the box shows a spinner, not a flat empty block (diary audit, Oct 27).
+  const [loadedPicture, setLoadedPicture] = useState<string | null>(null);
   useEffect(() => {
     if (pictureUrl) return;
     let live = true;
@@ -284,9 +287,18 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
         </View>
         <View ref={pictureRef} pointerEvents={passThrough} style={styles.picture} testID={id("picture")}>
           {shownPicture ? (
-            <Image source={{ uri: shownPicture }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            <>
+              {loadedPicture !== shownPicture ? <ActivityIndicator color={theme.color.textMuted} testID={id("picture-loading")} /> : null}
+              <Image source={{ uri: shownPicture }} style={StyleSheet.absoluteFill} resizeMode="cover" onLoad={() => setLoadedPicture(shownPicture)} />
+            </>
+          ) : picturePress && !editing ? (
+            // The box says what a tap does (the picture press covers it).
+            <View style={styles.pictureEmpty}>
+              <Icon name="photo" size={theme.icon.md} color={theme.color.text} />
+              <Text style={styles.pictureEmptyText}>{picturePress.label}</Text>
+            </View>
           ) : (
-            <Text style={styles.pictureEmpty}>🖍️</Text>
+            <Icon name="photo" size={theme.icon.md} color={theme.color.textMuted} />
           )}
           {picturePress && !editing ? (
             <Pressable
@@ -450,7 +462,8 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.text,
       backgroundColor: theme.color.accent,
     },
-    pictureEmpty: { fontSize: theme.icon.hero },
+    pictureEmpty: { alignItems: "center", gap: theme.spacing.xs },
+    pictureEmptyText: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     pictureActions: { position: "absolute", bottom: theme.spacing.sm, flexDirection: "row", gap: theme.spacing.sm },
     lines: { position: "absolute", left: theme.spacing.md, right: theme.spacing.md, zIndex: 0 },
     rule: { position: "absolute", left: 0, right: 0, height: 1, backgroundColor: theme.color.border },

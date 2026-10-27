@@ -1,7 +1,9 @@
 import { router } from "expo-router";
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ActiveTripCard } from "../../../components/ActiveTripCard";
+import { FeedPetPicker } from "../../../components/FeedPetPicker";
 import { BookingTicket } from "../../../components/BookingTicket";
 import { LatestCard } from "../../../components/home/LatestCard";
 import { PetTile } from "../../../components/home/PetTile";
@@ -17,6 +19,7 @@ import { sectionTitleStyle } from "../../../components/ui/SectionTitle";
 import { TextButton } from "../../../components/ui/TextButton";
 import { useHomeStay } from "../../../features/bookings/useHomeStay";
 import { useStayToday } from "../../../features/care/useStayToday";
+import { usePetFaces } from "../../../features/feed/usePetFaces";
 import { useMyPets } from "../../../features/pets/useMyPets";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { tokens } from "../../../theme/tokens";
@@ -26,7 +29,8 @@ import { Theme } from "../../../theme/themes";
  * Owner Home: two sides of a card, flipped with a button (#286). Today: the stay in progress (hero, the stay's ticket,
  * today's numbers, the latest update) and my pets. The ticket moved here from the Bookings tab (Oct 25); with no stay
  * in care it shows the next paid one.
- * Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
+ * Pet room: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today). The two sides are underline
+ * tabs, and on Pet room the Moments pet chip at the end of the row picks whose room it is (Mook, Oct 27).
  */
 export default function OwnerHome() {
   const styles = useThemedStyles(makeStyles);
@@ -34,6 +38,8 @@ export default function OwnerHome() {
   const stay = useStayToday();
   const booking = useHomeStay();
   const addPet = () => router.push("/owner-onboarding?add=1");
+  const [petId, setPetId] = useState<string>();
+  const faces = usePetFaces(pets.map((p) => p.id));
 
   if (status === "loading" && pets.length === 0) return <LoadingView />;
 
@@ -106,7 +112,20 @@ export default function OwnerHome() {
         testID="home-pager"
         pages={[
           { label: "Today", content: today },
-          { label: "Pet", content: <PetPage pets={pets} onChanged={() => void reload()} /> },
+          {
+            label: "Pet room",
+            content: <PetPage pets={pets} petId={petId} onChanged={() => void reload()} />,
+            right: (
+              <FeedPetPicker
+                groups={[{ key: "mine", pets: pets.map((p) => ({ id: p.id, name: p.name, species: p.species })) }]}
+                allPets={[]}
+                value={petId ?? pets[0].id}
+                onChange={setPetId}
+                faces={faces}
+                testID="pet-switch"
+              />
+            ),
+          },
         ]}
       />
     </View>
