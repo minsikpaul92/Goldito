@@ -7741,4 +7741,71 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 015w (#451): the chat list counts and previews only what the chat draws
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  ivy constant uuid := '00000000-0000-4000-8000-0000000000a9';
+  sam constant uuid := '00000000-0000-4000-8000-0000000000b9';
+  e constant date := app_today() + 700;
+  v_pet uuid;
+  v_b uuid;
+  t public.chat_threads;
+  r record;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (ivy, 'dog', 'Listed') returning id into v_pet;
+  perform _t_as(ivy);
+  t := open_chat_thread(sam);
+  perform _t_as(sam);
+  perform mark_chat_read(t.id);
+
+  -- A first-time request with a message: the stay, the text, the request card and the Meet & Greet card are written,
+  -- and the chat draws the stay and the text.
+  perform _t_as(ivy);
+  t := open_chat_thread(sam, local_ts(e, '09:00'), local_ts(e + 2, '17:00'), array[v_pet]);
+  perform send_chat_message(t.id, 'Hi Sam, can you take Listed?');
+  perform _t_as(null);
+  v_b := _t_booking(ivy, sam, array[v_pet], local_ts(e, '09:00'), local_ts(e + 2, '17:00'), 'requested');
+  perform _t_meet(v_b, 'required');
+  perform _t_as(ivy);
+  perform post_booking_request_card(t.id, v_b);
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.chat_messages where thread_id = t.id) = 4, '015w: the request wrote four rows');
+
+  perform _t_as(sam);
+  select * into r from list_my_chats() x where x.thread_id = t.id;
+  perform _t_ok(r.unread_count = 2 and r.last_kind = 'text' and r.last_body = 'Hi Sam, can you take Listed?',
+    '015w: the sitter sees 2 unread and the owner''s message, not the hidden cards');
+  perform _t_as(ivy);
+  select * into r from list_my_chats() x where x.thread_id = t.id;
+  perform _t_ok(r.last_body = 'Hi Sam, can you take Listed?', '015w: the owner''s preview is their own message');
+
+  -- The sitter's first yes shows the Meet & Greet card; the sitter's proposal is new for the owner.
+  perform _t_as(null);
+  perform _t_interest(v_b);
+  perform _t_as(ivy);
+  perform mark_chat_read(t.id);
+  perform _t_as(sam);
+  perform propose_meet_greet(v_b, 'video', local_ts(e - 1, '19:00'));
+  perform _t_as(ivy);
+  select * into r from list_my_chats() x where x.thread_id = t.id;
+  perform _t_ok(r.unread_count = 1 and r.last_card_type = 'meet_greet_update',
+    '015w: a Meet & Greet the sitter starts is new for the owner');
+
+  -- Opening the chat clears it; a card with no sender is never unread.
+  perform _t_as(sam);
+  perform mark_chat_read(t.id);
+  perform _t_as(null);
+  insert into public.chat_messages (thread_id, sender_id, kind, card)
+  values (t.id, null, 'card', jsonb_build_object('type', 'agreement', 'booking_id', v_b, 'rev', 0));
+  perform _t_as(sam);
+  select * into r from list_my_chats() x where x.thread_id = t.id;
+  perform _t_ok(r.unread_count = 0, '015w: opening the chat clears the count, and a card with no sender is not unread');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;

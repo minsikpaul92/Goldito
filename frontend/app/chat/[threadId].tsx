@@ -539,7 +539,10 @@ export default function Chat() {
 
   const bookingPath = booking ? `/${header.myRole}/bookings/${booking.id}` : null;
 
-  /** Meet & Greet, agreement and payment cards hold only a booking id: they draw that booking as it is now. */
+  /**
+   * Meet & Greet, agreement and payment cards hold only a booking id: they draw that booking as it is now.
+   * The chat list counts and previews by the same rule (`chat_message_shown`, 015w); change both together.
+   */
   const stepCard = (m: ChatMessage, c: Extract<ChatCard, { type: "meet_greet" | "agreement" | "payment" }>): ReactNode => {
     const b = pairBookings.find((x) => x.id === c.bookingId);
     if (!b) return null;

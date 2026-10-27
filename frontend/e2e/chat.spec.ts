@@ -696,6 +696,29 @@ test.describe("chat hub", () => {
     labels: await screen.locator('[data-testid^="stage-step-"]').allTextContents(),
   });
 
+  test("a request counts and previews only what the chat draws: 2 new, not the hidden request and Meet & Greet cards (#451)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedBooking(db, true);
+    db.chat_messages.push(
+      { id: "s0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: { type: "stay", drop_off_at: "2030-10-24T13:00:00Z", pick_up_at: "2030-10-27T21:00:00Z", pets: [{ id: MAX, name: "Max" }] }, created_at: "2026-10-10T09:58:00.000Z" },
+      { id: "t0", thread_id: THREAD, sender_id: OWNER.id, kind: "text", body: "Hi Chloe, I'm Robert", card: null, created_at: "2026-10-10T09:58:30.000Z" },
+      { id: "g0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: { type: "meet_greet", booking_id: BOOKING, rev: 0 }, created_at: "2026-10-10T09:59:30.000Z" },
+    );
+
+    const screen = await openChats(page, SITTER, "sitter");
+    await expect(screen.getByTestId("chat-unread-Robert")).toHaveText("2");
+    await expect(screen.getByTestId("chat-row-Robert")).toContainText("Hi Chloe, I'm Robert");
+    await expect(screen.getByRole("tab").filter({ hasText: "Chat" })).toContainText("2");
+    await screen.getByTestId("chat-row-Robert").click();
+    await expect(screen.getByTestId("chat-bubble-them")).toHaveCount(1);
+    await page.goBack();
+    await expect(screen.getByTestId("chat-unread-Robert")).toHaveCount(0);
+
+    await page.evaluate(() => localStorage.clear());
+    const owner = await openChats(page, OWNER, "owner");
+    await expect(owner.getByTestId("chat-row-Chloe")).toContainText("Hi Chloe, I'm Robert");
+  });
+
   test("a first-time pair goes from the sitter's yes to a paid booking in the chat, and the five circles follow the database", async ({ page }) => {
     test.setTimeout(90_000); // the whole stay from the first yes to the payment, on two phones
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
