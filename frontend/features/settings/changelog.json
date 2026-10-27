@@ -1,6 +1,18 @@
 [
   {
     "version": "Unreleased",
+    "title": "2026-10-25",
+    "sections": [
+      {
+        "heading": "Added",
+        "items": [
+          "Make your own 8-bit pet from a photo: add a photo of your pet when you sign up, and Goldito draws it as an 8-bit character from its breed, size and the colors in the photo. It lives on your Home."
+        ]
+      }
+    ]
+  },
+  {
+    "version": "Unreleased",
     "title": "2026-10-21",
     "sections": [
       {
@@ -37,7 +49,7 @@
       {
         "heading": "Changed",
         "items": [
-          "The app is now called Goldito (was Pawddy). You will be signed out once. New photos and videos go to the goldito/ Cloudinary folder (older pawddy/ and pawnote/ media still loads). What had to be done by hand: plan/rename-goldito.ko.md.",
+          "The app is now called Goldito (was Pawddy). You will be signed out once. New photos and videos go to the goldito/ Cloudinary folder (older pawddy/ and pawnote/ media still loads).",
           "The app is now called Pawddy (was PawNote). Demo sign-in emails are now @pawddy.test; new photos and videos go to the pawddy/ Cloudinary folder (older pawnote/ media still loads)."
         ]
       }

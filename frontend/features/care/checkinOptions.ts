@@ -15,7 +15,7 @@ export const MOOD_OPTIONS: CheckinOption[] = [
   { value: "anxious", label: "Anxious", icon: "moodAnxious" },
 ];
 
-/** The one-tap values of each check-in (sitter-care-loop §3). Notes have no tap value. */
+/** The one-tap values of each check-in. Notes have no tap value. */
 export const CHECKIN_GROUPS: {
   kind: Exclude<CareCheckinKind, "note">;
   emoji: string;

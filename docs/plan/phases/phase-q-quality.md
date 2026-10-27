@@ -1,96 +1,94 @@
-# Phase Q — 품질 · 데이터 · 말투 · QA (슬기 트랙, 2026-10-09 ~ 10-30)
+# Phase Q: Quality · data · tone · QA (Seulgi's track, 2026-10-09 to 10-30)
 
-> **담당:** 슬기 · **같이 보는 사람:** 민식 (급한 개발), 묵 (디자인)
-> **왜 따로 뺐나:** [work-split-2026-10-09.ko.md](../work-split-2026-10-09.ko.md) — 마감(10/30)까지 민식은 데모 경로를 막는 급한 개발(백엔드 배포 → 문의 AI 안전 RV-1~5 → 06B Pet Transit → 예약 흐름 → 데모 배포), 슬기는 **안 급한 것 · 익명화된 실제 데이터가 필요한 것 · 시터 실무 경험이 필요한 QA/UX**를 맡는다.
-> **공통 전제:** [CLAUDE.md](../../../CLAUDE.md) (작업 순서 · 브랜치 · 커밋 규칙) · [architecture.ko.md](architecture.ko.md) (D31 출입 정보 · D35 말투 · D38 시터 입력 최소화 · §9 AI 규칙)
+> **Owner:** Seulgi · **Also involved:** Minsik (urgent development), Muk (design)
+> **Why it is split out:** the 2026-10-09 work split (removed; in git history): until the deadline (10/30), Minsik takes the urgent development that blocks the demo path (backend deploy → inquiry AI safety RV-1 to 5 → 06B Pet Transit → booking flow → demo deploy), and Seulgi takes **what is not urgent · what needs anonymized real data · the QA/UX that needs hands-on sitter experience**.
+> **Shared context:** [CLAUDE.md](../../../CLAUDE.md) (work order · branch · commit rules) · [architecture.md](architecture.md) (D31 access info · D35 tone · D38 minimal sitter input · §9 AI rules)
 
 ---
 
-## 0. 슬기 시작하기 (첫날)
+## 0. Getting started, Seulgi (first day)
 
-### 0.1 읽는 순서 (약 1시간)
+### 0.1 Reading order (about 1 hour)
 
-| 순서 | 문서 | 무엇을 보나 |
+| Order | Doc | What to look at |
 | :--- | :--- | :--- |
-| 1 | 루트 [README.md](../../../README.md) — *How Goldito Works* · *A Stay with Goldito* | 제품 한 장 요약, 데모 경로 5단계 |
-| 2 | [full-process.ko.md](../full-process.ko.md) | 5단계 흐름 · 결정 D27~D47 · §9 열린 질문(슬기 담당: #1 지연 공식, #5 말투 데이터, #8 zero-retention, #9 mood meter 데이터) |
-| 3 | [work-split-2026-10-09.ko.md](../work-split-2026-10-09.ko.md) | 누가 무엇을, 충돌 막는 규칙 §4 |
-| 4 | **이 문서** | 내 작업 목록 Q.0~Q.10 |
-| 5 | [test-guide.ko.md](../test-guide.ko.md) §2 · §3 · §4 | 기능 상태표, 시나리오(ID · 기대 결과), 알려진 제약 |
-| 6 | [test-run.ko.md](../test-run.ko.md) | 손 테스트 시작점 · 데모 리셋 상태(`empty` · `pets` · `confirmed` · `ready` · `in_care`) |
-| 7 | GitHub 이슈 양식 **QA feedback** (`.github/ISSUE_TEMPLATE/qa-feedback.yml`) · 예전 사례는 [feedback-2026-10-08.ko.md](../feedback-2026-10-08.ko.md) | 피드백을 올리는 곳과 형식 |
-| 8 | [review-2026-10-08.ko.md](../review-2026-10-08.ko.md) §5 · §6 | 내가 맡을 M · L 항목 상세 (현상 → 원인 → 수정 → 테스트) |
-| 필요할 때 | [P0-ai-prompt-playbook.ko.md](../P0-ai-prompt-playbook.ko.md) · [README.ko.md](../README.ko.md) §8 (익명화) · [DESIGN.md](../../../DESIGN.md) | 프롬프트 · 익명화 규칙 · UI 토큰 |
+| 1 | Root [README.md](../../../README.md): *How Goldito Works* | One-page product summary, the 5-stage flow |
+| 2 | [the README, How Goldito works](../../../README.md#how-goldito-works) | The 5-stage flow · decisions D27 to D47 · §9 open questions (Seulgi's: #1 delay formula, #5 tone data, #8 zero-retention, #9 mood meter data) |
+| 3 | The 2026-10-09 work split (removed; in git history) | Who does what, §4 rules to avoid conflicts |
+| 4 | **This doc** | My task list Q.0 to Q.8 |
+| 5 | [test-guide.md](../test-guide.md) §2 · §3 · §4 | Feature status table, scenarios (ID · expected result), known limits |
+| 6 | test-run.md | Starting point for hand tests · demo reset states (`empty` · `pets` · `confirmed` · `ready` · `in_care`) |
+| 7 | The GitHub issue form **QA feedback** (`.github/ISSUE_TEMPLATE/qa-feedback.yml`) · earlier examples in the 2026-10-08 feedback (removed; in git history) | Where to post feedback and in what format |
+| 8 | The 2026-10-08 code review §5 · §6 (removed; in git history) | Details of the M · L items I take (symptom → cause → fix → test) |
+| When needed | P0-ai-prompt-playbook.md · README.md §8 (anonymization) · [DESIGN.md](../../../DESIGN.md) | Prompts · anonymization rules · UI tokens |
 
-### 0.2 환경 (Q.0)
+### 0.2 Environment (Q.0)
 
-**손 테스트는 설치 없이 Vercel에서** — `main`이 머지될 때마다 자동 배포되는 **https://goldito-petcare.vercel.app** 에서 합니다 (2026-10-09 결정, [test-run.ko.md](../test-run.ko.md) §0). 결과(✅)도 Vercel(main) 기준으로만 적습니다.
+**Hand tests happen on Vercel, with no install**: on **https://goldito-petcare.vercel.app**, which deploys automatically every time `main` is merged (decided 2026-10-09, test-run.md §0). Results (✅) are also recorded only against Vercel (main).
 
-1. https://goldito-petcare.vercel.app → 로그인 화면 **Try demo** → **Demo owner**(Robert) / **Demo sitter**(Chloe).
-2. 두 계정 동시에: 크롬 일반 창 + 시크릿 창에 각각 같은 주소.
-3. 업로드 · AI · 데모 리셋은 Render에 배포된 백엔드로 Vercel에서 다 됩니다 (U0, 2026-10-09). 무료 플랜이라 **15분 동안 아무도 안 쓰면 잠들고, 첫 요청이 30~50초** 걸립니다 — 고장이 아닙니다.
-4. 상태 되돌리기: 앱의 Profile → **Demo tools**(테스트 기간에만 켜 둠) → `empty` · `pets` · `confirmed` · `ready` · `in_care` 중 선택. (`011i`가 호스팅 DB에 적용되기 전에는 `in_care` 직후 3분 동안 체크인이 막힙니다 — CW-1.)
-5. **코드를 고칠 때만(Q.2부터) 로컬 환경:** 저장소 받기 → `main`에서 작은 브랜치(아래 §3). `backend/.env`, `frontend/.env`는 **민식에게 따로(메신저 · 비밀번호 관리자) 받는다** — 절대 커밋 · 채팅 공개 금지, 형식은 각 `.env.example`. 백엔드 `cd backend && python -m venv .venv && .venv/bin/pip install -r requirements.txt ruff` (Windows는 `.venv\Scripts\python`) → `uvicorn app.main:app --port 8000`, 프론트 `cd frontend && npm ci && npx expo start --web --port 8081` → `http://localhost:8081`. 로컬은 고치는 중 확인용이고, PR이 머지된 뒤 Vercel에서 다시 확인해 기록합니다.
-6. 코딩 에이전트(Claude Code · Cursor)를 쓰면 시작할 때 항상: *"Read CLAUDE.md, the assigned GitHub issue, docs/plan/phases/phase-q-quality.md. Work only on that task."*
+1. https://goldito-petcare.vercel.app → **Try demo** on the login screen → **Demo owner** (Robert) / **Demo sitter** (Chloe).
+2. Both accounts at once: the same address in a normal Chrome window + an incognito window.
+3. Upload · AI · demo reset all work from Vercel with the backend deployed on Render (U0, 2026-10-09). It is a free plan, so **if nobody uses it for 15 minutes it falls asleep, and the first request takes 30-50 seconds**; that is not a bug.
+4. Resetting the state: in the app, Profile → **Demo tools** (turned on only during the test period) → pick one of `empty` · `pets` · `confirmed` · `ready` · `in_care`. (Until `011i` is applied to the hosted DB, check-ins are blocked for 3 minutes right after `in_care`: CW-1.)
+5. **A local environment only when you change code (from Q.2 on):** get the repo → a small branch from `main` (§3 below). **Get `backend/.env` and `frontend/.env` from Minsik separately (messenger · password manager)**: never commit them or post them in chat; the format is in each `.env.example`. Backend `cd backend && python -m venv .venv && .venv/bin/pip install -r requirements.txt ruff` (on Windows `.venv\Scripts\python`) → `uvicorn app.main:app --port 8000`, frontend `cd frontend && npm ci && npx expo start --web --port 8081` → `http://localhost:8081`. Local is for checking while you fix; after the PR is merged, check again on Vercel and record that.
+6. If you use a coding agent (Claude Code · Cursor), always start with: *"Read CLAUDE.md, the assigned GitHub issue, docs/plan/phases/phase-q-quality.md. Work only on that task."*
 
 ---
 
 ## Goal
 
-심사위원이 데모 경로(문의 → 만남 → 예약 → 돌봄 · 이동 → 완료)를 마우스로 따라갈 때 **실제 펫시터가 쓰는 앱처럼** 느껴지게 한다: 흐름이 매끄럽고, 문구가 실무 표현이고, AI 답장 · 알림장이 **진짜 시터의 말투**이며, 틀린 숫자 · 개인정보가 새지 않는다. 그리고 그것을 **사람이 직접 확인한 기록**(test-guide ✅)으로 남긴다.
+When judges follow the demo path (inquiry → meeting → booking → care · transit → completion) with the mouse, make it feel **like an app real pet sitters use**: the flow is smooth, the wording is real working language, AI replies · daily reports are in **a real sitter's tone**, and no wrong numbers · personal data leak out. And leave **a record that a person checked it** (test-guide ✅).
 
-### Goal 달성 기준 (10/29까지)
+### Goal met when (by 10/29)
 
-- [ ] test-guide §3의 데모 경로 시나리오(FLOW · REPORT · CAP · INQ · DONE)를 사람이 한 번씩 돌리고 상태 칸에 **✅ (날짜, 슬기)** 또는 FB 번호
-- [ ] 07 · 07B · 09 · 07C의 phase DoD를 손으로 확인 (지금 "code complete, DoD pending")
-- [ ] 문의 답장과 알림장이 **익명화된 실제 기록에서 온 말투**로 나옴 (같은 질문으로 전/후 예시 3개씩 기록)
-- [ ] AI 답장 · 알림장이 **RAG 근거 우선** — 데이터베이스에 근거가 있으면 근거대로, 없으면 지어내지 않고 시터 확인으로 (Q.4b 전/후 예시 기록)
-- [ ] 리뷰 프리셋 · 알림장 칩 · 체크인 선택지 문구를 시터 실무 표현으로 검수 · 수정
-- [ ] R3 Medium 중 아래 Q.5 · Q.6 범위 완료 (또는 "안 함 + 이유" 기록)
-- [ ] 원본 데이터가 리포 · 프롬프트 · 영상 어디에도 없음 (익명화 샘플만)
+- [ ] A person runs each demo path scenario in test-guide §3 (FLOW · REPORT · CAP · INQ · DONE) once and writes **✅ (date, Seulgi)** or an FB number in the status column
+- [ ] Hand-check the phase DoD of 07 · 07B · 09 · 07C (now "code complete, DoD pending")
+- [ ] Inquiry replies and daily reports come out in **a tone taken from anonymized real records** (record 3 before/after examples each with the same question)
+- [ ] AI replies · daily reports are **RAG evidence first**: if the database has evidence, follow the evidence; if not, do not make things up and send it to the sitter to confirm (record Q.4b before/after examples)
+- [ ] Review and fix the wording of review presets · daily report chips · check-in options into real sitter language
+- [ ] Finish the Q.5 · Q.6 scope below from R3 Medium (or record "not doing + why")
+- [ ] The original data is nowhere in the repo · prompts · video (anonymized samples only)
 
 ---
 
-## 1. 작업 목록 (순서대로 — GitHub 이슈 #99 ~ #110에 하나씩)
+## 1. Task list (in order: one per GitHub issue, #99 to #110)
 
-| # | 작업 | 출력물 | 완료 기준 | 예상 |
+| # | Task | Output | Done when | Estimate |
 | :--- | :--- | :--- | :--- | :--- |
-| **Q.0** | 환경 · 계정 (§0.2) | Vercel에서 두 계정이 동시에 열림 | https://goldito-petcare.vercel.app 에서 오너 · 시터 데모 로그인(일반 창 + 시크릿 창), Demo tools로 원하는 상태로 리셋 1회. 로컬 환경은 Q.2 전까지만 준비하면 됨 | 0.5일 |
-| **Q.1** | **전체 손 테스트 + 시터 관점 피드백** — 데모 경로를 처음부터: 문의(INQ) → Meet & Greet → 예약 · 체크아웃(FLOW) → Received · 체크인 · 사진 · 알림장(REPORT · CAP) → Returned · 리뷰 · Life Record(DONE). 특히 새 기능 REPORT-11 · 12, FLOW-15~23 | test-guide 상태 칸 갱신, 발견한 것마다 GitHub 이슈 양식 **QA feedback** (본 것 · 기대 · 실무에서는 · 심각도) | 시나리오마다 ✅ 또는 이슈 번호. `blocks-demo` · `false-promise`는 민식에게 바로 알림 | 1.5일 |
-| **Q.2** | **문구 · 프리셋 검수 (실무 표현)** — ① 리뷰 프리셋 `frontend/features/completion/reviewPresets.ts` (오너 → 시터 · 시터 → 오너, 별마다 3개) ② 알림장 기록 칩 문구 `backend/app/ai/report_chips.py` (`MEAL` · `POTTY` · `MOOD`) ③ 체크인 선택지 `frontend/features/care/checkinOptions.ts` ④ 화면 안내 문구(빈 화면 · 버튼). 알림 제목은 SQL 함수 안에 있으니 **목록만** 피드백으로 | 코드 수정 PR (`fix/q-wording`) | 영어(D1) 유지, 관련 e2e · pytest 통과(문구를 고치면 테스트 기대값도) | 1일 |
-| **Q.3** | **익명화** (기존 담당) — 3년치 대화 · 알림장 → 이름 · 연락처 · 주소 · 위치 · 실견명 치환, 말투 유지 → train / validation / hold-out JSONL. `{PRICE}` · `{DATE}` 자리표시자 규칙. Nebius **zero-retention** 사용 여부와 제3자 처리 고지 결정 | 익명화 규칙 문서(`docs/plan/anonymization.ko.md`), JSONL은 **리포 밖** 또는 gitignore된 `data/` | 샘플 20개를 민식이 무작위로 봐서 개인정보 0. full-process §9 #5 · #8 답 기록 | 2일 |
-| **Q.4** | **말투 데이터 넣기** — ① 문의: 데모 시터 Chloe의 스타일 카드 + 예시 답장 5~10개를 익명화 기록에서 골라 `backend/app/ai/prompts/tone/demo_sitters.json` → `scripts/seed_tone.py` (dry run → `--apply`) ② **알림장:** `backend/app/ai/prompts/daily_report/few_shot.json` 예시를 실제 알림장(익명화) 스타일로, 필요하면 `tone_samples` `kind='report'` 샘플 ③ **자동 발송 지연 공식 · 메시지 분할** (7B.10, `backend/app/ai/inquiry.py` `human_delay`) — **R1b 머지 뒤** | PR (`data/tone-samples`) + `docs/plan/phases/notes/tone-before-after.ko.md`(같은 질문 3개 · 같은 하루 3개의 전/후) | 문의 · 알림장 전/후 예시가 "슬기다운" 말투, pytest 통과, 프롬프트에 원본 데이터 없음 | 2일 |
-| **Q.4b** | **프롬프트 엔지니어링 + RAG 우선 답변** — AI가 만드는 **대화**(문의 답장)와 **문장**(알림장 · 캡션 · Life Record · 케어 체크리스트)이 매끄럽고 시터답게 나오게 한다. 원칙: **답은 먼저 데이터베이스(RAG)에서 만들고, 거기 없는 내용만 AI가 쓴다.** ① **RAG 우선 (문의):** 지금 `backend/app/services/rag.py`의 `search`는 유사도 기준 없이 가장 가까운 5개를 그대로 모델에 넘긴다 → **유사도 기준값**을 정해, 기준 이상으로 맞는 근거(시터 정책 · 지난 문의 답 · Life Record · 케어 요청서)가 있으면 **그 내용을 바탕으로** 답하고(시터 말투로 다듬기만), 근거가 없으면 모델이 쓰되 사실(가격 · 날짜 · 가능 여부 · 펫 정보)은 지어내지 않고 "확인해서 알려 드릴게요"로 시터 확인(`needs_sitter`)으로 보낸다. 어떤 근거를 썼는지 출처 칩은 유지 ② **프롬프트 다듬기:** `backend/app/ai/prompts/**`(system · few-shot) — 문장 길이, 이모지, 같은 표현 반복, 어색한 연결, 질문에 없는 말 덧붙이기를 고친다. Q.4 말투 데이터와 같이 본다 ③ **바꾸지 않는 것:** 서버가 정하는 사실(D29 가격 · 날짜 · 가능 여부, D31 출입 정보는 프롬프트에 안 넣음), 시터 승인(D36) | ② 프롬프트 PR (`data/prompt-tuning`) — **언제든 가능** → ① RAG 우선 코드 PR (`fix/q-rag-first`) — **R1b 머지 뒤** (`inquiry.py` · `routers/ai_inquiry.py`는 그때까지 민식 작업 중) + `notes/prompt-before-after.ko.md` (같은 질문 5개 — RAG에 답이 있는 것 3 · 없는 것 2 — 와 알림장 하루 2개의 전/후) | 근거가 있는 질문은 근거와 같은 내용으로 답하고, 없는 질문은 사실을 지어내지 않고 시터 확인으로 감 (pytest: 기준 이상 · 이하 두 경우), 문장이 자연스럽다는 전/후 예시, 기존 pytest · ruff 통과 | 2~3일 |
-| **Q.5** | **R3 Medium — 알림장 · 캡션 · Life Record · 시드** ([review §5](../review-2026-10-08.ko.md)). 먼저: **M-14**(기록 칩을 끄면 오너 체크리스트에서 놓친 약이 숨음) · **M-20**(메모 속 번호 · 코드가 Life Record에 — D31) · **M-16**(보낸 알림장이 초안으로 — `011f` 뒤 다시 확인). 그다음 M-13 · M-15 · M-17 · M-18 · M-19 · M-21 · M-22 · M-23 · M-24 (M-12는 완료) | 항목마다 커밋 하나, 브랜치 `fix/q-review-medium` | review 문서의 "테스트" 칸대로 pytest / Playwright 추가, 항목 제목에 ✅ | 3~4일 |
-| **Q.6** | **R3 Medium — 문의 AI M-1~M-11** (**R1b `fix/review-inquiry` 머지 뒤** — 같은 파일). 특히 M-4(말투 예시에 다른 오너의 글 · 연락처가 섞임 — 익명화와 같은 일) | 같은 방식 | 같은 방식 | 3일 |
-| **Q.7** | **평가 (키 필요)** — `scripts/measure_inquiry.py` 기본 경로 재측정(M-1), `scripts/measure_caption.py`로 말투 카드 유무 비교(M-19), Life Record 환각 테스트 3회(07C DoD) | `phases/notes/model-ids.md` 표 갱신 | 수치 · 날짜 · 결론 한 줄 | 1일 |
-| **Q.8** | **최종 QA (10/27~29)** — 배포 URL에서 데모 경로 전체, 두 계정, **마우스만**(데스크톱 폰 프레임) + 폰 너비 + **실제 폰 카메라**(Take photo / Choose from library, Vercel 주소에서) | test-guide ✅, 남은 FB | 데모 영상 경로가 막힘 없이 끝남 | 1일 |
-| Q.9 | (여유) **R4 Low** L-1~L-6 묶음, FB-1 · FB-3 · FB-4 | 묶음마다 커밋 | review §6 | 여유 |
-| Q.10 | (P2, 여유) **11.7 SFT 보여주기** — 앱 런타임에는 안 씀(D43) | [phase-11-p1.md](phase-11-p1.md) 11.7 | | 여유 |
+| **Q.0** | Environment · accounts (§0.2) | Two accounts open at once on Vercel | Owner · sitter demo login at https://goldito-petcare.vercel.app (normal window + incognito window), one reset to the wanted state with Demo tools. The local environment only needs to be ready before Q.2 | 0.5 day |
+| **Q.1** | **Full hand test + sitter-eye feedback**: the demo path from the start: inquiry (INQ) → Meet & Greet → booking · checkout (FLOW) → Received · check-in · photo · daily report (REPORT · CAP) → Returned · review · Life Record (DONE). Especially the new features REPORT-11 · 12, FLOW-15 to 23 | Update the test-guide status column; for each finding, the GitHub issue form **QA feedback** (what I saw · what I expected · how it works in practice · severity) | ✅ or an issue number per scenario. Tell Minsik right away about `blocks-demo` · `false-promise` | 1.5 days |
+| **Q.2** | **Wording · preset review (real working language)**: ① review presets `frontend/features/completion/reviewPresets.ts` (owner → sitter · sitter → owner, 3 per star) ② daily report record chip wording `backend/app/ai/report_chips.py` (`MEAL` · `POTTY` · `MOOD`) ③ check-in options `frontend/features/care/checkinOptions.ts` ④ on-screen guide text (empty screens · buttons). Notification titles live inside SQL functions, so give **only a list** as feedback | Code fix PR (`fix/q-wording`) | Stays in English (D1), the related e2e · pytest pass (if you change the wording, change the test expectations too) | 1 day |
+| **Q.3** | **Anonymization** (existing owner): 3 years of chats · daily reports → replace names · contacts · addresses · locations · real dog names, keep the tone → train / validation / hold-out JSONL. Rules for the `{PRICE}` · `{DATE}` placeholders. Decide whether to use Nebius **zero-retention** and the third-party processing notice | Anonymization rules doc (`docs/plan/anonymization.md`), JSONL **outside the repo** or in the gitignored `data/` | Minsik looks at 20 random samples and finds 0 personal data. Record the answers to full-process §9 #5 · #8 | 2 days |
+| **Q.4** | **Add tone data**: ① inquiry: the demo sitter Chloe's style card + 5-10 example replies picked from the anonymized records into `backend/app/ai/prompts/tone/demo_sitters.json` → `scripts/seed_tone.py` (dry run → `--apply`) ② **daily report:** make the examples in `backend/app/ai/prompts/daily_report/few_shot.json` follow the style of real daily reports (anonymized), and if needed add `tone_samples` `kind='report'` samples ③ **auto-send delay formula · message splitting** (7B.10, `backend/app/ai/inquiry.py` `human_delay`): **after R1b is merged** | PR (`data/tone-samples`) + `docs/plan/phases/notes/tone-before-after.md` (before/after for the same 3 questions · the same 3 days) | The inquiry · daily report before/after examples sound "like Seulgi", pytest passes, no original data in the prompts | 2 days |
+| **Q.4b** | **Prompt engineering + RAG-first answers**: make the **conversations** (inquiry replies) and the **sentences** (daily report · caption · Life Record · care checklist) the AI writes come out smooth and sitter-like. Principle: **build the answer from the database (RAG) first, and let the AI write only what is not there.** ① **RAG first (inquiry):** right now `search` in `backend/app/services/rag.py` passes the 5 nearest results to the model as they are, with no similarity threshold → set a **similarity threshold**; if there is evidence above the threshold (sitter policy · past inquiry answers · Life Record · care request), answer **based on that content** (only polish it into the sitter's tone); if there is no evidence, the model writes it, but it does not make up facts (price · date · availability · pet info) and sends it to the sitter to confirm (`needs_sitter`) with "I'll check and let you know". Keep the source chips that show which evidence was used ② **Prompt polish:** `backend/app/ai/prompts/**` (system · few-shot): fix sentence length, emoji, repeated phrases, awkward transitions, adding things the question did not ask. Look at it together with the Q.4 tone data ③ **What does not change:** the facts the server decides (D29 price · date · availability; D31 access info never goes into prompts), sitter approval (D36) | ② prompt PR (`data/prompt-tuning`): **possible any time** → ① RAG-first code PR (`fix/q-rag-first`): **after R1b is merged** (`inquiry.py` · `routers/ai_inquiry.py` are Minsik's work until then) + `notes/prompt-before-after.md` (before/after for the same 5 questions (3 with an answer in RAG, 2 without) and 2 days of daily reports) | Questions with evidence are answered with the same content as the evidence, questions without evidence do not make up facts and go to the sitter to confirm (pytest: both above and below the threshold), before/after examples that show natural sentences, the existing pytest · ruff pass | 2-3 days |
+| **Q.5** | **R3 Medium: daily report · caption · Life Record · seed** (the 2026-10-08 code review §5, removed; in git history). First: **M-14** (turning off a record chip hides a missed medication in the owner checklist) · **M-20** (numbers · codes in the note end up in the Life Record, D31) · **M-16** (a sent daily report shows as a draft; recheck after `011f`). Then M-13 · M-15 · M-17 · M-18 · M-19 · M-21 · M-22 · M-23 · M-24 (M-12 is done) | One commit per item, branch `fix/q-review-medium` | Add pytest / Playwright per the "Test" column of the review doc, ✅ in the item title | 3-4 days |
+| **Q.6** | **R3 Medium: inquiry AI M-1 to M-11** (**after R1b `fix/review-inquiry` is merged**: same files). Especially M-4 (another owner's text · contact info mixed into the tone examples: the same work as anonymization) | Same way | Same way | 3 days |
+| **Q.7** | **Evaluation (needs keys)**: re-measure the default path with `scripts/measure_inquiry.py` (M-1), compare with and without the tone card with `scripts/measure_caption.py` (M-19), Life Record hallucination test 3 times (07C DoD) | Update the `phases/notes/model-ids.md` table | Numbers · date · one-line conclusion | 1 day |
+| **Q.8** | **Final QA (10/27 to 29)**: the whole demo path at the deploy URL, two accounts, **mouse only** (desktop phone frame) + phone width + **a real phone camera** (Take photo / Choose from library, at the Vercel address) | test-guide ✅, remaining FB | The demo video path finishes with nothing blocking | 1 day |
 
-> 순서를 바꾸고 싶으면 민식과 먼저 얘기한다(특히 Q.6은 R1b 머지 전에는 시작하지 않음).
+> If you want to change the order, talk to Minsik first (in particular, Q.6 does not start before R1b is merged).
 
-> **Q.1 영역 (2026-10-19):** 손 테스트를 네 영역으로 나눠 이슈로 올린다. **1 Booking · 2 Care & Pet Transit · 3 Completion · 4 Sign-up** (test-guide의 해당 절). 올라온 QA 이슈의 수정은 JeonBeomGu-S가 먼저 맡는다 ([phase-03d § 함께 정리할 QA 이슈](phase-03d-booking-chat.md)).
+> **Q.1 areas (2026-10-19):** the hand test is split into four areas, posted as issues. **1 Booking · 2 Care & Pet Transit · 3 Completion · 4 Sign-up** (the matching sections of the test-guide). JeonBeomGu-S takes the fixes for incoming QA issues first (phase-03d § QA issues to clean up together).
 
 ---
 
-## 2. 범위
+## 2. Scope
 
-| 포함 | 제외 (민식) |
+| In | Out (Minsik) |
 | :--- | :--- |
-| 손 테스트 · 피드백 · 문구 · 프리셋 | 문의 AI 안전 RV-1~RV-5 (R1b) |
-| 익명화 · 말투 · few-shot · 지연 공식 | 예약 흐름 R2 (FB-2 · 5 · 6 · 8 · 9) |
-| R3 Medium (M-1~M-24, M-12 완료), R4 Low | 06B Pet Transit · 08 · 10 배포 · 고정 데모 계정 |
-| 평가 · 측정 | 호스팅 DB 마이그레이션 적용 · OAuth |
+| Hand tests · feedback · wording · presets | Inquiry AI safety RV-1 to RV-5 (R1b) |
+| Anonymization · tone · few-shot · delay formula | Booking flow R2 (FB-2 · 5 · 6 · 8 · 9) |
+| R3 Medium (M-1 to M-24, M-12 done), R4 Low | 06B Pet Transit · 08 · 10 deploy · fixed demo accounts |
+| Evaluation · measurement | Applying hosted DB migrations · OAuth |
 
 ---
 
-## 3. 규칙 (요약 — 전체는 [work-split §4](../work-split-2026-10-09.ko.md#4-같이-일하는-규칙-충돌-막기))
+## 3. Rules (summary; the full version was §4 of the 2026-10-09 work split, removed; in git history)
 
-1. **브랜치 · 커밋 · PR:** CLAUDE.md §4. 브랜치 `qa/…` · `fix/q-…` · `data/…` · `docs/…` (`claude/` · `cursor/` 같은 도구 접두어 금지), 작업 하나 = 커밋 하나, 영어 한 줄 conventional commit, **AI 표기 금지**. 묶음마다 draft PR → 끝나면 ready, 머지는 민식과 확인 후.
-2. **민식이 바꾸는 중인 파일은 건드리지 않는다** (work-split §4 표). 프롬프트 파일(`backend/app/ai/prompts/**`)은 언제든 가능.
-3. **마이그레이션:** 사람별 글자 범위 없음 (2026-10-13, CR-6) — `main`과 열린 PR에서 가장 뒤 이름의 다음 빈 이름을 쓴다([supabase/README.md](../../../supabase/README.md) § Naming). 이미 적용된 파일은 절대 수정하지 않는다. 새 RPC는 `security definer` + `set search_path = public` + `auth.uid()` 검사 + `revoke … from public, anon`, `supabase/tests/rls_smoke.sql`에 체크 추가.
-4. **테스트:** 백엔드 `pytest -q` + `ruff check .`, 프론트 `npx tsc --noEmit` + 해당 Playwright spec. CI가 초록이어야 PR ready.
-5. **매 작업 끝 (CLAUDE.md §5):** PR 본문에 `Closes #N`(완료 기록은 커밋 · PR · test-guide), 다음 Q 이슈로 넘어가고, test-guide 갱신. **✅는 사람이 실제로 해 본 것만.**
-6. **데이터:** 원본은 리포 · 프롬프트 · 영상 · 스크린샷에 넣지 않는다. 익명화 샘플만 커밋. 실제 사람 · 장소 이름이 보이면 바로 멈추고 민식에게.
-7. **급한 문제를 찾으면:** 데모 경로가 막히거나 틀린 약속을 하는 것 → FB에 "급함"으로 적고 민식에게 바로 알린다(민식 큐로 감).
+1. **Branch · commit · PR:** CLAUDE.md §4. Branches `qa/…` · `fix/q-…` · `data/…` · `docs/…` (no tool prefixes such as `claude/` · `cursor/`), one task = one commit, a one-line English conventional commit, **no AI mention**. A draft PR per bundle → ready when done, merge after checking with Minsik.
+2. **Do not touch files Minsik is changing** (the table in work split §4). Prompt files (`backend/app/ai/prompts/**`) are fine any time.
+3. **Migrations:** no letter range per person (2026-10-13, CR-6): use the next free name after the latest name on `main` and in open PRs ([supabase/README.md](../../../supabase/README.md) § Naming). Never edit a file that is already applied. New RPCs: `security definer` + `set search_path = public` + an `auth.uid()` check + `revoke … from public, anon`, and add a check to `supabase/tests/rls_smoke.sql`.
+4. **Tests:** backend `pytest -q` + `ruff check .`, frontend `npx tsc --noEmit` + the related Playwright spec. CI must be green before the PR is ready.
+5. **At the end of every task (CLAUDE.md §5):** `Closes #N` in the PR body (the record of finished work is the commit · PR · test-guide), move on to the next Q issue, and update the test-guide. **✅ only for what a person actually tried.**
+6. **Data:** the originals never go into the repo · prompts · video · screenshots. Commit only anonymized samples. If a real person's or place's name shows up, stop right away and tell Minsik.
+7. **If you find an urgent problem:** something that blocks the demo path or makes a wrong promise → write it in FB as "urgent" and tell Minsik right away (it goes into Minsik's queue).

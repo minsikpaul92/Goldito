@@ -2,7 +2,7 @@
 
 -
 
-**Task:** <!-- Issue number + phase doc, e.g. 3.1 · docs/plan/phases/phase-03-auth.md -->
+**Task:** <!-- Issue number + phase doc, e.g. Closes #424 -->
 
 ## Test plan
 

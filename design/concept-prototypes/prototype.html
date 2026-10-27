@@ -198,7 +198,7 @@
         <a href="${FIG}${s.figma}" target="_blank" rel="noopener">${t("Figma section ↗", "Figma 섹션 ↗")}</a>
         ${s.readme ? `<a href="${REPO.replace("/blob/main/", "")}#${s.readme}" target="_blank" rel="noopener">${t("README: what we promise ↗", "README: 약속한 기능 ↗")}</a>` : ""}
         ${(s.docs || []).map(([l, path]) => `<a href="${REPO}${path}" target="_blank" rel="noopener">${l} ${t("doc", "문서")} ↗</a>`).join("")}
-        <a href="${REPO}docs/plan/test-guide.ko.md" target="_blank" rel="noopener">${t("What's built · test guide ↗", "구현 현황 · 테스트 가이드 ↗")}</a>
+        <a href="${REPO}docs/plan/test-guide.md" target="_blank" rel="noopener">${t("What's built · test guide ↗", "구현 현황 · 테스트 가이드 ↗")}</a>
         <p class="hint" style="margin:0">${s.figmaScreens.length ? `${t("In Figma", "Figma 화면")}: ${s.figmaScreens.join(" · ")}` : (s.ours.kind === "steps" ? t("Not in Figma yet: the step-by-step flows are a new exploration.", "아직 Figma에 없어요: 단계별 흐름은 새 탐색이에요.") : t("Not in Figma as its own screen: the in-care tabs are the Today's app screens.", "Figma에 별도 화면은 없어요: 돌봄 중 탭은 ‘지금 앱’ 화면이에요."))}</p>
 </div>
       <p class="hint">${t("Today's app is a screenshot of the live demo. The draft is the interactive part — as you tap through it, this list, the notes and the Figma link follow along.", "‘지금 앱’은 라이브 데모 스크린샷이에요. 초안은 직접 눌러 볼 수 있고, 누르는 대로 목록·노트·Figma 링크가 따라와요.")}</p>
