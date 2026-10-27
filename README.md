@@ -16,9 +16,9 @@ the server owns every fact, and a person approves every word.
 [![Tavily](https://img.shields.io/badge/search-Tavily-4f46e5?style=flat-square)](#tavily-live-answers-from-trusted-sites)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-<img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner adds a photo of Mumu, the AI reads breed and coat color, and Goldito builds Mumu as an 8-bit pet" width="340">
+<img src="docs/assets/readme/chat-draft.gif" alt="Inquiry chat between owner Paul and sitter Peter: reply chips draft a message, then a Meet & Greet request, acceptance, quote, and payment" width="340">
 
-<sub><i>Sign-up: a photo becomes your pet as an 8-bit character</i></sub>
+<sub><i>Booking chat: reply chips, Meet &amp; Greet, quote, and payment in one thread</i></sub>
 
 **[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up) · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
 
@@ -40,7 +40,7 @@ the server owns every fact, and a person approves every word.
 - **AI you can check.** Prices, dates, availability, and door codes come from the server, never from the model. Nemotron writes only from the facts it is handed, and **nothing is sent until a person taps Send**.
 - **Memory that follows the pet.** Each stay becomes the pet's Life Record, so the next stay, even with a new sitter, starts already knowing the pet.
 
-**AI is a tool here, not the sender.** Goldito never sends a message, a daily note, or a review on its own. A general chatbot cannot see the sitter's calendar, quote, or house rules, cannot be trusted with a lockbox code, and forgets the pet when the sitter changes. Here the facts come from the server, the words sound like the sitter, and the memory follows the pet.
+**AI is a tool here, not the sender.** Nothing goes out until a person taps Send. The server supplies the facts, the words sound like the sitter, and the memory follows the pet.
 
 ---
 
@@ -61,17 +61,17 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 
 | When this happens | The agent | Model | A person decides |
 | :--- | :--- | :--- | :--- |
+| A new owner registers a pet | Turns a photo and a few spoken sentences into profile suggestions and looks up breed needs | MiniCPM-V 4.5 · Groq Whisper → Nemotron 3 **Nano** | The owner confirms every suggestion |
 | A message arrives in the chat | Suggests reply chips and drafts a message in my voice, from the calendar, quote, policy, pet profile, and Life Record; points at the next step only if the code allows it | Nemotron 3 **Super** + Qwen3 Embedding | Taps a chip, edits, and taps **Send** |
 | The sitter says yes | Recognizes it and brings up the Meet & Greet card | Nemotron 3 **Nano** | Either side requests, accepts, or skips |
 | The owner writes a care request | Turns it into timed tasks and Heads-up cards | Nemotron 3 **Super** | The owner reviews and saves |
 | The day ends | Suggests chips from check-ins and photos, then writes the daily note | MiniCPM-V 4.5 → Nemotron 3 **Super** | The sitter fixes the chips and approves |
 | A treat label is photographed | Reads it, applies the rule table, searches trusted sites (Tavily), and reasons about hidden sources | MiniCPM-V 4.5 → Nemotron 3 **Ultra** | Danger needs an explicit "I understand" |
-| A new owner registers a pet | Turns a photo and a few spoken sentences into profile suggestions and looks up breed needs | MiniCPM-V 4.5 · Groq Whisper → Nemotron 3 **Nano** | The owner confirms every suggestion |
 | The stay ends | Writes the pet's Life Record and indexes it | Nemotron 3 **Super** + Qwen3 Embedding | The owner reads it |
 
-<img src="docs/assets/readme/chat-draft.gif" alt="Inquiry chat between owner Paul and sitter Peter: reply chips draft a message, then a Meet & Greet request, acceptance, quote, and payment" width="340">
+<img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner adds a photo of Mumu, the AI reads breed and coat color, and Goldito builds Mumu as an 8-bit pet" width="340">
 
-<sub><i>Booking chat: reply chips, Meet &amp; Greet, quote, and payment in one thread</i></sub>
+<sub><i>Sign-up: a photo becomes your pet as an 8-bit character</i></sub>
 
 **Guardrails.** The model never writes a price, a date, or an entry code (a draft whose numbers do not match the server is rewritten once, then falls back to plain words). Entry codes never enter a prompt or the RAG index. Life Records and spoken profile facts need recorded evidence or a matching quote, and safety answers are never pre-filled. The treat verdict is never below the rule table. If a model is slow or down, the screen shows fixed chips or a plain list, never an error.
 
@@ -85,7 +85,7 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 | **MiniCPM-V 4.5** `openbmb/MiniCPM-V-4_5` ¹ | Treat labels · photo captions and album · daily-note photo chips · breed guess from a pet photo · mood tags · handoff photo check (server API, not in the app yet) | A label in 0.9 to 1.4 s; a caption in about 1.2 s, 8 of 9 sample photos sorted right |
 | **Qwen3 Embedding 8B** `Qwen/Qwen3-Embedding-8B` | RAG over Life Records, sitter policies, and care requests · picking a sitter's own past replies as tone examples | `dimensions: 1024` fits a pgvector HNSW index |
 
-¹ NVIDIA's vision models on Token Factory (`Nemotron-Nano-V2-12b`, `Cosmos3-Super-Reasoner`, `Nemotron-3-Nano-Omni`) are offered only as dedicated endpoints, not on the shared API (checked 2026-10-02). Keeping one running until judging ends would cost more than our credits, so vision uses MiniCPM-V 4.5 on the shared API, and all reasoning and writing stay on Nemotron. Every check: [model-ids.md](docs/plan/phases/notes/model-ids.md).
+¹ NVIDIA's vision models on Token Factory (`Nemotron-Nano-V2-12b`, `Cosmos3-Super-Reasoner`, `Nemotron-3-Nano-Omni`) are offered only as dedicated endpoints, not on the shared API (checked 2026-10-02). Keeping one running until judging ends would cost more than our credits, so vision uses MiniCPM-V 4.5 on the shared API, and all reasoning and writing stay on Nemotron. `Nemotron-3.5-Super-VL` reached the shared API later (seen 2026-10-27, global base URL only); we have not measured it for our photos yet. Every check: [model-ids.md](docs/plan/phases/notes/model-ids.md).
 
 **Tested in CI on every push:** about 690 pytest tests, more than 640 Playwright tests (68 specs, desktop phone frame and mouse), and 88 SQL migrations applied to a Postgres stub followed by a row-level-security smoke test.
 
@@ -110,7 +110,7 @@ What we used, what worked, and what got in the way, written down as it happened.
 **Nebius Token Factory**
 - *Onboarding:* the catalog check and the first answers on the same day (2026-09-29): a Nano text call and a MiniCPM-V image call through the OpenAI SDK, with only the base URL and key changed.
 - *Worked:* one OpenAI-compatible API for chat, vision, and embeddings; `GET /v1/models` for scripted checks; JSON mode and tool calling (`tools` + `tool_choice="auto"`) on Nano and Super, about 0.9 s per call; base64 data URLs as image input.
-- *Got in the way:* NVIDIA's vision models are dedicated-endpoint only (about $48 to $113 a day to keep one up), so a hackathon app cannot use NVIDIA for vision on the shared API. No speech-to-text and no NVIDIA embedding model in the catalog. The two base URLs list different models (25 vs 18 on 2026-10-10). The catalog shows a "Fine-tuning" badge on Nemotron, but the model pages say fine-tuning is not available. External image URLs can fail, so we send data URLs.
+- *Got in the way:* NVIDIA's vision models were dedicated-endpoint only when we started (about $48 to $113 a day to keep one up), so we used MiniCPM-V on the shared API; `Nemotron-3.5-Super-VL` showed up on the shared API later. No speech-to-text and no NVIDIA embedding model in the catalog. The two base URLs list different models (25 vs 18 on 2026-10-10). The catalog shows a "Fine-tuning" badge on Nemotron, but the model pages say fine-tuning is not available. External image URLs can fail, so we send data URLs.
 - *Again?* Yes. We met NVIDIA models through this hackathon and Token Factory, and we plan to use both in our next projects. On list prices (public price trackers, 2026-10-27), Nemotron 3 Nano costs about 80% less on input and 90% less on output than Gemini 3.5 Flash-Lite, and Super's output costs about 64% less. We have not run the other models ourselves; in our own tests every Nemotron model met the bar we set for its job.
 
 **NVIDIA Nemotron 3 Nano**
