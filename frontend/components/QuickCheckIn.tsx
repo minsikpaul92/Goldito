@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { SentCheckin, listTodayCheckins, logCareCheckin, logCareCheckins } from "../features/care/careApi";
 import { MEMO_MAX, groupsFor } from "../features/care/checkinOptions";
 import { checkinLabel } from "../features/diary/diaryApi";
+import { CHECKIN_FACE } from "../features/pets/sprites/moodFaces";
+import { usePetLook } from "../features/pets/usePetLook";
 import { formatTime, isoToZoned } from "../features/schedule/dates";
 import { UploadError, uploadMedia } from "../lib/cloudinary";
 import { pickMedia, type PickedMedia } from "../lib/media";
@@ -13,8 +15,10 @@ import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
 import type { CareCheckinKind, Species } from "../types/db";
 import { Art } from "./art/Art";
+import { PetMoodFace } from "./pet/PetMoodFace";
 import { Button } from "./ui/Button";
 import { Icon } from "./ui/Icon";
+import { Screen } from "./ui/Screen";
 import { Sheet } from "./ui/Sheet";
 import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
@@ -23,6 +27,8 @@ type Props = {
   pet: { id: string; name: string; species: Species; ownerName: string };
   /** Opens the pet's photos (the link sits on the "Sent today" list). */
   onPhotos?: () => void;
+  /** The screen's back link and title, above the check-in. */
+  header?: ReactNode;
 };
 
 /** The drawing beside each group and each sent line (Figma sitter art). */
@@ -32,10 +38,11 @@ const GROUP_ART = { meal: "sitter/ate", potty: "sitter/potty", walk: "sitter/wal
  * The 5-second check (phase-06 6.10): tap what happened, one answer per group (#397), then **Send**. The owner gets
  * one notice listing every pick ("Max ate everything · Max seems happy"); a memo typed for something special rides
  * along. A photo can ride along too, shown as a thumbnail until it is sent. A memo alone (nothing picked) is sent as a
- * note. Layout: the Oct 25 design (design site, Expressive prototype `sitter-checkin`): one card of big equal options,
- * the memo beside Add photo, the day's sends.
+ * note. Layout (Oct 27 call, design site `collab-1027` item 1 B): a group with a pick folds to one line (tap it to change),
+ * Mood is picked on the pet's own tamagotchi faces, and a dock pinned at the bottom keeps what is ready next to Send at
+ * any scroll. The memo sits beside Add photo, then the day's sends. The whole screen, so the dock can pin to it.
  */
-export function QuickCheckIn({ pet, onPhotos }: Props) {
+export function QuickCheckIn({ pet, onPhotos, header }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
@@ -43,6 +50,10 @@ export function QuickCheckIn({ pet, onPhotos }: Props) {
   const [sent, setSent] = useState<SentCheckin[]>([]);
   /** One pick per group, not sent yet (`{ meal: "all", mood: "happy" }`); tapping a pick again unpicks it. */
   const [picks, setPicks] = useState<Partial<Record<CareCheckinKind, string>>>({});
+  /** The group opened again to change its pick; any other group with a pick shows as one folded line. */
+  const [reopened, setReopened] = useState<CareCheckinKind | null>(null);
+  const { breed, look } = usePetLook(pet.id);
+  const facePet = { name: pet.name, species: pet.species, breed, look };
   const [memo, setMemo] = useState("");
   const [photo, setPhoto] = useState<PickedMedia | null>(null);
   const [photoOpen, setPhotoOpen] = useState(false);
@@ -95,6 +106,7 @@ export function QuickCheckIn({ pet, onPhotos }: Props) {
       setMemo("");
       setPhoto(null);
       setPicks({});
+      setReopened(null);
       void loadSent();
     } catch (e) {
       errorDialog.show({
@@ -113,141 +125,194 @@ export function QuickCheckIn({ pet, onPhotos }: Props) {
     if (picked) setPhoto(picked);
   };
 
-  return (
-    <View style={styles.wrap} testID={`checkin-${pet.id}`}>
-      <View style={styles.card}>
-        {groups.map((group) => {
-          const walk = group.kind === "walk";
-          return (
-            <View key={group.kind} style={styles.group}>
-              <View style={styles.groupHead}>
-                <Art name={GROUP_ART[group.kind]} size={22} />
-                <Text style={styles.groupLabel}>{group.label}</Text>
-              </View>
-              <View style={[styles.options, walk && styles.optionsWalk]}>
-                {group.options.map((option) => {
-                  const on = picks[group.kind] === option.value;
-                  return (
-                    <Pressable
-                      key={option.value}
-                      accessibilityRole="button"
-                      accessibilityLabel={`${group.label}: ${option.label}`}
-                      aria-pressed={on}
-                      disabled={sending}
-                      onPress={() =>
-                        setPicks((prev) => {
-                          const next = { ...prev };
-                          if (on) delete next[group.kind];
-                          else next[group.kind] = option.value;
-                          return next;
-                        })
-                      }
-                      style={({ pressed }) => [styles.option, walk && styles.optionWalk, on && styles.optionOn, pressed && styles.pressed]}
-                      testID={`checkin-${pet.id}-${group.kind}-${option.value}`}
-                    >
-                      {walk ? (
-                        <>
-                          <Text style={styles.walkNumber}>{option.value}</Text>
-                          <Text style={styles.walkUnit}>min</Text>
-                        </>
-                      ) : (
-                        <Text style={styles.optionText}>
-                          {on ? `✓ ${option.label}` : option.label}
-                        </Text>
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-          );
-        })}
-      </View>
+  const choose = (kind: CareCheckinKind, value: string, on: boolean) => {
+    setPicks((prev) => {
+      const next = { ...prev };
+      if (on) delete next[kind];
+      else next[kind] = value;
+      return next;
+    });
+    // A new pick folds the group; unpicking leaves it open.
+    if (!on) setReopened(null);
+  };
 
-      <View style={styles.memoRow}>
-        <View style={styles.memo}>
-          <TextField
-            label="Anything special? (optional)"
-            value={memo}
-            maxLength={MEMO_MAX}
-            placeholder="Skip for a preset note"
-            onChangeText={(v) => {
-              setMemo(v);
-              setError(null);
-            }}
-            error={error}
-            testID={`checkin-memo-${pet.id}`}
-          />
-        </View>
-        {photo && preview ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="See the photo"
-            onPress={() => setPhotoOpen(true)}
-            style={({ pressed }) => [styles.thumb, pressed && styles.pressed]}
-            testID={`checkin-photo-preview-${pet.id}`}
-          >
-            <Image source={{ uri: preview }} style={styles.fill} resizeMode="cover" accessibilityIgnoresInvertColors />
-          </Pressable>
+  const dock = (
+    <View style={styles.dock}>
+      <View style={styles.readyRow} testID={`checkin-picked-${pet.id}`}>
+        {pickList.length > 0 ? (
+          <>
+            <Text style={styles.readyLabel}>Ready to send:</Text>
+            {pickList.map((p) => (
+              <View key={p.kind} style={styles.readyChip} testID={`checkin-ready-${pet.id}-${p.kind}`}>
+                <Text style={styles.readyChipText}>{checkinLabel(p.kind, p.value).label}</Text>
+              </View>
+            ))}
+          </>
         ) : (
-          <Button
-            label="Add photo"
-            variant="secondary"
-            icon={<Icon name="camera" size={20} color={theme.color.primary} />}
-            disabled={sending}
-            onPress={() => void attachPhoto()}
-            style={styles.photoButton}
-            testID={`checkin-photo-${pet.id}`}
-          />
+          <Text style={styles.ready}>{memo.trim() ? "Ready to send as a note" : "Pick what happened, then Send"}</Text>
         )}
       </View>
-      {photo ? (
-        <TextButton label="Remove photo" onPress={() => setPhoto(null)} disabled={sending} style={styles.right} testID={`checkin-photo-remove-${pet.id}`} />
-      ) : null}
-      <Sheet visible={photoOpen && !!preview} title="Photo" onClose={() => setPhotoOpen(false)} testID={`checkin-photo-view-${pet.id}`}>
-        <View style={styles.big}>
-          {preview ? <Image source={{ uri: preview }} style={styles.fill} resizeMode="contain" accessibilityIgnoresInvertColors /> : null}
-        </View>
-      </Sheet>
-
-      {sent.length > 0 ? (
-        <View style={styles.sentBox} testID={`checkin-sent-${pet.id}`}>
-          <View style={styles.sentHead}>
-            <Text style={styles.sentTitle}>{`Sent to ${pet.ownerName} today`}</Text>
-            {onPhotos ? <TextButton label={`Photos of ${pet.name}`} onPress={onPhotos} testID="checkin-photos" /> : null}
-          </View>
-          {sent.slice(0, 4).map((c) => {
-            const { label } = checkinLabel(c.kind, c.value);
-            return (
-              <View key={c.id} style={styles.sentRow} testID={`checkin-sent-item-${c.id}`}>
-                {c.kind in GROUP_ART ? <Art name={GROUP_ART[c.kind as keyof typeof GROUP_ART]} size={20} /> : <Icon name="tip" size={18} color={theme.color.text} />}
-                <Text style={styles.sentLine} numberOfLines={1}>
-                  {`${label}${c.note ? ` · “${c.note}”` : ""}`}
-                </Text>
-                <Text style={styles.sentTime}>{formatTime(isoToZoned(c.at).time)}</Text>
-              </View>
-            );
-          })}
-          {sent.length > 4 ? <Text style={styles.sentMore}>{`+ ${sent.length - 4} earlier`}</Text> : null}
-        </View>
-      ) : onPhotos ? (
-        <TextButton label={`Photos of ${pet.name}`} onPress={onPhotos} style={styles.left} testID="checkin-photos" />
-      ) : null}
-
-      <Text style={styles.ready} testID={`checkin-picked-${pet.id}`}>
-        {pickList.length > 0
-          ? `Ready to send: ${pickList.map((p) => checkinLabel(p.kind, p.value).label).join(", ")}`
-          : memo.trim()
-            ? "Ready to send as a note"
-            : "Pick what happened, add a memo or photo if you like, then Send."}
-      </Text>
       <Button
-        label={sending ? "Sending…" : "Send"}
+        label={sending ? "Sending…" : `Send to ${pet.ownerName}`}
         disabled={sending || (pickList.length === 0 && !memo.trim())}
         onPress={() => void send()}
         testID={`checkin-send-${pet.id}`}
       />
     </View>
+  );
+
+  return (
+    <Screen testID="sitter-checkin-screen" footer={dock}>
+      {header}
+      <View style={styles.wrap} testID={`checkin-${pet.id}`}>
+        <View style={styles.card}>
+          {groups.map((group) => {
+            const walk = group.kind === "walk";
+            const mood = group.kind === "mood";
+            const value = picks[group.kind];
+            const picked = group.options.find((o) => o.value === value);
+            if (picked && reopened !== group.kind) {
+              return (
+                <Pressable
+                  key={group.kind}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${group.label}: ${picked.label}. Change`}
+                  disabled={sending}
+                  onPress={() => setReopened(group.kind)}
+                  style={({ pressed }) => [styles.folded, pressed && styles.pressed]}
+                  testID={`checkin-${pet.id}-${group.kind}-row`}
+                >
+                  <Art name={GROUP_ART[group.kind]} size={22} />
+                  <Text style={styles.groupLabel}>{group.label}</Text>
+                  <View style={styles.foldedChip}>
+                    {mood ? <PetMoodFace pet={facePet} mood={CHECKIN_FACE[picked.value] ?? "idle"} size={24} decorative /> : null}
+                    <Text style={styles.foldedText}>{picked.label}</Text>
+                  </View>
+                  <Icon name="check" size={18} color={theme.color.primary} />
+                </Pressable>
+              );
+            }
+            return (
+              <View key={group.kind} style={styles.group}>
+                <View style={styles.groupHead}>
+                  <Art name={GROUP_ART[group.kind]} size={22} />
+                  <Text style={styles.groupLabel}>{group.label}</Text>
+                </View>
+                <View style={[styles.options, walk && styles.optionsWalk]}>
+                  {group.options.map((option) => {
+                    const on = value === option.value;
+                    return (
+                      <Pressable
+                        key={option.value}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${group.label}: ${option.label}`}
+                        aria-pressed={on}
+                        disabled={sending}
+                        onPress={() => choose(group.kind, option.value, on)}
+                        style={({ pressed }) => [
+                          styles.option,
+                          walk && styles.optionWalk,
+                          mood && styles.optionFace,
+                          on && styles.optionOn,
+                          pressed && styles.pressed,
+                        ]}
+                        testID={`checkin-${pet.id}-${group.kind}-${option.value}`}
+                      >
+                        {walk ? (
+                          <>
+                            <Text style={styles.walkNumber}>{option.value}</Text>
+                            <Text style={styles.walkUnit}>min</Text>
+                          </>
+                        ) : mood ? (
+                          <>
+                            <PetMoodFace pet={facePet} mood={CHECKIN_FACE[option.value] ?? "idle"} size={48} decorative />
+                            <Text style={styles.faceText} numberOfLines={1}>
+                              {option.label}
+                            </Text>
+                          </>
+                        ) : (
+                          <Text style={styles.optionText}>{on ? `✓ ${option.label}` : option.label}</Text>
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            );
+          })}
+        </View>
+
+        <View style={styles.memoRow}>
+          <View style={styles.memo}>
+            <TextField
+              label="Anything special? (optional)"
+              value={memo}
+              maxLength={MEMO_MAX}
+              placeholder="Skip for a preset note"
+              onChangeText={(v) => {
+                setMemo(v);
+                setError(null);
+              }}
+              error={error}
+              testID={`checkin-memo-${pet.id}`}
+            />
+          </View>
+          {photo && preview ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="See the photo"
+              onPress={() => setPhotoOpen(true)}
+              style={({ pressed }) => [styles.thumb, pressed && styles.pressed]}
+              testID={`checkin-photo-preview-${pet.id}`}
+            >
+              <Image source={{ uri: preview }} style={styles.fill} resizeMode="cover" accessibilityIgnoresInvertColors />
+            </Pressable>
+          ) : (
+            <Button
+              label="Add photo"
+              variant="secondary"
+              icon={<Icon name="camera" size={20} color={theme.color.primary} />}
+              disabled={sending}
+              onPress={() => void attachPhoto()}
+              style={styles.photoButton}
+              testID={`checkin-photo-${pet.id}`}
+            />
+          )}
+        </View>
+        {photo ? (
+          <TextButton label="Remove photo" onPress={() => setPhoto(null)} disabled={sending} style={styles.right} testID={`checkin-photo-remove-${pet.id}`} />
+        ) : null}
+        <Sheet visible={photoOpen && !!preview} title="Photo" onClose={() => setPhotoOpen(false)} testID={`checkin-photo-view-${pet.id}`}>
+          <View style={styles.big}>
+            {preview ? <Image source={{ uri: preview }} style={styles.fill} resizeMode="contain" accessibilityIgnoresInvertColors /> : null}
+          </View>
+        </Sheet>
+
+        {sent.length > 0 ? (
+          <View style={styles.sentBox} testID={`checkin-sent-${pet.id}`}>
+            <View style={styles.sentHead}>
+              <Text style={styles.sentTitle}>{`Sent to ${pet.ownerName} today`}</Text>
+              {onPhotos ? <TextButton label={`Photos of ${pet.name}`} onPress={onPhotos} testID="checkin-photos" /> : null}
+            </View>
+            {sent.slice(0, 4).map((c) => {
+              const { label } = checkinLabel(c.kind, c.value);
+              return (
+                <View key={c.id} style={styles.sentRow} testID={`checkin-sent-item-${c.id}`}>
+                  {c.kind in GROUP_ART ? <Art name={GROUP_ART[c.kind as keyof typeof GROUP_ART]} size={20} /> : <Icon name="tip" size={18} color={theme.color.text} />}
+                  <Text style={styles.sentLine} numberOfLines={1}>
+                    {`${label}${c.note ? ` · “${c.note}”` : ""}`}
+                  </Text>
+                  <Text style={styles.sentTime}>{formatTime(isoToZoned(c.at).time)}</Text>
+                </View>
+              );
+            })}
+            {sent.length > 4 ? <Text style={styles.sentMore}>{`+ ${sent.length - 4} earlier`}</Text> : null}
+          </View>
+        ) : onPhotos ? (
+          <TextButton label={`Photos of ${pet.name}`} onPress={onPhotos} style={styles.left} testID="checkin-photos" />
+        ) : null}
+      </View>
+    </Screen>
   );
 }
 
@@ -279,9 +344,35 @@ const makeStyles = (theme: Theme) => {
       justifyContent: "center",
     },
     optionWalk: { flexBasis: 0, flexGrow: 1, paddingHorizontal: 0, borderRadius: theme.radius.md, minHeight: 52, gap: 0 },
+    // Mood: four faces a row, the word under each.
+    optionFace: { flexBasis: "22%", flexGrow: 1, minHeight: 84, paddingHorizontal: 2, paddingVertical: 6, gap: 2, borderRadius: theme.radius.md },
     optionOn: { backgroundColor: theme.color.accent, borderColor: theme.color.primary, borderWidth: 2 },
     pressed: { opacity: 0.6 },
     optionText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    faceText: { fontSize: theme.fontSize.caption, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    // A group with a pick: one line, the pick as a chip and a check; a tap opens it again.
+    folded: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
+      minHeight: 48,
+      paddingHorizontal: theme.spacing.sm,
+      borderRadius: theme.radius.lg,
+      backgroundColor: theme.color.background,
+    },
+    foldedChip: {
+      marginLeft: "auto",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      minHeight: 30,
+      paddingHorizontal: 10,
+      borderRadius: theme.radius.pill,
+      borderWidth: 1.5,
+      borderColor: theme.color.primary,
+      backgroundColor: theme.color.accent,
+    },
+    foldedText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     walkNumber: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     walkUnit: { fontSize: theme.fontSize.caption, color: theme.color.textMuted },
     memoRow: { flexDirection: "row", alignItems: "flex-end", gap: theme.spacing.sm },
@@ -299,6 +390,19 @@ const makeStyles = (theme: Theme) => {
     sentLine: { flex: 1, minWidth: 0, fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     sentTime: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     sentMore: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    ready: { textAlign: "center", fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    // The dock pinned above the bottom edge: what goes out, then Send.
+    dock: {
+      gap: theme.spacing.sm,
+      padding: theme.spacing.sm,
+      borderRadius: theme.radius.xl,
+      borderWidth: 1,
+      borderColor: theme.color.border,
+      backgroundColor: theme.color.surface,
+    },
+    readyRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6, minHeight: 28 },
+    readyLabel: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
+    readyChip: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: theme.radius.pill, borderWidth: 1, borderColor: theme.color.primary, backgroundColor: theme.color.accent },
+    readyChipText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    ready: { flex: 1, textAlign: "center", fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
   });
 };
