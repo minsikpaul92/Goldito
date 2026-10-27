@@ -12,7 +12,7 @@
 
 | Order | Doc | What to look at |
 | :--- | :--- | :--- |
-| 1 | Root [README.md](../../../README.md): *How Goldito Works* · *A Stay with Goldito* | One-page product summary, the 5-stage demo path |
+| 1 | Root [README.md](../../../README.md): *How Goldito Works* | One-page product summary, the 5-stage flow |
 | 2 | [full-process.md](../full-process.md) | The 5-stage flow · decisions D27 to D47 · §9 open questions (Seulgi's: #1 delay formula, #5 tone data, #8 zero-retention, #9 mood meter data) |
 | 3 | The 2026-10-09 work split (removed; in git history) | Who does what, §4 rules to avoid conflicts |
 | 4 | **This doc** | My task list Q.0 to Q.10 |

@@ -20,9 +20,11 @@ the server owns every fact, and a person approves every word.
 <img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner adds a photo of Max, and Goldito draws Max as an 8-bit pet on Home" width="360">
 -->
 
-**[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up) · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Judge quick start](#try-it-in-60-seconds) · [Run it](#run-it-yourself)
+**[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up) · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
 
 </div>
+
+> No sign-up: open the demo and tap **Try the demo**. The backend is on a free plan, so the first load after a quiet spell can take 30 to 50 seconds. On a computer the app runs in a phone frame (click = tap).
 
 ---
 
@@ -107,22 +109,6 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 <!-- TODO(image): treat check GIF, about 360 px wide. Snap a label for Max (allergic to chicken), "animal fat" is caught, the red DANGER screen shows with source links.
 <img src="docs/assets/readme/treat-check-danger.gif" alt="A treat label is checked for Max, chicken hidden in animal fat is caught, and a red DANGER screen shows the sources" width="360">
 -->
-
----
-
-## Try it in 60 seconds
-
-> [!TIP]
-> No setup: open **[goldito-petcare.vercel.app](https://goldito-petcare.vercel.app)**, tap **Try the demo**, then **Robert, the owner** or **Chloe, the sitter**. No sign-up and no password. The demo people and pets are fictional.
-
-1. On a computer the app runs inside a phone frame: **click = tap, drag or scroll = swipe**. Sample photos are built in, and a demo trip can **simulate the drive**, so no camera or GPS is needed.
-2. To watch both sides of one stay, open **[the split view](https://goldito-petcare.vercel.app/?view=split)** (a window at least 900 px wide) and log in as Robert on one phone and Chloe on the other.
-3. Payment is a demo: no card is asked for.
-
-> [!NOTE]
-> The backend runs on a free plan. The first request after a quiet spell can take 30 to 50 seconds while it wakes up; a job pings it every 10 minutes to keep that rare.
-
-**Demo video:** _coming_ <!-- TODO(submission): the YouTube link (under 3 minutes, public, English voice-over on Token Factory and Nemotron). -->
 
 ---
 
@@ -232,55 +218,6 @@ Tap a stage for the details.
 - **What a sitter gets back:** in our own work, about 30 minutes a day (40 minutes of messages, updates, reports, and schedule checks down to about 10, our estimate).
 - **How it pays (plan):** Goldito takes **no cut of the sitting fee**. The AI features come with a **subscription**, and optional extras are sold: **outfits for the 8-bit pet** and **sticker packs** for the diary.
 <!-- TODO(Q8): what real owners and sitters said, once they have tried it. -->
-
----
-
-## A Stay with Goldito (demo path)
-
-Thanksgiving weekend, Oct 9 to 12: Robert leaves **Max** (dog, Maltese, allergic to chicken) and **Mochi** (cat) with sitter Chloe, whom he has never met. **System** means Goldito's AI and rules; a person approves everything the AI sends to the other side.
-
-<details>
-<summary><b>The stay, step by step</b>: 23 steps and the exceptions (click to expand)</summary>
-
-| Flow | Actor | What happens |
-| :--- | :--- | :--- |
-| **Inquiry** | 1 · Owner | Searches sitters for Oct 9 to 12 near home, opens Chloe's profile, and taps **Start chat**. The chat opens with the stay card (dates, times, Max and Mochi) and a hello. |
-| | 2 · System → Sitter | Suggests reply chips for Chloe. Tapping one drafts a short reply in her own voice from her calendar, rates, house policy, and the pets' profiles. Chloe edits if she wants and taps **Send**. |
-| | 3 · System | Reads Chloe's yes, holds her dates for Robert, and brings up the **Meet & Greet** card. A step bar (Request · Meet · Confirm · Pay · Stay) shows where they are. |
-| **Meet & Greet** | 4 · Owner | Writes the care note, such as *"8 AM kibble · 2 PM pill in a treat · no knocking"*, or taps Quick add chips. |
-| | 5 · System | Nemotron turns the note into a timed **checklist** and **Heads-up** cards; Robert reviews and saves. |
-| | 6 · Owner | Requests a Meet & Greet: in person at a park near home, or online. |
-| | 7 · Sitter | Accepts, changes the time, or asks to skip. For online, the backend creates the **Google Meet** link and calendar invites. |
-| | 8 · Owner & Sitter | Meet, go through the checklist, and mark it done. |
-| **Booking** | 9 · Owner & Sitter | Robert taps **I'd like to book**; Chloe taps **I accept**. Either can still decline with a reason chip. |
-| | 10 · Sitter | Sends the **final quote** with one tap. The server calculates it, with the holiday and second-pet rates. |
-| | 11 · Owner | Confirms the quote, signs the consent forms, and **pays (demo)**. Chloe's address, visitor parking, and the packing list open. |
-| **Care & Pet Transit** | 12 · Owner & Sitter | Agree on drop-off and pick-up as one pair in the chat. Five minutes before, the traveller is reminded. |
-| | 13 · Owner | Taps **Start trip** and shares live location until arrival (or starts without sharing). The chat says *on the way*, then *arrived*; Chloe follows the live map and ETA. |
-| | 14 · Sitter | Taps **Received**. Robert hears that care has started. |
-| | 15 · Sitter | Ticks tasks (the pill, with a photo), taps meal, walk, potty, and nap on the pets' 8-bit room, and sends quick check-ins with photos. Robert sees each update live. |
-| | 16 · Owner | Taps **Ask for a photo**; Chloe's next photo answers it, with a one-line caption. |
-| | 17 · System → Sitter | In the evening, suggests chips from the day's records and photos. Chloe turns off a wrong one and adds one short line; Nemotron writes the **daily note** in her voice; she approves it. The album sorts itself into Meals · Walks · Naps. |
-| | 18 · Owner | Reads the daily note in the Diary and decorates the page with a sticker of Max. |
-| **Completion** | 19 · Owner | On pick-up day taps **Start trip** and shares location. |
-| | 20 · Sitter | Meets Robert at the agreed spot and taps **Returned** after a confirm sheet (with a warning if it is early). |
-| | 21 · System | Tells Robert *"Max and Mochi are home safe 🏠"* and asks for a review. |
-| | 22 · Owner & Sitter | Robert rates Chloe and adds her to favorites; Chloe reviews Robert and gives each pet a medal. |
-| | 23 · System | Nemotron turns the stay into each pet's **Life Record** and indexes it, so the next chat, checklist, and request card already know the pets. |
-
-**Exceptions**
-
-| When | What happens |
-| :--- | :--- |
-| The sitter declines, or the owner decides against the sitter after meeting | A reason chip; the dates are released and the owner can find another sitter |
-| Either side wants to skip the Meet & Greet | The other must agree; if not, the request is cancelled |
-| No Meet & Greet time within 2 days | Both are asked to set one, skip it, or decline; after 3 more quiet days the request is cancelled |
-| A booking time has already passed | The app says which time and lets the owner pick new times |
-| The owner declines to share location | No live map; the meeting place is shown with **Open in Google Maps** |
-| The AI is slow or unavailable | Fixed chips, a plain-list daily note, or a photo posted without a caption, never an error screen |
-| The sitter drives to the owner's home | The entry codes open only 2 hours before, and the owner is told when they open |
-
-</details>
 
 ---
 

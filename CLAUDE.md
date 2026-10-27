@@ -21,7 +21,7 @@ Every feature must pass:
 
 **Product flow (source of truth):** `docs/plan/full-process.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D47).
 
-**Demo north star:** The 5-stage flow in root `README.md` — *How Goldito Works* and the demo path *A Stay with Goldito* — must work end-to-end before hackathon submit.
+**Demo north star:** The 5-stage flow in root `README.md` — *How Goldito Works* (demo path: `docs/plan/full-process.md` §6) — must work end-to-end before hackathon submit.
 
 **Hackathon hard rules:** Runtime on Token Factory; at least one **NVIDIA open-source model (Nemotron)**; public repo + MIT; demo stays up until judging ends; no real PII in repo or prompts.
 
@@ -276,7 +276,7 @@ Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; c
 
 - Public demo URL + test owner/sitter accounts documented
 - Root README Getting Started runs the project
-- Video path matches *A Stay with Goldito* (5 stages, `docs/plan/full-process.md` §6)
+- Video path matches the demo path (5 stages, `docs/plan/full-process.md` §6)
 - Feedback on Token Factory / Nemotron filled in README log
 - Design feels like a **product**, not a single API demo page
 
