@@ -104,9 +104,7 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 - **Danger is loud:** a DANGER verdict opens a red screen that only "I understand" closes, and a sitter's DANGER also notifies the owner.
 - Code: [`services/tavily.py`](backend/app/services/tavily.py) · [`services/breed_needs.py`](backend/app/services/breed_needs.py) · [`routers/ai_safety_check.py`](backend/app/routers/ai_safety_check.py)
 
-<!-- TODO(image): treat check GIF, about 360 px wide. Snap a label for Max (allergic to chicken), "animal fat" is caught, the red DANGER screen shows with source links.
-<img src="docs/assets/readme/treat-check-danger.gif" alt="A treat label is checked for Max, chicken hidden in animal fat is caught, and a red DANGER screen shows the sources" width="360">
--->
+<img src="docs/assets/readme/treat-check.gif" alt="Two treat labels are checked for Biscuit, who is allergic to chicken: a label with hidden chicken sources gets a WARNING, and a label that names chicken and garlic powder gets a red DANGER screen" width="360">
 
 ---
 
