@@ -90,11 +90,14 @@ test.describe("judge panel", () => {
     // The reset carries this browser's seat holder id: the backend resets only the seat it holds.
     expect(resets[0].holder).toMatch(/^[0-9a-f-]{36}$/);
 
+    // The panel is off while the phone reloads into the scene (no account for a moment), so wait for it to come back.
+    await expect(page.getByTestId("judge-replay")).toBeEnabled();
     await page.getByTestId("judge-replay").click();
     await expect.poll(() => resets.length).toBe(2);
 
     // Mood keeps the stay: no reset.
     await page.getByTestId("judge-more").click();
+    await expect(page.getByTestId("judge-scene-mood")).toBeEnabled();
     await page.getByTestId("judge-scene-mood").click();
     await expect.poll(() => phoneUrl(page)).toMatch(/\/owner\/snap\/mood$/);
     expect(resets).toHaveLength(2);
