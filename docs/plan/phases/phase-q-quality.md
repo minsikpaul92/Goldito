@@ -20,7 +20,7 @@
 | 6 | test-run.md | Starting point for hand tests · demo reset states (`empty` · `pets` · `confirmed` · `ready` · `in_care`) |
 | 7 | The GitHub issue form **QA feedback** (`.github/ISSUE_TEMPLATE/qa-feedback.yml`) · earlier examples in the 2026-10-08 feedback (removed; in git history) | Where to post feedback and in what format |
 | 8 | The 2026-10-08 code review §5 · §6 (removed; in git history) | Details of the M · L items I take (symptom → cause → fix → test) |
-| When needed | P0-ai-prompt-playbook.md · [README.md](../README.md) §8 (anonymization) · [DESIGN.md](../../../DESIGN.md) | Prompts · anonymization rules · UI tokens |
+| When needed | P0-ai-prompt-playbook.md · README.md §8 (anonymization) · [DESIGN.md](../../../DESIGN.md) | Prompts · anonymization rules · UI tokens |
 
 ### 0.2 Environment (Q.0)
 

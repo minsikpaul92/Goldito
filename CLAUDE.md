@@ -45,7 +45,7 @@ Every feature must pass:
 - Product: `README.md`
 - **Feature status + test scenarios:** `docs/plan/test-guide.md`
 - **Product flow (5 stages):** root `README.md` (*How Goldito works*), decisions D27 to D47 in `docs/plan/phases/architecture.md`
-- Plan & data model: `docs/plan/README.md`
+- Plan & data model: `docs/plan/phases/architecture.md`
 - **Active task queue:** [GitHub issues](https://github.com/minsikpaul92/Goldito/issues): milestone = priority (P0 hackathon, P1, P2 after hackathon), assignee = owner. There is no TODO file: do not create or update one, read the assigned issue and update the issue (comment, checklist, PR `Closes #N`).
 - **Blueprint (decisions, repo layout, routes, env, API contract):** `docs/plan/phases/architecture.md`
 - **Design guide (tokens, components, UI patterns):** `DESIGN.md` — §0 maps Muk's Figma (source of truth) to the code; every screen and button: the screen map (`node frontend/scripts/screen-map.mjs` writes `docs/design/screen-map.md`; generated, not committed)

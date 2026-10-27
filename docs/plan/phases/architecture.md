@@ -1,7 +1,7 @@
 # Goldito P0: shared design blueprint (every phase follows it)
 
 > Every phase doc is written **on top of the decisions, structure, and rules in this doc**.
-> If this doc disagrees with [README.md §9 Data Model (summary)](../README.md#9-data-model-summary) or the Playbook, **this doc + the phase doc win**.
+> If this doc disagrees with README.md §9 Data Model (summary) or the Playbook, **this doc + the phase doc win**.
 > To change a decision, fix the §1 decision log in this doc first, then update the affected phase docs with it.
 > **The source of truth for the product flow (5 stages: Inquiry → Meet & Greet → Booking → Care & Transit → Completion) is [the README, How Goldito works](../../../README.md#how-goldito-works)** (D27 to D47). This doc sets the structure and rules that build that flow.
 

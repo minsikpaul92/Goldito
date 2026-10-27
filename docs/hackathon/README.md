@@ -22,7 +22,7 @@ If anything here conflicts with the [Official Rules](https://nebiusglobalaihacka
 1. **Runs on Nebius** — makes a runtime call to the **Nebius Token Factory** inference API, *or* is deployed on Nebius AI Cloud (Serverless Jobs, Serverless Endpoints, DevPods).
 2. **Uses at least one NVIDIA open source model** — Nemotron, GR00T, Cosmos, or Sonic.
    Meta Llama models do **not** count, even when served on NVIDIA GPUs.
-   Verified NVIDIA models on Token Factory: see [plan § AI Models](../plan/README.md#6-ai-models-verified-sep-28-2026).
+   Verified NVIDIA models on Token Factory: see [model-ids.md](../plan/phases/notes/model-ids.md).
 3. **Fits one track** — a genuine attempt at the track goal, not a rebrand of an unrelated idea.
 
 ---

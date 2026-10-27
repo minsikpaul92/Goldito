@@ -1,6 +1,18 @@
 [
   {
     "version": "Unreleased",
+    "title": "2026-10-25",
+    "sections": [
+      {
+        "heading": "Added",
+        "items": [
+          "Make your own 8-bit pet from a photo: add a photo of your pet when you sign up, and Goldito draws it as an 8-bit character from its breed, size and the colors in the photo. It lives on your Home."
+        ]
+      }
+    ]
+  },
+  {
+    "version": "Unreleased",
     "title": "2026-10-21",
     "sections": [
       {

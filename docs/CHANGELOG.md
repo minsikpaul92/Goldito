@@ -4,6 +4,12 @@ All notable **user-facing** Goldito changes. Format based on [Keep a Changelog](
 
 The in-app **Menu → What's new** screen (Phase 11.11) shows the released entries of this file, **from 1.0.0 on**: what people can do now that they could not at launch. Everything before 1.0.0 (the hackathon build, P0) stays below as history and is never shown in the app. A release may be split by day (the same version under several dated headings): What's new shows one card per dated heading, and a heading with no date is left out of the app. Release rule: when a feature ships after launch (P1, post-hackathon, post-release), add its line under the new version here and run `node scripts/changelog.mjs` in `frontend/` (it writes `features/settings/changelog.json`; CI fails when the two differ). Planned items are never shown in the app.
 
+## [Unreleased] — 2026-10-25
+
+### Added
+
+- Make your own 8-bit pet from a photo: add a photo of your pet when you sign up, and Goldito draws it as an 8-bit character from its breed, size and the colors in the photo. It lives on your Home.
+
 ## [Unreleased] — 2026-10-21
 
 ### Added
