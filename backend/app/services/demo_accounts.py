@@ -1,7 +1,8 @@
 """The demo accounts: who they are, how to find them, and the sitter's services and prices.
 
 The accounts come in sets, one owner and one sitter per teammate, so a reset only touches the set of whoever asks
-for it. The first set is the default pair (Robert and Chloe) that the judges and the seed always used.
+for it. The first set is the default pair (Robert and Chloe) that the seed always used; the four judge sets (#411)
+keep the same names and are held by one judge at a time.
 Shared by `scripts/seed_demo.py`, `scripts/reset_demo.py` and the demo reset service.
 """
 
@@ -78,6 +79,8 @@ class DemoSet:
     owner: DemoUser
     sitter: DemoUser
     pets: tuple[Pet, ...] = MAX_AND_MOCHI
+    # A Judge seat (#411): one browser holds the set at a time (015t), and taking it resets both accounts.
+    judge: bool = False
 
 
 # Keep in sync with frontend/lib/demo.ts.
@@ -118,8 +121,21 @@ DEMO_SETS = (
             ("Leo", "cat", "British Shorthair", 4, 5.1, []),
         ),
     ),
+    # Judge seats (#411): the judges keep the story names (Robert, Chloe, Max, Mochi), so every judge sees the same
+    # Treat check results and scenes.
+    *(
+        DemoSet(
+            f"judge{n}",
+            f"Judge {n}",
+            DemoUser(f"demo-owner-judge{n}@goldito.test", "owner", "Robert"),
+            DemoUser(f"demo-sitter-judge{n}@goldito.test", "sitter", "Chloe"),
+            judge=True,
+        )
+        for n in range(1, 5)
+    ),
 )
 DEFAULT_SET = DEMO_SETS[0]
+JUDGE_SETS = tuple(s for s in DEMO_SETS if s.judge)
 # Every demo account, for the seed.
 DEMO_USERS = tuple(user for demo_set in DEMO_SETS for user in (demo_set.owner, demo_set.sitter))
 
@@ -192,6 +208,12 @@ DEMO_SERVICE_AREAS = {
     "demo-sitter-allen@goldito.test": "Toronto M4W",
     "demo-sitter-daniel@goldito.test": "Toronto M6A",
 }
+
+# The judge sets live where the story set (Robert and Chloe) lives.
+for _judge in JUDGE_SETS:
+    DEMO_HOMES[_judge.owner.email] = DEMO_HOMES[DEFAULT_SET.owner.email]
+    DEMO_HOMES[_judge.sitter.email] = DEMO_HOMES[DEFAULT_SET.sitter.email]
+    DEMO_SERVICE_AREAS[_judge.sitter.email] = DEMO_SERVICE_AREAS[DEFAULT_SET.sitter.email]
 
 # A demo account that is not in DEMO_HOMES gets a point by role.
 DEMO_HOME_POINTS = {

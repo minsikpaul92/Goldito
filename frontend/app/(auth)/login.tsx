@@ -14,15 +14,19 @@ import { TextButton } from "../../components/ui/TextButton";
 import { Select } from "../../components/ui/Select";
 import { TextField } from "../../components/ui/TextField";
 import { describeAuthError } from "../../lib/authErrors";
+import { ChoiceChips } from "../../components/ui/ChoiceChips";
 import {
   DEMO_PASSWORD,
-  DEMO_SETS,
+  JUDGE_SETS,
+  TEAM_SETS,
   demoSetFor,
   isDemoEnabled,
   isDemoRole,
   isDemoToolsBuild,
 } from "../../lib/demo";
-import { Role } from "../../providers/SessionProvider";
+import { SeatStatus, fetchSeats, isJudgeSetKey, takeSeat } from "../../lib/judgeSeat";
+import { postJudgeSeat } from "../../components/shell/judgeMessages";
+import { Role, useSession } from "../../providers/SessionProvider";
 import {
   SUPABASE_NOT_CONFIGURED,
   getSupabase,
@@ -39,8 +43,20 @@ export default function LoginScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const params = useLocalSearchParams<{ demo?: string; set?: string }>();
-  // Whose demo accounts the two buttons sign in to. Only the team's build offers the choice.
-  const [setKey, setSetKey] = useState(() => demoSetFor(params.set).key);
+  const { seatNotice } = useSession();
+  // Whose demo accounts the two buttons sign in to. The team's build picks a team set or "Judge seats"; the judging
+  // build offers only the Judge seats (#411).
+  const [team, setTeam] = useState(() => {
+    if (!isDemoToolsBuild) return JUDGES;
+    return isJudgeSetKey(params.set ?? "") ? JUDGES : demoSetFor(params.set).key;
+  });
+  const judging = team === JUDGES;
+  const seats = useSeats(isDemoEnabled && isSupabaseConfigured && judging);
+  const [seatPick, setSeatPick] = useState<string | null>(() => (isJudgeSetKey(params.set ?? "") ? params.set! : null));
+  // The picked seat, or the first free one.
+  const seatKey = seatPick ?? seats?.find((s) => s.mine)?.set ?? seats?.find((s) => !s.inUse)?.set ?? null;
+  const allBusy = seats !== null && seats.every((s) => s.inUse && !s.mine);
+  const setKey = judging ? (seatKey ?? JUDGE_SETS[0].key) : team;
   const demoTried = useRef(false);
   const demoSet = demoSetFor(setKey);
 
@@ -50,7 +66,7 @@ export default function LoginScreen() {
     password !== "" &&
     !submitting;
 
-  async function signInWith(emailValue: string, passwordValue: string) {
+  async function signInWith(emailValue: string, passwordValue: string): Promise<boolean> {
     setSubmitting(true);
     setError(null);
     const { error: authError } = await getSupabase().auth.signInWithPassword({
@@ -60,28 +76,46 @@ export default function LoginScreen() {
     setSubmitting(false);
     // On success the session changes and the (auth) layout sends the user on.
     if (authError) setError(describeAuthError(authError));
+    return !authError;
   }
 
   function signIn() {
     if (canSubmit) void signInWith(email, password);
   }
 
-  // Try demo (OB.3): fill the seeded account so the judge sees what happens, then sign in.
-  function tryDemo(role: Role) {
+  // Try demo (OB.3): fill the seeded account so the judge sees what happens, then sign in. A judge set takes its
+  // seat first (the backend resets the set for a new judge), and in the split view the other phone signs in too.
+  async function tryDemo(role: Role) {
     if (!isDemoEnabled || !isSupabaseConfigured || submitting) return;
+    if (judging) {
+      if (!seatKey) {
+        setError(BUSY);
+        return;
+      }
+      setSubmitting(true);
+      setError(null);
+      try {
+        await takeSeat(seatKey);
+      } catch (seatError) {
+        setSubmitting(false);
+        setError(seatError instanceof Error ? seatError.message : "Try again.");
+        setSeatPick(null);
+        return;
+      }
+    }
     const { email: demoEmail } = demoSetFor(setKey)[role];
     setEmail(demoEmail);
     setPassword(DEMO_PASSWORD);
-    void signInWith(demoEmail, DEMO_PASSWORD);
+    if ((await signInWith(demoEmail, DEMO_PASSWORD)) && judging) postJudgeSeat(setKey, role);
   }
 
-  // /login?demo=owner|sitter does the same (desktop side panel 10.9, split view 10.10).
+  // /login?demo=owner|sitter does the same (desktop side panel 10.9, split view 10.10). A judge waits for the seats.
   useEffect(() => {
-    if (demoTried.current || !isDemoRole(params.demo)) return;
+    if (demoTried.current || !isDemoRole(params.demo) || (judging && seats === null)) return;
     demoTried.current = true;
-    tryDemo(params.demo);
-    // Once per visit; tryDemo only reads constants and state setters.
-  }, [params.demo]);
+    void tryDemo(params.demo);
+    // Once per visit; tryDemo reads the seats, which this waits for.
+  }, [params.demo, seats]);
 
   return (
     <Screen contentStyle={styles.content}>
@@ -147,20 +181,42 @@ export default function LoginScreen() {
             {isDemoToolsBuild ? (
               <Select
                 label="Whose demo"
-                value={setKey}
-                options={DEMO_SETS.map((set) => ({
-                  value: set.key,
-                  label: set.label,
-                }))}
-                onChange={setSetKey}
+                value={team}
+                options={[
+                  ...TEAM_SETS.map((set) => ({ value: set.key, label: set.label })),
+                  { value: JUDGES, label: "Judge seats" },
+                ]}
+                onChange={setTeam}
                 testID="demo-set"
               />
+            ) : null}
+            {judging ? (
+              <ChoiceChips
+                options={JUDGE_SETS.map((set) => {
+                  const seat = seats?.find((s) => s.set === set.key);
+                  const taken = Boolean(seat?.inUse && !seat.mine);
+                  return { value: set.key, label: taken ? `${set.label} · In use` : set.label, disabled: taken };
+                })}
+                value={seatKey ? [seatKey] : []}
+                onChange={(picked) => setSeatPick(picked[0] ?? null)}
+                testID="judge-seat"
+              />
+            ) : null}
+            {judging && allBusy ? (
+              <Text style={styles.hint} testID="judge-seats-busy">
+                {BUSY}
+              </Text>
+            ) : null}
+            {seatNotice && judging ? (
+              <Text style={styles.error} testID="judge-seat-notice">
+                {seatNotice}
+              </Text>
             ) : null}
             <View style={styles.demoButtons}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Demo owner, ${demoSet.owner.name}`}
-                onPress={() => tryDemo("owner")}
+                onPress={() => void tryDemo("owner")}
                 disabled={submitting || !isSupabaseConfigured}
                 style={({ pressed }) => [styles.demoTile, styles.demoOwner, pressed && styles.pressed]}
                 testID="demo-owner"
@@ -171,7 +227,7 @@ export default function LoginScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Demo sitter, ${demoSet.sitter.name}`}
-                onPress={() => tryDemo("sitter")}
+                onPress={() => void tryDemo("sitter")}
                 disabled={submitting || !isSupabaseConfigured}
                 style={({ pressed }) => [styles.demoTile, styles.demoSitter, pressed && styles.pressed]}
                 testID="demo-sitter"
@@ -194,6 +250,32 @@ export default function LoginScreen() {
       </View>
     </Screen>
   );
+}
+
+const JUDGES = "judges";
+const BUSY = "All judge seats are busy. Try again in a few minutes.";
+const SEATS_POLL_MS = 15_000;
+
+/** The Judge seats and who holds them, read again every 15 seconds while the picker shows. Null until the first read. */
+function useSeats(on: boolean): SeatStatus[] | null {
+  const [seats, setSeats] = useState<SeatStatus[] | null>(null);
+  useEffect(() => {
+    if (!on) return;
+    let active = true;
+    const read = () =>
+      fetchSeats().then(
+        (next) => active && setSeats(next),
+        // Seats unknown (no 015t yet, offline): show every seat as free; taking one still asks the server.
+        () => active && setSeats(JUDGE_SETS.map((set) => ({ set: set.key, inUse: false, mine: false }))),
+      );
+    void read();
+    const timer = setInterval(read, SEATS_POLL_MS);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [on]);
+  return seats;
 }
 
 const makeStyles = (theme: Theme) =>

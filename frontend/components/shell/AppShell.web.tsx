@@ -11,6 +11,12 @@ import {
   resolvePresentation,
 } from "./presentation";
 import { FrameAccount, accountLabel, isAccountMessage } from "./accountMessage";
+import { isDemoToolsBuild } from "../../lib/demo";
+import { JUDGE_PANEL_WIDTH, JudgePanel } from "./JudgePanel.web";
+import { JUDGE_SIGN_IN, JudgeSignInMessage, isJudgeSeatMessage, otherRole, paneWindow } from "./judgeMessages";
+
+/** Below this window width the judge panel would squeeze the phones; it hides (the seats still work). */
+const PANEL_MIN_WIDTH = 1100;
 import { installTouchEmulation } from "./TouchEmulation.web";
 import { ShellContext } from "./useShell";
 
@@ -98,13 +104,35 @@ export function AppShell({ children }: Props) {
     if (presentation === "split") window.history.replaceState(window.history.state, "", "/?view=split");
   }, [presentation]);
 
+  // Split view: the phone that took a Judge seat has the other phone sign in to the set's other account (#411).
+  useEffect(() => {
+    if (presentation !== "split") return;
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || !isJudgeSeatMessage(event.data)) return;
+      const other = event.data.pane === "pane-left" ? "pane-right" : "pane-left";
+      const message: JudgeSignInMessage = { type: JUDGE_SIGN_IN, set: event.data.set, role: otherRole(event.data.role) };
+      paneWindow(other)?.postMessage(message, window.location.origin);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [presentation]);
+
+  // The judge panel (#413) sits left of the phones on a wide computer window: always in the judging build, and in the
+  // team build only while a phone is signed in to a judge set. The phones keep their place in the tree either way, so
+  // the panel appearing never reloads them.
+  const judgeHere = useJudgeHere(accounts);
+  const showPanel = presentation !== "direct" && windowWidth >= PANEL_MIN_WIDTH && (!isDemoToolsBuild || judgeHere);
+  const reserve = showPanel ? JUDGE_PANEL_WIDTH : 0;
+
   if (presentation === "split") {
     return (
       <View style={{ flex: 1, flexDirection: "row" }} testID="split-view">
+        {showPanel ? <JudgePanel key="panel" panes={["pane-left", "pane-right"]} accounts={accounts} /> : null}
         {(["left", "right"] as const).map((side) => (
           <View key={side} style={{ flex: 1 }}>
             <DeviceFrame
               columns={2}
+              reserve={reserve}
               label={accountLabel(accounts[`pane-${side}`])}
               // Both phones keep the same height; the link sits under the left one.
               footer={side === "left" ? <FrameLink label="Show one phone" href="/" testID="show-one-phone" /> : <View />}
@@ -119,16 +147,22 @@ export function AppShell({ children }: Props) {
 
   if (presentation === "framed") {
     return (
-      <DeviceFrame
-        label={accountLabel(accounts[""])}
-        footer={
-          windowWidth >= SPLIT_MIN_WIDTH && !touchPrimary ? (
-            <FrameLink label="Show both phones" href="/?view=split" testID="show-both-phones" />
-          ) : undefined
-        }
-      >
-        <AppFrame />
-      </DeviceFrame>
+      <View style={{ flex: 1, flexDirection: "row" }}>
+        {showPanel ? <JudgePanel key="panel" panes={[""]} accounts={accounts} /> : null}
+        <View key="phone" style={{ flex: 1 }}>
+          <DeviceFrame
+            reserve={reserve}
+            label={accountLabel(accounts[""])}
+            footer={
+              windowWidth >= SPLIT_MIN_WIDTH && !touchPrimary ? (
+                <FrameLink label="Show both phones" href="/?view=split" testID="show-both-phones" />
+              ) : undefined
+            }
+          >
+            <AppFrame />
+          </DeviceFrame>
+        </View>
+      </View>
     );
   }
 
@@ -138,6 +172,22 @@ export function AppShell({ children }: Props) {
       {children}
     </ShellContext.Provider>
   );
+}
+
+/**
+ * A phone here is signed in to a judge set (#413). A phone that reloads (a scene opening) reports no account for a
+ * moment; that keeps the answer, so the panel and its scene stay. Only a team account signing in turns it off.
+ */
+function useJudgeHere(accounts: Record<string, FrameAccount>): boolean {
+  const [here, setHere] = useState(false);
+  const values = Object.values(accounts);
+  const judge = values.some((account) => account?.judge);
+  const team = values.some((account) => account && !account.judge);
+  useEffect(() => {
+    if (judge) setHere(true);
+    else if (team) setHere(false);
+  }, [judge, team]);
+  return judge || (here && !team);
 }
 
 /** Inside a split-view phone (named by the outer page): two phones must not fight over the address bar. */

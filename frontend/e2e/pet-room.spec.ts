@@ -176,6 +176,7 @@ test.describe("pet room", () => {
   });
 
   test("Match colors from photo (pet profile): the colors are saved to the pet, and Use the coat color takes them back", async ({ page }) => {
+    test.setTimeout(60_000);
     await fakePetPhoto(page);
     const db = await setup(page, (db) =>
       db.pets.push(pet("pet-max", "Max", "dog", { breed: "Maltese", profile: { coat: "white", v: 1, pixel_head: { v: 1 } } })),
@@ -184,7 +185,7 @@ test.describe("pet room", () => {
     await screen.getByTestId("pet-card-Max").click();
     const sprite = screen.getByTestId("pet-pixel-sprite");
     await expect(sprite).toBeVisible();
-    const coat = await colorsOf(sprite);
+    const coat = await steadyColorsOf(sprite);
 
     await screen.getByTestId("pet-colors-open").click();
     await screen.getByTestId("pet-colors-pick").click();
@@ -207,9 +208,22 @@ test.describe("pet room", () => {
     await screen.getByTestId("pet-colors-reset").click();
     await expect(screen.getByTestId("toast")).toContainText("Back to the coat color");
     expect("pixel_colors" in (db.pets[0].profile as object)).toBe(false);
-    await expect.poll(async () => JSON.stringify(await colorsOf(sprite))).toBe(JSON.stringify(coat));
+    // Golden is gone and the coat's own colors are back (steady ones: a nap Z or a toy comes and goes).
+    await expect.poll(() => colorsOf(sprite)).not.toContain("rgb(217, 164, 65)");
+    await expect.poll(async () => JSON.stringify(await steadyColorsOf(sprite)), { timeout: 15_000 }).toBe(JSON.stringify(coat));
   });
 });
+
+/** The colors drawn in every one of a few frames: the pet's own, without what the animation adds for a moment. */
+async function steadyColorsOf(sprite: import("@playwright/test").Locator): Promise<string[]> {
+  let steady = await colorsOf(sprite);
+  for (let i = 0; i < 4; i++) {
+    await sprite.page().waitForTimeout(400);
+    const now = await colorsOf(sprite);
+    steady = steady.filter((c) => now.includes(c));
+  }
+  return steady;
+}
 
 /** The background colors drawn in a sprite, sorted. */
 async function colorsOf(sprite: import("@playwright/test").Locator): Promise<string[]> {

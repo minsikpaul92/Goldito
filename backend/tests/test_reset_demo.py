@@ -477,10 +477,11 @@ def test_each_set_gets_its_own_pets():
     }
 
 
-def test_all_pet_names_in_the_demo_sets_differ():
+def test_all_pet_names_in_the_team_sets_differ():
+    """The judge sets (#411) keep the story's Max and Mochi on purpose; each judge only sees their own set."""
     from app.services.demo_accounts import DEMO_SETS
 
-    names = [pet[0] for demo_set in DEMO_SETS for pet in demo_set.pets]
+    names = [pet[0] for demo_set in DEMO_SETS if not demo_set.judge for pet in demo_set.pets]
     assert len(names) == len(set(names))
 
 

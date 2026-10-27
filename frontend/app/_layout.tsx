@@ -4,6 +4,7 @@ import { Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
 
 import { AppShell } from "../components/shell/AppShell";
+import { JudgeBridge } from "../components/shell/JudgeBridge";
 import { MediaPickerProvider } from "../providers/MediaPickerProvider";
 import { NotificationsProvider } from "../providers/NotificationsProvider";
 import { SessionProvider } from "../providers/SessionProvider";
@@ -29,6 +30,7 @@ export default function RootLayout() {
                 <TripProvider>
                   <MediaPickerProvider>
                     <StatusBar style="dark" />
+                    <JudgeBridge />
                     {/* Role areas draw their own headers; only shared screens use this stack header. */}
                     <RootStack />
                   </MediaPickerProvider>
