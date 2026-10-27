@@ -1,4 +1,4 @@
-"""Speech to text for voice sign-up (11.15 S3, docs/plan/pet-profile-onboarding.ko.md §6.2).
+"""Speech to text for voice sign-up (11.15 S3).
 
 Token Factory has no speech-to-text, so the recording goes to Groq (`whisper-large-v3-turbo`, free plan, OpenAI-style
 endpoint). The audio is sent once and never stored; only the text comes back. Nothing here logs the audio or the text.

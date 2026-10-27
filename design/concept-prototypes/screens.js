@@ -254,7 +254,7 @@ window.GOLDITO_SCREENS = [
   "docs": [
    [
     "Phase 12",
-    "docs/plan/phases/phase-12-snap.md"
+    "README.md"
    ]
   ]
  },
@@ -809,7 +809,7 @@ window.GOLDITO_SCREENS = [
   "docs": [
    [
     "Onboarding plan",
-    "docs/plan/onboarding.ko.md"
+    "README.md"
    ]
   ]
  },
@@ -853,7 +853,7 @@ window.GOLDITO_SCREENS = [
    ],
    [
     "Onboarding plan",
-    "docs/plan/onboarding.ko.md"
+    "README.md"
    ]
   ]
  },
@@ -1010,7 +1010,7 @@ window.GOLDITO_SCREENS = [
   ]
  }
 ];
-// Every README promise → where to play it in the Draft, its Figma section, and its status in the app (test-guide.ko.md §2, main @ 1a7be5a, Oct 15). Optional 6th field: "no" = not in the Draft yet, "related" = a related Draft screen.
+// Every README promise → where to play it in the Draft, its Figma section, and its status in the app (test-guide.md §2, main @ 1a7be5a, Oct 15). Optional 6th field: "no" = not in the Draft yet, "related" = a related Draft screen.
 // app: "built" · "part" · "none". screen: an id above (Play opens that screen in the Prototype).
 window.GOLDITO_FEATURES = [
  ["① Inquiry", [
