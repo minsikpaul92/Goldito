@@ -490,8 +490,8 @@ Goldito keeps only ingredient names, short excerpts, and links from these pages,
 | :--- | :--- |
 | **Minsik** | Full-Stack Lead · AI Backend |
 | **Seulgi** | AI & Prompt Engineer · QA · Data Anonymization |
-| **Muk** | Product & UX/UI Designer |
-| **JeonBeomGu-S** | Full-Stack Developer |
+| **Mooque** | Product & UX/UI Designer |
+| **BeomGu** | Full-Stack Developer |
 
 ---
 
