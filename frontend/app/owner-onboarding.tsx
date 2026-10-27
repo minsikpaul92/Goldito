@@ -534,6 +534,7 @@ export default function OwnerOnboarding() {
       `Meet ${petName}`,
       <View style={styles.center}>
         <PetReveal
+          name={petName}
           species={species}
           breed={draft.breed}
           coat={draft.coat}

@@ -1,63 +1,47 @@
-import { useEffect, useMemo, useState } from "react";
-import { View } from "react-native";
+import { useEffect, useMemo, useRef } from "react";
+import { Animated, View } from "react-native";
 
-import { petRows, recipeFor } from "../../features/pets/sprites/petLook";
-import { SCENE_SIZE } from "../../features/pets/sprites/scene";
+import { recipeFor } from "../../features/pets/sprites/petLook";
 import type { Species } from "../../types/db";
-import { PixelGrid } from "../pet/PixelGrid";
+import { PetRoomCard } from "../pet/PetRoomCard";
 
 type Props = {
+  name: string;
   species: Species;
   breed: string;
   coat: string;
   weightKg: number | null;
-  /** Called once the pet is drawn. */
+  /** Called once the room has faded in. */
   onDone: () => void;
   testID?: string;
 };
 
-const PIXEL = 9;
-const ROWS_PER_TICK = 2;
-const TICK_MS = 60;
-const HOP_MS = 450;
+const FADE_MS = 900;
+const ROOM_HEIGHT = 380;
 
-/** The 8-bit pet of sign-up: drawn row by row from the top, then it idles and hops. Mount it again to draw it again. */
-export function PetReveal({ species, breed, coat, weightKg, onDone, testID }: Props) {
+/** The pet room of sign-up: the same screen as the pet's page, with the pet walking, turning and lying down. Mount it again to play it again. */
+export function PetReveal({ name, species, breed, coat, weightKg, onDone, testID }: Props) {
   const recipe = useMemo(() => recipeFor({ species, breed, coat, weightKg }), [species, breed, coat, weightKg]);
-  const [drawn, setDrawn] = useState(0);
-  const [beat, setBeat] = useState(0);
-  const done = drawn >= SCENE_SIZE;
+  const fade = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (done) return;
-    const t = setInterval(() => setDrawn((n) => n + ROWS_PER_TICK), TICK_MS);
-    return () => clearInterval(t);
-  }, [done]);
-  useEffect(() => {
-    if (!done) return;
-    onDone();
-    const t = setInterval(() => setBeat((n) => n + 1), HOP_MS);
-    return () => clearInterval(t);
-    // onDone only flips a flag in the parent.
+    Animated.timing(fade, { toValue: 1, duration: FADE_MS, useNativeDriver: false }).start(({ finished }) => {
+      if (finished) onDone();
+    });
+    // Plays once per mount; onDone only flips a flag in the parent.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [done]);
-
-  const frame = useMemo(
-    () => petRows(recipe, { mood: done ? "excited" : "calm", pose: { view: "front", action: "idle", frame: beat % 2 } }),
-    [recipe, done, beat],
-  );
-  const pixels = useMemo(() => frame.map((row, y) => (y < drawn ? row : row.map(() => null))), [frame, drawn]);
+  }, []);
 
   return (
     <View
       accessibilityRole="image"
       accessibilityLabel={`${species} in 8-bit, build ${recipe.build ?? 0}, coat ${recipe.colors?.coat ?? "default"}`}
-      style={{ width: SCENE_SIZE * PIXEL, height: SCENE_SIZE * PIXEL + PIXEL, justifyContent: "flex-end" }}
+      style={{ alignSelf: "stretch", height: ROOM_HEIGHT }}
       testID={testID}
     >
-      <View style={{ transform: [{ translateY: done && beat % 2 === 1 ? -PIXEL : 0 }] }}>
-        <PixelGrid pixels={pixels} pixel={PIXEL} />
-      </View>
+      <Animated.View style={{ flex: 1, opacity: fade, transform: [{ scale: fade.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] }) }] }}>
+        <PetRoomCard name={name} species={species} breed={breed} coat={coat} weightKg={weightKg} status={null} />
+      </Animated.View>
     </View>
   );
 }
