@@ -301,7 +301,9 @@ def test_while_search_is_off_only_our_own_list_answers_and_no_search_or_db_is_to
     assert breed_needs.ENABLED is False
     monkeypatch.setattr(breed_needs, "search_needs", lambda *a: pytest.fail("must not search"))
     monkeypatch.setattr(router, "get_service_client", lambda: pytest.fail("must not touch the DB"))
-    ask = lambda species, breed: client.post("/api/breed-needs", json={"species": species, "breed": breed}, headers=headers(owner_token())).json()
+
+    def ask(species, breed):
+        return client.post("/api/breed-needs", json={"species": species, "breed": breed}, headers=headers(owner_token())).json()
 
     listed = ask("dog", "Maltese")
     assert listed["origin"] == "list" and listed["sources"] == [] and listed["basis"] is None
