@@ -565,8 +565,8 @@ export default function OwnerOnboarding() {
 
   if (step === "about" && species) {
     return frame(
-      "About these questions",
-      <Text style={styles.note}>We wrote them ourselves, in plain words. It is not a behavior test.</Text>,
+      "A few quick questions",
+      null,
       <>
         <Button label="Start" onPress={next} testID="own-next" />
         <TextButton label="Skip questions" onPress={skipAll} testID="own-skip-questions" />

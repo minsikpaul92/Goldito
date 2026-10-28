@@ -156,10 +156,8 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-pet-intro").fill("Loves the sofa.");
     await screen.getByTestId("own-next").click();
 
-    // Before the questions: a short note that we wrote them ourselves (no survey is named or linked).
-    await expect(screen.getByTestId("own-title")).toHaveText("About these questions");
-    await expect(screen.getByText("We wrote them ourselves, in plain words.")).toBeVisible();
-    await expect(screen.getByText("It is not a behavior test.")).toBeVisible();
+    // Before the questions: just a title and Start (no survey is named or linked, no explanation).
+    await expect(screen.getByTestId("own-title")).toHaveText("A few quick questions");
     await screen.getByTestId("own-next").click();
 
     // The 12 chart questions: the name is in every question, a tap goes on by itself.
