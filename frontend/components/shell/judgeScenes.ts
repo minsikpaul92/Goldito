@@ -254,8 +254,8 @@ const MAKE_STICKER: ScriptStep[] = [
 
 /**
  * A day of care on Chloe's phone, Max first: check-in tiles on Home, two taps in the pixel pet room, the 5-second
- * check (a few picks, a note and a photo at once), a sticker of Max, Moments with today's photos, then the diary page:
- * a line of her own, the page written from the chips, a heart and the sticker on it, Send.
+ * check (a few picks, a note and a photo at once), a sticker of Max, Moments with today's photos, then the diary:
+ * Write a diary, a photo and its chips, a line of her own, the page written by AI, stickers in the free spots, Send.
  */
 const CARE_SCRIPT: ScriptStep[] = [
   { tapBest: "caring-pet-*", prefer: "Max" },
@@ -293,13 +293,20 @@ const CARE_SCRIPT: ScriptStep[] = [
   { open: "/sitter/feed" },
   { wait: "feed-card-*", timeout: 30_000 },
   { pause: 3_000 },
-  // The diary page, with a line in her own words first (it goes into the page).
-  // Max is the first pet, so his page is the one open.
+  // The diary: Write a diary (Max is the pet), a photo placed in its frame, the chips it brings, a line of her own,
+  // the page written by AI from the photo, the chips and her words, three stickers in the free spots, Send.
   { tap: "feed-view-diary" },
   { tap: "sitter-diary-view-today" },
   // With two pets in care Write a diary asks which one; Max is the first.
   { tapIf: "diary-pick-pet-*" },
-  { wait: "report-chip-*", timeout: AI_MS },
+  { wait: "report-body-*", timeout: 30_000 },
+  { pause: 1_000 },
+  { tap: "report-add-photo-*" },
+  { tap: "sample-walk" },
+  // The photo is placed in the page's frame first, then used; its chips are read.
+  { tap: "media-confirm-use" },
+  { wait: "report-chip-*-0", timeout: AI_MS },
+  { pause: 1_500 },
   { tap: "report-custom-open-*" },
   { type: "report-custom-input-*", text: "Chased a squirrel at the park" },
   { tap: "report-custom-add-*" },
@@ -307,12 +314,16 @@ const CARE_SCRIPT: ScriptStep[] = [
   { tap: "report-generate-*" },
   { filled: "report-body-*", timeout: AI_MS },
   { pause: 2_500 },
+  // Stickers: Max's own, a heart and a star; each lands on the photo or the empty lines, not on the words.
   { tap: "decor-start" },
-  { tap: "decor-preset-heart" },
   { tap: "decor-add" },
-  { pause: 1_000 },
+  { pause: 800 },
+  { tap: "decor-preset-heart" },
+  { pause: 800 },
+  { tap: "decor-preset-star" },
+  { pause: 1_500 },
   { tap: "decor-start" },
-  { pause: 1_000 },
+  { pause: 1_500 },
   { tap: "report-send-*" },
   { wait: "report-sent-*", timeout: 30_000 },
   { signal: "diary-sent" },
@@ -326,7 +337,8 @@ const CARE_OWNER_SCRIPT: ScriptStep[] = [
   { pause: 3_000 },
   { tap: "feed-view-diary" },
   { tap: "diary-entry-cover-*", timeout: 30_000 },
-  { pause: 4_000 },
+  // The page as Chloe sent it: her photo, her words and the stickers.
+  { pause: 6_000 },
 ];
 
 /** Before Chloe brings them home, a few check-ins, so the Life Record has a stay to write from. */

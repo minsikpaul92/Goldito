@@ -48,6 +48,14 @@ async function spot(sticker: Locator, paper: Locator) {
   return { x: (s.x - p.x) / p.width, y: (s.y - p.y) / p.height };
 }
 
+/** Brings the picked sticker to the middle of the page, away from the phone's edge, so a drag or a pinch has room all around it. */
+async function toMiddle(page: Page, sticker: Locator, paper: Locator) {
+  await sticker.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  const from = center(await box(sticker));
+  const p = await box(paper);
+  await drag(page, from, { x: p.x + p.width / 2, y: from.y });
+}
+
 async function openOwnerEntry(page: Page, seed: (db: MockDb) => void) {
   const { db } = await mockSupabase(page, [OWNER, SITTER]);
   caring(db, [MAX]);
@@ -81,6 +89,8 @@ test.describe("diary decorating", () => {
     const mine = screen.getByTestId("decor-mine");
     await expect(mine).toHaveCount(1);
     await expect(mine).toHaveAttribute("data-selected", "true");
+    // It lands in a free spot (the picture or the empty lines), not in the middle of the words.
+    const start = await spot(mine, paper);
 
     // Drag by mouse: 60 px right, 30 px down. The sticker sits mid-page: bring it to the middle of the screen first, so
     // the tab bar (or the phone's edge) is never under the pointer.
@@ -88,7 +98,7 @@ test.describe("diary decorating", () => {
     const p = await box(paper);
     const from = center(await box(mine));
     await drag(page, from, { x: from.x + 60, y: from.y + 30 });
-    await expect.poll(async () => (await spot(mine, paper)).x).toBeCloseTo(0.5 + 60 / p.width, 1);
+    await expect.poll(async () => (await spot(mine, paper)).x).toBeCloseTo(start.x + 60 / p.width, 1);
 
     // No size or turn buttons any more: the corner handle does both (#369, next test).
     await expect(screen.getByTestId("decor-bigger")).toHaveCount(0);
@@ -98,8 +108,8 @@ test.describe("diary decorating", () => {
     const saved = db.report_decor.find((r) => r.user_id === OWNER.id)!;
     const [item] = saved.items as Record<string, number | string>[];
     expect(item).toMatchObject({ sticker_id: "st-1", public_id: `goldito/${MAX.id}/sticker/a`, scale: 1, rotate: 0 });
-    expect(Number(item.x)).toBeCloseTo(0.5 + 60 / p.width, 1);
-    expect(Number(item.y)).toBeCloseTo(0.5 + 30 / p.height, 1);
+    expect(Number(item.x)).toBeCloseTo(start.x + 60 / p.width, 1);
+    expect(Number(item.y)).toBeCloseTo(start.y + 30 / p.height, 1);
     // The sitter's layer is untouched, and so is the text.
     expect(db.report_decor.find((r) => r.user_id === SITTER.id)!.items).toEqual(layer(SITTER.id, 0.8, 0.3).items);
     await expect(screen.getByTestId("diary-entry-body")).toContainText("Then we walked.");
@@ -120,7 +130,7 @@ test.describe("diary decorating", () => {
     await screen.getByTestId("decor-start").click();
     await screen.getByTestId("decor-add").click();
     const mine = screen.getByTestId("decor-mine");
-    await mine.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await toMiddle(page, mine, screen.getByTestId("diary-entry-paper"));
     const handle = screen.getByTestId("decor-resize");
     await expect(handle).toHaveCount(1); // only on the picked sticker
 
@@ -155,9 +165,10 @@ test.describe("diary decorating", () => {
     await screen.getByTestId("decor-start").click();
     await screen.getByTestId("decor-add").click();
     const mine = screen.getByTestId("decor-mine");
-    await mine.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await toMiddle(page, mine, screen.getByTestId("diary-entry-paper"));
     const s = await box(mine);
     const c = center(s);
+    const start = await spot(mine, screen.getByTestId("diary-entry-paper"));
     const d0 = s.width / 4;
     const cdp = await page.context().newCDPSession(page);
     const at = (d: number) => [
@@ -172,7 +183,7 @@ test.describe("diary decorating", () => {
     const [item] = db.report_decor.find((r) => r.user_id === OWNER.id)!.items as Record<string, number>[];
     expect(item.scale).toBeCloseTo(2, 1);
     // A pinch does not move the sticker.
-    expect(item.x).toBeCloseTo(0.5, 1);
+    expect(item.x).toBeCloseTo(start.x, 1);
   });
 
   test("A sticker is saved as it goes on; Remove takes the picked sticker off", async ({ page }) => {
@@ -194,6 +205,23 @@ test.describe("diary decorating", () => {
     await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
     await expect.poll(() => db.report_decor[0].items.length).toBe(1);
     await expect(screen.getByTestId("decor-mine")).toHaveCount(1);
+  });
+
+  test("new stickers land on the picture and the empty lines, never on the words", async ({ page }) => {
+    await openOwnerEntry(page, (d) => seedSticker(d, OWNER.id));
+    const screen = app(page);
+    await screen.getByTestId("decor-start").click();
+    for (const id of ["heart", "star", "sun"]) await screen.getByTestId(`decor-preset-${id}`).click();
+    const text = screen.locator('[data-testid$="-body"]:visible').first();
+    const textBox = (await text.boundingBox())!;
+    const stickers = screen.locator('[data-testid="decor-mine"]:visible');
+    await expect(stickers).toHaveCount(3);
+    // The words are the box the text takes; no sticker centre may sit inside it.
+    for (let i = 0; i < 3; i++) {
+      const box = (await stickers.nth(i).boundingBox())!;
+      const centreY = box.y + box.height / 2;
+      expect(centreY > textBox.y && centreY < textBox.y + textBox.height, `sticker ${i} centre ${centreY} vs words ${textBox.y}-${textBox.y + textBox.height}`).toBe(false);
+    }
   });
 
   test("a saved sticker is picked straight from the page: no Decorate first, then moved or taken off", async ({ page }) => {

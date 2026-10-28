@@ -29,6 +29,8 @@ const MIN_LINES = 6;
 /** The picture box's width / height, one shape for owner and sitter so a sticker lands in the same spot for both. A photo is framed to it before it goes on a page, so it fills the box. */
 export const PHOTO_ASPECT = 5 / 3;
 /** A white wash the page shows through (the floating buttons and the tray). */
+/** A sticker at scale 1 is this share of the paper's width (StickerCanvas draws it so). */
+const STICKER_WIDTH = 0.24;
 const SEE_THROUGH = "rgba(255,255,255,0.82)";
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -111,6 +113,10 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   const [layers, setLayers] = useState<DecorLayer[]>([]);
   const [picture, setPicture] = useState<string | null>(null);
   const [lines, setLines] = useState({ top: 0, height: MIN_LINES * LINE });
+  // The page's measures, to put a new sticker where it covers no words: the paper, the picture box and (read only) the text.
+  const [paperSize, setPaperSize] = useState<{ w: number; h: number } | null>(null);
+  const [pictureBox, setPictureBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [readHeight, setReadHeight] = useState(LINE);
   const [editing, setEditing] = useState(false);
   // The sticker tray is out while Decorate is open; a tap on a sticker of mine edits it with the tray folded away.
   const [trayOpen, setTrayOpen] = useState(true);
@@ -236,10 +242,40 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
     setDraft((items) => items.map((item, i) => (i === index ? { ...item, z: topZ(items) } : item)));
   };
 
+  /**
+   * Where a new sticker goes so it does not cover the words: the corners of the picture and the empty ruled lines under
+   * the text, the first one nobody is on yet. `null` when the page has not been measured (it lands in the middle).
+   */
+  const freeSpot = (items: DecorItem[]): { x: number; y: number } | null => {
+    if (!paperSize || !pictureBox) return null;
+    const size = paperSize.w * STICKER_WIDTH;
+    const half = size / 2 + 6;
+    const textEnd = lines.top + Math.max(LINE, writing ? writtenHeight : readHeight);
+    const rulesEnd = lines.top + Math.max(MIN_LINES, Math.ceil(lines.height / LINE)) * LINE;
+    const lineY = textEnd + half;
+    const room = lineY + half <= rulesEnd + LINE; // the empty lines are tall enough for one
+    const right = pictureBox.x + pictureBox.w - half;
+    const left = pictureBox.x + half;
+    const top = pictureBox.y + half;
+    const bottom = pictureBox.y + pictureBox.h - half;
+    const slots = [
+      { x: right, y: bottom },
+      ...(room ? [{ x: paperSize.w - half - 10, y: lineY }] : []),
+      { x: left, y: bottom },
+      ...(room ? [{ x: half + 10, y: lineY }] : []),
+      { x: right, y: top },
+      { x: left, y: top },
+      ...(room ? [{ x: paperSize.w / 2, y: lineY }] : []),
+    ];
+    const free = slots.find((slot) => items.every((item) => Math.hypot(item.x * paperSize.w - slot.x, item.y * paperSize.h - slot.y) > size * 0.85));
+    return free ? { x: free.x / paperSize.w, y: free.y / paperSize.h } : null;
+  };
+
   const add = (ref: string, stickerId: string) => {
     if (draft.length >= MAX_ITEMS) return;
     const offset = (draft.length % 5) * 0.04; // a few in a row do not land exactly on top of each other
-    const item: DecorItem = { sticker_id: stickerId, public_id: ref, x: 0.5 + offset, y: 0.5 + offset, scale: 1, rotate: 0, z: topZ(draft), layer: "front" };
+    const spot = freeSpot(draft) ?? { x: 0.5 + offset, y: 0.5 + offset };
+    const item: DecorItem = { sticker_id: stickerId, public_id: ref, x: spot.x, y: spot.y, scale: 1, rotate: 0, z: topZ(draft), layer: "front" };
     setDraft([...draft, item]);
     setSelected(draft.length);
   };
@@ -320,7 +356,12 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
 
   return (
     <View style={styles.wrap}>
-      <View ref={paperRef} style={[styles.paper, editing && styles.paperEditing, focused && styles.paperWriting]} testID={id("paper")}>
+      <View
+        ref={paperRef}
+        style={[styles.paper, editing && styles.paperEditing, focused && styles.paperWriting]}
+        onLayout={(event) => setPaperSize({ w: event.nativeEvent.layout.width, h: event.nativeEvent.layout.height })}
+        testID={id("paper")}
+      >
         <SpiralEdge testID={id("spiral")} />
         <View ref={linesRef} pointerEvents="none" style={[styles.lines, { top: lines.top, height: ruled * LINE }]}>
           {Array.from({ length: ruled }, (_, i) => (
@@ -344,7 +385,14 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
           <Text style={[styles.headerText, styles.headerFit]} numberOfLines={1}>{`📅 ${longDay(day)}`}</Text>
           <Text style={[styles.headerText, styles.headerFit]} numberOfLines={1}>{`${petName}'s day 🐾`}</Text>
         </View>
-        <View ref={pictureRef} pointerEvents={passThrough} style={styles.picture} testID={id("picture")} {...(many ? swipe.panHandlers : null)}>
+        <View
+          ref={pictureRef}
+          pointerEvents={passThrough}
+          style={styles.picture}
+          onLayout={(event) => setPictureBox({ x: event.nativeEvent.layout.x, y: event.nativeEvent.layout.y, w: event.nativeEvent.layout.width, h: event.nativeEvent.layout.height })}
+          testID={id("picture")}
+          {...(many ? swipe.panHandlers : null)}
+        >
           {shownNow ? (
             <>
               {loadedPicture !== shownNow ? <ActivityIndicator color={theme.color.textMuted} testID={id("picture-loading")} /> : null}
@@ -398,7 +446,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
               testID={writing.testID}
             />
           ) : (
-            <Text style={styles.body} testID={id("body")}>
+            <Text style={styles.body} onLayout={(event) => setReadHeight(event.nativeEvent.layout.height)} testID={id("body")}>
               {body}
             </Text>
           )}
