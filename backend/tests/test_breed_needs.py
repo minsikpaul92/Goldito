@@ -30,7 +30,7 @@ client = base.client
 
 NOW = datetime(2026, 10, 21, 12, 0, tzinfo=UTC)
 HITS = [
-    {"title": "Poodle", "url": "https://www.akc.org/poodle", "domain": "akc.org", "content": "The Poodle needs about an hour of exercise every day. Brush the coat daily."},
+    {"title": "Poodle", "url": "https://www.merckvetmanual.com/poodle", "domain": "merckvetmanual.com", "content": "The Poodle needs about an hour of exercise every day. Brush the coat daily."},
     {"title": "Poodle care", "url": "https://vcahospitals.com/poodle", "domain": "vcahospitals.com", "content": "Poodles can be prone to hip problems in later life."},
 ]
 
@@ -71,7 +71,7 @@ def test_lines_with_a_real_quote_are_kept_and_only_their_pages_are_listed():
     )
     assert [(c.kind, c.source) for c in chips] == [("exercise", 0), ("care", 1)]
     assert chips[0].quote == "needs about an hour of exercise every day"
-    assert [s.url for s in sources] == ["https://www.akc.org/poodle", "https://vcahospitals.com/poodle"]
+    assert [s.url for s in sources] == ["https://www.merckvetmanual.com/poodle", "https://vcahospitals.com/poodle"]
 
 
 def test_a_line_that_the_page_does_not_say_is_dropped():
@@ -118,7 +118,7 @@ def test_a_kind_is_used_once_and_there_are_at_most_three_lines():
 @pytest.fixture
 def listing(tmp_path, monkeypatch):
     data = {
-        "dog": {"maltese": {"name": "Maltese", "aliases": ["maltese dog"], "chips": [{"kind": "grooming", "text": "Brush daily", "source": 0}], "sources": [{"title": "AKC", "url": "https://www.akc.org/m"}], "reviewed": True}},
+        "dog": {"maltese": {"name": "Maltese", "aliases": ["maltese dog"], "chips": [{"kind": "grooming", "text": "Brush daily", "source": 0}], "sources": [{"title": "VCA", "url": "https://vcahospitals.com/m"}], "reviewed": True}},
         "cat": {},
     }
     path = tmp_path / "breed_needs.json"
@@ -178,7 +178,7 @@ def test_a_breed_in_the_list_is_answered_without_a_search_or_the_cache(listing):
 
 def test_a_new_breed_is_searched_once_and_then_comes_from_the_cache(listing):
     notes = Notes()
-    found = ([Chip(kind="grooming", text="Brush daily", source=0)], [rules.Source(title="AKC", url="https://www.akc.org/p")])
+    found = ([Chip(kind="grooming", text="Brush daily", source=0)], [rules.Source(title="VCA", url="https://vcahospitals.com/p")])
     calls = []
 
     def searcher(species, breed):
@@ -238,11 +238,11 @@ def test_the_search_uses_the_species_domains_and_keeps_only_quoted_lines(monkeyp
     monkeypatch.setattr(tavily, "search", search)
     monkeypatch.setattr(nebius, "chat_json", chat_json)
     chips, sources = breed_needs.search_needs("dog", "poodle")
-    assert sent["domains"] == ["akc.org", "vcahospitals.com", "merckvetmanual.com"]
+    assert sent["domains"] == ["vcahospitals.com", "merckvetmanual.com"]
     assert "poodle" in sent["query"] and "dog" in sent["query"]
     assert "<results>" in sent["prompt"]
     assert [c.kind for c in chips] == ["exercise"]
-    assert [s.url for s in sources] == ["https://www.akc.org/poodle"]
+    assert [s.url for s in sources] == ["https://www.merckvetmanual.com/poodle"]
     assert tavily.TRUSTED_DOMAINS != sent["domains"]  # the treat check's list is untouched
 
 
@@ -250,7 +250,7 @@ def test_cats_use_cat_sites(monkeypatch, key):
     seen = {}
     monkeypatch.setattr(tavily, "search", lambda q, *, api_key, timeout, domains=None, excerpt_chars=400: seen.update(d=domains) or [])
     assert breed_needs.search_needs("cat", "ragdoll") == ([], [])
-    assert "icatcare.org" in seen["d"] and "akc.org" not in seen["d"]
+    assert "icatcare.org" in seen["d"]
 
 
 def test_no_key_a_slow_site_or_a_model_failure_mean_could_not_run(monkeypatch, key):
@@ -281,7 +281,7 @@ def api(monkeypatch, listing):
 
     def search_needs(species, breed):
         state["searches"] += 1
-        return [Chip(kind="grooming", text="Brush daily", source=0)], [rules.Source(title="AKC", url="https://www.akc.org/p")]
+        return [Chip(kind="grooming", text="Brush daily", source=0)], [rules.Source(title="VCA", url="https://vcahospitals.com/p")]
 
     monkeypatch.setattr(breed_needs, "search_needs", search_needs)
     return state
