@@ -9,7 +9,8 @@
 A pet-sitting app for dogs and cats where an **NVIDIA Nemotron** agent does the typing for the whole stay,<br>
 the server owns every fact, and a person approves every word.
 
-[![Live demo](https://img.shields.io/badge/live%20demo-goldito--petcare.vercel.app-0070f3?style=flat-square)](https://goldito-petcare.vercel.app)
+[![Try the live demo](https://img.shields.io/badge/%E2%96%B6%20Try%20the%20live%20demo-goldito--petcare.vercel.app-0070f3?style=for-the-badge)](https://goldito-petcare.vercel.app)
+
 [![Track: Best Apps and Agents](https://img.shields.io/badge/track-Best%20Apps%20%26%20Agents-76b900?style=flat-square)](docs/hackathon/README.md)
 [![NVIDIA Nemotron 3](https://img.shields.io/badge/NVIDIA-Nemotron%203%20Nano%20%C2%B7%20Super%20%C2%B7%20Ultra-76b900?style=flat-square)](#powered-by-nvidia-nemotron-on-nebius-token-factory)
 [![Nebius Token Factory](https://img.shields.io/badge/runs%20on-Nebius%20Token%20Factory-052b42?style=flat-square)](#powered-by-nvidia-nemotron-on-nebius-token-factory)
@@ -27,6 +28,26 @@ the server owns every fact, and a person approves every word.
 > The backend runs on a free plan, so the first load after a quiet spell can take 30 to 50 seconds.
 
 > **Judges:** tap **Try the demo**, then **Robert, the owner** or **Chloe, the sitter**, for a free Judge seat (Judge 1 to 4). A seat is yours alone: it starts from a clean stay and frees itself when you log out or leave for 10 minutes. On a computer, **[Show both phones](https://goldito-petcare.vercel.app/?view=split)** and use the panel left of the phones to run the five scenes. Demo accounts and pets are fictional.
+
+---
+
+## Contents
+
+1. [Goldito in 30 seconds](#goldito-in-30-seconds)
+2. [Powered by NVIDIA Nemotron on Nebius Token Factory](#powered-by-nvidia-nemotron-on-nebius-token-factory)
+   - [The agent loop](#the-agent-loop)
+   - [Models and measurements](#models-and-measurements)
+3. [Where Token Factory accelerated our workflow](#where-token-factory-accelerated-our-workflow)
+4. [Tavily: live answers from trusted sites](#tavily-live-answers-from-trusted-sites)
+5. [How Goldito works](#how-goldito-works)
+6. [Who it's for](#who-its-for)
+7. [Architecture](#architecture)
+8. [Privacy & Safety by Design](#privacy--safety-by-design)
+9. [Run it yourself](#run-it-yourself)
+10. [What's Next](#whats-next)
+11. [Sources and Credits](#sources-and-credits)
+12. [Team](#team)
+13. [License](#license)
 
 ---
 
