@@ -50,6 +50,8 @@ export function SitterDiary() {
   const shownView: View_ = view ?? "book";
   // A page deleted in the book: the Today cards start again (their "sent" state is stale).
   const [deleted, setDeleted] = useState(0);
+  // A pet whose unsent page was cancelled starts again (only that pet's composer).
+  const [resets, setResets] = useState<Record<string, number>>({});
   const [pages, setPages] = useState<SentReport[] | null>(null);
   const [bookError, setBookError] = useState<string | null>(null);
   // The book's own pet picker (All pets, or one): the pets that have pages.
@@ -122,7 +124,21 @@ export function SitterDiary() {
       scrollbar
       footer={
         bar && current ? (
-          <Button label={bar.label} disabled={bar.disabled} onPress={bar.onPress} testID={`report-send-${current.id}`} />
+          // Cancel and Send, each half the row: Cancel drops everything on the page (the AI draft too) and goes back.
+          <View style={styles.footerRow}>
+            <Button
+              label="Cancel"
+              variant="secondary"
+              style={styles.half}
+              onPress={() => {
+                void bar.discard();
+                setResets((prev) => ({ ...prev, [current.id]: (prev[current.id] ?? 0) + 1 }));
+                setView("book");
+              }}
+              testID={`report-cancel-${current.id}`}
+            />
+            <Button label={bar.label} disabled={bar.disabled} onPress={bar.onPress} style={styles.half} testID={`report-send-${current.id}`} />
+          </View>
         ) : undefined
       }
     >
@@ -182,7 +198,7 @@ export function SitterDiary() {
       {caring.map((pet) => (
         // Every pet's composer stays mounted (its chips, lines and page survive switching); only the picked one shows.
         <View key={pet.id} style={shownView === "today" && pet.id === current?.id ? undefined : styles.hidden}>
-          <ReportComposer key={deleted} pet={pet} onStatus={onStatus(pet.id)} onSendBar={onSendBar(pet.id)} />
+          <ReportComposer key={`${deleted}-${resets[pet.id] ?? 0}`} pet={pet} onStatus={onStatus(pet.id)} onSendBar={onSendBar(pet.id)} />
         </View>
       ))}
 
@@ -235,6 +251,8 @@ const makeStyles = (theme: Theme) =>
     toggleText: { fontSize: HOME_TEXT.chip, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     pressed: { opacity: 0.6 },
     hidden: { display: "none" },
+    footerRow: { flexDirection: "row", gap: theme.spacing.sm },
+    half: { flex: 1 },
     writeRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
     writeFill: { flex: 1 },
   });

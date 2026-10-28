@@ -136,7 +136,25 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
         {writeButton}
       </View>
     ) : null;
-  const footer = writing && saveBar ? <Button label={saveBar.label} disabled={saveBar.disabled} onPress={saveBar.onPress} testID="diary-write-save" /> : undefined;
+  // Cancel and Save page, each half the row: Cancel drops what is on the page and goes back to the book.
+  const footer =
+    writing && saveBar ? (
+      <View style={styles.footerRow}>
+        <Button
+          label="Cancel"
+          variant="secondary"
+          style={styles.half}
+          onPress={() => {
+            setPageKey((n) => n + 1);
+            setDirty(false);
+            setArmed(false);
+            setView("book");
+          }}
+          testID="diary-write-cancel"
+        />
+        <Button label={saveBar.label} disabled={saveBar.disabled} onPress={saveBar.onPress} style={styles.half} testID="diary-write-save" />
+      </View>
+    ) : undefined;
   const composer = writing ? (
     <OwnerEntryPage
       key={pageKey}
@@ -245,6 +263,8 @@ const makeStyles = (theme: Theme) =>
     },
     toggleText: { fontSize: HOME_TEXT.chip, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     pressed: { opacity: 0.6 },
+    footerRow: { flexDirection: "row", gap: theme.spacing.sm },
+    half: { flex: 1 },
     writeRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
     writeFill: { flex: 1 },
     // The day's tasks in a card, like TodayTasks' "Done today".

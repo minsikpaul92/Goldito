@@ -55,19 +55,18 @@ export async function suggestChips(petId: string, mediaIds: string[]): Promise<C
 }
 
 /** Chips for the photos on an owner's own page (`POST /api/ai/diary-photo-chips`): episode chips, one or two per photo. */
-export async function suggestPhotoChips(petId: string, mediaIds: string[]): Promise<ReportChip[]> {
+export async function suggestPhotoChips(petId: string, mediaIds: string[]): Promise<{ chips: ReportChip[]; photos: ChipPhoto[] }> {
   try {
-    const res = await apiPost<{ chips: ReportChip[] }>("/api/ai/diary-photo-chips", { pet_id: petId, media_ids: mediaIds });
-    return res.chips;
+    return await apiPost<{ chips: ReportChip[]; photos: ChipPhoto[] }>("/api/ai/diary-photo-chips", { pet_id: petId, media_ids: mediaIds });
   } catch (error) {
     throw explain(error, "Couldn't suggest chips. Check your connection and try again.");
   }
 }
 
 /** An owner's page written from the chips they kept and the words already on it (`POST /api/ai/diary-entry`). */
-export async function generateOwnerEntry(petId: string, chips: string[], note: string | null): Promise<{ body: string; fallback: boolean }> {
+export async function generateOwnerEntry(petId: string, chips: string[], photos: string[], note: string | null): Promise<{ body: string; fallback: boolean }> {
   try {
-    return await apiPost<{ body: string; fallback: boolean }>("/api/ai/diary-entry", { pet_id: petId, chips, note });
+    return await apiPost<{ body: string; fallback: boolean }>("/api/ai/diary-entry", { pet_id: petId, chips, photos, note });
   } catch (error) {
     throw explain(error, "Couldn't write the page. Check your connection and try again.");
   }

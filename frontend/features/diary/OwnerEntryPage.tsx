@@ -4,6 +4,8 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { UploadError, deliveryUrl, uploadMedia } from "../../lib/cloudinary";
 import { FALLBACK_CAPTION, createFeedPost } from "../../lib/feed";
 import { Button } from "../../components/ui/Button";
+import { ChipSuggestions, ChipsReading } from "../../components/ChipSuggestions";
+import { scrollIntoView } from "../../lib/scrollIntoView";
 import { pickMedia } from "../../lib/media";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useSession } from "../../providers/SessionProvider";
@@ -13,13 +15,12 @@ import { Theme } from "../../theme/themes";
 import { appToday } from "../schedule/dates";
 import { type DecorItem, saveDecor } from "../snap/decorApi";
 import { DecoratedReport, PHOTO_ASPECT } from "../snap/DecoratedReport";
-import { REPORT_BODY_MAX, addOwnerEntry, generateOwnerEntry, setDiaryPagePhotos, suggestPhotoChips } from "./reportApi";
+import { type ChipPhoto, REPORT_BODY_MAX, type ReportChip, addOwnerEntry, generateOwnerEntry, setDiaryPagePhotos, suggestPhotoChips } from "./reportApi";
 
 /** The most photos on a page (015x). */
 const MAX_PAGE_PHOTOS = 4;
 
 type PagePhoto = { mediaId: string; url: string };
-type PhotoChip = { id: string; label: string };
 
 export type SaveBar = { label: string; disabled: boolean; onPress: () => void };
 
@@ -51,7 +52,11 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
   /** Add and Remove show over the photo after a tap on it. */
   const [photoMenu, setPhotoMenu] = useState(false);
   /** Lines the photos suggest. All are kept to start with; a tap turns one off (like the sitter's chips). */
-  const [chips, setChips] = useState<PhotoChip[]>([]);
+  const [chips, setChips] = useState<ReportChip[]>([]);
+  /** What the vision model said about each photo (it goes into the AI page, unless a chip of that photo is off). */
+  const [descriptions, setDescriptions] = useState<ChipPhoto[]>([]);
+  /** Photos whose chips are still being made (a spinner shows meanwhile). */
+  const [reading, setReading] = useState(0);
   const [off, setOff] = useState<Set<string>>(new Set());
   const [writing, setWriting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -64,6 +69,7 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
   useEffect(() => {
     setPhotos([]);
     setChips([]);
+    setDescriptions([]);
     setOff(new Set());
     setPhotoMenu(false);
   }, [petId]);
@@ -82,9 +88,14 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
       // Shown as it was framed: the whole picture, not the square thumbnail.
       setPhotos((now) => [...now, { mediaId: up.mediaId, url: deliveryUrl(up.publicId, 900) || up.secureUrl || up.thumbUrl }]);
       // The chips are a bonus: a photo that cannot be read just brings none.
+      setReading((n) => n + 1);
       void suggestPhotoChips(pet.id, [up.mediaId])
-        .then((found) => setChips((now) => [...now, ...found.map((c) => ({ id: c.id, label: c.label }))]))
-        .catch(() => undefined);
+        .then((found) => {
+          setChips((now) => [...now, ...found.chips]);
+          setDescriptions((now) => [...now, ...found.photos]);
+        })
+        .catch(() => undefined)
+        .finally(() => setReading((n) => n - 1));
     } catch (error) {
       errorDialog.show({ title: "Photo not added", message: error instanceof UploadError || error instanceof Error ? error.message : "Try again." });
     } finally {
@@ -96,9 +107,21 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
     const gone = photos[index];
     setPhotos((now) => now.filter((_, i) => i !== index));
     // Its lines go with it.
-    if (gone) setChips((now) => now.filter((c) => !c.id.startsWith(`photo-${gone.mediaId}-`)));
+    if (gone) {
+      setChips((now) => now.filter((c) => c.media_id !== gone.mediaId));
+      setDescriptions((now) => now.filter((d) => d.media_id !== gone.mediaId));
+    }
     setPhotoMenu(false);
   };
+
+  // Chips that have just been made are scrolled into sight (they land below the page, often under the fold).
+  const chipsRef = useRef<View>(null);
+  const wasReading = useRef(false);
+  useEffect(() => {
+    const now = reading > 0;
+    if (wasReading.current && !now && chips.length > 0) setTimeout(() => scrollIntoView(chipsRef), 50);
+    wasReading.current = now;
+  }, [reading, chips.length]);
 
   const toggleChip = (id: string) =>
     setOff((now) => {
@@ -110,12 +133,14 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
 
   // "Write the page from the chips": the kept chips and what is already on the page become the page's words.
   const kept = chips.filter((c) => !off.has(c.id));
-  const canWrite = !!pet && !writing && (kept.length > 0 || body.trim() !== "");
+  const canWrite = !!pet && !writing && (kept.length > 0 || descriptions.length > 0 || body.trim() !== "");
   const writeFromChips = async () => {
     if (!pet || writing) return;
     setWriting(true);
     try {
-      const res = await generateOwnerEntry(pet.id, kept.map((c) => c.label), body.trim() || null);
+      // A photo with any chip turned off sends no description: it could say what that chip said.
+      const photoLines = descriptions.filter((d) => !chips.some((c) => c.media_id === d.media_id && off.has(c.id))).map((d) => d.description);
+      const res = await generateOwnerEntry(pet.id, kept.map((c) => c.label), photoLines, body.trim() || null);
       setBody(res.body.slice(0, REPORT_BODY_MAX));
       if (res.fallback) toast.show("The writing helper is down. Here's a plain list to edit.");
     } catch (error) {
@@ -214,33 +239,20 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
           writing={{ onChangeText: setBody, placeholder: "Dear diary, today…", maxLength: REPORT_BODY_MAX, disabled: saving, testID: "diary-write-body" }}
         />
       ) : null}
-      {/* Right under the page, like the sitter's: write it from the chips. */}
+      {/* Right under the page, like the sitter's: the AI writes it from the photos, the chips and the words on it. */}
       <Button
-        label={writing ? "Writing…" : "Write the page from the chips"}
+        label={writing ? "Writing…" : body.trim() ? "Rewrite the page with AI" : "Write the page with AI"}
         ai
         variant="secondary"
         onPress={() => void writeFromChips()}
         disabled={!canWrite || saving}
         testID="diary-write-generate"
       />
+      {body.trim() ? <Text style={styles.muted}>Uses the photos, chips and your words. Nothing is saved.</Text> : null}
+      {reading > 0 ? <ChipsReading testID="diary-write-chips-reading" /> : null}
       {chips.length > 0 ? (
-        <View style={styles.chips} testID="diary-write-chips">
-          {chips.map((chip) => {
-            const on = !off.has(chip.id);
-            return (
-              <Pressable
-                key={chip.id}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: on }}
-                aria-checked={on}
-                onPress={() => toggleChip(chip.id)}
-                style={[styles.action, !on && styles.actionOff]}
-                testID={`diary-write-chip-${chip.id}`}
-              >
-                <Text style={[styles.actionLabel, !on && styles.actionLabelOff]}>{chip.label}</Text>
-              </Pressable>
-            );
-          })}
+        <View ref={chipsRef} testID="diary-write-chips">
+          <ChipSuggestions chips={chips} off={off} onToggle={toggleChip} testIDPrefix="diary-write-chip" />
         </View>
       ) : null}
     </View>
@@ -268,8 +280,6 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.border,
     },
     page: { gap: theme.spacing.md },
-    actionOff: { backgroundColor: theme.color.background, borderStyle: "dashed" },
-    actionLabelOff: { color: theme.color.textMuted, textDecorationLine: "line-through" },
-    chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
+    muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     actionLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
   });

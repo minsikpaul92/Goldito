@@ -9,6 +9,7 @@ import {
   REPORT_MAX_HIGHLIGHTS,
   ReportChip,
   ReportDraft,
+  deleteDiaryPage,
   generateReport,
   saveDraftByHand,
   overrideLabel,
@@ -32,7 +33,8 @@ import type { CaringPet } from "../features/feed/caringPets";
 import { PageActions } from "../features/diary/PageActions";
 import { type DecorItem, saveDecor } from "../features/snap/decorApi";
 import { DecoratedReport, PHOTO_ASPECT } from "../features/snap/DecoratedReport";
-import { ChipSuggestions } from "./ChipSuggestions";
+import { ChipSuggestions, ChipsReading } from "./ChipSuggestions";
+import { scrollIntoView } from "../lib/scrollIntoView";
 import { Button } from "./ui/Button";
 import { Sheet } from "./ui/Sheet";
 import { Card } from "./ui/Card";
@@ -51,7 +53,13 @@ const HIGHLIGHT_ORDER: Record<string, number> = { custom: 0, checkin: 1, vision:
 export type ReportStatus = "sent" | "draft" | null;
 
 /** The Send button the Diary pins at the bottom of the screen (#398), or null when there is nothing to send. */
-export type SendBar = { label: string; disabled: boolean; onPress: () => void };
+export type SendBar = {
+  label: string;
+  disabled: boolean;
+  onPress: () => void;
+  /** Cancel: the draft saved on the server (an AI-written one) goes, so nothing of the page is left. */
+  discard: () => Promise<void>;
+};
 
 /**
  * The sitter's evening note for one pet (phase-07 7.3), as a diary page from the start (Diary book): write on the page
@@ -283,8 +291,8 @@ export function ReportComposer({
       const result = await generateReport({
         petId: pet.id,
         chips: highlights.map((c) => c.label),
-        // The sitter's own words now come as lines (custom chips, FB-18); no separate note.
-        note: null,
+        // What is already on the page goes in with the chips and the photos: the AI weaves it into the page.
+        note: body.trim().slice(0, 600) || null,
         // A photo with any chip turned off sends no description: it could say what that chip said (D38).
         photos: descriptions
           .filter((d) => !chips.some((c) => c.media_id === d.media_id && off.has(c.id)))
@@ -339,14 +347,33 @@ export function ReportComposer({
     }
   };
 
+  // Chips that have just been made are scrolled into sight (they land below the page, often under the fold).
+  const chipsRef = useRef<View>(null);
+  const wasReading = useRef(false);
+  useEffect(() => {
+    const reading = busy === "chips";
+    if (wasReading.current && !reading && all.length > 0) setTimeout(() => scrollIntoView(chipsRef), 50);
+    wasReading.current = reading;
+  }, [busy, all.length]);
+
   // The Diary pins this pet's Send at the bottom of the screen; it reads the latest `send` through the ref.
   const sendRef = useRef(send);
   sendRef.current = send;
   const sendLabel = busy === "send" ? "Sending…" : `Send to ${pet.ownerName}`;
   const sendDisabled = busy != null || !body.trim();
   const sendable = !loading && !sent;
+  const discard = async () => {
+    if (!draft) return;
+    try {
+      await deleteDiaryPage(draft.id);
+    } catch {
+      // The draft stays on the server, private; the page on screen starts again either way.
+    }
+  };
+  const discardRef = useRef(discard);
+  discardRef.current = discard;
   useEffect(() => {
-    onSendBar?.(sendable ? { label: sendLabel, disabled: sendDisabled, onPress: () => void sendRef.current() } : null);
+    onSendBar?.(sendable ? { label: sendLabel, disabled: sendDisabled, onPress: () => void sendRef.current(), discard: () => discardRef.current() } : null);
   }, [onSendBar, sendable, sendLabel, sendDisabled]);
   useEffect(() => () => onSendBar?.(null), [onSendBar]);
 
@@ -454,17 +481,18 @@ export function ReportComposer({
       />
 
       <Button
-        label={busy === "generate" ? "Writing…" : body.trim() ? "Rewrite the page from the chips" : "Write the page from the chips"}
+        label={busy === "generate" ? "Writing…" : body.trim() ? "Rewrite the page with AI" : "Write the page with AI"}
         variant="secondary"
         ai
         disabled={busy != null}
         onPress={() => void generate()}
         testID={`report-generate-${pet.id}`}
       />
-      {body.trim() ? <Text style={styles.muted}>This replaces what's on the page. Nothing is sent.</Text> : null}
+      {body.trim() ? <Text style={styles.muted}>Uses the photos, chips and your words. Nothing is sent.</Text> : null}
 
       <View style={styles.chipsHead}>
         <Text style={styles.label}>Today's chips</Text>
+        {busy === "chips" ? <ChipsReading testID={`report-chips-reading-${pet.id}`} /> : null}
         {summary ? (
           <Text style={styles.summary} numberOfLines={1} testID={`report-summary-${pet.id}`}>
             {summaryLine(summary)}
@@ -472,14 +500,14 @@ export function ReportComposer({
         ) : null}
       </View>
       {all.length > 0 ? (
-        <>
+        <View ref={chipsRef}>
           <ChipSuggestions chips={all} off={off} onToggle={toggle} onRemove={removeCustom} testIDPrefix={`report-chip-${pet.id}`} />
           {highlights.length > REPORT_MAX_HIGHLIGHTS ? (
             <Text style={styles.muted} testID={`report-too-many-${pet.id}`}>
               {`Only ${REPORT_MAX_HIGHLIGHTS} highlights fit on the page. Turn a few off.`}
             </Text>
           ) : null}
-        </>
+        </View>
       ) : (
         <Text style={styles.muted} testID={`report-nochips-${pet.id}`}>
           {busy === "chips" ? "Looking at today…" : "Nothing recorded yet. Add a photo or a short line."}
