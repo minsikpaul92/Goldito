@@ -129,12 +129,13 @@ test.describe("owner diary page", () => {
     await screen.getByTestId("diary-write").click();
     await screen.getByTestId("diary-write-body").fill("A walk in the sun.");
     // The picture box starts empty and is the button (#369).
-    const picture = screen.getByTestId("diary-write-page-picture").locator("img");
-    await expect(picture).toHaveCount(0);
+    // (The photo itself is a Cloudinary url the test cannot load: the box turning into the photo button is what shows.)
+    const photo = screen.getByTestId("diary-write-photo-change");
+    await expect(photo).toHaveCount(0);
     await screen.getByTestId("diary-write-photo").click();
     await screen.getByTestId("sample-walk").click();
     await screen.getByTestId("media-confirm-use").click(); // the photo is placed in its frame first
-    await expect(picture).toHaveCount(1);
+    await expect(photo).toHaveCount(1);
     // The photo brings a line; tapping it puts it on the page.
     expect(asked[0]).toMatchObject({ pet_id: MAX.id, media_ids: ["media-own"] });
     await screen.getByTestId("diary-write-chip-photo-media-own-0").click();
@@ -145,11 +146,11 @@ test.describe("owner diary page", () => {
     await screen.getByTestId("diary-write-photo-change").click();
     await expect(screen.getByTestId("diary-write-photo-add")).toBeVisible();
     await screen.getByTestId("diary-write-photo-remove").click();
-    await expect(picture).toHaveCount(0);
+    await expect(photo).toHaveCount(0);
     await screen.getByTestId("diary-write-photo").click();
     await screen.getByTestId("sample-walk").click();
     await screen.getByTestId("media-confirm-use").click(); // the photo is placed in its frame first
-    await expect(picture).toHaveCount(1);
+    await expect(photo).toHaveCount(1);
     await screen.getByTestId("diary-write-save").click();
 
     await expect(screen.getByTestId("toast")).toContainText("Page saved");

@@ -189,12 +189,11 @@ test.describe("diary decorating", () => {
     await expect(screen.getByTestId("decor-mine")).toHaveCount(2);
 
     await screen.getByTestId("decor-start").click();
-    await screen.getByTestId("decor-mine").click();
+    await screen.getByTestId("decor-mine").first().click();
     await screen.getByTestId("decor-remove").click();
     await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
-    await page.waitForTimeout(300);
-    expect(db.report_decor[0].items).toEqual([]);
-    await expect(screen.getByTestId("decor-mine")).toHaveCount(0);
+    await expect.poll(() => db.report_decor[0].items.length).toBe(1);
+    await expect(screen.getByTestId("decor-mine")).toHaveCount(1);
   });
 
   test("a picture-diary page: new stickers go over the writing; one saved behind it stays there and still drags", async ({ page }) => {

@@ -380,6 +380,7 @@ test.describe("daily report", () => {
     db.daily_reports.push({ id: "d1", pet_id: MAX.id, sitter_id: SITTER.id, report_date: TODAY_TORONTO, body: "Saved draft text", status: "draft", source_snapshot: null, created_at: NOON_TORONTO.toISOString() });
     await page.reload();
     const screen = app(page);
+    await screen.getByTestId("sitter-diary-view-today").click(); // the Diary opens on the book
     await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue("Saved draft text");
     await expect(screen.getByTestId(`report-send-${MAX.id}`)).toBeEnabled();
   });
