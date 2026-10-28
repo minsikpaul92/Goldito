@@ -341,8 +341,8 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
           urlFor={stickerUrl}
         />
         <View ref={headerRef} pointerEvents={passThrough} style={styles.header} testID={id("header")}>
-          <Text style={styles.headerText}>{`📅 ${longDay(day)}`}</Text>
-          <Text style={styles.headerText}>{`${petName}'s day 🐾`}</Text>
+          <Text style={[styles.headerText, styles.headerFit]} numberOfLines={1}>{`📅 ${longDay(day)}`}</Text>
+          <Text style={[styles.headerText, styles.headerFit]} numberOfLines={1}>{`${petName}'s day 🐾`}</Text>
         </View>
         <View ref={pictureRef} pointerEvents={passThrough} style={styles.picture} testID={id("picture")} {...(many ? swipe.panHandlers : null)}>
           {shownNow ? (
@@ -539,6 +539,8 @@ const makeStyles = (theme: Theme) =>
     paperEditing: { borderColor: theme.color.primary, borderStyle: "dashed" },
     paperWriting: { borderColor: theme.color.primary },
     header: { zIndex: 2, flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.sm },
+    // One line each, whatever the page's width or the pet's name.
+    headerFit: { flexShrink: 1 },
     headerText: { fontFamily: DIARY_FONT, fontSize: theme.fontSize.body + 2, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     picture: {
       zIndex: 0,

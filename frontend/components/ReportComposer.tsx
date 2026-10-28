@@ -466,7 +466,8 @@ export function ReportComposer({
   // Not sent yet: the page is there from the start (Diary book). The sitter writes on it by hand, or lets Goldito write
   // it from the chips below; either way it stays a draft only they can see until they tap Send (pinned by the Diary).
   return (
-    <Card style={styles.card} testID={`report-${pet.id}`}>
+    // No card around it: the page is as wide as the owner's, so the same page sits the same on both phones.
+    <View style={styles.writing} testID={`report-${pet.id}`}>
       {draft || body.trim() ? (
         <Text style={styles.muted} testID={`report-state-${pet.id}`}>
           {`Draft. Only you can see it until you send it to ${pet.ownerName}.`}
@@ -586,7 +587,7 @@ export function ReportComposer({
         })}
         <Button label="Done" onPress={() => setEditing(false)} testID={`report-edit-done-${pet.id}`} />
       </Sheet>
-    </Card>
+    </View>
   );
 }
 
@@ -602,6 +603,7 @@ function PhotoAction({ label, onPress, testID }: { label: string; onPress: () =>
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.sm },
+    writing: { gap: theme.spacing.md },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
