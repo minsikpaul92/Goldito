@@ -133,7 +133,8 @@ def search_queries(
     """Up to four keyword searches for every check (D61: Tavily always, trusted sites only).
 
     Hidden allergen sources first, then toxic ingredients, then a recall check for the product; whatever room is left
-    goes to the first ingredients, so there is always at least one source to show.
+    goes to the first ingredients. What the searches find is evidence for the model; a page is shown to the owner only
+    when `sources_to_show` lets it through.
     """
     queries: list[Query] = []
 
@@ -150,6 +151,37 @@ def search_queries(
     for ingredient in ingredients:
         add(Query(f"{ingredient} safe for {species}s"))
     return queries
+
+
+def _mentions(text: str, term: str) -> bool:
+    """The whole word or phrase appears (a plural 's' is allowed), case-insensitive."""
+    return re.search(rf"(?<![a-z0-9]){re.escape(term.lower())}s?(?![a-z0-9])", text.lower()) is not None
+
+
+def sources_to_show(
+    hits: list[dict], cited: list[int], terms: list[str], *, rule_allergen_hit: bool, limit: int
+) -> list[dict]:
+    """The search pages the owner may see: never one that is unrelated to this verdict.
+
+    - A verdict that the pet's own allergy and the label already settle (`rule_allergen_hit`) shows no pages: the search
+      cannot add to it, and a page that only mentions the food (a recall, a bland diet) would look like proof.
+    - Otherwise a page is shown only when the model cited it (`cited` are 1-based numbers of the excerpts it was given)
+      and its title or text names one of the `terms` (the product, or an ingredient or allergen the verdict is about).
+    """
+    if rule_allergen_hit:
+        return []
+    shown: list[dict] = []
+    for n in cited:
+        if not 1 <= n <= len(hits):
+            continue
+        hit = hits[n - 1]
+        words = f"{hit.get('title', '')} {hit.get('content', '')}"
+        if hit in shown or not any(t.strip() and _mentions(words, t.strip()) for t in terms):
+            continue
+        shown.append(hit)
+        if len(shown) == limit:
+            break
+    return shown
 
 
 def partial_message(pet_name: str) -> str:

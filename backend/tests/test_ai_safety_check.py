@@ -102,12 +102,12 @@ def post(client, token=None, **over):
 HIT = {"title": "People foods to avoid", "url": "https://www.fda.gov/foods", "domain": "fda.gov", "content": "Avoid..."}
 
 
-def test_an_owner_checks_a_plain_treat_and_it_is_saved_with_its_sources(client, setup):
+def test_an_owner_checks_a_plain_treat_and_it_is_saved(client, setup):
     ctx = setup(label("sweet potato", "glycerin"), judged("SAFE", "Looks fine for Max."), hits=[HIT])
     body = post(client).json()
     assert body["safety_status"] == "SAFE" and body["double_checked"] is True and body["sources_unavailable"] is False
     assert body["detected_ingredients"] == ["sweet potato", "glycerin"] and body["product_name"] == "Crunchy Bites"
-    assert body["sources"] == [{"title": "People foods to avoid", "url": "https://www.fda.gov/foods", "domain": "fda.gov"}]
+    assert body["sources"] == []  # the search ran, but the model cited nothing: no page is shown
     assert body["model"] == "safety-model" and body["warning_message"] == "Looks fine for Max."
     (saved,) = ctx.db.tables["safety_checks"]
     assert body["safety_check_id"] == saved["id"]
@@ -147,6 +147,50 @@ def test_a_possible_hidden_allergen_is_a_warning_with_the_reason(client, setup):
     assert body["safety_status"] == "WARNING"
     assert body["hidden_sources"][0]["ingredient"] == "animal fat" and body["hidden_sources"][0]["may_contain"] == "chicken"
     assert ctx.searches[0][0].text == "animal fat chicken derived"
+
+
+FAT_HIT = {
+    "title": "Animal fat in pet food",
+    "url": "https://vcahospitals.com/animal-fat",
+    "domain": "vcahospitals.com",
+    "content": "Animal fat in pet food is often poultry-derived and the label may not say which animal.",
+}
+OFF_TOPIC_HIT = {
+    "title": "Bland diet instructions",
+    "url": "https://vcahospitals.com/bland-diet",
+    "domain": "vcahospitals.com",
+    "content": "Feed boiled rice and plain cooked meat for two days.",
+}
+
+
+def test_a_page_is_shown_only_when_the_model_cited_it_and_it_is_about_the_finding(client, setup):
+    setup(label("sweet potato", "animal fat"), judged("WARNING", "Ask the owner first.", sources=[1]), hits=[FAT_HIT, OFF_TOPIC_HIT])
+    body = post(client).json()
+    assert [s["url"] for s in body["sources"]] == ["https://vcahospitals.com/animal-fat"]
+
+
+def test_a_cited_page_that_is_not_about_the_finding_is_never_shown(client, setup):
+    setup(label("sweet potato", "animal fat"), judged("WARNING", "Ask the owner first.", sources=[1, 2]), hits=[OFF_TOPIC_HIT, FAT_HIT])
+    body = post(client).json()
+    assert [s["url"] for s in body["sources"]] == ["https://vcahospitals.com/animal-fat"]
+
+
+def test_a_page_the_model_did_not_cite_is_not_shown_even_if_it_fits(client, setup):
+    setup(label("sweet potato", "animal fat"), judged("WARNING", "Ask the owner first.", sources=[]), hits=[FAT_HIT])
+    assert post(client).json()["sources"] == []
+
+
+def test_made_up_source_numbers_are_ignored(client, setup):
+    setup(label("sweet potato", "animal fat"), judged("WARNING", "Ask the owner first.", sources=[0, 7, 99, "x"]), hits=[FAT_HIT])
+    assert post(client).json()["sources"] == []
+
+
+def test_the_pets_own_allergy_shows_no_pages_even_when_one_is_cited(client, setup):
+    chicken_hit = {**FAT_HIT, "title": "Chicken in pet food", "content": "Chicken breast is a common allergen in dog treats."}
+    setup(label("chicken breast", "rice"), judged("DANGER", "Don't feed it.", sources=[1]), hits=[chicken_hit])
+    body = post(client).json()
+    assert body["safety_status"] == "DANGER" and body["matched_allergens"] == ["chicken"]
+    assert body["sources"] == []
 
 
 def test_the_model_can_raise_the_status_but_not_lower_it(client, setup):
