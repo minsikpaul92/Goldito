@@ -248,7 +248,6 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
         disabled={!canWrite || saving}
         testID="diary-write-generate"
       />
-      {body.trim() ? <Text style={styles.muted}>Uses the photos, chips and your words. Nothing is saved.</Text> : null}
       {reading > 0 ? <ChipsReading testID="diary-write-chips-reading" /> : null}
       {chips.length > 0 ? (
         <View ref={chipsRef} testID="diary-write-chips">
@@ -280,6 +279,5 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.border,
     },
     page: { gap: theme.spacing.md },
-    muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     actionLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
   });

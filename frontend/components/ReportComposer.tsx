@@ -488,7 +488,6 @@ export function ReportComposer({
         onPress={() => void generate()}
         testID={`report-generate-${pet.id}`}
       />
-      {body.trim() ? <Text style={styles.muted}>Uses the photos, chips and your words. Nothing is sent.</Text> : null}
 
       <View style={styles.chipsHead}>
         <Text style={styles.label}>Today's chips</Text>

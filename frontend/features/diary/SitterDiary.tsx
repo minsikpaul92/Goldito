@@ -131,9 +131,11 @@ export function SitterDiary() {
               variant="secondary"
               style={styles.half}
               onPress={() => {
-                void bar.discard();
-                setResets((prev) => ({ ...prev, [current.id]: (prev[current.id] ?? 0) + 1 }));
-                setView("book");
+                // The draft on the server goes first: a page started again would otherwise read it back.
+                void bar.discard().then(() => {
+                  setResets((prev) => ({ ...prev, [current.id]: (prev[current.id] ?? 0) + 1 }));
+                  setView("book");
+                });
               }}
               testID={`report-cancel-${current.id}`}
             />
