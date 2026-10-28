@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Image, LayoutChangeEvent, PanResponder, Platform, Pressable, StyleSheet, View } from "react-native";
 
-import { useThemedStyles } from "../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 import { Icon } from "./ui/Icon";
 
@@ -9,7 +9,6 @@ const ZOOM_MAX = 4;
 const ZOOM_STEP = 1.2;
 /** Longest side of the cropped copy that is uploaded. */
 const OUT_MAX = 1600;
-const BACKGROUND = "#F3EDE0";
 
 type Size = { w: number; h: number };
 
@@ -31,6 +30,7 @@ type Props = {
  * `crop()` draws exactly what shows in the frame into a new image file.
  */
 export function PhotoFrame({ url, file, aspect, onReady }: Props) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   // The photo as shown: the one picked, or a quarter-turned copy of it (the crop is drawn from this one).
   const [src, setSrc] = useState(url);
@@ -155,7 +155,8 @@ export function PhotoFrame({ url, file, aspect, onReady }: Props) {
     canvas.height = outH;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    ctx.fillStyle = BACKGROUND;
+    // Where the photo does not reach (made smaller than the frame), the paper shows.
+    ctx.fillStyle = theme.color.surface;
     ctx.fillRect(0, 0, outW, outH);
     ctx.drawImage(img, 0, 0, natural.w, natural.h, offset.x * k, offset.y * k, natural.w * scale * k, natural.h * scale * k);
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
@@ -201,13 +202,13 @@ export function PhotoFrame({ url, file, aspect, onReady }: Props) {
       </View>
       <View style={styles.zoomRow}>
         <Pressable accessibilityRole="button" accessibilityLabel="Smaller" onPress={() => zoomTo(zoom / ZOOM_STEP)} style={styles.zoomButton} testID="photo-frame-smaller">
-          <Icon name="remove" size={20} color="#1B4332" />
+          <Icon name="remove" size={20} color={theme.color.primary} />
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Turn" onPress={() => void turn()} style={styles.zoomButton} testID="photo-frame-turn">
-          <Icon name="refresh" size={20} color="#1B4332" />
+          <Icon name="refresh" size={20} color={theme.color.primary} />
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Bigger" onPress={() => zoomTo(zoom * ZOOM_STEP)} style={styles.zoomButton} testID="photo-frame-bigger">
-          <Icon name="add" size={20} color="#1B4332" />
+          <Icon name="add" size={20} color={theme.color.primary} />
         </Pressable>
       </View>
     </View>
@@ -219,7 +220,7 @@ const makeStyles = (theme: Theme) =>
     wrap: { gap: theme.spacing.sm },
     // The line is drawn outside the frame, so the frame itself is exactly the shape that gets cropped.
     border: { overflow: "hidden", borderRadius: theme.radius.sm, borderWidth: 2, borderColor: theme.color.text },
-    frame: { width: "100%", overflow: "hidden", backgroundColor: BACKGROUND },
+    frame: { width: "100%", overflow: "hidden", backgroundColor: theme.color.surface },
     zoomRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: theme.spacing.sm },
     zoomButton: {
       width: 44,

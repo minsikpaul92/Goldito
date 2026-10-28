@@ -563,7 +563,7 @@ const makeStyles = (theme: Theme) =>
       borderRadius: theme.radius.pill,
       backgroundColor: "rgba(0,0,0,0.55)",
     },
-    countText: { fontSize: theme.fontSize.caption, fontWeight: theme.fontWeight.semibold, color: "#FFFFFF" },
+    countText: { fontSize: theme.fontSize.caption, fontWeight: theme.fontWeight.semibold, color: theme.color.primaryText },
     pictureEmpty: { alignItems: "center", gap: theme.spacing.xs },
     pictureEmptyText: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     pictureActions: { position: "absolute", bottom: theme.spacing.sm, flexDirection: "row", gap: theme.spacing.sm },
