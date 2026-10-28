@@ -18,7 +18,7 @@ from app.config import get_settings
 log = logging.getLogger("goldito.tavily")
 
 SEARCH_URL = "https://api.tavily.com/search"
-TRUSTED_DOMAINS = ["aspca.org", "fda.gov", "avma.org", "petpoisonhelpline.com", "vcahospitals.com"]
+TRUSTED_DOMAINS = ["fda.gov"]
 TOTAL_TIMEOUT_S = 8.0
 MAX_RESULTS = 3
 EXCERPT_CHARS = 400

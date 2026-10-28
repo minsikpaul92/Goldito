@@ -21,19 +21,17 @@ MAX_CHIPS = 3
 MAX_TEXT = 60
 DATA = Path(__file__).resolve().parent.parent / "data" / "breed_needs.json"
 
-# Only trusted veterinary and breed-club sites, per species (README.md, Tavily section).
-DOMAINS = {
-    "dog": ["vcahospitals.com", "merckvetmanual.com"],
-    "cat": ["icatcare.org", "cfa.org", "vcahospitals.com", "merckvetmanual.com"],
-}
+# Sites the breed needs may be searched on, per species. Empty on purpose: the sites we read before (VCA, Merck) forbid
+# reuse of their content, so nothing is searched until a site that allows it is added here.
+DOMAINS: dict[str, list[str]] = {"dog": [], "cat": []}
 
 
 class Chip(BaseModel):
     kind: Literal["exercise", "grooming", "care"]
     text: str
-    # Index into the needs' `sources` of the page this came from.
-    source: int
-    # The words on that page the line rests on, kept so a person can check the line against the page.
+    # Index into the needs' `sources` of the page this came from; none for a line we wrote ourselves.
+    source: int | None = None
+    # Not stored or returned: the quote only proves the line is on the page, and we do not keep page text.
     quote: str | None = None
 
 
@@ -120,7 +118,7 @@ def validate_chips(raw: RawNeeds, hits: list[dict]) -> tuple[list[Chip], list[So
         if link not in sources:
             sources.append(link)
         used.add(kind)
-        chips.append(Chip(kind=kind, text=text, source=sources.index(link), quote=" ".join(item.quote.split())[:300]))
+        chips.append(Chip(kind=kind, text=text, source=sources.index(link)))
         if len(chips) == MAX_CHIPS:
             break
     return chips, sources

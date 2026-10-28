@@ -1,18 +1,18 @@
 {
-  "_comment": "Treat check rules (Phase 12.1, D23). Ingredient names and where they come from only, no copied article text. Matching is whole-word and case-insensitive; `not` lists ingredients that merely contain the word.",
+  "_comment": "Treat check rules (Phase 12.1, D23). Ingredient names only, no copied article text. Matching is whole-word and case-insensitive; `not` lists ingredients that merely contain the word.",
   "toxic": [
-    {"name": "xylitol", "aliases": ["xylitol", "birch sugar"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
-    {"name": "chocolate", "aliases": ["chocolate", "cocoa", "cacao", "theobromine"], "not": ["cocoa butter"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
-    {"name": "caffeine", "aliases": ["caffeine", "coffee", "guarana"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
-    {"name": "alcohol", "aliases": ["alcohol", "ethanol", "beer", "wine"], "not": ["sugar alcohol", "cetyl alcohol", "stearyl alcohol"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
-    {"name": "grapes / raisins", "aliases": ["grape", "grapes", "raisin", "raisins", "currant", "currants", "sultana", "sultanas"], "not": ["grapeseed", "grape seed"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
-    {"name": "onion", "aliases": ["onion", "onions", "onion powder", "shallot", "shallots", "leek", "leeks", "chive", "chives"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
-    {"name": "garlic", "aliases": ["garlic", "garlic powder"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
-    {"name": "macadamia nuts", "aliases": ["macadamia", "macadamia nut", "macadamia nuts"], "species": ["dog"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
-    {"name": "lily", "aliases": ["lily", "lilies", "lilium", "daylily"], "species": ["cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants"},
-    {"name": "essential oils", "aliases": ["essential oil", "essential oils", "tea tree oil", "melaleuca oil", "eucalyptus oil", "peppermint oil", "wintergreen oil"], "species": ["cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control"},
-    {"name": "propylene glycol", "aliases": ["propylene glycol"], "species": ["cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control"},
-    {"name": "raw yeast dough", "aliases": ["yeast dough", "raw dough", "bread dough"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"}
+    {"name": "xylitol", "aliases": ["xylitol", "birch sugar"], "species": ["dog", "cat"]},
+    {"name": "chocolate", "aliases": ["chocolate", "cocoa", "cacao", "theobromine"], "not": ["cocoa butter"], "species": ["dog", "cat"]},
+    {"name": "caffeine", "aliases": ["caffeine", "coffee", "guarana"], "species": ["dog", "cat"]},
+    {"name": "alcohol", "aliases": ["alcohol", "ethanol", "beer", "wine"], "not": ["sugar alcohol", "cetyl alcohol", "stearyl alcohol"], "species": ["dog", "cat"]},
+    {"name": "grapes / raisins", "aliases": ["grape", "grapes", "raisin", "raisins", "currant", "currants", "sultana", "sultanas"], "not": ["grapeseed", "grape seed"], "species": ["dog", "cat"]},
+    {"name": "onion", "aliases": ["onion", "onions", "onion powder", "shallot", "shallots", "leek", "leeks", "chive", "chives"], "species": ["dog", "cat"]},
+    {"name": "garlic", "aliases": ["garlic", "garlic powder"], "species": ["dog", "cat"]},
+    {"name": "macadamia nuts", "aliases": ["macadamia", "macadamia nut", "macadamia nuts"], "species": ["dog"]},
+    {"name": "lily", "aliases": ["lily", "lilies", "lilium", "daylily"], "species": ["cat"]},
+    {"name": "essential oils", "aliases": ["essential oil", "essential oils", "tea tree oil", "melaleuca oil", "eucalyptus oil", "peppermint oil", "wintergreen oil"], "species": ["cat"]},
+    {"name": "propylene glycol", "aliases": ["propylene glycol"], "species": ["cat"]},
+    {"name": "raw yeast dough", "aliases": ["yeast dough", "raw dough", "bread dough"], "species": ["dog", "cat"]}
   ],
   "hidden_sources": [
     {"term": "animal fat", "may_contain": ["chicken", "beef", "pork", "lamb", "turkey"], "reason": "Animal fat is often rendered from poultry or beef and the label does not say which."},
