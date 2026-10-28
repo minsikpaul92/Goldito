@@ -285,6 +285,8 @@ const CARE_SCRIPT: ScriptStep[] = [
   { tap: "media-confirm-use" },
   { wait: "checkin-photo-preview-*", timeout: 30_000 },
   { tap: "checkin-send-*" },
+  // Sent: the picks clear. ("Sent today" shows from the Home tiles already, so it can't tell.)
+  { gone: "checkin-ready-*-walk", timeout: 30_000 },
   { wait: "checkin-sent-*", timeout: 30_000 },
   { pause: 1_500 },
   { open: "/sitter/snap/sticker" },
@@ -297,8 +299,8 @@ const CARE_SCRIPT: ScriptStep[] = [
   // the page written by AI from the photo, the chips and her words, three stickers in the free spots, Send.
   { tap: "feed-view-diary" },
   { tap: "sitter-diary-view-today" },
-  // With two pets in care Write a diary asks which one; Max is the first.
-  { tapIf: "diary-pick-pet-*" },
+  // With two pets in care Write a diary asks which one: Max (the sheet's backdrop and Close match the * too).
+  { tapIf: "diary-pick-pet-*", prefer: "Max" },
   { wait: "report-body-*", timeout: 30_000 },
   { pause: 1_000 },
   { tap: "report-add-photo-*" },
@@ -336,7 +338,7 @@ const CARE_OWNER_SCRIPT: ScriptStep[] = [
   { wait: "feed-card-*", timeout: 30_000 },
   { pause: 3_000 },
   { tap: "feed-view-diary" },
-  { tap: "diary-entry-cover-*", timeout: 30_000 },
+  { tapBest: "diary-entry-cover-*", prefer: "Max", timeout: 30_000 },
   // The page as Chloe sent it: her photo, her words and the stickers.
   { pause: 6_000 },
 ];
