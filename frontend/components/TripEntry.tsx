@@ -44,10 +44,10 @@ export function TripEntry({
     const line = mine
       ? live.status === "arrived"
         ? "You've arrived 📍"
-        : `You're on the way 🚗${eta}`
+        : `You're on the way 🐾${eta}`
       : live.status === "arrived"
-        ? `${traveler} has arrived 🚗`
-        : `${traveler} is on the way 🚗${eta}`;
+        ? `${traveler} has arrived 🐾`
+        : `${traveler} is on the way 🐾${eta}`;
     return (
       <Card style={styles.card} testID="trip-entry-live">
         <Text style={styles.title}>{line}</Text>

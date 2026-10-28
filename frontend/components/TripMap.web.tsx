@@ -27,15 +27,22 @@ function addStyles() {
   document.head.appendChild(style);
 }
 
-/** The traveller: a white disc with the car, a ring pulsing out from it so it reads as moving. */
-function travelerPin(label: string, ring: string, line: string, fill: string) {
+/**
+ * The traveller: a white disc with the pet on the move (its photo, or a dog or cat face; a paw with no pet), a ring
+ * pulsing out from it so it reads as moving. The pet, not the car: what the owner watches come down the street is Max
+ * (Mook, Oct 27).
+ */
+function travelerPin(label: string, ring: string, line: string, fill: string, pet: TripMapProps["travelerPet"]) {
+  const face = pet?.photoUrl
+    ? `<img src="${esc(pet.photoUrl)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block">`
+    : pet?.species === "cat" ? "🐱" : pet ? "🐶" : "🐾";
   const d = 34;
   return L.divIcon({
     className: "goldito-pin",
     html:
       `<div role="img" aria-label="${esc(label)}" style="position:relative;width:${d}px;height:${d}px">` +
       `<span class="goldito-trip-pulse" style="position:absolute;inset:0;border-radius:50%;background:${ring}"></span>` +
-      `<span style="position:absolute;inset:0;border-radius:50%;background:${fill};border:2px solid ${line};display:flex;align-items:center;justify-content:center;font-size:18px">🚗</span>` +
+      `<span style="position:absolute;inset:0;border-radius:50%;background:${fill};border:2px solid ${line};display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden">${face}</span>` +
       `</div>`,
     iconSize: [d, d],
     iconAnchor: [d / 2, d / 2],
@@ -62,7 +69,7 @@ function placePin(label: string, line: string, fill: string, tag: string, tagTex
  * A finger or the mouse drags it, two fingers pinch zoom, and ± zoom. The wheel zooms only once the map has focus
  * (a click or Tab on it), so scrolling past it still scrolls the screen (#381).
  */
-export function TripMap({ traveler, dest, travelerLabel, destLabel = "Handoff place", flush, height = HEIGHT, testID = "trip-map" }: TripMapProps) {
+export function TripMap({ traveler, dest, travelerLabel, travelerPet, destLabel = "Handoff place", flush, height = HEIGHT, testID = "trip-map" }: TripMapProps) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const host = useRef<HTMLDivElement>(null);
@@ -160,11 +167,14 @@ export function TripMap({ traveler, dest, travelerLabel, destLabel = "Handoff pl
         delete markers.current[key];
         return;
       }
-      if (existing) existing.setLatLng([at.lat, at.lng]);
-      else markers.current[key] = L.marker([at.lat, at.lng], { icon, interactive: false, keyboard: false }).addTo(instance);
+      if (existing) {
+        existing.setLatLng([at.lat, at.lng]);
+        // A new picture (the pet's photo arrives after the map) swaps the icon; a move alone keeps it, so the pulse runs on.
+        if ((existing.options.icon as L.DivIcon | undefined)?.options.html !== icon.options.html) existing.setIcon(icon);
+      } else markers.current[key] = L.marker([at.lat, at.lng], { icon, interactive: false, keyboard: false }).addTo(instance);
     };
     const c = theme.color;
-    sync("traveler", traveler, travelerPin(travelerLabel, c.primary, c.primary, c.surface));
+    sync("traveler", traveler, travelerPin(travelerLabel, c.primary, c.primary, c.surface, travelerPet));
     sync("dest", dest, placePin(destLabel, c.text, c.surface, c.text, c.surface));
     // Keep each new position on the trail; a jump back to nothing starts it again.
     if (!traveler) trail.current = [];
@@ -185,7 +195,7 @@ export function TripMap({ traveler, dest, travelerLabel, destLabel = "Handoff pl
     draw("left", traveler && dest ? [traveler, dest] : [], { color: c.primary, weight: 4, opacity: 0.55, dashArray: "1 9", lineCap: "round" });
     points.current = [traveler, dest].filter((p): p is LatLng => p != null);
     if (!moved.current) fit();
-  }, [traveler, dest, travelerLabel, destLabel, theme, fit]);
+  }, [traveler, dest, travelerLabel, travelerPet?.photoUrl, travelerPet?.species, destLabel, theme, fit]);
 
   const zoom = (delta: number) => {
     markMoved();

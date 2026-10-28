@@ -22,6 +22,8 @@ import { useThemedStyles } from "../../providers/ThemeProvider";
 import { useTrip } from "../../providers/TripProvider";
 import { Theme } from "../../theme/themes";
 import { formatTime, isoToZoned } from "../schedule/dates";
+import { usePetFaces } from "../feed/usePetFaces";
+import { petPhotoThumb } from "../ownerOnboarding/petPhotosApi";
 import { Role, canTravel, nextHandoff, placeFor, startOpensAt } from "./tripLogic";
 import { useLiveTrips } from "./useLiveTrips";
 import { useStartTrip } from "./useStartTrip";
@@ -73,6 +75,10 @@ export function TripScreen({ role }: { role: Role }) {
   const booking = state.status === "ready" ? state.booking : null;
   // Called unconditionally (hooks): a placeholder booking until the real one is loaded.
   const startTrip = useStartTrip(booking ?? PLACEHOLDER, role);
+  // The pet on the move goes in the map's moving pin (the first one when several travel together).
+  const firstPet = booking?.pets[0];
+  const faces = usePetFaces(firstPet?.id ? [firstPet.id] : []);
+  const petPhoto = firstPet?.id ? faces[firstPet.id] : null;
 
   if (state.status === "loading" || trips === null) return <LoadingView />;
   if (state.status === "missing") {
@@ -163,7 +169,7 @@ export function TripScreen({ role }: { role: Role }) {
       {/* Arrived: the car sits on the place pin (the arrival circle is 150 m, so the last point is often a bit short). */}
       {shared && place ? (
         <View style={styles.bleed}>
-          <TripMap traveler={arrived ? place : position} dest={place} travelerLabel={travelerName === "You" ? "You" : other} destLabel={placeName} flush height={300} />
+          <TripMap traveler={arrived ? place : position} dest={place} travelerLabel={travelerName === "You" ? "You" : other} travelerPet={firstPet ? { species: firstPet.species, photoUrl: petPhoto ? petPhotoThumb(petPhoto, 80) : null } : null} destLabel={placeName} flush height={300} />
         </View>
       ) : null}
 
@@ -173,7 +179,7 @@ export function TripScreen({ role }: { role: Role }) {
             {!shared
               ? `${travelerName === "You" ? "You're" : `${travelerName} is`} on the way`
               : arrived
-              ? `${travelerName === "You" ? "You've" : `${travelerName} has`} arrived 🚗`
+              ? `${travelerName === "You" ? "You've" : `${travelerName} has`} arrived 🐾`
               : live.eta_at
                 ? `ETA ${clock(live.eta_at)}${live.distance_m != null ? ` · ${formatDistance(live.distance_m)}` : ""}`
                 : position
