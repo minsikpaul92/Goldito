@@ -529,7 +529,6 @@ const makeStyles = (theme: Theme) =>
       alignItems: "center",
       justifyContent: "center",
       borderRadius: theme.radius.sm,
-      backgroundColor: theme.color.accent,
     },
     thumbImage: { width: 40, height: 40 },
   });
