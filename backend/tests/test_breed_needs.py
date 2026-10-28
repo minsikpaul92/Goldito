@@ -70,7 +70,7 @@ def test_lines_with_a_real_quote_are_kept_and_only_their_pages_are_listed():
         HITS,
     )
     assert [(c.kind, c.source) for c in chips] == [("exercise", 0), ("care", 1)]
-    assert chips[0].quote == "needs about an hour of exercise every day"
+    assert chips[0].quote is None  # the quote proves the line, and is not kept
     assert [s.url for s in sources] == ["https://www.merckvetmanual.com/poodle", "https://vcahospitals.com/poodle"]
 
 

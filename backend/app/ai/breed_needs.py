@@ -33,7 +33,7 @@ class Chip(BaseModel):
     text: str
     # Index into the needs' `sources` of the page this came from.
     source: int
-    # The words on that page the line rests on, kept so a person can check the line against the page.
+    # Not stored or returned: the quote only proves the line is on the page, and we do not keep page text.
     quote: str | None = None
 
 
@@ -120,7 +120,7 @@ def validate_chips(raw: RawNeeds, hits: list[dict]) -> tuple[list[Chip], list[So
         if link not in sources:
             sources.append(link)
         used.add(kind)
-        chips.append(Chip(kind=kind, text=text, source=sources.index(link), quote=" ".join(item.quote.split())[:300]))
+        chips.append(Chip(kind=kind, text=text, source=sources.index(link)))
         if len(chips) == MAX_CHIPS:
             break
     return chips, sources

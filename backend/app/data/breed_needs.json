@@ -7,14 +7,12 @@
         {
           "kind": "exercise",
           "text": "Daily walks and play sessions",
-          "source": 0,
-          "quote": "Can be a calm housedog if given adequate exercise. Needs daily walks, jogs, hikes or play sessions."
+          "source": 0
         },
         {
           "kind": "grooming",
           "text": "Brush weekly",
-          "source": 0,
-          "quote": "Brushing once a week is adequate; more during shedding seasons."
+          "source": 0
         }
       ],
       "sources": [
@@ -32,14 +30,12 @@
         {
           "kind": "exercise",
           "text": "Daily walks and play",
-          "source": 0,
-          "quote": "Daily walks, jogs, hikes or play sessions"
+          "source": 0
         },
         {
           "kind": "care",
           "text": "Watch for heat sensitivity",
-          "source": 1,
-          "quote": "Sensitive to heat due to coat density"
+          "source": 1
         }
       ],
       "sources": [
@@ -61,8 +57,7 @@
         {
           "kind": "exercise",
           "text": "Daily walks jogs hikes play sessions",
-          "source": 0,
-          "quote": "Needs daily walks jogs hikes or play sessions"
+          "source": 0
         }
       ],
       "sources": [
@@ -80,14 +75,12 @@
         {
           "kind": "exercise",
           "text": "Daily walk and play sessions",
-          "source": 0,
-          "quote": "A daily walk around the block, coupled with several play sessions, will meet its exercise needs."
+          "source": 0
         },
         {
           "kind": "care",
           "text": "Watch for chilling",
-          "source": 0,
-          "quote": "Its thick coat provides some protection against cold weather, but its small body size makes it vulnerable to chilling."
+          "source": 0
         }
       ],
       "sources": [
@@ -105,20 +98,17 @@
         {
           "kind": "exercise",
           "text": "Daily walk or jog",
-          "source": 0,
-          "quote": "Requires daily exercise in the form of a long walk, jog, or energetic games."
+          "source": 0
         },
         {
           "kind": "grooming",
           "text": "Weekly brushing",
-          "source": 0,
-          "quote": "The coat needs only occasional brushing, once every week or so, to remove dead hair."
+          "source": 0
         },
         {
           "kind": "care",
           "text": "Watch for overheating",
-          "source": 0,
-          "quote": "May overheat easily in warm weather."
+          "source": 0
         }
       ],
       "sources": [
@@ -136,8 +126,7 @@
         {
           "kind": "exercise",
           "text": "Indoor games and short walks",
-          "source": 0,
-          "quote": "Although many of its physical exercise needs can be met with indoor games, it still needs the mental stimulation of walking and sniffing outdoors."
+          "source": 0
         }
       ],
       "sources": [
@@ -155,14 +144,12 @@
         {
           "kind": "exercise",
           "text": "Daily walk or short jog",
-          "source": 0,
-          "quote": "Requires daily exercise in the form of a walk, short jog, or energetic games"
+          "source": 0
         },
         {
           "kind": "grooming",
           "text": "Weekly brushing",
-          "source": 0,
-          "quote": "The coat needs only weekly brushing to remove dead hair"
+          "source": 0
         }
       ],
       "sources": [
@@ -180,8 +167,7 @@
         {
           "kind": "exercise",
           "text": "High energy needs daily exercise",
-          "source": 0,
-          "quote": "Border Collies need significant daily exercise that includes both physical and mental activity"
+          "source": 0
         }
       ],
       "sources": [
@@ -199,14 +185,12 @@
         {
           "kind": "grooming",
           "text": "Brush coat weekly",
-          "source": 0,
-          "quote": "The coat needs only occasional brushing, once every week or so, to remove dead hair."
+          "source": 0
         },
         {
           "kind": "care",
           "text": "Watch for overheating",
-          "source": 0,
-          "quote": "Extremely prone to overheating because of its flat face."
+          "source": 0
         }
       ],
       "sources": [
@@ -226,8 +210,7 @@
         {
           "kind": "grooming",
           "text": "Weekly combing and brushing",
-          "source": 0,
-          "quote": "requires weekly combing and brushing"
+          "source": 0
         }
       ],
       "sources": [
@@ -245,8 +228,7 @@
         {
           "kind": "grooming",
           "text": "Daily brushing to prevent mats",
-          "source": 0,
-          "quote": "This breed's coat is prone to mats and requires daily brushing"
+          "source": 0
         }
       ],
       "sources": [
@@ -264,8 +246,7 @@
         {
           "kind": "grooming",
           "text": "Daily brushing to prevent tangles and mats",
-          "source": 0,
-          "quote": "Cats with long, silky, or curly coats require daily brushing to keep their hair from becoming tangled or matted"
+          "source": 0
         }
       ],
       "sources": [
@@ -283,14 +264,12 @@
         {
           "kind": "grooming",
           "text": "Weekly combing to remove loose hairs",
-          "source": 0,
-          "quote": "Comb coat weekly to remove loose hairs"
+          "source": 0
         },
         {
           "kind": "care",
           "text": "Watch for obesity due to low activity",
-          "source": 0,
-          "quote": "Prone to obesity because they are not active cats"
+          "source": 0
         }
       ],
       "sources": [
@@ -308,8 +287,7 @@
         {
           "kind": "grooming",
           "text": "Brush daily to prevent tangles",
-          "source": 0,
-          "quote": "Cats with long, silky, or curly coats require daily brushing to keep their hair from becoming tangled or matted"
+          "source": 0
         }
       ],
       "sources": [
@@ -327,14 +305,12 @@
         {
           "kind": "grooming",
           "text": "Weekly combing removes dead hair",
-          "source": 0,
-          "quote": "Running a quick comb once a week is ample to remove dead hair in the coat"
+          "source": 0
         },
         {
           "kind": "care",
           "text": "May develop anxiety when left alone",
-          "source": 0,
-          "quote": "Siamese rarely needs to be bathed. Suggested Nutritional Needs for Siamese [...] Can exhibit anxiety from being left home alone by over grooming, possibly leading to psychogenic alopecia"
+          "source": 0
         }
       ],
       "sources": [
@@ -352,14 +328,12 @@
         {
           "kind": "grooming",
           "text": "Weekly combing to keep coat mat-free",
-          "source": 0,
-          "quote": "Run a comb through its coat at least weekly to keep it mat-free and looking healthy."
+          "source": 0
         },
         {
           "kind": "care",
           "text": "Measure food portions to prevent becoming overweight",
-          "source": 0,
-          "quote": "measure food portions to prevent this breed from becoming overweight."
+          "source": 0
         }
       ],
       "sources": [
