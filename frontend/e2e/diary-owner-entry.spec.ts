@@ -150,6 +150,20 @@ test.describe("owner diary page", () => {
     expect(written[0]).toMatchObject({ pet_id: MAX.id, chips: ["Lying on a blanket"], note: "A walk in the sun." });
     await screen.getByTestId("diary-write-chip-photo-media-own-0").click();
     await expect(screen.getByTestId("diary-write-chip-photo-media-own-0")).toHaveAttribute("aria-pressed", "false");
+    // A rewrite keeps the owner's own words, leaves the chip they turned off out, and never sends the AI's text back.
+    await screen.getByTestId("diary-write-generate").click();
+    await expect.poll(() => written.length).toBe(2);
+    expect(written[1]).toMatchObject({ chips: [], photos: [], note: "A walk in the sun." });
+    // A line of their own is a chip too: kept across rewrites, and it can be taken back.
+    await screen.getByTestId("diary-write-custom-open").click();
+    await screen.getByTestId("diary-write-custom-input").fill("Learned a new trick");
+    await screen.getByTestId("diary-write-custom-add").click();
+    await expect(screen.getByTestId("diary-write-chip-custom-1")).toHaveAttribute("aria-pressed", "true");
+    await screen.getByTestId("diary-write-generate").click();
+    await expect.poll(() => written.length).toBe(3);
+    expect(written[2]).toMatchObject({ chips: ["Learned a new trick"], note: "A walk in the sun." });
+    await screen.getByTestId("diary-write-chip-custom-1-remove").click();
+    await expect(screen.getByTestId("diary-write-chip-custom-1")).toHaveCount(0);
     // A tap on the photo offers Add and Remove.
     await expect(screen.getByTestId("diary-write-photo-remove")).toHaveCount(0);
     await screen.getByTestId("diary-write-photo-change").click();

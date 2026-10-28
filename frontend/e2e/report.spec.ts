@@ -421,13 +421,19 @@ test.describe("daily report", () => {
   });
 
   test("generated text lands on the page as a draft; the sitter edits it there and only Send shares it", async ({ page }) => {
-    const { db } = await openSitterDiary(page);
+    const { db, reportRequests } = await openSitterDiary(page);
     const screen = app(page);
     await screen.getByTestId(`report-body-${MAX.id}`).fill("My own first line.");
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
     await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue(/lovely day with Max/);
     expect(db.daily_reports[0].status).toBe("draft");
     expect(db.notifications.some((n) => n.type === "report_sent")).toBe(false);
+    expect(reportRequests[0]).toMatchObject({ sitter_note: "My own first line." });
+    // A rewrite keeps the sitter's own words, leaves a chip they turned off out, and never sends the AI's text back.
+    await screen.getByTestId(`report-chip-${MAX.id}-rec-walk`).click();
+    await screen.getByTestId(`report-generate-${MAX.id}`).click();
+    await expect.poll(() => reportRequests.length).toBe(2);
+    expect(reportRequests[1]).toMatchObject({ sitter_note: "My own first line.", skip: ["walk"] });
     await screen.getByTestId(`report-body-${MAX.id}`).fill("Edited on the page.");
     await screen.getByTestId(`report-send-${MAX.id}`).click();
     await expect(screen.getByTestId(`report-sent-${MAX.id}`)).toContainText("Sent to Robert");

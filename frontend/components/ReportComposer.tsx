@@ -283,6 +283,17 @@ export function ReportComposer({
     onStatus?.(sent ? "sent" : draft ? "draft" : null);
   }, [sent, draft, onStatus]);
 
+  // The words the sitter wrote themselves are remembered across rewrites; the AI's own text is not sent back, so a chip
+  // turned off stays out (it would still be in the old text).
+  const lastAi = useRef<string | null>(null);
+  const ownWords = useRef<string | null>(null);
+  const wordsForRewrite = () => {
+    const text = body.trim();
+    if (!text) ownWords.current = null;
+    else if (text !== lastAi.current) ownWords.current = text.slice(0, 600);
+    return ownWords.current;
+  };
+
   const generate = async () => {
     if (busy) return;
     setBusy("generate");
@@ -292,7 +303,7 @@ export function ReportComposer({
         petId: pet.id,
         chips: highlights.map((c) => c.label),
         // What is already on the page goes in with the chips and the photos: the AI weaves it into the page.
-        note: body.trim().slice(0, 600) || null,
+        note: wordsForRewrite(),
         // A photo with any chip turned off sends no description: it could say what that chip said (D38).
         photos: descriptions
           .filter((d) => !chips.some((c) => c.media_id === d.media_id && off.has(c.id)))
@@ -304,6 +315,7 @@ export function ReportComposer({
         overrides: Object.fromEntries(Object.entries(overrides).filter(([check]) => !skip.includes(check))),
       });
       setDraft(result);
+      lastAi.current = result.body.trim();
       setBody(result.body);
     } catch (e) {
       errorDialog.show({ title: "Couldn't write the page", message: (e as Error).message, onRetry: () => void generate() });

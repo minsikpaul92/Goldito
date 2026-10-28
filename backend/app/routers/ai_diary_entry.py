@@ -22,7 +22,7 @@ from app.services import authz, nebius
 router = APIRouter(prefix="/api/ai", tags=["ai"], dependencies=[Depends(limits.ai_calls)])
 logger = logging.getLogger("goldito.ai")
 
-MAX_CHIPS = 8
+MAX_CHIPS = 16
 CHIP_MAX = 60
 NOTE_MAX = 600
 PHOTO_MAX = 120

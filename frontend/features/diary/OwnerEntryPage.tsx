@@ -5,6 +5,8 @@ import { UploadError, deliveryUrl, uploadMedia } from "../../lib/cloudinary";
 import { FALLBACK_CAPTION, createFeedPost } from "../../lib/feed";
 import { Button } from "../../components/ui/Button";
 import { ChipSuggestions, ChipsReading } from "../../components/ChipSuggestions";
+import { TextButton } from "../../components/ui/TextButton";
+import { TextField } from "../../components/ui/TextField";
 import { scrollIntoView } from "../../lib/scrollIntoView";
 import { pickMedia } from "../../lib/media";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
@@ -15,7 +17,7 @@ import { Theme } from "../../theme/themes";
 import { appToday } from "../schedule/dates";
 import { type DecorItem, saveDecor } from "../snap/decorApi";
 import { DecoratedReport, PHOTO_ASPECT } from "../snap/DecoratedReport";
-import { type ChipPhoto, REPORT_BODY_MAX, type ReportChip, addOwnerEntry, generateOwnerEntry, setDiaryPagePhotos, suggestPhotoChips } from "./reportApi";
+import { CUSTOM_CHIP_MAX, type ChipPhoto, REPORT_BODY_MAX, type ReportChip, addOwnerEntry, generateOwnerEntry, setDiaryPagePhotos, suggestPhotoChips } from "./reportApi";
 
 /** The most photos on a page (015x). */
 const MAX_PAGE_PHOTOS = 4;
@@ -57,6 +59,11 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
   const [descriptions, setDescriptions] = useState<ChipPhoto[]>([]);
   /** Photos whose chips are still being made (a spinner shows meanwhile). */
   const [reading, setReading] = useState(0);
+  /** Short lines the owner typed ("One short line"): each is a chip of their own, remembered across rewrites. */
+  const [custom, setCustom] = useState<ReportChip[]>([]);
+  const [customText, setCustomText] = useState("");
+  const [customOpen, setCustomOpen] = useState(false);
+  const customSeq = useRef(0);
   const [off, setOff] = useState<Set<string>>(new Set());
   const [writing, setWriting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -70,6 +77,7 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
     setPhotos([]);
     setChips([]);
     setDescriptions([]);
+    setCustom([]);
     setOff(new Set());
     setPhotoMenu(false);
   }, [petId]);
@@ -132,16 +140,50 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
     });
 
   // "Write the page from the chips": the kept chips and what is already on the page become the page's words.
-  const kept = chips.filter((c) => !off.has(c.id));
+  const all = [...chips, ...custom];
+  const kept = all.filter((c) => !off.has(c.id));
   const canWrite = !!pet && !writing && (kept.length > 0 || descriptions.length > 0 || body.trim() !== "");
+  // The words the owner wrote themselves are remembered across rewrites; the AI's own text is not sent back, so a chip
+  // turned off stays out (it would still be in the old text).
+  const lastAi = useRef<string | null>(null);
+  const ownWords = useRef<string | null>(null);
+  const wordsForRewrite = () => {
+    const text = body.trim();
+    if (!text) ownWords.current = null;
+    else if (text !== lastAi.current) ownWords.current = text.slice(0, 600);
+    return ownWords.current;
+  };
+
+  const addCustom = () => {
+    const label = customText.trim().replace(/\s+/g, " ").slice(0, CUSTOM_CHIP_MAX);
+    if (!label) return;
+    if (!all.some((c) => c.label.toLowerCase() === label.toLowerCase())) {
+      const id = `custom-${(customSeq.current += 1)}`;
+      setCustom((now) => [...now, { id, kind: "episode", label, source: "custom", check: null, media_id: null }]);
+    }
+    setCustomText("");
+  };
+
+  /** A line the owner added can be taken back entirely; the photos' chips are only turned off. */
+  const removeCustom = (id: string) => {
+    setCustom((now) => now.filter((c) => c.id !== id));
+    setOff((now) => {
+      const next = new Set(now);
+      next.delete(id);
+      return next;
+    });
+  };
+
   const writeFromChips = async () => {
     if (!pet || writing) return;
     setWriting(true);
     try {
       // A photo with any chip turned off sends no description: it could say what that chip said.
       const photoLines = descriptions.filter((d) => !chips.some((c) => c.media_id === d.media_id && off.has(c.id))).map((d) => d.description);
-      const res = await generateOwnerEntry(pet.id, kept.map((c) => c.label), photoLines, body.trim() || null);
-      setBody(res.body.slice(0, REPORT_BODY_MAX));
+      const res = await generateOwnerEntry(pet.id, kept.map((c) => c.label), photoLines, wordsForRewrite());
+      const written = res.body.slice(0, REPORT_BODY_MAX);
+      lastAi.current = written.trim();
+      setBody(written);
       if (res.fallback) toast.show("The writing helper is down. Here's a plain list to edit.");
     } catch (error) {
       errorDialog.show({ title: "Page not written", message: (error as Error).message, onRetry: () => void writeFromChips() });
@@ -249,11 +291,31 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
         testID="diary-write-generate"
       />
       {reading > 0 ? <ChipsReading testID="diary-write-chips-reading" /> : null}
-      {chips.length > 0 ? (
+      {all.length > 0 ? (
         <View ref={chipsRef} testID="diary-write-chips">
-          <ChipSuggestions chips={chips} off={off} onToggle={toggleChip} testIDPrefix="diary-write-chip" />
+          <ChipSuggestions chips={all} off={off} onToggle={toggleChip} onRemove={removeCustom} testIDPrefix="diary-write-chip" />
         </View>
       ) : null}
+      {customOpen ? (
+        <View style={styles.addRow}>
+          <View style={styles.addField}>
+            <TextField
+              label="One short line"
+              value={customText}
+              maxLength={CUSTOM_CHIP_MAX}
+              placeholder="e.g. Learned a new trick"
+              onChangeText={setCustomText}
+              onSubmitEditing={addCustom}
+              testID="diary-write-custom-input"
+            />
+          </View>
+          <Button label="Add" disabled={!customText.trim()} onPress={addCustom} testID="diary-write-custom-add" />
+        </View>
+      ) : (
+        <View style={styles.links}>
+          <TextButton label="+ Add a line" onPress={() => setCustomOpen(true)} testID="diary-write-custom-open" />
+        </View>
+      )}
     </View>
   );
 }
@@ -279,5 +341,8 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.border,
     },
     page: { gap: theme.spacing.md },
+    addRow: { flexDirection: "row", alignItems: "flex-end", gap: theme.spacing.sm },
+    addField: { flex: 1 },
+    links: { flexDirection: "row", gap: theme.spacing.md },
     actionLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
   });
