@@ -15,7 +15,7 @@ import {
   getTodayReport,
   sendReport,
   suggestChips,
-  setDiaryPagePhoto,
+  setDiaryPagePhotos,
   summaryLine,
   type DaySummary,
 } from "../features/diary/reportApi";
@@ -41,6 +41,8 @@ import { Tag } from "./ui/Tag";
 import { TextField } from "./ui/TextField";
 
 type Photo = { mediaId: string; thumbUrl: string };
+/** The most photos on a page (015x). */
+const MAX_PAGE_PHOTOS = 4;
 
 /** Which highlights go first when more than REPORT_MAX_HIGHLIGHTS are on (by chip source). */
 const HIGHLIGHT_ORDER: Record<string, number> = { custom: 0, checkin: 1, vision: 2, feed: 3 };
@@ -87,7 +89,7 @@ export function ReportComposer({
   const [customText, setCustomText] = useState("");
   /** The line box is hidden behind "+ Add a line" until the sitter wants it. */
   const [customOpen, setCustomOpen] = useState(false);
-  /** Replace and Remove show over the page's photo after a tap on it (#369). */
+  /** Add and Remove show over the page's photo after a tap on it (#369). */
   const [photoMenu, setPhotoMenu] = useState(false);
   const customSeq = useRef(0);
   const [draft, setDraft] = useState<ReportDraft | null>(null);
@@ -98,8 +100,8 @@ export function ReportComposer({
   const [stickers, setStickers] = useState<DecorItem[]>([]);
   /** The sent report shown on the card — the paper the sitter can decorate (12.3b). */
   const [sentId, setSentId] = useState<string | null>(null);
-  /** The photo on the sent page (the first one added), if any. */
-  const [sentPhoto, setSentPhoto] = useState<string | null>(null);
+  /** The photos on the sent page, the first one added is the main one. */
+  const [sentPhotos, setSentPhotos] = useState<string[]>([]);
 
   const refreshChips = useCallback(
     async (mediaIds: string[]) => {
@@ -127,7 +129,7 @@ export function ReportComposer({
         if (existing?.status === "sent") {
           setSent(true);
           setSentId(existing.id);
-          setSentPhoto(existing.photoUrl ?? null);
+          setSentPhotos(existing.photoUrls ?? (existing.photoUrl ? [existing.photoUrl] : []));
           setBody(existing.body);
         } else if (existing) {
           setDraft(existing);
@@ -200,16 +202,16 @@ export function ReportComposer({
       return next;
     });
 
-  /** The page's photo: picked from the picture box, it replaces the one there (one photo per page). */
+  /** A photo for the page: up to four, the first one is the main photo; the chips are read again from all of them. */
   const addPhoto = async () => {
     setPhotoMenu(false);
-    if (busy) return;
+    if (busy || photos.length >= MAX_PAGE_PHOTOS) return;
     const picked = await pickMedia({ purpose: "report", confirm: true, confirmLabel: "Use this photo" });
     if (!picked) return;
     setBusy("chips");
     try {
       const up = await uploadMedia({ petId: pet.id, purpose: "report", file: picked.file, resourceType: "image" });
-      const next = [{ mediaId: up.mediaId, thumbUrl: up.thumbUrl }];
+      const next = [...photos, { mediaId: up.mediaId, thumbUrl: up.thumbUrl }];
       setPhotos(next);
       await refreshChips(next.map((p) => p.mediaId));
     } catch (e) {
@@ -317,18 +319,17 @@ export function ReportComposer({
         }
         setStickers([]);
       }
-      // The first photo added shows on the page the owner reads.
-      const pagePhoto = photos[0];
-      if (pagePhoto) {
+      // The photos added show on the page the owner reads, the first one as the main photo.
+      if (photos.length > 0) {
         try {
-          await setDiaryPagePhoto(id, pagePhoto.mediaId);
+          await setDiaryPagePhotos(id, photos.map((p) => p.mediaId));
         } catch {
           toast.show("Sent, but the photo wasn't added to the page.");
         }
       }
       setSent(true);
       setSentId(id);
-      setSentPhoto(pagePhoto?.thumbUrl || null);
+      setSentPhotos(photos.map((p) => p.thumbUrl).filter(Boolean));
       setDraft(null);
       toast.show(`Sent. ${pet.ownerName} was told`);
     } catch (e) {
@@ -362,7 +363,7 @@ export function ReportComposer({
   const writeAnother = () => {
     setSent(false);
     setSentId(null);
-    setSentPhoto(null);
+    setSentPhotos([]);
     setBody("");
     setStickers([]);
     setOff(new Set());
@@ -387,7 +388,8 @@ export function ReportComposer({
             petName={pet.name}
             day={day.current}
             body={body}
-            pictureUrl={sentPhoto}
+            pictureUrl={sentPhotos[0] ?? null}
+            pictureUrls={sentPhotos}
             testID={`report-sent-paper-${pet.id}`}
           />
         ) : (
@@ -401,18 +403,19 @@ export function ReportComposer({
   }
 
   const pagePhoto = photos[0] ?? null;
-  // The picture box is the photo button (#369): empty, it opens the picker; with a photo, Replace and Remove.
+  // The picture box is the photo button (#369): empty, it opens the picker; with photos, Add and Remove (the photo showing).
   const picturePress = pagePhoto
     ? {
         onPress: () => setPhotoMenu((open) => !open),
-        label: "Change the photo",
+        label: "Change the photos",
         testID: `report-photo-change-${pet.id}`,
-        actions: photoMenu ? (
-          <>
-            <PhotoAction label="Replace" onPress={() => void addPhoto()} testID={`report-photo-replace-${pet.id}`} />
-            <PhotoAction label="Remove" onPress={() => removePhoto(pagePhoto.mediaId)} testID={`report-photo-remove-${pet.id}`} />
-          </>
-        ) : undefined,
+        actions: (index: number) =>
+          photoMenu ? (
+            <>
+              {photos.length < MAX_PAGE_PHOTOS ? <PhotoAction label="Add" onPress={() => void addPhoto()} testID={`report-photo-add-${pet.id}`} /> : null}
+              <PhotoAction label="Remove" onPress={() => removePhoto((photos[index] ?? pagePhoto).mediaId)} testID={`report-photo-remove-${pet.id}`} />
+            </>
+          ) : undefined,
       }
     : { onPress: () => void addPhoto(), label: "Add a photo", testID: `report-add-photo-${pet.id}` };
 
@@ -437,6 +440,7 @@ export function ReportComposer({
         day={day.current}
         body={body}
         pictureUrl={pagePhoto?.thumbUrl || null}
+        pictureUrls={photos.map((p) => p.thumbUrl).filter(Boolean)}
         pending={{ items: stickers, onChange: setStickers }}
         picturePress={busy != null ? undefined : picturePress}
         writing={{

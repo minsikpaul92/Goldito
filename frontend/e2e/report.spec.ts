@@ -479,7 +479,7 @@ test.describe("daily report", () => {
     await expect(send).toHaveCount(0); // nothing left to send
   });
 
-  test("the picture box adds the photo; a tap on it offers Replace and Remove (#398)", async ({ page }) => {
+  test("the picture box adds the photo; a tap on it offers Add and Remove (#398)", async ({ page }) => {
     const { db } = await openSitterDiary(page);
     await mockUpload(page, db, MAX.id);
     const screen = app(page);
@@ -488,7 +488,7 @@ test.describe("daily report", () => {
     await screen.getByTestId("media-confirm-use").click();
     await screen.getByTestId(`report-chip-${MAX.id}-${PHOTO_CHIP.id}`).waitFor();
     await screen.getByTestId(`report-photo-change-${MAX.id}`).click();
-    await expect(screen.getByTestId(`report-photo-replace-${MAX.id}`)).toBeVisible();
+    await expect(screen.getByTestId(`report-photo-add-${MAX.id}`)).toBeVisible();
     await screen.getByTestId(`report-photo-remove-${MAX.id}`).click();
     await expect(screen.getByTestId(`report-chip-${MAX.id}-${PHOTO_CHIP.id}`)).toHaveCount(0);
     await expect(screen.getByTestId(`report-add-photo-${MAX.id}`)).toBeVisible();

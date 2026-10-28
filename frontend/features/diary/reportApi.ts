@@ -28,7 +28,16 @@ export const REPORT_MAX_HIGHLIGHTS = 8;
 export const CUSTOM_CHIP_MAX = 40;
 
 /** `fallback`: the writing model was down, so the draft is the plain list of the kept chips (RV-8). */
-export type ReportDraft = { id: string; body: string; status: "draft" | "sent"; fallback?: boolean; /** The photo on a sent page (014t). */ photoUrl?: string | null };
+export type ReportDraft = {
+  id: string;
+  body: string;
+  status: "draft" | "sent";
+  fallback?: boolean;
+  /** The photo on a sent page (014t). */
+  photoUrl?: string | null;
+  /** Every photo on the page, the main one first (015x). */
+  photoUrls?: string[];
+};
 
 function explain(error: unknown, fallback: string): Error {
   // The server's 403 / 409 messages are already written for the sitter. (A model outage is no longer an error:
@@ -40,6 +49,16 @@ function explain(error: unknown, fallback: string): Error {
 export async function suggestChips(petId: string, mediaIds: string[]): Promise<ChipSuggestions> {
   try {
     return await apiPost<ChipSuggestions>("/api/ai/report-chips", { pet_id: petId, media_ids: mediaIds });
+  } catch (error) {
+    throw explain(error, "Couldn't suggest chips. Check your connection and try again.");
+  }
+}
+
+/** Chips for the photos on an owner's own page (`POST /api/ai/diary-photo-chips`): episode chips, one or two per photo. */
+export async function suggestPhotoChips(petId: string, mediaIds: string[]): Promise<ReportChip[]> {
+  try {
+    const res = await apiPost<{ chips: ReportChip[] }>("/api/ai/diary-photo-chips", { pet_id: petId, media_ids: mediaIds });
+    return res.chips;
   } catch (error) {
     throw explain(error, "Couldn't suggest chips. Check your connection and try again.");
   }
@@ -83,19 +102,21 @@ export async function getTodayReport(petId: string, sitterId: string): Promise<R
   // A day can hold several sent reports and at most one draft (011f, FB-22): the draft first, else the last sent.
   const { data, error } = await getSupabase()
     .from("daily_reports")
-    .select("id, body, status, sent_at, media(cloudinary_public_id, resource_type)")
+    .select("id, body, status, sent_at, more_media_ids, media(cloudinary_public_id, resource_type)")
     .eq("pet_id", petId)
     .eq("sitter_id", sitterId)
     .eq("report_date", appToday());
   if (error) throw new Error("Couldn't load today's page.");
-  const rows = ((data ?? []) as unknown as (Omit<ReportDraft, "photoUrl"> & { sent_at: string | null; media: Embed<PageMedia> })[]).map((r) => ({
-    ...r,
-    photoUrl: pageMediaUrl(first(r.media)),
-  }));
+  const found = (data ?? []) as unknown as (Omit<ReportDraft, "photoUrl" | "photoUrls"> & { sent_at: string | null; more_media_ids: string[]; media: Embed<PageMedia> })[];
+  const more = await loadMorePhotos(found.flatMap((r) => r.more_media_ids ?? []));
+  const rows = found.map((r) => {
+    const photoUrls = [pageMediaUrl(first(r.media)), ...(r.more_media_ids ?? []).map((id) => more.get(id) ?? null)].filter((u): u is string => !!u);
+    return { ...r, photoUrl: photoUrls[0] ?? null, photoUrls };
+  });
   const draft = rows.find((r) => r.status === "draft");
   const last = rows.filter((r) => r.status === "sent").sort((a, b) => (b.sent_at ?? "").localeCompare(a.sent_at ?? ""))[0];
   const pick = draft ?? last;
-  return pick ? { id: pick.id, body: pick.body, status: pick.status, photoUrl: pick.photoUrl } : null;
+  return pick ? { id: pick.id, body: pick.body, status: pick.status, photoUrl: pick.photoUrl, photoUrls: pick.photoUrls } : null;
 }
 
 /** Today's draft written by the sitter's own hand (014b) — the same one draft the AI writes; returns its id. */
@@ -135,6 +156,13 @@ export async function setDiaryPagePhoto(reportId: string, mediaId: string | null
   throw new Error("Couldn't put the photo on the page.");
 }
 
+/** Puts up to four of the writer's own images of the pet on their page, the first one as the main photo; `[]` takes them all off (015x). */
+export async function setDiaryPagePhotos(reportId: string, mediaIds: string[]): Promise<void> {
+  const { error } = await getSupabase().rpc("set_diary_page_photos", { p_report: reportId, p_media: mediaIds });
+  if (!error) return;
+  throw new Error("Couldn't put the photos on the page.");
+}
+
 /** The writer deletes their own page (014t): draft or sent. A sitter's sent page leaves the owner's book too. */
 export async function deleteDiaryPage(reportId: string): Promise<void> {
   const { error } = await getSupabase().rpc("delete_diary_page", { p_report: reportId });
@@ -165,6 +193,8 @@ export type SentReport = {
   tasks: { title: string; status: string }[];
   /** The photo the writer put on the page (014t); without one the page shows the day's first shared photo. */
   photoUrl: string | null;
+  /** Every photo the writer put on the page, the main one first (015x). */
+  photoUrls: string[];
 };
 
 type Embed<T> = T | T[] | null;
@@ -186,12 +216,27 @@ type ReportRow = {
   pets: Embed<{ name: string; species: Species }>;
   sitter: Embed<{ display_name: string }>;
   media: Embed<PageMedia>;
+  more_media_ids: string[];
 };
 const first = <T,>(v: Embed<T>): T | null => (Array.isArray(v) ? (v[0] ?? null) : v);
 const COLUMNS =
-  "id, sitter_id, pet_id, report_date, body, sent_at, source_snapshot, pets(name, species), sitter:profiles!daily_reports_sitter_id_fkey(display_name), media(cloudinary_public_id, resource_type)";
+  "id, sitter_id, pet_id, report_date, body, sent_at, source_snapshot, more_media_ids, pets(name, species), sitter:profiles!daily_reports_sitter_id_fkey(display_name), media(cloudinary_public_id, resource_type)";
 
-function toSent(row: ReportRow): SentReport {
+/** The page's other photos (015x) in one query: media id → picture url (RLS: the same media policy as the main photo). */
+async function loadMorePhotos(ids: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  const unique = [...new Set(ids)];
+  if (unique.length === 0) return out;
+  const { data } = await getSupabase().from("media").select("id, cloudinary_public_id, resource_type").in("id", unique);
+  for (const m of (data ?? []) as (PageMedia & { id: string })[]) {
+    const url = pageMediaUrl(m);
+    if (url) out.set(m.id, url);
+  }
+  return out;
+}
+
+function toSent(row: ReportRow, more: Map<string, string>): SentReport {
+  const photoUrls = [pageMediaUrl(first(row.media)), ...(row.more_media_ids ?? []).map((id) => more.get(id) ?? null)].filter((u): u is string => !!u);
   return {
     id: row.id,
     authorId: row.sitter_id,
@@ -203,7 +248,8 @@ function toSent(row: ReportRow): SentReport {
     body: row.body,
     sentAt: row.sent_at,
     tasks: row.source_snapshot?.tasks ?? [],
-    photoUrl: pageMediaUrl(first(row.media)),
+    photoUrl: photoUrls[0] ?? null,
+    photoUrls,
   };
 }
 
@@ -218,7 +264,9 @@ export async function listSentReports(): Promise<SentReport[]> {
     .order("sent_at", { ascending: false })
     .limit(60);
   if (error) throw new Error("Couldn't load the diary. Check your connection and try again.");
-  return ((data ?? []) as unknown as ReportRow[]).map(toSent);
+  const rows = (data ?? []) as unknown as ReportRow[];
+  const more = await loadMorePhotos(rows.flatMap((r) => r.more_media_ids ?? []));
+  return rows.map((r) => toSent(r, more));
 }
 
 /**
@@ -234,13 +282,17 @@ export async function listBookPages(): Promise<SentReport[]> {
     .order("sent_at", { ascending: true })
     .limit(500);
   if (error) throw new Error("Couldn't load the diary. Check your connection and try again.");
-  return ((data ?? []) as unknown as ReportRow[]).map(toSent);
+  const rows = (data ?? []) as unknown as ReportRow[];
+  const more = await loadMorePhotos(rows.flatMap((r) => r.more_media_ids ?? []));
+  return rows.map((r) => toSent(r, more));
 }
 
 export async function getSentReport(reportId: string): Promise<SentReport | null> {
   const { data, error } = await getSupabase().from("daily_reports").select(COLUMNS).eq("id", reportId).eq("status", "sent").maybeSingle();
   if (error) throw new Error("Couldn't load this entry.");
-  return data ? toSent(data as unknown as ReportRow) : null;
+  if (!data) return null;
+  const row = data as unknown as ReportRow;
+  return toSent(row, await loadMorePhotos(row.more_media_ids ?? []));
 }
 
 export type ReportPhoto = { id: string; publicId: string; resourceType: "image" | "video" };

@@ -42,7 +42,7 @@ async function mockFeedUpload(page: Page, db: MockDb) {
     return route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ media_id: "media-own", public_id: `goldito/${MAX.id}/feed/own`, secure_url: "https://res.cloudinary.com/goldito-test/image/upload/own", thumb_url: "" }),
+      body: JSON.stringify({ media_id: "media-own", public_id: `goldito/${MAX.id}/feed/own`, secure_url: "https://res.cloudinary.com/goldito-test/image/upload/own", thumb_url: "https://res.cloudinary.com/goldito-test/image/upload/c_fill,w_600/own" }),
     });
   });
 }
@@ -110,29 +110,44 @@ test.describe("owner diary page", () => {
     expect(db.daily_reports.find((r) => r.sitter_id === OWNER.id)).toMatchObject({ pet_id: MOCHI.id });
   });
 
-  test("a photo goes on the page and is kept in Feed, private", async ({ page }) => {
+  test("a photo goes on the page with its chips and is kept in Feed, private", async ({ page }) => {
     const db = await openOwnerDiary(page, oneStay);
     await mockFeedUpload(page, db);
+    const asked: Record<string, unknown>[] = [];
+    await page.route("**/api/ai/diary-photo-chips", (route) => {
+      asked.push(route.request().postDataJSON());
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          chips: [{ id: "photo-media-own-0", kind: "episode", label: "Lying on a blanket", source: "vision", check: null, media_id: "media-own" }],
+          photos: [],
+        }),
+      });
+    });
     const screen = app(page);
     await screen.getByTestId("diary-write").click();
     await screen.getByTestId("diary-write-body").fill("A walk in the sun.");
-    // The picture box is the button (#369).
+    // The picture box starts empty and is the button (#369).
+    const picture = screen.getByTestId("diary-write-page-picture").locator("img");
+    await expect(picture).toHaveCount(0);
     await screen.getByTestId("diary-write-photo").click();
     await screen.getByTestId("sample-walk").click();
-    // The photo shows in the page's picture box at once.
-    const picture = screen.getByTestId("diary-write-page-picture").locator("img");
-    await expect(picture).toHaveAttribute("src", /^blob:/);
-    // A tap on it offers Replace and Remove.
+    await expect(picture).toHaveCount(1);
+    // The photo brings a line; tapping it puts it on the page.
+    expect(asked[0]).toMatchObject({ pet_id: MAX.id, media_ids: ["media-own"] });
+    await screen.getByTestId("diary-write-chip-photo-media-own-0").click();
+    await expect(screen.getByTestId("diary-write-body")).toHaveValue("A walk in the sun.\nLying on a blanket.");
+    await expect(screen.getByTestId("diary-write-chips")).toHaveCount(0);
+    // A tap on the photo offers Add and Remove.
     await expect(screen.getByTestId("diary-write-photo-remove")).toHaveCount(0);
     await screen.getByTestId("diary-write-photo-change").click();
+    await expect(screen.getByTestId("diary-write-photo-add")).toBeVisible();
     await screen.getByTestId("diary-write-photo-remove").click();
     await expect(picture).toHaveCount(0);
     await screen.getByTestId("diary-write-photo").click();
     await screen.getByTestId("sample-walk").click();
-    await screen.getByTestId("diary-write-photo-change").click();
-    await screen.getByTestId("diary-write-photo-replace").click();
-    await screen.getByTestId("sample-walk").click();
-    await expect(picture).toHaveAttribute("src", /^blob:/);
+    await expect(picture).toHaveCount(1);
     await screen.getByTestId("diary-write-save").click();
 
     await expect(screen.getByTestId("toast")).toContainText("Page saved");
@@ -140,7 +155,7 @@ test.describe("owner diary page", () => {
     expect(db.feed_posts).toHaveLength(1);
     expect(db.feed_posts[0]).toMatchObject({ pet_id: MAX.id, posted_by: OWNER.id, sitter_id: null, visibility: "private", media_id: "media-own" });
     // The page points at the photo (014t); deleting the page later leaves the Feed post alone.
-    expect(db.daily_reports.find((r) => r.sitter_id === OWNER.id)).toMatchObject({ media_id: "media-own" });
+    expect(db.daily_reports.find((r) => r.sitter_id === OWNER.id)).toMatchObject({ media_id: "media-own", more_media_ids: [] });
 
     await page.goto("/owner/feed");
     await expect(screen.locator("[data-testid^='feed-card-']")).toHaveCount(1);

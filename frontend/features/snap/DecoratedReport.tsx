@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Image, LayoutChangeEvent, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, LayoutChangeEvent, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { Button } from "../../components/ui/Button";
 import { Icon } from "../../components/ui/Icon";
@@ -69,6 +69,8 @@ type Props = {
   ownPage?: boolean;
   /** The page's own photo (014t), or a photo just added to a page being written. Without one: the day's first shared photo. */
   pictureUrl?: string | null;
+  /** Up to four photos (015x), the main one first: drag the picture to turn through them; "1/2" shows at the top right. */
+  pictureUrls?: string[];
   /**
    * Stickers put on a page that is still being written (no report row yet): kept by the parent and saved with the
    * page once it exists. Without it a page being written has no Decorate.
@@ -78,7 +80,7 @@ type Props = {
    * The picture box is a button (the owner's new page, #369): it adds a photo, or with one in, shows `actions` (Replace,
    * Remove) over it. Off while decorating.
    */
-  picturePress?: { onPress: () => void; label: string; testID?: string; actions?: ReactNode };
+  picturePress?: { onPress: () => void; label: string; testID?: string; actions?: ReactNode | ((index: number) => ReactNode) };
   /** Told when Decorate opens or closes (the diary book holds still meanwhile). */
   onEditingChange?: (editing: boolean) => void;
   testID?: string;
@@ -94,7 +96,7 @@ type Props = {
  *
  * Page layers, bottom to top: paper → picture + ruled lines → stickers behind the text → the text → stickers over it.
  */
-export function DecoratedReport({ reportId, petId, petName, day, body, writing, ownPage, pictureUrl, pending, picturePress, onEditingChange, testID }: Props) {
+export function DecoratedReport({ reportId, petId, petName, day, body, writing, ownPage, pictureUrl, pictureUrls, pending, picturePress, onEditingChange, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const [writtenHeight, setWrittenHeight] = useState(0);
@@ -142,13 +144,40 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   }, [load]);
 
   // The picture box: the page's own photo; without one, the day's first shared photo, if there is one.
-  const shownPicture = pictureUrl || picture;
+  const shownPicture = pictureUrls?.[0] || pictureUrl || picture;
+  const urls = pictureUrls && pictureUrls.length > 0 ? pictureUrls : shownPicture ? [shownPicture] : [];
+  const many = urls.length > 1;
+  // Which photo shows: a new photo comes up at once, and the index never points past the last one.
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const lastCount = useRef(urls.length);
+  useEffect(() => {
+    setPhotoIndex((i) => (urls.length > lastCount.current ? urls.length - 1 : Math.min(i, Math.max(0, urls.length - 1))));
+    lastCount.current = urls.length;
+  }, [urls.length]);
+  const at = Math.min(photoIndex, Math.max(0, urls.length - 1));
+  const shownNow = urls[at] ?? null;
+  const turnPhoto = (by: number) => setPhotoIndex((i) => (i + by + urls.length) % urls.length);
+  // Dragging the picture turns the photos. It takes the gesture before the diary book's page turn does (the child's
+  // responder is asked first), and only when there is more than one photo.
+  const turnRef = useRef(turnPhoto);
+  turnRef.current = turnPhoto;
+  const manyRef = useRef(many);
+  manyRef.current = many;
+  const swipe = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_e, g) => manyRef.current && Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: (_e, g) => {
+        if (Math.abs(g.dx) > 40) turnRef.current(g.dx < 0 ? 1 : -1);
+      },
+    }),
+  ).current;
   // Until the photo arrives the box shows a spinner, not a flat empty block (diary audit, Oct 27).
   const [loadedPicture, setLoadedPicture] = useState<string | null>(null);
   // A page being written starts with an empty box: the writer adds the photo (no photo of the day is put there for them).
   const blank = !!writing;
   useEffect(() => {
-    if (pictureUrl || blank) return;
+    if (pictureUrl || pictureUrls?.length || blank) return;
     let live = true;
     listReportPhotos(petId, day, ownPage && role === "owner")
       .then((photos) => {
@@ -160,7 +189,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
     return () => {
       live = false;
     };
-  }, [petId, day, ownPage, role, pictureUrl, blank]);
+  }, [petId, day, ownPage, role, pictureUrl, pictureUrls, blank]);
 
   const drafting = !reportId && !!pending;
   const mine = drafting ? pending.items : (layers.find((l) => l.userId === me)?.items ?? []);
@@ -297,11 +326,11 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
           <Text style={styles.headerText}>{`📅 ${longDay(day)}`}</Text>
           <Text style={styles.headerText}>{`${petName}'s day 🐾`}</Text>
         </View>
-        <View ref={pictureRef} pointerEvents={passThrough} style={styles.picture} testID={id("picture")}>
-          {shownPicture ? (
+        <View ref={pictureRef} pointerEvents={passThrough} style={styles.picture} testID={id("picture")} {...(many ? swipe.panHandlers : null)}>
+          {shownNow ? (
             <>
-              {loadedPicture !== shownPicture ? <ActivityIndicator color={theme.color.textMuted} testID={id("picture-loading")} /> : null}
-              <Image source={{ uri: shownPicture }} style={StyleSheet.absoluteFill} resizeMode="cover" onLoad={() => setLoadedPicture(shownPicture)} />
+              {loadedPicture !== shownNow ? <ActivityIndicator color={theme.color.textMuted} testID={id("picture-loading")} /> : null}
+              <Image source={{ uri: shownNow }} style={StyleSheet.absoluteFill} resizeMode="cover" onLoad={() => setLoadedPicture(shownNow)} />
             </>
           ) : picturePress && !editing ? (
             // The box says what a tap does (the picture press covers it).
@@ -321,7 +350,15 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
               testID={picturePress.testID}
             />
           ) : null}
-          {picturePress?.actions && !editing ? <View style={styles.pictureActions}>{picturePress.actions}</View> : null}
+          {many && !editing ? (
+            // "1/2": also a button that turns to the next photo, for anyone who does not drag.
+            <Pressable accessibilityRole="button" accessibilityLabel="Next photo" onPress={() => turnPhoto(1)} style={styles.count} testID={id("count")}>
+              <Text style={styles.countText}>{`${at + 1}/${urls.length}`}</Text>
+            </Pressable>
+          ) : null}
+          {picturePress?.actions && !editing ? (
+            <View style={styles.pictureActions}>{typeof picturePress.actions === "function" ? picturePress.actions(at) : picturePress.actions}</View>
+          ) : null}
         </View>
         <View ref={textRef} pointerEvents={passThrough} style={[styles.textArea, { minHeight: MIN_LINES * LINE }]} onLayout={onTextLayout}>
           {writing ? (
@@ -495,6 +532,17 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.text,
       backgroundColor: theme.color.accent,
     },
+    count: {
+      position: "absolute",
+      top: theme.spacing.xs,
+      right: theme.spacing.xs,
+      minHeight: 22,
+      justifyContent: "center",
+      paddingHorizontal: theme.spacing.xs + 2,
+      borderRadius: theme.radius.pill,
+      backgroundColor: "rgba(0,0,0,0.55)",
+    },
+    countText: { fontSize: theme.fontSize.caption, fontWeight: theme.fontWeight.semibold, color: "#FFFFFF" },
     pictureEmpty: { alignItems: "center", gap: theme.spacing.xs },
     pictureEmptyText: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     pictureActions: { position: "absolute", bottom: theme.spacing.sm, flexDirection: "row", gap: theme.spacing.sm },

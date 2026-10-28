@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../components/ui/Button";
 import { FeedPetPicker } from "../../components/FeedPetPicker";
 import { Sheet } from "../../components/ui/Sheet";
 import { UploadError, uploadMedia } from "../../lib/cloudinary";
 import { FALLBACK_CAPTION, createFeedPost } from "../../lib/feed";
-import { PickedMedia, pickMedia } from "../../lib/media";
+import { pickMedia } from "../../lib/media";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useSession } from "../../providers/SessionProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
@@ -16,7 +16,13 @@ import { usePetFaces } from "../feed/usePetFaces";
 import { appToday } from "../schedule/dates";
 import { type DecorItem, saveDecor } from "../snap/decorApi";
 import { DecoratedReport } from "../snap/DecoratedReport";
-import { REPORT_BODY_MAX, addOwnerEntry, setDiaryPagePhoto } from "./reportApi";
+import { REPORT_BODY_MAX, addOwnerEntry, setDiaryPagePhotos, suggestPhotoChips } from "./reportApi";
+
+/** The most photos on a page (015x). */
+const MAX_PAGE_PHOTOS = 4;
+
+type PagePhoto = { mediaId: string; url: string };
+type PhotoChip = { id: string; label: string };
 
 type Props = {
   visible: boolean;
@@ -30,8 +36,9 @@ type Props = {
 
 /**
  * The owner's own diary page (014p, #186): write on the page, add a photo if you like, save. The page is sent to the
- * owner's book at once (no AI, no notice, the sitter never sees it). The photo shows in the page's picture box and is
- * also kept in Feed, private.
+ * owner's book at once (no notice, the sitter never sees it). Up to four photos: the first is the main one, a tap on the
+ * picture box offers Add and Remove, and each photo brings a few short lines (chips) that go onto the page when tapped.
+ * The photos are also kept in Feed, private.
  * Stickers can go on while writing; they are saved with the page.
  */
 export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved }: Props) {
@@ -41,9 +48,12 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
   const [petId, setPetId] = useState<string | null>(null);
   const faces = usePetFaces(pets.map((p) => p.id));
   const [body, setBody] = useState("");
-  const [photo, setPhoto] = useState<PickedMedia | null>(null);
-  /** Replace and Remove show over the photo after a tap on it. */
+  const [photos, setPhotos] = useState<PagePhoto[]>([]);
+  /** Add and Remove show over the photo after a tap on it. */
   const [photoMenu, setPhotoMenu] = useState(false);
+  /** Lines the photos suggest; one that was tapped is on the page and leaves the list. */
+  const [chips, setChips] = useState<PhotoChip[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [stickers, setStickers] = useState<DecorItem[]>([]);
   const session = useSession();
   const me = session.status === "signedIn" ? session.profile.id : null;
@@ -54,67 +64,95 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
     if (!visible) return;
     setPetId(initialPetId && pets.some((p) => p.id === initialPetId) ? initialPetId : (pets[0]?.id ?? null));
     setBody("");
-    setPhoto(null);
+    setPhotos([]);
+    setChips([]);
     setPhotoMenu(false);
     setStickers([]);
   }, [visible, initialPetId, pets]);
+  // A photo belongs to one pet: another pet starts without them.
+  useEffect(() => {
+    setPhotos([]);
+    setChips([]);
+    setPhotoMenu(false);
+  }, [petId]);
 
   const pet = pets.find((p) => p.id === petId) ?? null;
 
-  // The picked photo shows in the page's picture box at once.
-  const preview = useMemo(() => (photo && typeof URL !== "undefined" ? URL.createObjectURL(photo.file) : null), [photo]);
-  useEffect(() => () => (preview ? URL.revokeObjectURL(preview) : undefined), [preview]);
-
+  // A photo goes up as it is picked (its chips need it), and shows in the page's picture box once it is there.
   const addPhoto = async () => {
     setPhotoMenu(false);
+    if (!pet || uploading || photos.length >= MAX_PAGE_PHOTOS) return;
     const picked = await pickMedia({ purpose: "feed", mediaTypes: ["image"] });
-    if (picked) setPhoto(picked);
+    if (!picked) return;
+    setUploading(true);
+    try {
+      const up = await uploadMedia({ petId: pet.id, purpose: "feed", file: picked.file, trim: picked.trim, resourceType: "image" });
+      setPhotos((now) => [...now, { mediaId: up.mediaId, url: up.thumbUrl }]);
+      // The chips are a bonus: a photo that cannot be read just brings none.
+      void suggestPhotoChips(pet.id, [up.mediaId])
+        .then((found) => setChips((now) => [...now, ...found.map((c) => ({ id: c.id, label: c.label }))]))
+        .catch(() => undefined);
+    } catch (error) {
+      errorDialog.show({ title: "Photo not added", message: error instanceof UploadError || error instanceof Error ? error.message : "Try again." });
+    } finally {
+      setUploading(false);
+    }
   };
 
-  // The picture box is the photo button (#369): empty, it opens the picker; with a photo, Replace and Remove.
-  const picturePress = photo
-    ? {
-        onPress: () => setPhotoMenu((open) => !open),
-        label: "Change the photo",
-        testID: "diary-write-photo-change",
-        actions: photoMenu ? (
-          <>
-            <PhotoAction label="Replace" onPress={() => void addPhoto()} testID="diary-write-photo-replace" />
-            <PhotoAction
-              label="Remove"
-              onPress={() => {
-                setPhoto(null);
-                setPhotoMenu(false);
-              }}
-              testID="diary-write-photo-remove"
-            />
-          </>
-        ) : undefined,
-      }
-    : { onPress: () => void addPhoto(), label: "Add a photo", testID: "diary-write-photo" };
+  const removePhoto = (index: number) => {
+    const gone = photos[index];
+    setPhotos((now) => now.filter((_, i) => i !== index));
+    // Its lines go with it.
+    if (gone) setChips((now) => now.filter((c) => !c.id.startsWith(`photo-${gone.mediaId}-`)));
+    setPhotoMenu(false);
+  };
+
+  // A tapped chip goes onto the page as a line of its own.
+  const putChip = (chip: PhotoChip) => {
+    setBody((now) => {
+      const next = now.trim() ? `${now.replace(/\s+$/, "")}\n${chip.label}.` : `${chip.label}.`;
+      return next.slice(0, REPORT_BODY_MAX);
+    });
+    setChips((now) => now.filter((c) => c.id !== chip.id));
+  };
+
+  // The picture box is the photo button (#369): empty, it opens the picker; with photos, Add and Remove (the one showing).
+  const picturePress =
+    photos.length > 0
+      ? {
+          onPress: () => setPhotoMenu((open) => !open),
+          label: "Change the photos",
+          testID: "diary-write-photo-change",
+          actions: (index: number) =>
+            photoMenu ? (
+              <>
+                {photos.length < MAX_PAGE_PHOTOS ? <PhotoAction label="Add" onPress={() => void addPhoto()} testID="diary-write-photo-add" /> : null}
+                <PhotoAction label="Remove" onPress={() => removePhoto(index)} testID="diary-write-photo-remove" />
+              </>
+            ) : undefined,
+        }
+      : { onPress: () => void addPhoto(), label: "Add a photo", testID: "diary-write-photo" };
 
   const save = async () => {
     if (!pet || saving) return;
     setSaving(true);
     try {
-      // The photo goes up first: if it fails nothing is saved yet and Retry runs the whole thing again.
-      const uploaded = photo
-        ? await uploadMedia({ petId: pet.id, purpose: "feed", file: photo.file, trim: photo.trim, resourceType: "image" })
-        : null;
       const reportId = await addOwnerEntry(pet.id, body);
-      if (uploaded) {
+      if (photos.length > 0) {
         try {
-          await setDiaryPagePhoto(reportId, uploaded.mediaId);
-          await createFeedPost({
-            petId: pet.id,
-            mediaId: uploaded.mediaId,
-            caption: FALLBACK_CAPTION,
-            captionSource: "fallback",
-            role: "owner",
-            visibility: "private",
-          });
+          await setDiaryPagePhotos(reportId, photos.map((p) => p.mediaId));
+          for (const photo of photos) {
+            await createFeedPost({
+              petId: pet.id,
+              mediaId: photo.mediaId,
+              caption: FALLBACK_CAPTION,
+              captionSource: "fallback",
+              role: "owner",
+              visibility: "private",
+            });
+          }
         } catch {
-          toast.show("Page saved, but the photo wasn't added.");
+          toast.show("Page saved, but the photos weren't added.");
         }
       }
       if (stickers.length > 0 && me) {
@@ -151,7 +189,7 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
       onClose={onClose}
       scrollbar
       testID="diary-write-sheet"
-      footer={<Button label={saving ? "Saving…" : "Save page"} onPress={() => void save()} disabled={saving || body.trim().length === 0} testID="diary-write-save" />}
+      footer={<Button label={saving ? "Saving…" : "Save page"} onPress={() => void save()} disabled={saving || uploading || body.trim().length === 0} testID="diary-write-save" />}
     >
       {pet ? (
         <DecoratedReport
@@ -160,12 +198,22 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
           petName={pet.name}
           day={appToday()}
           body={body}
-          pictureUrl={preview}
+          pictureUrl={photos[0]?.url ?? null}
+          pictureUrls={photos.map((p) => p.url)}
           testID="diary-write-page"
           pending={{ items: stickers, onChange: setStickers }}
-          picturePress={saving ? undefined : picturePress}
+          picturePress={saving || uploading ? undefined : picturePress}
           writing={{ onChangeText: setBody, placeholder: "Dear diary, today…", maxLength: REPORT_BODY_MAX, disabled: saving, testID: "diary-write-body" }}
         />
+      ) : null}
+      {chips.length > 0 ? (
+        <View style={styles.chips} testID="diary-write-chips">
+          {chips.map((chip) => (
+            <Pressable key={chip.id} accessibilityRole="button" onPress={() => putChip(chip)} style={styles.action} testID={`diary-write-chip-${chip.id}`}>
+              <Text style={styles.actionLabel}>{chip.label}</Text>
+            </Pressable>
+          ))}
+        </View>
       ) : null}
     </Sheet>
   );
@@ -191,5 +239,6 @@ const makeStyles = (theme: Theme) =>
       borderWidth: 1,
       borderColor: theme.color.border,
     },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
     actionLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
   });

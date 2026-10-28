@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.ai.daily_report import CAPTION_MAX, CHIP_MAX, NOTE_MAX, _chip, _clean
 
-MAX_PHOTOS = 2
+MAX_PHOTOS = 4
 MAX_PHOTO_CHIPS = 2
 
 MEAL = {"all": "Ate everything", "most": "Ate most of it", "little": "Ate a little", "none": "Skipped the meal"}
