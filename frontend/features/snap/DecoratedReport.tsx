@@ -530,7 +530,8 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
       borderRadius: theme.radius.sm,
       borderWidth: 1,
-      borderColor: "#FFFFFF",
+      borderStyle: "dashed",
+      borderColor: theme.color.primary,
     },
     thumbImage: { width: 40, height: 40 },
   });
