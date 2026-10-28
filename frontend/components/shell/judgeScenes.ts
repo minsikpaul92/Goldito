@@ -309,7 +309,7 @@ const CARE_SCRIPT: ScriptStep[] = [
   { tap: "decor-preset-heart" },
   { tap: "decor-add" },
   { pause: 1_000 },
-  { tap: "decor-save" },
+  { tap: "decor-start" },
   { pause: 1_000 },
   { tap: "report-send-*" },
   { wait: "report-sent-*", timeout: 30_000 },

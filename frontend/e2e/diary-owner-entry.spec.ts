@@ -176,8 +176,8 @@ test.describe("owner diary page", () => {
     await screen.getByTestId("decor-start").click();
     await screen.getByTestId("decor-preset-heart").click();
     await screen.getByTestId("decor-add").click();
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     const items = db.report_decor.find((r) => r.user_id === OWNER.id)?.items as { sticker_id: string }[];
     expect(items).toHaveLength(2);
     expect(items.map((i) => i.sticker_id)).toContain("st-1");
@@ -191,8 +191,8 @@ test.describe("owner diary page", () => {
     await screen.getByTestId("decor-start").click();
     await expect(screen.getByTestId("decor-share")).toHaveCount(0); // not a page yet: nothing to share
     await screen.getByTestId("decor-preset-heart").click();
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers added");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     expect(db.report_decor).toHaveLength(0); // kept on the screen, not saved yet
 
     await screen.getByTestId("diary-write-save").click();

@@ -110,15 +110,14 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   const [picture, setPicture] = useState<string | null>(null);
   const [lines, setLines] = useState({ top: 0, height: MIN_LINES * LINE });
   const [editing, setEditing] = useState(false);
-  // The sticker tray folds away on the round button, so the page can be seen and the stickers dragged on it.
-  const [trayOpen, setTrayOpen] = useState(true);
   useEffect(() => {
     onEditingChange?.(editing);
   }, [editing, onEditingChange]);
   const [draft, setDraft] = useState<DecorItem[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [box, setBox] = useState<PetSticker[] | null>(null);
-  const [saving, setSaving] = useState(false);
+  // What is saved now (JSON of the items): a sticker put on, moved or removed is saved on its own a moment later.
+  const saved = useRef("");
   const [sharing, setSharing] = useState(false);
   const paperRef = useRef<View>(null);
   const pictureRef = useRef<View>(null);
@@ -171,8 +170,8 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   const start = async () => {
     setDraft(mine.map((item) => ({ ...item })));
     setSelected(null);
+    saved.current = JSON.stringify(mine);
     setEditing(true);
-    setTrayOpen(true);
     try {
       setBox(await listStickers(petId));
     } catch {
@@ -211,28 +210,34 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
     setSelected(null);
   };
 
-  const save = async () => {
+  // Every change is saved as it is made (no Save button): a sticker you do not like comes off with its ×.
+  const persist = async (items: DecorItem[]) => {
+    const json = JSON.stringify(items);
+    if (json === saved.current) return;
+    saved.current = json;
     if (drafting) {
       // Not a report yet: the parent keeps the stickers and saves them with the page.
-      pending.onChange(draft);
-      setEditing(false);
-      setSelected(null);
-      toast.show("Stickers added");
+      pending.onChange(items);
       return;
     }
-    if (!me || !reportId || saving) return;
-    setSaving(true);
+    if (!me || !reportId) return;
     try {
-      await saveDecor(reportId, me, draft);
-      setLayers((now) => [...now.filter((l) => l.userId !== me), { userId: me, items: draft }]);
-      setEditing(false);
-      setSelected(null);
-      toast.show("Stickers saved");
+      await saveDecor(reportId, me, items);
+      setLayers((now) => [...now.filter((l) => l.userId !== me), { userId: me, items }]);
     } catch (error) {
-      errorDialog.show({ title: "Stickers not saved", message: (error as Error).message, onRetry: () => void save() });
-    } finally {
-      setSaving(false);
+      saved.current = "";
+      errorDialog.show({ title: "Stickers not saved", message: (error as Error).message, onRetry: () => void persist(items) });
     }
+  };
+  useEffect(() => {
+    if (!editing) return;
+    const timer = setTimeout(() => void persist(draft), 500);
+    return () => clearTimeout(timer);
+  }, [draft, editing]); // eslint-disable-line react-hooks/exhaustive-deps
+  const stop = () => {
+    void persist(draft);
+    setEditing(false);
+    setSelected(null);
   };
 
   /** The page as it is on screen, drawn to a PNG (11.8) — for Share → image, download or public link (DB.5). */
@@ -359,9 +364,9 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
         // Floats at the screen's bottom right while the page scrolls (a zero-height sticky slot), so it never sits on the words.
         <View style={styles.floatSlot} pointerEvents="box-none">
           <View style={styles.float} pointerEvents="box-none">
-            {editing && trayOpen ? (
+            {editing ? (
               <ScrollView
-                style={styles.tray}
+                style={[styles.tray, box?.length === 0 && styles.trayWide]}
                 contentContainerStyle={styles.trayContent}
                 showsVerticalScrollIndicator={false}
                 testID="decor-tools"
@@ -407,27 +412,10 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
                 ))}
               </ScrollView>
             ) : null}
-            <View style={styles.floatRow} pointerEvents="box-none">
-              {editing ? (
-                <>
-                  <RoundButton
-                    label="Cancel"
-                    onPress={() => {
-                      setEditing(false);
-                      setSelected(null);
-                    }}
-                    testID="decor-cancel"
-                  >
-                    <Icon name="close" size={22} color={theme.color.text} />
-                  </RoundButton>
-                  <RoundButton label={saving ? "Saving…" : "Save stickers"} onPress={() => void save()} disabled={saving} testID="decor-save">
-                    <Icon name="check" size={22} color={theme.color.text} />
-                  </RoundButton>
-                </>
-              ) : null}
+            <View pointerEvents="box-none">
               <RoundButton
-                label={editing ? (trayOpen ? "Hide the stickers" : "Show the stickers") : "Decorate"}
-                onPress={() => (editing ? setTrayOpen((open) => !open) : void start())}
+                label={editing ? "Hide the stickers" : "Decorate"}
+                onPress={() => (editing ? stop() : void start())}
                 testID="decor-start"
               >
                 <Icon name="sticker" size={22} color={theme.color.primary} />
@@ -519,11 +507,11 @@ const makeStyles = (theme: Theme) =>
     // A zero-height slot at the end of the page that sticks to the bottom of the scrolling screen; the buttons stand up from it.
     floatSlot: { ...(Platform.OS === "web" ? ({ position: "sticky" } as object) : null), bottom: theme.spacing.md, height: 0, zIndex: 20, overflow: "visible" },
     float: { position: "absolute", right: 0, bottom: 0, alignItems: "flex-end", gap: theme.spacing.sm },
-    floatRow: { flexDirection: "row", gap: theme.spacing.sm },
     // About four stickers show; the rest are a drag away.
-    tray: { maxHeight: 4 * 56 + 3 * theme.spacing.sm + 2 * theme.spacing.sm, borderRadius: theme.radius.md, backgroundColor: SEE_THROUGH, flexGrow: 0 },
-    trayContent: { gap: theme.spacing.sm, padding: theme.spacing.sm, alignItems: "center" },
-    trayEmpty: { gap: theme.spacing.xs, alignItems: "center", paddingHorizontal: theme.spacing.xs },
+    tray: { width: 48, maxHeight: 4 * 48 + 3 * theme.spacing.sm + 2 * theme.spacing.sm, borderRadius: theme.radius.md, backgroundColor: SEE_THROUGH, flexGrow: 0 },
+    trayContent: { gap: theme.spacing.sm, paddingVertical: theme.spacing.sm, alignItems: "center" },
+    trayWide: { width: 140 },
+    trayEmpty: { gap: theme.spacing.xs, alignItems: "center", padding: theme.spacing.xs },
     round: {
       width: 48,
       height: 48,
@@ -536,12 +524,12 @@ const makeStyles = (theme: Theme) =>
     },
     roundPressed: { opacity: 0.6 },
     thumb: {
-      width: 56,
-      height: 56,
+      width: 48,
+      height: 48,
       alignItems: "center",
       justifyContent: "center",
       borderRadius: theme.radius.sm,
       backgroundColor: theme.color.accent,
     },
-    thumbImage: { width: 48, height: 48 },
+    thumbImage: { width: 40, height: 40 },
   });

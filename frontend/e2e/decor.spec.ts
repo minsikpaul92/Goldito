@@ -92,8 +92,8 @@ test.describe("diary decorating", () => {
 
     // No size or turn buttons any more: the corner handle does both (#369, next test).
     await expect(screen.getByTestId("decor-bigger")).toHaveCount(0);
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
 
     const saved = db.report_decor.find((r) => r.user_id === OWNER.id)!;
     const [item] = saved.items as Record<string, number | string>[];
@@ -131,8 +131,8 @@ test.describe("diary decorating", () => {
     // A quarter turn around the centre.
     const h2 = center(await box(handle));
     await drag(page, h2, { x: c.x - (h2.y - c.y), y: c.y + (h2.x - c.x) });
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     let [item] = db.report_decor.find((r) => r.user_id === OWNER.id)!.items as Record<string, number>[];
     expect(item.scale).toBeCloseTo(1.5, 1);
     expect(Math.abs(item.rotate - 90)).toBeLessThan(4);
@@ -142,8 +142,8 @@ test.describe("diary decorating", () => {
     await screen.getByTestId("decor-mine").click();
     const h3 = center(await box(handle));
     await drag(page, h3, { x: c.x + (h3.x - c.x) * 6, y: c.y + (h3.y - c.y) * 6 });
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     [item] = db.report_decor.find((r) => r.user_id === OWNER.id)!.items as Record<string, number>[];
     expect(item.scale).toBe(2.5);
   });
@@ -167,15 +167,15 @@ test.describe("diary decorating", () => {
     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: at(d0) });
     for (let i = 1; i <= 10; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: at(d0 * (1 + i / 10)) });
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     const [item] = db.report_decor.find((r) => r.user_id === OWNER.id)!.items as Record<string, number>[];
     expect(item.scale).toBeCloseTo(2, 1);
     // A pinch does not move the sticker.
     expect(item.x).toBeCloseTo(0.5, 1);
   });
 
-  test("Cancel keeps what was saved; Remove takes the picked sticker off", async ({ page }) => {
+  test("A sticker is saved as it goes on; Remove takes the picked sticker off", async ({ page }) => {
     const db = await openOwnerEntry(page, (d) => {
       seedSticker(d, OWNER.id);
       d.report_decor.push(layer(OWNER.id, 0.3, 0.6));
@@ -184,15 +184,15 @@ test.describe("diary decorating", () => {
     await screen.getByTestId("decor-start").click();
     await screen.getByTestId("decor-add").click();
     await expect(screen.getByTestId("decor-mine")).toHaveCount(2);
-    await screen.getByTestId("decor-cancel").click();
-    await expect(screen.getByTestId("decor-mine")).toHaveCount(1);
-    expect(db.report_decor).toHaveLength(1);
+    await expect.poll(() => db.report_decor[0].items.length).toBe(2);
+    await screen.getByTestId("decor-start").click();
+    await expect(screen.getByTestId("decor-mine")).toHaveCount(2);
 
     await screen.getByTestId("decor-start").click();
     await screen.getByTestId("decor-mine").click();
     await screen.getByTestId("decor-remove").click();
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     expect(db.report_decor[0].items).toEqual([]);
     await expect(screen.getByTestId("decor-mine")).toHaveCount(0);
   });
@@ -231,8 +231,8 @@ test.describe("diary decorating", () => {
     await screen.getByTestId("decor-preset-star").click();
     await expect(screen.getByTestId("decor-canvas-front").locator("[data-layer='front']")).toHaveCount(1); // new ones go over the writing
 
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     const items = db.report_decor[0].items as Record<string, unknown>[];
     expect(items.map((i) => i.layer ?? "front")).toEqual(["back", "front"]);
     // Saved, the old one goes back under the writing.
@@ -343,8 +343,8 @@ test.describe("diary decorating", () => {
 
     await screen.getByTestId("decor-start").click();
     await screen.getByTestId("decor-add").click();
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     expect(db.report_decor.map((r) => r.user_id).sort()).toEqual([OWNER.id, SITTER.id].sort());
   });
 });

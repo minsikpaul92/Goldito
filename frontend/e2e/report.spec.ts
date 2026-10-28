@@ -409,8 +409,8 @@ test.describe("daily report", () => {
     await screen.getByTestId(`report-body-${MAX.id}`).fill("A day with a sticker.");
     await screen.getByTestId("decor-start").click();
     await screen.getByTestId("decor-preset-star").click();
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers added");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     expect(db.report_decor).toHaveLength(0);
 
     await screen.getByTestId(`report-send-${MAX.id}`).click();
