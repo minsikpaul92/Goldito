@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ALL_PETS, FeedPetPicker } from "../../components/FeedPetPicker";
 import { FeedBarRight } from "../../components/FeedSwitch";
+import { BackLink } from "../../components/ui/BackLink";
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Icon } from "../../components/ui/Icon";
@@ -166,8 +167,14 @@ export function SitterDiary() {
         ) : null}
       </FeedBarRight>
 
-      {shownView === "book" && caring.length > 0 ? (
-        <Button label="Write a page" variant="secondary" onPress={() => setView("today")} testID="sitter-diary-view-today" />
+      {shownView === "book" && (caring.length > 0 || bookPet !== ALL_PETS) ? (
+        // ← (one pet's pages back to the covers) sits left of Write a page: the one Back control (DESIGN.md §7.8).
+        <View style={styles.writeRow}>
+          {bookPet !== ALL_PETS ? <BackLink onPress={() => setBookPet(ALL_PETS)} testID="sitter-book-covers" /> : null}
+          {caring.length > 0 ? (
+            <Button label="Write a page" variant="secondary" onPress={() => setView("today")} style={styles.writeFill} testID="sitter-diary-view-today" />
+          ) : null}
+        </View>
       ) : null}
       {shownView === "today" && caring.length === 0 ? (
         <EmptyState emoji="📔" title="Diary" message="When you're caring for a pet, you can write and send the day's page from here." />
@@ -228,4 +235,6 @@ const makeStyles = (theme: Theme) =>
     toggleText: { fontSize: HOME_TEXT.chip, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     pressed: { opacity: 0.6 },
     hidden: { display: "none" },
+    writeRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
+    writeFill: { flex: 1 },
   });

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, LayoutChangeEvent, PanResponder, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { TextButton } from "../../components/ui/TextButton";
 import { useSession } from "../../providers/SessionProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
@@ -25,8 +24,6 @@ export type DiaryBookProps = {
   header?: (page: SentReport) => React.ReactNode;
   /** Under each page: the day's tasks and the page's actions (owner). */
   footer?: (page: SentReport) => React.ReactNode;
-  /** False when the screen was opened on one page (a chat card): its header ← is the way out, so no "‹ Diaries". */
-  showCovers?: boolean;
   /** A pet picker outside the book (the Diary's dropdown): the pet to show, or null for the covers. Without it the book keeps its own. */
   selectedPet?: string | null;
   /** The book moved to a pet's pages, or back to the covers (null): keeps the picker outside in step. */
@@ -46,7 +43,7 @@ export function bookOrder(pages: SentReport[]): SentReport[] {
  * the next or the previous day; ‹ › do the same (DESIGN.md §7.7: never gesture-only). While a page is being
  * decorated the book holds still, so dragging a sticker never turns the page.
  */
-export function DiaryBook({ pages, initialId, header, footer, showCovers = true, selectedPet, onPetChange, testID = "diary-book" }: DiaryBookProps) {
+export function DiaryBook({ pages, initialId, header, footer, selectedPet, onPetChange, testID = "diary-book" }: DiaryBookProps) {
   const styles = useThemedStyles(makeStyles);
   const session = useSession();
   const me = session.status === "signedIn" ? session.profile.id : null;
@@ -229,10 +226,6 @@ export function DiaryBook({ pages, initialId, header, footer, showCovers = true,
 
   return (
     <View style={styles.wrap} testID={testID}>
-      {showCovers ? (
-        <TextButton label="‹ Diaries" onPress={() => setPet(null)} disabled={turning != null || decorating} testID={`${testID}-covers`} />
-      ) : null}
-
       <View style={styles.bar}>
         <NavButton label="‹" hint="Previous page" disabled={!hasPrev || turning != null || decorating} onPress={() => turn("prev")} testID={`${testID}-prev`} />
         <View style={styles.where}>

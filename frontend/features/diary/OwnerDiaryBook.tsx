@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { ALL_PETS, FeedPetPicker } from "../../components/FeedPetPicker";
 import { FeedBarRight } from "../../components/FeedSwitch";
+import { BackLink } from "../../components/ui/BackLink";
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Icon } from "../../components/ui/Icon";
@@ -75,7 +76,16 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
       <FeedPetPicker groups={[{ key: "mine", pets }]} allPets={pets} value={petSel} onChange={setPetSel} faces={faces} testID="diary-pet" />
     </FeedBarRight>
   ) : null;
-  const write = pets.length > 0 && !linked ? <Button label="Write a page" variant="secondary" onPress={() => setWriting(true)} testID="diary-write" /> : null;
+  // ← (one pet's pages back to the covers) sits left of Write a page: the one Back control, no "‹ Diaries" (DESIGN.md §7.8).
+  const back = !linked && petSel !== ALL_PETS ? <BackLink onPress={() => setPetSel(ALL_PETS)} testID="diary-entry-covers" /> : null;
+  const writeButton = pets.length > 0 && !linked ? <Button label="Write a page" variant="secondary" onPress={() => setWriting(true)} testID="diary-write" style={styles.writeFill} /> : null;
+  const write =
+    back || writeButton ? (
+      <View style={styles.writeRow}>
+        {back}
+        {writeButton}
+      </View>
+    ) : null;
   const sheet = (
     <OwnerEntrySheet
       visible={writing}
@@ -114,7 +124,6 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
         pages={pages}
         initialId={openId}
         testID="diary-entry"
-        showCovers={!linked}
         header={(page) => {
           const mine = page.authorId === me;
           const time = page.sentAt ? new Date(page.sentAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : null;
@@ -163,6 +172,8 @@ const makeStyles = (theme: Theme) =>
     // Who wrote the page, above it: the photo viewer's meta line.
     byline: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.textMuted, paddingHorizontal: theme.spacing.xs, paddingBottom: theme.spacing.xs },
     footer: { gap: theme.spacing.sm, paddingTop: theme.spacing.xs },
+    writeRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
+    writeFill: { flex: 1 },
     // The day's tasks in a card, like TodayTasks' "Done today".
     tasks: { backgroundColor: theme.color.surface, borderRadius: theme.radius.lg, paddingTop: theme.spacing.sm, overflow: "hidden" },
     tasksTitle: {
