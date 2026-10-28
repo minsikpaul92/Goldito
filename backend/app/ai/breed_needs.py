@@ -21,11 +21,9 @@ MAX_CHIPS = 3
 MAX_TEXT = 60
 DATA = Path(__file__).resolve().parent.parent / "data" / "breed_needs.json"
 
-# Only trusted veterinary and breed-club sites, per species (README.md, Tavily section).
-DOMAINS = {
-    "dog": ["merckvetmanual.com"],
-    "cat": ["merckvetmanual.com"],
-}
+# Sites the breed needs may be searched on, per species. Empty on purpose: the sites we read before (VCA, Merck) forbid
+# reuse of their content, so nothing is searched until a site that allows it is added here.
+DOMAINS: dict[str, list[str]] = {"dog": [], "cat": []}
 
 
 class Chip(BaseModel):

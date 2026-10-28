@@ -30,7 +30,7 @@ client = base.client
 
 NOW = datetime(2026, 10, 21, 12, 0, tzinfo=UTC)
 HITS = [
-    {"title": "Poodle", "url": "https://www.merckvetmanual.com/poodle", "domain": "merckvetmanual.com", "content": "The Poodle needs about an hour of exercise every day. Brush the coat daily."},
+    {"title": "Poodle", "url": "https://allowed.example/poodle", "domain": "allowed.example", "content": "The Poodle needs about an hour of exercise every day. Brush the coat daily."},
     {"title": "Poodle care", "url": "https://vcahospitals.com/poodle", "domain": "vcahospitals.com", "content": "Poodles can be prone to hip problems in later life."},
 ]
 
@@ -71,7 +71,7 @@ def test_lines_with_a_real_quote_are_kept_and_only_their_pages_are_listed():
     )
     assert [(c.kind, c.source) for c in chips] == [("exercise", 0), ("care", 1)]
     assert chips[0].quote is None  # the quote proves the line, and is not kept
-    assert [s.url for s in sources] == ["https://www.merckvetmanual.com/poodle", "https://vcahospitals.com/poodle"]
+    assert [s.url for s in sources] == ["https://allowed.example/poodle", "https://vcahospitals.com/poodle"]
 
 
 def test_a_line_that_the_page_does_not_say_is_dropped():
@@ -237,20 +237,29 @@ def test_the_search_uses_the_species_domains_and_keeps_only_quoted_lines(monkeyp
 
     monkeypatch.setattr(tavily, "search", search)
     monkeypatch.setattr(nebius, "chat_json", chat_json)
+    monkeypatch.setitem(rules.DOMAINS, "dog", ["allowed.example"])
     chips, sources = breed_needs.search_needs("dog", "poodle")
-    assert sent["domains"] == ["merckvetmanual.com"]
+    assert sent["domains"] == ["allowed.example"]
     assert "poodle" in sent["query"] and "dog" in sent["query"]
     assert "<results>" in sent["prompt"]
     assert [c.kind for c in chips] == ["exercise"]
-    assert [s.url for s in sources] == ["https://www.merckvetmanual.com/poodle"]
+    assert [s.url for s in sources] == ["https://allowed.example/poodle"]
     assert tavily.TRUSTED_DOMAINS != sent["domains"]  # the treat check's list is untouched
 
 
 def test_cats_use_cat_sites(monkeypatch, key):
     seen = {}
     monkeypatch.setattr(tavily, "search", lambda q, *, api_key, timeout, domains=None, excerpt_chars=400: seen.update(d=domains) or [])
+    monkeypatch.setitem(rules.DOMAINS, "cat", ["cats.example"])
     assert breed_needs.search_needs("cat", "ragdoll") == ([], [])
-    assert seen["d"] == breed_needs.DOMAINS["cat"]
+    assert seen["d"] == ["cats.example"]
+
+
+def test_with_no_site_to_read_from_nothing_is_searched(monkeypatch, key):
+    assert rules.DOMAINS == {"dog": [], "cat": []}
+    monkeypatch.setattr(tavily, "search", lambda *a, **k: pytest.fail("must not search with no site"))
+    assert breed_needs.search_needs("dog", "poodle") is None
+    assert breed_needs.search_needs("cat", "ragdoll") is None
 
 
 def test_no_key_a_slow_site_or_a_model_failure_mean_could_not_run(monkeypatch, key):

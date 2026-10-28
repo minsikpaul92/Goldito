@@ -34,7 +34,7 @@ test.describe("pet at a glance", () => {
             { kind: "care", text: "Prone to hip problems", source: 1, quote: null },
           ],
           sources: [
-            { title: "Maltese | Merck", url: "https://www.merckvetmanual.com/dog-breeds/maltese/" },
+            { title: "Maltese | Example", url: "https://petcare.example/dog-breeds/maltese/" },
             { title: "Maltese | VCA", url: "https://vcahospitals.com/know-your-pet/maltese" },
           ],
           origin: "list",
@@ -64,7 +64,7 @@ test.describe("pet at a glance", () => {
     const needs = card.getByTestId(`glance-${MAX.id}-needs`);
     await expect(needs).toContainText("Grooming: Brush daily");
     await expect(needs).toContainText("Watch for: Prone to hip problems");
-    await expect(needs).toContainText("Source: merckvetmanual.com");
+    await expect(needs).toContainText("Source: petcare.example");
     await expect(needs).toContainText("Source: vcahospitals.com");
     expect(asked).toEqual({ species: "dog", breed: "Maltese" });
     await expect(card).toContainText("Owner's description, not an assessment.");

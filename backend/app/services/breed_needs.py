@@ -38,7 +38,7 @@ MODEL_TIMEOUT_S = 20.0
 
 
 # Off since 2026-10-28: the stored and searched text came from VCA (its terms forbid reuse and derivative works) and
-# Merck (its terms were not checked), so no breed page is searched or summarized. The lookup answers with nothing and touches no search or DB.
+# Merck (its terms forbid scraping, data mining and AI use, and are for US residents), so no breed page is searched or summarized. The lookup answers with nothing and touches no search or DB.
 ENABLED = False
 
 
@@ -75,6 +75,8 @@ def _from_entry(entry: dict, origin: str, basis: str | None) -> Needs:
 
 def search_needs(species: str, breed: str) -> tuple[list[Chip], list[Source]] | None:
     """One search plus one model call. None when it could not run (no key, a failure); ([], []) when it found nothing."""
+    if not DOMAINS[species]:
+        return None  # no site to read from (the empty list must never fall back to the treat check's sites)
     api_key = get_settings().tavily_api_key
     if not api_key:
         return None
