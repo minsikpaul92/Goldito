@@ -125,6 +125,11 @@ test.describe("owner diary page", () => {
         }),
       });
     });
+    const written: Record<string, unknown>[] = [];
+    await page.route("**/api/ai/diary-entry", (route) => {
+      written.push(route.request().postDataJSON());
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ body: "A walk in the sun. Max lay on a blanket.", fallback: false }) });
+    });
     const screen = app(page);
     await screen.getByTestId("diary-write").click();
     await screen.getByTestId("diary-write-body").fill("A walk in the sun.");
@@ -136,11 +141,15 @@ test.describe("owner diary page", () => {
     await screen.getByTestId("sample-walk").click();
     await screen.getByTestId("media-confirm-use").click(); // the photo is placed in its frame first
     await expect(photo).toHaveCount(1);
-    // The photo brings a line; tapping it puts it on the page.
+    // The photo brings a line (kept to start with; a tap turns it off). "Write the page from the chips" writes the page
+    // from the kept ones and the words already on it.
     expect(asked[0]).toMatchObject({ pet_id: MAX.id, media_ids: ["media-own"] });
+    await expect(screen.getByTestId("diary-write-chip-photo-media-own-0")).toHaveAttribute("aria-checked", "true");
+    await screen.getByTestId("diary-write-generate").click();
+    await expect(screen.getByTestId("diary-write-body")).toHaveValue("A walk in the sun. Max lay on a blanket.");
+    expect(written[0]).toMatchObject({ pet_id: MAX.id, chips: ["Lying on a blanket"], note: "A walk in the sun." });
     await screen.getByTestId("diary-write-chip-photo-media-own-0").click();
-    await expect(screen.getByTestId("diary-write-body")).toHaveValue("A walk in the sun.\nLying on a blanket.");
-    await expect(screen.getByTestId("diary-write-chips")).toHaveCount(0);
+    await expect(screen.getByTestId("diary-write-chip-photo-media-own-0")).toHaveAttribute("aria-checked", "false");
     // A tap on the photo offers Add and Remove.
     await expect(screen.getByTestId("diary-write-photo-remove")).toHaveCount(0);
     await screen.getByTestId("diary-write-photo-change").click();

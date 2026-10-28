@@ -21,7 +21,7 @@ import {
 } from "../features/diary/reportApi";
 import { CHECKIN_GROUPS } from "../features/care/checkinOptions";
 import { appToday } from "../features/schedule/dates";
-import { UploadError, uploadMedia } from "../lib/cloudinary";
+import { UploadError, deliveryUrl, uploadMedia } from "../lib/cloudinary";
 import { pickMedia } from "../lib/media";
 import { useErrorDialog } from "../providers/ErrorDialogProvider";
 import { useSession } from "../providers/SessionProvider";
@@ -211,7 +211,7 @@ export function ReportComposer({
     setBusy("chips");
     try {
       const up = await uploadMedia({ petId: pet.id, purpose: "report", file: picked.file, resourceType: "image" });
-      const next = [...photos, { mediaId: up.mediaId, thumbUrl: up.thumbUrl }];
+      const next = [...photos, { mediaId: up.mediaId, thumbUrl: deliveryUrl(up.publicId, 900) || up.secureUrl || up.thumbUrl }];
       setPhotos(next);
       await refreshChips(next.map((p) => p.mediaId));
     } catch (e) {

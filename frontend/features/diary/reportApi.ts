@@ -1,5 +1,5 @@
 import { ApiError, apiPost } from "../../lib/api";
-import { thumbUrl, videoPosterUrl } from "../../lib/cloudinary";
+import { deliveryUrl, thumbUrl, videoPosterUrl } from "../../lib/cloudinary";
 import { getSupabase } from "../../lib/supabase";
 import { CHECKIN_GROUPS } from "../care/checkinOptions";
 import type { Species } from "../../types/db";
@@ -61,6 +61,15 @@ export async function suggestPhotoChips(petId: string, mediaIds: string[]): Prom
     return res.chips;
   } catch (error) {
     throw explain(error, "Couldn't suggest chips. Check your connection and try again.");
+  }
+}
+
+/** An owner's page written from the chips they kept and the words already on it (`POST /api/ai/diary-entry`). */
+export async function generateOwnerEntry(petId: string, chips: string[], note: string | null): Promise<{ body: string; fallback: boolean }> {
+  try {
+    return await apiPost<{ body: string; fallback: boolean }>("/api/ai/diary-entry", { pet_id: petId, chips, note });
+  } catch (error) {
+    throw explain(error, "Couldn't write the page. Check your connection and try again.");
   }
 }
 
@@ -203,7 +212,8 @@ type PageMedia = { cloudinary_public_id: string; resource_type: "image" | "video
 /** The picture box's image for a page's own photo. */
 function pageMediaUrl(media: PageMedia | null): string | null {
   if (!media) return null;
-  return (media.resource_type === "video" ? videoPosterUrl(media.cloudinary_public_id, 600) : thumbUrl(media.cloudinary_public_id, 600)) || null;
+  // A photo on a page is shown as it was framed (no square thumbnail crop on top of it).
+  return (media.resource_type === "video" ? videoPosterUrl(media.cloudinary_public_id, 600) : deliveryUrl(media.cloudinary_public_id, 900) || thumbUrl(media.cloudinary_public_id, 600)) || null;
 }
 type ReportRow = {
   id: string;

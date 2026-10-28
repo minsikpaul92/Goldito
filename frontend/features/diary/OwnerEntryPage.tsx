@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { UploadError, uploadMedia } from "../../lib/cloudinary";
+import { UploadError, deliveryUrl, uploadMedia } from "../../lib/cloudinary";
 import { FALLBACK_CAPTION, createFeedPost } from "../../lib/feed";
+import { Button } from "../../components/ui/Button";
 import { pickMedia } from "../../lib/media";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useSession } from "../../providers/SessionProvider";
@@ -12,7 +13,7 @@ import { Theme } from "../../theme/themes";
 import { appToday } from "../schedule/dates";
 import { type DecorItem, saveDecor } from "../snap/decorApi";
 import { DecoratedReport, PHOTO_ASPECT } from "../snap/DecoratedReport";
-import { REPORT_BODY_MAX, addOwnerEntry, setDiaryPagePhotos, suggestPhotoChips } from "./reportApi";
+import { REPORT_BODY_MAX, addOwnerEntry, generateOwnerEntry, setDiaryPagePhotos, suggestPhotoChips } from "./reportApi";
 
 /** The most photos on a page (015x). */
 const MAX_PAGE_PHOTOS = 4;
@@ -49,8 +50,10 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
   const [photos, setPhotos] = useState<PagePhoto[]>([]);
   /** Add and Remove show over the photo after a tap on it. */
   const [photoMenu, setPhotoMenu] = useState(false);
-  /** Lines the photos suggest; one that was tapped is on the page and leaves the list. */
+  /** Lines the photos suggest. All are kept to start with; a tap turns one off (like the sitter's chips). */
   const [chips, setChips] = useState<PhotoChip[]>([]);
+  const [off, setOff] = useState<Set<string>>(new Set());
+  const [writing, setWriting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [stickers, setStickers] = useState<DecorItem[]>([]);
   const session = useSession();
@@ -61,6 +64,7 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
   useEffect(() => {
     setPhotos([]);
     setChips([]);
+    setOff(new Set());
     setPhotoMenu(false);
   }, [petId]);
 
@@ -75,7 +79,8 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
     setUploading(true);
     try {
       const up = await uploadMedia({ petId: pet.id, purpose: "feed", file: picked.file, trim: picked.trim, resourceType: "image" });
-      setPhotos((now) => [...now, { mediaId: up.mediaId, url: up.thumbUrl }]);
+      // Shown as it was framed: the whole picture, not the square thumbnail.
+      setPhotos((now) => [...now, { mediaId: up.mediaId, url: deliveryUrl(up.publicId, 900) || up.secureUrl || up.thumbUrl }]);
       // The chips are a bonus: a photo that cannot be read just brings none.
       void suggestPhotoChips(pet.id, [up.mediaId])
         .then((found) => setChips((now) => [...now, ...found.map((c) => ({ id: c.id, label: c.label }))]))
@@ -95,13 +100,29 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
     setPhotoMenu(false);
   };
 
-  // A tapped chip goes onto the page as a line of its own.
-  const putChip = (chip: PhotoChip) => {
-    setBody((now) => {
-      const next = now.trim() ? `${now.replace(/\s+$/, "")}\n${chip.label}.` : `${chip.label}.`;
-      return next.slice(0, REPORT_BODY_MAX);
+  const toggleChip = (id: string) =>
+    setOff((now) => {
+      const next = new Set(now);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
-    setChips((now) => now.filter((c) => c.id !== chip.id));
+
+  // "Write the page from the chips": the kept chips and what is already on the page become the page's words.
+  const kept = chips.filter((c) => !off.has(c.id));
+  const canWrite = !!pet && !writing && (kept.length > 0 || body.trim() !== "");
+  const writeFromChips = async () => {
+    if (!pet || writing) return;
+    setWriting(true);
+    try {
+      const res = await generateOwnerEntry(pet.id, kept.map((c) => c.label), body.trim() || null);
+      setBody(res.body.slice(0, REPORT_BODY_MAX));
+      if (res.fallback) toast.show("The writing helper is down. Here's a plain list to edit.");
+    } catch (error) {
+      errorDialog.show({ title: "Page not written", message: (error as Error).message, onRetry: () => void writeFromChips() });
+    } finally {
+      setWriting(false);
+    }
   };
 
   // The picture box is the photo button (#369): empty, it opens the picker; with photos, Add and Remove (the one showing).
@@ -193,13 +214,33 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
           writing={{ onChangeText: setBody, placeholder: "Dear diary, today…", maxLength: REPORT_BODY_MAX, disabled: saving, testID: "diary-write-body" }}
         />
       ) : null}
+      {/* Right under the page, like the sitter's: write it from the chips. */}
+      <Button
+        label={writing ? "Writing…" : "Write the page from the chips"}
+        ai
+        variant="secondary"
+        onPress={() => void writeFromChips()}
+        disabled={!canWrite || saving}
+        testID="diary-write-generate"
+      />
       {chips.length > 0 ? (
         <View style={styles.chips} testID="diary-write-chips">
-          {chips.map((chip) => (
-            <Pressable key={chip.id} accessibilityRole="button" onPress={() => putChip(chip)} style={styles.action} testID={`diary-write-chip-${chip.id}`}>
-              <Text style={styles.actionLabel}>{chip.label}</Text>
-            </Pressable>
-          ))}
+          {chips.map((chip) => {
+            const on = !off.has(chip.id);
+            return (
+              <Pressable
+                key={chip.id}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: on }}
+                aria-checked={on}
+                onPress={() => toggleChip(chip.id)}
+                style={[styles.action, !on && styles.actionOff]}
+                testID={`diary-write-chip-${chip.id}`}
+              >
+                <Text style={[styles.actionLabel, !on && styles.actionLabelOff]}>{chip.label}</Text>
+              </Pressable>
+            );
+          })}
         </View>
       ) : null}
     </View>
@@ -227,6 +268,8 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.border,
     },
     page: { gap: theme.spacing.md },
+    actionOff: { backgroundColor: theme.color.background, borderStyle: "dashed" },
+    actionLabelOff: { color: theme.color.textMuted, textDecorationLine: "line-through" },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
     actionLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
   });

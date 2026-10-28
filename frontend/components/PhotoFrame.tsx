@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Image, LayoutChangeEvent, PanResponder, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, LayoutChangeEvent, PanResponder, Platform, Pressable, StyleSheet, View } from "react-native";
 
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
@@ -26,11 +26,22 @@ type Props = {
 
 /**
  * A photo in a frame (`pickMedia({ frame })`): drag it to move, the − and + buttons or the mouse wheel to make it
- * smaller or bigger. It starts filling the frame and can shrink until the whole photo shows (the rest is paper-coloured).
+ * smaller or bigger, the turn button for a quarter turn. It starts filling the frame and can shrink until the whole photo
+ * shows (the rest is paper-coloured).
  * `crop()` draws exactly what shows in the frame into a new image file.
  */
 export function PhotoFrame({ url, file, aspect, onReady }: Props) {
   const styles = useThemedStyles(makeStyles);
+  // The photo as shown: the one picked, or a quarter-turned copy of it (the crop is drawn from this one).
+  const [src, setSrc] = useState(url);
+  const turned = useRef<string[]>([]);
+  useEffect(() => {
+    setSrc(url);
+  }, [url]);
+  useEffect(() => {
+    const made = turned.current;
+    return () => made.forEach((u) => URL.revokeObjectURL(u));
+  }, []);
   const [natural, setNatural] = useState<Size | null>(null);
   const [view, setView] = useState<Size | null>(null);
   // zoom 1 = the photo fills the frame; below 1 down to `fit` shows all of it. Offset: the photo's top left in the frame.
@@ -40,14 +51,14 @@ export function PhotoFrame({ url, file, aspect, onReady }: Props) {
   useEffect(() => {
     let live = true;
     Image.getSize(
-      url,
+      src,
       (w, h) => live && setNatural({ w, h }),
       () => undefined,
     );
     return () => {
       live = false;
     };
-  }, [url]);
+  }, [src]);
 
   const geometry = useMemo(() => {
     if (!natural || !view) return null;
@@ -103,6 +114,30 @@ export function PhotoFrame({ url, file, aspect, onReady }: Props) {
   const liveZoom = useRef(zoomTo);
   liveZoom.current = zoomTo;
 
+  /** A quarter turn clockwise: the turned copy replaces the photo and starts centred again. */
+  const turn = async () => {
+    if (typeof document === "undefined") return;
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new window.Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("The photo didn't load."));
+      el.src = src;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalHeight;
+    canvas.height = img.naturalWidth;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.translate(canvas.width, 0);
+    ctx.rotate(Math.PI / 2);
+    ctx.drawImage(img, 0, 0);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+    if (!blob) return;
+    const next = URL.createObjectURL(blob);
+    turned.current.push(next);
+    setSrc(next);
+  };
+
   const crop = async (): Promise<File | null> => {
     if (!natural || !view || !geometry || typeof document === "undefined") return null;
     const scale = geometry.cover * zoom;
@@ -113,7 +148,7 @@ export function PhotoFrame({ url, file, aspect, onReady }: Props) {
       const el = new window.Image();
       el.onload = () => resolve(el);
       el.onerror = () => reject(new Error("The photo didn't load."));
-      el.src = url;
+      el.src = src;
     });
     const canvas = document.createElement("canvas");
     canvas.width = outW;
@@ -151,10 +186,11 @@ export function PhotoFrame({ url, file, aspect, onReady }: Props) {
 
   return (
     <View style={styles.wrap}>
+      <View style={styles.border}>
       <View style={[styles.frame, { aspectRatio: aspect }]} onLayout={onLayout} testID="photo-frame" {...pan.panHandlers} {...wheel}>
         {natural && view ? (
           <Image
-            source={{ uri: url }}
+            source={{ uri: src }}
             style={{ position: "absolute", left: offset.x, top: offset.y, width: natural.w * scale, height: natural.h * scale }}
             accessibilityIgnoresInvertColors
             // Dragging moves the photo, never the browser's own image drag.
@@ -162,11 +198,14 @@ export function PhotoFrame({ url, file, aspect, onReady }: Props) {
           />
         ) : null}
       </View>
+      </View>
       <View style={styles.zoomRow}>
         <Pressable accessibilityRole="button" accessibilityLabel="Smaller" onPress={() => zoomTo(zoom / ZOOM_STEP)} style={styles.zoomButton} testID="photo-frame-smaller">
           <Icon name="remove" size={20} color="#1B4332" />
         </Pressable>
-        <Text style={styles.hint}>Drag to move</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Turn" onPress={() => void turn()} style={styles.zoomButton} testID="photo-frame-turn">
+          <Icon name="refresh" size={20} color="#1B4332" />
+        </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Bigger" onPress={() => zoomTo(zoom * ZOOM_STEP)} style={styles.zoomButton} testID="photo-frame-bigger">
           <Icon name="add" size={20} color="#1B4332" />
         </Pressable>
@@ -178,7 +217,9 @@ export function PhotoFrame({ url, file, aspect, onReady }: Props) {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     wrap: { gap: theme.spacing.sm },
-    frame: { width: "100%", overflow: "hidden", borderRadius: theme.radius.sm, borderWidth: 2, borderColor: theme.color.text, backgroundColor: BACKGROUND },
+    // The line is drawn outside the frame, so the frame itself is exactly the shape that gets cropped.
+    border: { overflow: "hidden", borderRadius: theme.radius.sm, borderWidth: 2, borderColor: theme.color.text },
+    frame: { width: "100%", overflow: "hidden", backgroundColor: BACKGROUND },
     zoomRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: theme.spacing.sm },
     zoomButton: {
       width: 44,
@@ -190,5 +231,4 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.borderStrong,
       backgroundColor: theme.color.surface,
     },
-    hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });
