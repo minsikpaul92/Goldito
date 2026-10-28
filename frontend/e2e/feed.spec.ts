@@ -847,7 +847,7 @@ test.describe("Feed pet dropdown and switch", () => {
     await expect(app(page).getByTestId("feed-card-max-1")).toBeVisible();
     await app(page).getByTestId("feed-view-diary").click();
     await expect(app(page).getByTestId("feed-view-diary")).toHaveAttribute("aria-selected", "true");
-    await expect(app(page).getByTestId("sitter-diary-view-book")).toBeVisible();
+    await expect(app(page).getByTestId("sitter-diary-view-today")).toBeVisible();
     await expect(app(page).getByTestId("feed-card-max-1")).toHaveCount(0);
     await app(page).getByTestId("feed-view-photos").click();
     await expect(app(page).getByTestId("feed-card-max-1")).toBeVisible();

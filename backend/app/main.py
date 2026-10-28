@@ -10,6 +10,8 @@ from app.routers import (
     ai_care_plan,
     ai_chat,
     ai_daily_report,
+    ai_diary_entry,
+    ai_diary_photo_chips,
     ai_handoff_check,
     ai_inquiry,
     ai_life_record,
@@ -68,6 +70,8 @@ app.include_router(ai_pet_photo.router)
 app.include_router(ai_pet_review.router)
 app.include_router(ai_pet_voice.router)
 app.include_router(ai_report_chips.router)
+app.include_router(ai_diary_photo_chips.router)
+app.include_router(ai_diary_entry.router)
 app.include_router(ai_safety_check.router)
 app.include_router(rag.router)
 app.include_router(sweep.router)

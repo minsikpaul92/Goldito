@@ -29,6 +29,11 @@ export type PickMediaOptions = {
   confirm?: boolean;
   /** Label of the confirm button (e.g. "Use photo & mark done"). */
   confirmLabel?: string;
+  /**
+   * A photo is placed in a frame of this width / height before it is used: drag it, make it bigger or smaller, and
+   * what shows in the frame is the photo that comes back (a cropped copy). 0: no frame (the default).
+   */
+  frame?: number;
 };
 
 export type PickedMedia = {
@@ -52,7 +57,7 @@ export function pickMedia(options: PickMediaOptions): Promise<PickedMedia | null
   if (!handler) {
     return Promise.reject(new Error("pickMedia() needs MediaPickerProvider at the app root."));
   }
-  return handler({ mediaTypes: ["image"], confirm: false, confirmLabel: "Use this photo", ...options });
+  return handler({ mediaTypes: ["image"], confirm: false, confirmLabel: "Use this photo", frame: 0, ...options });
 }
 
 /** Props of the trim sheet (`VideoTrimSheet.web.tsx`; native has no sheet yet). */

@@ -119,7 +119,7 @@ def test_two_photos_at_most_and_long_or_extra_chips_are_trimmed(client, setup):
     vision_labels = [c["label"] for c in response.json()["chips"] if c["source"] == "vision"]
     assert vision_labels == ["One", "Two"]
     assert response.json()["photos"] == [{"media_id": M1, "description": "d"}]  # an empty description is not kept
-    assert post(client, media_ids=[M1, M2, "33333333-3333-4333-8333-333333333333"]).status_code == 422
+    assert post(client, media_ids=[f"{i}3333333-3333-4333-8333-333333333333" for i in range(5)]).status_code == 422
 
 
 def test_a_failed_photo_is_left_out_and_the_records_still_come(client, setup):

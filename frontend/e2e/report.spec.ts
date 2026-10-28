@@ -66,6 +66,10 @@ async function openSitterDiary(page: import("@playwright/test").Page, extraChips
   await signIn(page, SITTER);
   await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
   await page.goto("/sitter/diary");
+  // The Diary opens on the book; Write a page opens today's page.
+  await app(page).getByTestId("sitter-diary-view-today").click();
+  // With two pets in care it asks which one the diary is about.
+  if (pets.length > 1) await app(page).getByTestId(`diary-pick-pet-${MAX.id}`).click();
   await app(page).getByTestId(`report-${MAX.id}`).waitFor();
   return { db, chipRequests, reportRequests, served };
 }
@@ -378,6 +382,7 @@ test.describe("daily report", () => {
     db.daily_reports.push({ id: "d1", pet_id: MAX.id, sitter_id: SITTER.id, report_date: TODAY_TORONTO, body: "Saved draft text", status: "draft", source_snapshot: null, created_at: NOON_TORONTO.toISOString() });
     await page.reload();
     const screen = app(page);
+    await screen.getByTestId("sitter-diary-view-today").click(); // the Diary opens on the book
     await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue("Saved draft text");
     await expect(screen.getByTestId(`report-send-${MAX.id}`)).toBeEnabled();
   });
@@ -401,14 +406,38 @@ test.describe("daily report", () => {
     expect(db.notifications.find((n) => n.type === "report_sent")?.ref_id).toBe(db.daily_reports[0].id);
   });
 
+  test("Write a diary after a page was sent today opens a new page, not the sent one", async ({ page }) => {
+    const { db } = await openSitterDiary(page);
+    const screen = app(page);
+    await screen.getByTestId(`report-body-${MAX.id}`).fill("The first page of the day.");
+    await screen.getByTestId(`report-send-${MAX.id}`).click();
+    await expect(screen.getByTestId(`report-sent-${MAX.id}`)).toBeVisible();
+    await screen.getByTestId("sitter-diary-view-book").click();
+    await screen.getByTestId("sitter-diary-view-today").click();
+    await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue("");
+    await expect(screen.getByTestId(`report-sent-${MAX.id}`)).toHaveCount(0);
+    expect(db.daily_reports).toHaveLength(1); // the sent page stays in the book
+  });
+
+  test("with two pets in care, Write a diary asks which one", async ({ page }) => {
+    await openSitterDiary(page, [], [MAX, MOCHI]);
+    const screen = app(page);
+    await expect(screen.getByTestId(`report-body-${MAX.id}`)).toBeVisible();
+    await screen.getByTestId(`report-cancel-${MAX.id}`).click();
+    await screen.getByTestId("sitter-diary-view-today").click();
+    await expect(screen.getByTestId("diary-pick-pet")).toBeVisible();
+    await screen.getByTestId(`diary-pick-pet-${MOCHI.id}`).click();
+    await expect(screen.getByTestId(`report-body-${MOCHI.id}`)).toBeVisible();
+  });
+
   test("stickers go on the page before Send and are saved with the sent report", async ({ page }) => {
     const { db } = await openSitterDiary(page);
     const screen = app(page);
     await screen.getByTestId(`report-body-${MAX.id}`).fill("A day with a sticker.");
     await screen.getByTestId("decor-start").click();
     await screen.getByTestId("decor-preset-star").click();
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers added");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     expect(db.report_decor).toHaveLength(0);
 
     await screen.getByTestId(`report-send-${MAX.id}`).click();
@@ -418,13 +447,19 @@ test.describe("daily report", () => {
   });
 
   test("generated text lands on the page as a draft; the sitter edits it there and only Send shares it", async ({ page }) => {
-    const { db } = await openSitterDiary(page);
+    const { db, reportRequests } = await openSitterDiary(page);
     const screen = app(page);
     await screen.getByTestId(`report-body-${MAX.id}`).fill("My own first line.");
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
     await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue(/lovely day with Max/);
     expect(db.daily_reports[0].status).toBe("draft");
     expect(db.notifications.some((n) => n.type === "report_sent")).toBe(false);
+    expect(reportRequests[0]).toMatchObject({ sitter_note: "My own first line." });
+    // A rewrite keeps the sitter's own words, leaves a chip they turned off out, and never sends the AI's text back.
+    await screen.getByTestId(`report-chip-${MAX.id}-rec-walk`).click();
+    await screen.getByTestId(`report-generate-${MAX.id}`).click();
+    await expect.poll(() => reportRequests.length).toBe(2);
+    expect(reportRequests[1]).toMatchObject({ sitter_note: "My own first line.", skip: ["walk"] });
     await screen.getByTestId(`report-body-${MAX.id}`).fill("Edited on the page.");
     await screen.getByTestId(`report-send-${MAX.id}`).click();
     await expect(screen.getByTestId(`report-sent-${MAX.id}`)).toContainText("Sent to Robert");
@@ -477,7 +512,7 @@ test.describe("daily report", () => {
     await expect(send).toHaveCount(0); // nothing left to send
   });
 
-  test("the picture box adds the photo; a tap on it offers Replace and Remove (#398)", async ({ page }) => {
+  test("the picture box adds the photo; a tap on it offers Add and Remove (#398)", async ({ page }) => {
     const { db } = await openSitterDiary(page);
     await mockUpload(page, db, MAX.id);
     const screen = app(page);
@@ -486,7 +521,7 @@ test.describe("daily report", () => {
     await screen.getByTestId("media-confirm-use").click();
     await screen.getByTestId(`report-chip-${MAX.id}-${PHOTO_CHIP.id}`).waitFor();
     await screen.getByTestId(`report-photo-change-${MAX.id}`).click();
-    await expect(screen.getByTestId(`report-photo-replace-${MAX.id}`)).toBeVisible();
+    await expect(screen.getByTestId(`report-photo-add-${MAX.id}`)).toBeVisible();
     await screen.getByTestId(`report-photo-remove-${MAX.id}`).click();
     await expect(screen.getByTestId(`report-chip-${MAX.id}-${PHOTO_CHIP.id}`)).toHaveCount(0);
     await expect(screen.getByTestId(`report-add-photo-${MAX.id}`)).toBeVisible();

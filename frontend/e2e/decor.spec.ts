@@ -48,6 +48,14 @@ async function spot(sticker: Locator, paper: Locator) {
   return { x: (s.x - p.x) / p.width, y: (s.y - p.y) / p.height };
 }
 
+/** Brings the picked sticker to the middle of the page, away from the phone's edge, so a drag or a pinch has room all around it. */
+async function toMiddle(page: Page, sticker: Locator, paper: Locator) {
+  await sticker.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  const from = center(await box(sticker));
+  const p = await box(paper);
+  await drag(page, from, { x: p.x + p.width / 2, y: from.y });
+}
+
 async function openOwnerEntry(page: Page, seed: (db: MockDb) => void) {
   const { db } = await mockSupabase(page, [OWNER, SITTER]);
   caring(db, [MAX]);
@@ -81,6 +89,8 @@ test.describe("diary decorating", () => {
     const mine = screen.getByTestId("decor-mine");
     await expect(mine).toHaveCount(1);
     await expect(mine).toHaveAttribute("data-selected", "true");
+    // It lands in a free spot (the picture or the empty lines), not in the middle of the words.
+    const start = await spot(mine, paper);
 
     // Drag by mouse: 60 px right, 30 px down. The sticker sits mid-page: bring it to the middle of the screen first, so
     // the tab bar (or the phone's edge) is never under the pointer.
@@ -88,18 +98,18 @@ test.describe("diary decorating", () => {
     const p = await box(paper);
     const from = center(await box(mine));
     await drag(page, from, { x: from.x + 60, y: from.y + 30 });
-    await expect.poll(async () => (await spot(mine, paper)).x).toBeCloseTo(0.5 + 60 / p.width, 1);
+    await expect.poll(async () => (await spot(mine, paper)).x).toBeCloseTo(start.x + 60 / p.width, 1);
 
     // No size or turn buttons any more: the corner handle does both (#369, next test).
     await expect(screen.getByTestId("decor-bigger")).toHaveCount(0);
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
 
     const saved = db.report_decor.find((r) => r.user_id === OWNER.id)!;
     const [item] = saved.items as Record<string, number | string>[];
     expect(item).toMatchObject({ sticker_id: "st-1", public_id: `goldito/${MAX.id}/sticker/a`, scale: 1, rotate: 0 });
-    expect(Number(item.x)).toBeCloseTo(0.5 + 60 / p.width, 1);
-    expect(Number(item.y)).toBeCloseTo(0.5 + 30 / p.height, 1);
+    expect(Number(item.x)).toBeCloseTo(start.x + 60 / p.width, 1);
+    expect(Number(item.y)).toBeCloseTo(start.y + 30 / p.height, 1);
     // The sitter's layer is untouched, and so is the text.
     expect(db.report_decor.find((r) => r.user_id === SITTER.id)!.items).toEqual(layer(SITTER.id, 0.8, 0.3).items);
     await expect(screen.getByTestId("diary-entry-body")).toContainText("Then we walked.");
@@ -120,7 +130,7 @@ test.describe("diary decorating", () => {
     await screen.getByTestId("decor-start").click();
     await screen.getByTestId("decor-add").click();
     const mine = screen.getByTestId("decor-mine");
-    await mine.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await toMiddle(page, mine, screen.getByTestId("diary-entry-paper"));
     const handle = screen.getByTestId("decor-resize");
     await expect(handle).toHaveCount(1); // only on the picked sticker
 
@@ -131,8 +141,8 @@ test.describe("diary decorating", () => {
     // A quarter turn around the centre.
     const h2 = center(await box(handle));
     await drag(page, h2, { x: c.x - (h2.y - c.y), y: c.y + (h2.x - c.x) });
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     let [item] = db.report_decor.find((r) => r.user_id === OWNER.id)!.items as Record<string, number>[];
     expect(item.scale).toBeCloseTo(1.5, 1);
     expect(Math.abs(item.rotate - 90)).toBeLessThan(4);
@@ -142,8 +152,8 @@ test.describe("diary decorating", () => {
     await screen.getByTestId("decor-mine").click();
     const h3 = center(await box(handle));
     await drag(page, h3, { x: c.x + (h3.x - c.x) * 6, y: c.y + (h3.y - c.y) * 6 });
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     [item] = db.report_decor.find((r) => r.user_id === OWNER.id)!.items as Record<string, number>[];
     expect(item.scale).toBe(2.5);
   });
@@ -155,9 +165,10 @@ test.describe("diary decorating", () => {
     await screen.getByTestId("decor-start").click();
     await screen.getByTestId("decor-add").click();
     const mine = screen.getByTestId("decor-mine");
-    await mine.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await toMiddle(page, mine, screen.getByTestId("diary-entry-paper"));
     const s = await box(mine);
     const c = center(s);
+    const start = await spot(mine, screen.getByTestId("diary-entry-paper"));
     const d0 = s.width / 4;
     const cdp = await page.context().newCDPSession(page);
     const at = (d: number) => [
@@ -167,15 +178,15 @@ test.describe("diary decorating", () => {
     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: at(d0) });
     for (let i = 1; i <= 10; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: at(d0 * (1 + i / 10)) });
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     const [item] = db.report_decor.find((r) => r.user_id === OWNER.id)!.items as Record<string, number>[];
     expect(item.scale).toBeCloseTo(2, 1);
     // A pinch does not move the sticker.
-    expect(item.x).toBeCloseTo(0.5, 1);
+    expect(item.x).toBeCloseTo(start.x, 1);
   });
 
-  test("Cancel keeps what was saved; Remove takes the picked sticker off", async ({ page }) => {
+  test("A sticker is saved as it goes on; Remove takes the picked sticker off", async ({ page }) => {
     const db = await openOwnerEntry(page, (d) => {
       seedSticker(d, OWNER.id);
       d.report_decor.push(layer(OWNER.id, 0.3, 0.6));
@@ -184,16 +195,49 @@ test.describe("diary decorating", () => {
     await screen.getByTestId("decor-start").click();
     await screen.getByTestId("decor-add").click();
     await expect(screen.getByTestId("decor-mine")).toHaveCount(2);
-    await screen.getByTestId("decor-cancel").click();
-    await expect(screen.getByTestId("decor-mine")).toHaveCount(1);
-    expect(db.report_decor).toHaveLength(1);
+    await expect.poll(() => db.report_decor[0].items.length).toBe(2);
+    await screen.getByTestId("decor-start").click();
+    await expect(screen.getByTestId("decor-mine")).toHaveCount(2);
 
     await screen.getByTestId("decor-start").click();
-    await screen.getByTestId("decor-mine").click();
+    await screen.getByTestId("decor-mine").first().click();
     await screen.getByTestId("decor-remove").click();
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
-    expect(db.report_decor[0].items).toEqual([]);
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await expect.poll(() => db.report_decor[0].items.length).toBe(1);
+    await expect(screen.getByTestId("decor-mine")).toHaveCount(1);
+  });
+
+  test("new stickers land on the picture and the empty lines, never on the words", async ({ page }) => {
+    await openOwnerEntry(page, (d) => seedSticker(d, OWNER.id));
+    const screen = app(page);
+    await screen.getByTestId("decor-start").click();
+    for (const id of ["heart", "star", "sun"]) await screen.getByTestId(`decor-preset-${id}`).click();
+    const text = screen.locator('[data-testid$="-body"]:visible').first();
+    const textBox = (await text.boundingBox())!;
+    const stickers = screen.locator('[data-testid="decor-mine"]:visible');
+    await expect(stickers).toHaveCount(3);
+    // The words are the box the text takes; no sticker centre may sit inside it.
+    for (let i = 0; i < 3; i++) {
+      const box = (await stickers.nth(i).boundingBox())!;
+      const centreY = box.y + box.height / 2;
+      expect(centreY > textBox.y && centreY < textBox.y + textBox.height, `sticker ${i} centre ${centreY} vs words ${textBox.y}-${textBox.y + textBox.height}`).toBe(false);
+    }
+  });
+
+  test("a saved sticker is picked straight from the page: no Decorate first, then moved or taken off", async ({ page }) => {
+    const db = await openOwnerEntry(page, (d) => {
+      seedSticker(d, OWNER.id);
+      d.report_decor.push(layer(OWNER.id, 0.3, 0.6));
+    });
+    const screen = app(page);
+    await expect(screen.getByTestId("decor-tools")).toHaveCount(0);
+    await screen.getByTestId("decor-mine").click();
+    // Picked on its own: the × and the size handle show, the tray stays folded.
+    await expect(screen.getByTestId("decor-remove")).toBeVisible();
+    await expect(screen.getByTestId("decor-resize")).toBeVisible();
+    await expect(screen.getByTestId("decor-tools")).toHaveCount(0);
+    await screen.getByTestId("decor-remove").click();
+    await expect.poll(() => db.report_decor[0].items.length).toBe(0);
     await expect(screen.getByTestId("decor-mine")).toHaveCount(0);
   });
 
@@ -231,8 +275,8 @@ test.describe("diary decorating", () => {
     await screen.getByTestId("decor-preset-star").click();
     await expect(screen.getByTestId("decor-canvas-front").locator("[data-layer='front']")).toHaveCount(1); // new ones go over the writing
 
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     const items = db.report_decor[0].items as Record<string, unknown>[];
     expect(items.map((i) => i.layer ?? "front")).toEqual(["back", "front"]);
     // Saved, the old one goes back under the writing.
@@ -317,7 +361,7 @@ test.describe("diary decorating", () => {
     await expect(page).toHaveURL(/\/owner\/snap\/sticker$/);
   });
 
-  test("sitter: today's sent report shows the owner's stickers, and the sitter adds her own layer", async ({ page }) => {
+  test("sitter: a sent page in the book shows the owner's stickers, and the sitter adds her own layer", async ({ page }) => {
     await page.clock.setFixedTime(NOON_TORONTO);
     const { db } = await mockSupabase(page, [OWNER, SITTER], { now: NOON_TORONTO });
     caring(db, [MAX], NOON_TORONTO);
@@ -331,19 +375,22 @@ test.describe("diary decorating", () => {
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/sitter/diary");
     const screen = app(page);
-    const paper = screen.getByTestId(`report-sent-paper-${MAX.id}-paper`);
+    // The sent page is read in the book (Write a diary starts a new page).
+    await screen.getByTestId("sitter-book-cover-" + MAX.id).click();
+    const paper = screen.getByTestId("sitter-book-paper");
     await paper.waitFor();
 
-    const other = screen.getByTestId("decor-other");
+    // (Today's composer sits hidden behind the book with the same page: look at the one in sight.)
+    const other = screen.locator('[data-testid="decor-other"]:visible');
     await expect(other).toHaveCount(1);
     const o = await spot(other, paper);
     expect(o.x).toBeCloseTo(0.25, 1);
     expect(o.y).toBeCloseTo(0.7, 1);
 
-    await screen.getByTestId("decor-start").click();
-    await screen.getByTestId("decor-add").click();
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    await screen.locator('[data-testid="decor-start"]:visible').click();
+    await screen.locator('[data-testid="decor-add"]:visible').click();
+    await screen.locator('[data-testid="decor-start"]:visible').click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     expect(db.report_decor.map((r) => r.user_id).sort()).toEqual([OWNER.id, SITTER.id].sort());
   });
 });

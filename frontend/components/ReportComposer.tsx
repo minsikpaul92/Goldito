@@ -9,19 +9,20 @@ import {
   REPORT_MAX_HIGHLIGHTS,
   ReportChip,
   ReportDraft,
+  deleteDiaryPage,
   generateReport,
   saveDraftByHand,
   overrideLabel,
   getTodayReport,
   sendReport,
   suggestChips,
-  setDiaryPagePhoto,
+  setDiaryPagePhotos,
   summaryLine,
   type DaySummary,
 } from "../features/diary/reportApi";
 import { CHECKIN_GROUPS } from "../features/care/checkinOptions";
 import { appToday } from "../features/schedule/dates";
-import { UploadError, uploadMedia } from "../lib/cloudinary";
+import { UploadError, deliveryUrl, uploadMedia } from "../lib/cloudinary";
 import { pickMedia } from "../lib/media";
 import { useErrorDialog } from "../providers/ErrorDialogProvider";
 import { useSession } from "../providers/SessionProvider";
@@ -31,8 +32,9 @@ import { Theme } from "../theme/themes";
 import type { CaringPet } from "../features/feed/caringPets";
 import { PageActions } from "../features/diary/PageActions";
 import { type DecorItem, saveDecor } from "../features/snap/decorApi";
-import { DecoratedReport } from "../features/snap/DecoratedReport";
-import { ChipSuggestions } from "./ChipSuggestions";
+import { DecoratedReport, PHOTO_ASPECT } from "../features/snap/DecoratedReport";
+import { ChipSuggestions, ChipsReading } from "./ChipSuggestions";
+import { scrollIntoView } from "../lib/scrollIntoView";
 import { Button } from "./ui/Button";
 import { Sheet } from "./ui/Sheet";
 import { Card } from "./ui/Card";
@@ -41,6 +43,8 @@ import { Tag } from "./ui/Tag";
 import { TextField } from "./ui/TextField";
 
 type Photo = { mediaId: string; thumbUrl: string };
+/** The most photos on a page (015x). */
+const MAX_PAGE_PHOTOS = 4;
 
 /** Which highlights go first when more than REPORT_MAX_HIGHLIGHTS are on (by chip source). */
 const HIGHLIGHT_ORDER: Record<string, number> = { custom: 0, checkin: 1, vision: 2, feed: 3 };
@@ -49,7 +53,13 @@ const HIGHLIGHT_ORDER: Record<string, number> = { custom: 0, checkin: 1, vision:
 export type ReportStatus = "sent" | "draft" | null;
 
 /** The Send button the Diary pins at the bottom of the screen (#398), or null when there is nothing to send. */
-export type SendBar = { label: string; disabled: boolean; onPress: () => void };
+export type SendBar = {
+  label: string;
+  disabled: boolean;
+  onPress: () => void;
+  /** Cancel: the draft saved on the server (an AI-written one) goes, so nothing of the page is left. */
+  discard: () => Promise<void>;
+};
 
 /**
  * The sitter's evening note for one pet (phase-07 7.3), as a diary page from the start (Diary book): write on the page
@@ -60,10 +70,13 @@ export type SendBar = { label: string; disabled: boolean; onPress: () => void };
  */
 export function ReportComposer({
   pet,
+  startFresh = false,
   onStatus,
   onSendBar,
 }: {
   pet: CaringPet;
+  /** Write a diary: start a new page even if one was already sent today (it stays in the book). */
+  startFresh?: boolean;
   onStatus?: (status: ReportStatus) => void;
   onSendBar?: (bar: SendBar | null) => void;
 }) {
@@ -87,7 +100,7 @@ export function ReportComposer({
   const [customText, setCustomText] = useState("");
   /** The line box is hidden behind "+ Add a line" until the sitter wants it. */
   const [customOpen, setCustomOpen] = useState(false);
-  /** Replace and Remove show over the page's photo after a tap on it (#369). */
+  /** Add and Remove show over the page's photo after a tap on it (#369). */
   const [photoMenu, setPhotoMenu] = useState(false);
   const customSeq = useRef(0);
   const [draft, setDraft] = useState<ReportDraft | null>(null);
@@ -98,8 +111,8 @@ export function ReportComposer({
   const [stickers, setStickers] = useState<DecorItem[]>([]);
   /** The sent report shown on the card — the paper the sitter can decorate (12.3b). */
   const [sentId, setSentId] = useState<string | null>(null);
-  /** The photo on the sent page (the first one added), if any. */
-  const [sentPhoto, setSentPhoto] = useState<string | null>(null);
+  /** The photos on the sent page, the first one added is the main one. */
+  const [sentPhotos, setSentPhotos] = useState<string[]>([]);
 
   const refreshChips = useCallback(
     async (mediaIds: string[]) => {
@@ -124,10 +137,12 @@ export function ReportComposer({
       try {
         const existing = sitterId ? await getTodayReport(pet.id, sitterId) : null;
         if (!isLive()) return;
-        if (existing?.status === "sent") {
+        if (existing?.status === "sent" && startFresh) {
+          // Write a diary starts a new page: the one already sent today stays in the book.
+        } else if (existing?.status === "sent") {
           setSent(true);
           setSentId(existing.id);
-          setSentPhoto(existing.photoUrl ?? null);
+          setSentPhotos(existing.photoUrls ?? (existing.photoUrl ? [existing.photoUrl] : []));
           setBody(existing.body);
         } else if (existing) {
           setDraft(existing);
@@ -200,16 +215,16 @@ export function ReportComposer({
       return next;
     });
 
-  /** The page's photo: picked from the picture box, it replaces the one there (one photo per page). */
+  /** A photo for the page: up to four, the first one is the main photo; the chips are read again from all of them. */
   const addPhoto = async () => {
     setPhotoMenu(false);
-    if (busy) return;
-    const picked = await pickMedia({ purpose: "report", confirm: true, confirmLabel: "Use this photo" });
+    if (busy || photos.length >= MAX_PAGE_PHOTOS) return;
+    const picked = await pickMedia({ purpose: "report", confirm: true, confirmLabel: "Use this photo", frame: PHOTO_ASPECT });
     if (!picked) return;
     setBusy("chips");
     try {
       const up = await uploadMedia({ petId: pet.id, purpose: "report", file: picked.file, resourceType: "image" });
-      const next = [{ mediaId: up.mediaId, thumbUrl: up.thumbUrl }];
+      const next = [...photos, { mediaId: up.mediaId, thumbUrl: deliveryUrl(up.publicId, 900) || up.secureUrl || up.thumbUrl }];
       setPhotos(next);
       await refreshChips(next.map((p) => p.mediaId));
     } catch (e) {
@@ -273,6 +288,17 @@ export function ReportComposer({
     onStatus?.(sent ? "sent" : draft ? "draft" : null);
   }, [sent, draft, onStatus]);
 
+  // The words the sitter wrote themselves are remembered across rewrites; the AI's own text is not sent back, so a chip
+  // turned off stays out (it would still be in the old text).
+  const lastAi = useRef<string | null>(null);
+  const ownWords = useRef<string | null>(null);
+  const wordsForRewrite = () => {
+    const text = body.trim();
+    if (!text) ownWords.current = null;
+    else if (text !== lastAi.current) ownWords.current = text.slice(0, 600);
+    return ownWords.current;
+  };
+
   const generate = async () => {
     if (busy) return;
     setBusy("generate");
@@ -281,8 +307,8 @@ export function ReportComposer({
       const result = await generateReport({
         petId: pet.id,
         chips: highlights.map((c) => c.label),
-        // The sitter's own words now come as lines (custom chips, FB-18); no separate note.
-        note: null,
+        // What is already on the page goes in with the chips and the photos: the AI weaves it into the page.
+        note: wordsForRewrite(),
         // A photo with any chip turned off sends no description: it could say what that chip said (D38).
         photos: descriptions
           .filter((d) => !chips.some((c) => c.media_id === d.media_id && off.has(c.id)))
@@ -294,6 +320,7 @@ export function ReportComposer({
         overrides: Object.fromEntries(Object.entries(overrides).filter(([check]) => !skip.includes(check))),
       });
       setDraft(result);
+      lastAi.current = result.body.trim();
       setBody(result.body);
     } catch (e) {
       errorDialog.show({ title: "Couldn't write the page", message: (e as Error).message, onRetry: () => void generate() });
@@ -317,18 +344,17 @@ export function ReportComposer({
         }
         setStickers([]);
       }
-      // The first photo added shows on the page the owner reads.
-      const pagePhoto = photos[0];
-      if (pagePhoto) {
+      // The photos added show on the page the owner reads, the first one as the main photo.
+      if (photos.length > 0) {
         try {
-          await setDiaryPagePhoto(id, pagePhoto.mediaId);
+          await setDiaryPagePhotos(id, photos.map((p) => p.mediaId));
         } catch {
           toast.show("Sent, but the photo wasn't added to the page.");
         }
       }
       setSent(true);
       setSentId(id);
-      setSentPhoto(pagePhoto?.thumbUrl || null);
+      setSentPhotos(photos.map((p) => p.thumbUrl).filter(Boolean));
       setDraft(null);
       toast.show(`Sent. ${pet.ownerName} was told`);
     } catch (e) {
@@ -338,14 +364,33 @@ export function ReportComposer({
     }
   };
 
+  // Chips that have just been made are scrolled into sight (they land below the page, often under the fold).
+  const chipsRef = useRef<View>(null);
+  const wasReading = useRef(false);
+  useEffect(() => {
+    const reading = busy === "chips";
+    if (wasReading.current && !reading && all.length > 0) setTimeout(() => scrollIntoView(chipsRef), 50);
+    wasReading.current = reading;
+  }, [busy, all.length]);
+
   // The Diary pins this pet's Send at the bottom of the screen; it reads the latest `send` through the ref.
   const sendRef = useRef(send);
   sendRef.current = send;
   const sendLabel = busy === "send" ? "Sending…" : `Send to ${pet.ownerName}`;
   const sendDisabled = busy != null || !body.trim();
   const sendable = !loading && !sent;
+  const discard = async () => {
+    if (!draft) return;
+    try {
+      await deleteDiaryPage(draft.id);
+    } catch {
+      // The draft stays on the server, private; the page on screen starts again either way.
+    }
+  };
+  const discardRef = useRef(discard);
+  discardRef.current = discard;
   useEffect(() => {
-    onSendBar?.(sendable ? { label: sendLabel, disabled: sendDisabled, onPress: () => void sendRef.current() } : null);
+    onSendBar?.(sendable ? { label: sendLabel, disabled: sendDisabled, onPress: () => void sendRef.current(), discard: () => discardRef.current() } : null);
   }, [onSendBar, sendable, sendLabel, sendDisabled]);
   useEffect(() => () => onSendBar?.(null), [onSendBar]);
 
@@ -362,7 +407,7 @@ export function ReportComposer({
   const writeAnother = () => {
     setSent(false);
     setSentId(null);
-    setSentPhoto(null);
+    setSentPhotos([]);
     setBody("");
     setStickers([]);
     setOff(new Set());
@@ -387,7 +432,8 @@ export function ReportComposer({
             petName={pet.name}
             day={day.current}
             body={body}
-            pictureUrl={sentPhoto}
+            pictureUrl={sentPhotos[0] ?? null}
+            pictureUrls={sentPhotos}
             testID={`report-sent-paper-${pet.id}`}
           />
         ) : (
@@ -401,25 +447,27 @@ export function ReportComposer({
   }
 
   const pagePhoto = photos[0] ?? null;
-  // The picture box is the photo button (#369): empty, it opens the picker; with a photo, Replace and Remove.
+  // The picture box is the photo button (#369): empty, it opens the picker; with photos, Add and Remove (the photo showing).
   const picturePress = pagePhoto
     ? {
         onPress: () => setPhotoMenu((open) => !open),
-        label: "Change the photo",
+        label: "Change the photos",
         testID: `report-photo-change-${pet.id}`,
-        actions: photoMenu ? (
-          <>
-            <PhotoAction label="Replace" onPress={() => void addPhoto()} testID={`report-photo-replace-${pet.id}`} />
-            <PhotoAction label="Remove" onPress={() => removePhoto(pagePhoto.mediaId)} testID={`report-photo-remove-${pet.id}`} />
-          </>
-        ) : undefined,
+        actions: (index: number) =>
+          photoMenu ? (
+            <>
+              {photos.length < MAX_PAGE_PHOTOS ? <PhotoAction label="Add" onPress={() => void addPhoto()} testID={`report-photo-add-${pet.id}`} /> : null}
+              <PhotoAction label="Remove" onPress={() => removePhoto((photos[index] ?? pagePhoto).mediaId)} testID={`report-photo-remove-${pet.id}`} />
+            </>
+          ) : undefined,
       }
     : { onPress: () => void addPhoto(), label: "Add a photo", testID: `report-add-photo-${pet.id}` };
 
   // Not sent yet: the page is there from the start (Diary book). The sitter writes on it by hand, or lets Goldito write
   // it from the chips below; either way it stays a draft only they can see until they tap Send (pinned by the Diary).
   return (
-    <Card style={styles.card} testID={`report-${pet.id}`}>
+    // No card around it: the page is as wide as the owner's, so the same page sits the same on both phones.
+    <View style={styles.writing} testID={`report-${pet.id}`}>
       {draft || body.trim() ? (
         <Text style={styles.muted} testID={`report-state-${pet.id}`}>
           {`Draft. Only you can see it until you send it to ${pet.ownerName}.`}
@@ -437,6 +485,7 @@ export function ReportComposer({
         day={day.current}
         body={body}
         pictureUrl={pagePhoto?.thumbUrl || null}
+        pictureUrls={photos.map((p) => p.thumbUrl).filter(Boolean)}
         pending={{ items: stickers, onChange: setStickers }}
         picturePress={busy != null ? undefined : picturePress}
         writing={{
@@ -450,17 +499,17 @@ export function ReportComposer({
       />
 
       <Button
-        label={busy === "generate" ? "Writing…" : body.trim() ? "Rewrite the page from the chips" : "Write the page from the chips"}
+        label={busy === "generate" ? "Writing…" : body.trim() ? "Rewrite the page with AI" : "Write the page with AI"}
         variant="secondary"
         ai
         disabled={busy != null}
         onPress={() => void generate()}
         testID={`report-generate-${pet.id}`}
       />
-      {body.trim() ? <Text style={styles.muted}>This replaces what's on the page. Nothing is sent.</Text> : null}
 
       <View style={styles.chipsHead}>
         <Text style={styles.label}>Today's chips</Text>
+        {busy === "chips" ? <ChipsReading testID={`report-chips-reading-${pet.id}`} /> : null}
         {summary ? (
           <Text style={styles.summary} numberOfLines={1} testID={`report-summary-${pet.id}`}>
             {summaryLine(summary)}
@@ -468,14 +517,14 @@ export function ReportComposer({
         ) : null}
       </View>
       {all.length > 0 ? (
-        <>
+        <View ref={chipsRef}>
           <ChipSuggestions chips={all} off={off} onToggle={toggle} onRemove={removeCustom} testIDPrefix={`report-chip-${pet.id}`} />
           {highlights.length > REPORT_MAX_HIGHLIGHTS ? (
             <Text style={styles.muted} testID={`report-too-many-${pet.id}`}>
               {`Only ${REPORT_MAX_HIGHLIGHTS} highlights fit on the page. Turn a few off.`}
             </Text>
           ) : null}
-        </>
+        </View>
       ) : (
         <Text style={styles.muted} testID={`report-nochips-${pet.id}`}>
           {busy === "chips" ? "Looking at today…" : "Nothing recorded yet. Add a photo or a short line."}
@@ -538,7 +587,7 @@ export function ReportComposer({
         })}
         <Button label="Done" onPress={() => setEditing(false)} testID={`report-edit-done-${pet.id}`} />
       </Sheet>
-    </Card>
+    </View>
   );
 }
 
@@ -554,6 +603,7 @@ function PhotoAction({ label, onPress, testID }: { label: string; onPress: () =>
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.sm },
+    writing: { gap: theme.spacing.md },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },

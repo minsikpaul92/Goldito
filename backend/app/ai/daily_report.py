@@ -29,6 +29,8 @@ MAX_WALK_MINUTES = 240
 MAX_CHIPS = 8
 CHIP_MAX = 40
 NOTE_MAX = 200
+# The words the sitter already wrote on the page, which the AI weaves in (the page itself is longer than a note).
+SITTER_NOTE_MAX = 600
 CAPTION_MAX = 160
 MAX_FEED_PHOTOS = 6
 MAX_REPORT_PHOTOS = 2
@@ -273,7 +275,7 @@ def build_snapshot(
         "checkins": snap_checkins,
         "checks": checks,
         "chips": clean_chips(chips),
-        "sitter_note": _clean(sitter_note, NOTE_MAX),
+        "sitter_note": _clean(sitter_note, SITTER_NOTE_MAX),
     }
     return snapshot
 

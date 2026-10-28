@@ -42,7 +42,7 @@ async function mockFeedUpload(page: Page, db: MockDb) {
     return route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ media_id: "media-own", public_id: `goldito/${MAX.id}/feed/own`, secure_url: "https://res.cloudinary.com/goldito-test/image/upload/own", thumb_url: "" }),
+      body: JSON.stringify({ media_id: "media-own", public_id: `goldito/${MAX.id}/feed/own`, secure_url: "https://res.cloudinary.com/goldito-test/image/upload/own", thumb_url: "https://res.cloudinary.com/goldito-test/image/upload/c_fill,w_600/own" }),
     });
   });
 }
@@ -101,7 +101,8 @@ test.describe("owner diary page", () => {
     const db = await openOwnerDiary(page, (d) => caring(d, [MAX, MOCHI]));
     const screen = app(page);
     await screen.getByTestId("diary-write").click();
-    await screen.getByTestId(`diary-write-pet-${MOCHI.id}`).click();
+    // Two pets: it asks which one the diary is about.
+    await screen.getByTestId(`diary-pick-pet-${MOCHI.id}`).click();
     await expect(screen.getByTestId("diary-write-body")).toBeVisible();
     await screen.getByTestId("diary-write-body").fill("Mochi slept on the sofa.");
     await screen.getByTestId("diary-write-save").click();
@@ -109,29 +110,70 @@ test.describe("owner diary page", () => {
     expect(db.daily_reports.find((r) => r.sitter_id === OWNER.id)).toMatchObject({ pet_id: MOCHI.id });
   });
 
-  test("a photo goes on the page and is kept in Feed, private", async ({ page }) => {
+  test("a photo goes on the page with its chips and is kept in Feed, private", async ({ page }) => {
     const db = await openOwnerDiary(page, oneStay);
     await mockFeedUpload(page, db);
+    const asked: Record<string, unknown>[] = [];
+    await page.route("**/api/ai/diary-photo-chips", (route) => {
+      asked.push(route.request().postDataJSON());
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          chips: [{ id: "photo-media-own-0", kind: "episode", label: "Lying on a blanket", source: "vision", check: null, media_id: "media-own" }],
+          photos: [],
+        }),
+      });
+    });
+    const written: Record<string, unknown>[] = [];
+    await page.route("**/api/ai/diary-entry", (route) => {
+      written.push(route.request().postDataJSON());
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ body: "A walk in the sun. Max lay on a blanket.", fallback: false }) });
+    });
     const screen = app(page);
     await screen.getByTestId("diary-write").click();
     await screen.getByTestId("diary-write-body").fill("A walk in the sun.");
-    // The picture box is the button (#369).
+    // The picture box starts empty and is the button (#369).
+    // (The photo itself is a Cloudinary url the test cannot load: the box turning into the photo button is what shows.)
+    const photo = screen.getByTestId("diary-write-photo-change");
+    await expect(photo).toHaveCount(0);
     await screen.getByTestId("diary-write-photo").click();
     await screen.getByTestId("sample-walk").click();
-    // The photo shows in the page's picture box at once.
-    const picture = screen.getByTestId("diary-write-page-picture").locator("img");
-    await expect(picture).toHaveAttribute("src", /^blob:/);
-    // A tap on it offers Replace and Remove.
+    await screen.getByTestId("media-confirm-use").click(); // the photo is placed in its frame first
+    await expect(photo).toHaveCount(1);
+    // The photo brings a line (kept to start with; a tap turns it off). "Write the page with AI" writes the page
+    // from the kept ones and the words already on it.
+    expect(asked[0]).toMatchObject({ pet_id: MAX.id, media_ids: ["media-own"] });
+    await expect(screen.getByTestId("diary-write-chip-photo-media-own-0")).toHaveAttribute("aria-pressed", "true");
+    await screen.getByTestId("diary-write-generate").click();
+    await expect(screen.getByTestId("diary-write-body")).toHaveValue("A walk in the sun. Max lay on a blanket.");
+    expect(written[0]).toMatchObject({ pet_id: MAX.id, chips: ["Lying on a blanket"], note: "A walk in the sun." });
+    await screen.getByTestId("diary-write-chip-photo-media-own-0").click();
+    await expect(screen.getByTestId("diary-write-chip-photo-media-own-0")).toHaveAttribute("aria-pressed", "false");
+    // A rewrite keeps the owner's own words, leaves the chip they turned off out, and never sends the AI's text back.
+    await screen.getByTestId("diary-write-generate").click();
+    await expect.poll(() => written.length).toBe(2);
+    expect(written[1]).toMatchObject({ chips: [], photos: [], note: "A walk in the sun." });
+    // A line of their own is a chip too: kept across rewrites, and it can be taken back.
+    await screen.getByTestId("diary-write-custom-open").click();
+    await screen.getByTestId("diary-write-custom-input").fill("Learned a new trick");
+    await screen.getByTestId("diary-write-custom-add").click();
+    await expect(screen.getByTestId("diary-write-chip-custom-1")).toHaveAttribute("aria-pressed", "true");
+    await screen.getByTestId("diary-write-generate").click();
+    await expect.poll(() => written.length).toBe(3);
+    expect(written[2]).toMatchObject({ chips: ["Learned a new trick"], note: "A walk in the sun." });
+    await screen.getByTestId("diary-write-chip-custom-1-remove").click();
+    await expect(screen.getByTestId("diary-write-chip-custom-1")).toHaveCount(0);
+    // A tap on the photo offers Add and Remove.
     await expect(screen.getByTestId("diary-write-photo-remove")).toHaveCount(0);
     await screen.getByTestId("diary-write-photo-change").click();
+    await expect(screen.getByTestId("diary-write-photo-add")).toBeVisible();
     await screen.getByTestId("diary-write-photo-remove").click();
-    await expect(picture).toHaveCount(0);
+    await expect(photo).toHaveCount(0);
     await screen.getByTestId("diary-write-photo").click();
     await screen.getByTestId("sample-walk").click();
-    await screen.getByTestId("diary-write-photo-change").click();
-    await screen.getByTestId("diary-write-photo-replace").click();
-    await screen.getByTestId("sample-walk").click();
-    await expect(picture).toHaveAttribute("src", /^blob:/);
+    await screen.getByTestId("media-confirm-use").click(); // the photo is placed in its frame first
+    await expect(photo).toHaveCount(1);
     await screen.getByTestId("diary-write-save").click();
 
     await expect(screen.getByTestId("toast")).toContainText("Page saved");
@@ -139,10 +181,23 @@ test.describe("owner diary page", () => {
     expect(db.feed_posts).toHaveLength(1);
     expect(db.feed_posts[0]).toMatchObject({ pet_id: MAX.id, posted_by: OWNER.id, sitter_id: null, visibility: "private", media_id: "media-own" });
     // The page points at the photo (014t); deleting the page later leaves the Feed post alone.
-    expect(db.daily_reports.find((r) => r.sitter_id === OWNER.id)).toMatchObject({ media_id: "media-own" });
+    expect(db.daily_reports.find((r) => r.sitter_id === OWNER.id)).toMatchObject({ media_id: "media-own", more_media_ids: [] });
 
     await page.goto("/owner/feed");
     await expect(screen.locator("[data-testid^='feed-card-']")).toHaveCount(1);
+  });
+
+  test("Cancel drops what was written and goes back to the book", async ({ page }) => {
+    const db = await openOwnerDiary(page, oneStay);
+    const screen = app(page);
+    await screen.getByTestId("diary-write").click();
+    await screen.getByTestId("diary-write-body").fill("Words that go away.");
+    await screen.getByTestId("diary-write-cancel").click();
+    await expect(screen.getByTestId("diary-write-body")).toHaveCount(0);
+    expect(db.daily_reports.find((r) => r.sitter_id === OWNER.id)).toBeUndefined();
+    // A new page starts empty.
+    await screen.getByTestId("diary-write").click();
+    await expect(screen.getByTestId("diary-write-body")).toHaveValue("");
   });
 
   test("a page with no photo saves as normal, without one", async ({ page }) => {
@@ -170,13 +225,13 @@ test.describe("owner diary page", () => {
     await screen.getByTestId("diary-write-body").fill("Sticker day.");
     await screen.getByTestId("diary-write-save").click();
     await expect(screen.getByText("Your page")).toBeVisible();
-    await expect(screen.getByTestId("diary-write-sheet")).toHaveCount(0); // the sheet has its own Decorate while open
+    await expect(screen.getByTestId("diary-write-body")).toHaveCount(0); // the writing page has its own Decorate while open
 
     await screen.getByTestId("decor-start").click();
     await screen.getByTestId("decor-preset-heart").click();
     await screen.getByTestId("decor-add").click();
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     const items = db.report_decor.find((r) => r.user_id === OWNER.id)?.items as { sticker_id: string }[];
     expect(items).toHaveLength(2);
     expect(items.map((i) => i.sticker_id)).toContain("st-1");
@@ -190,8 +245,8 @@ test.describe("owner diary page", () => {
     await screen.getByTestId("decor-start").click();
     await expect(screen.getByTestId("decor-share")).toHaveCount(0); // not a page yet: nothing to share
     await screen.getByTestId("decor-preset-heart").click();
-    await screen.getByTestId("decor-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Stickers added");
+    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await page.waitForTimeout(300);
     expect(db.report_decor).toHaveLength(0); // kept on the screen, not saved yet
 
     await screen.getByTestId("diary-write-save").click();
@@ -206,7 +261,7 @@ test.describe("owner diary page", () => {
     await screen.getByTestId("diary-write-body").fill("A page to delete.");
     await screen.getByTestId("diary-write-save").click();
     await expect(screen.getByText("Your page")).toBeVisible();
-    await expect(screen.getByTestId("diary-write-sheet")).toHaveCount(0);
+    await expect(screen.getByTestId("diary-write-body")).toHaveCount(0);
     const mine = db.daily_reports.find((r) => r.sitter_id === OWNER.id)!;
 
     await screen.getByTestId(`diary-page-delete-${mine.id}`).click();
@@ -245,7 +300,6 @@ test.describe("owner diary page", () => {
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/sitter/diary");
     const screen = app(page);
-    await screen.getByTestId("sitter-diary-view-book").click();
     await screen.getByTestId("sitter-book-cover-" + MAX.id).click();
     await screen.getByTestId("diary-page-delete-s1").click();
     await expect(screen.getByText("It is deleted for good. The owner loses it too.")).toBeVisible();
@@ -267,7 +321,6 @@ test.describe("owner diary page", () => {
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/sitter/diary");
     const screen = app(page);
-    await screen.getByTestId("sitter-diary-view-book").click();
     await screen.getByTestId("sitter-book-cover-" + MAX.id).click();
     await expect(screen.getByTestId("sitter-book-body")).toContainText("Max napped a lot.");
     await expect(screen.getByTestId("sitter-book-prev")).toBeDisabled();

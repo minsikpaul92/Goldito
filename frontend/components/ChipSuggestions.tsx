@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { ReportChip } from "../features/diary/reportApi";
-import { useThemedStyles } from "../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 import { selectable } from "./ui/selectable";
 
@@ -14,6 +14,18 @@ type Props = {
   onRemove?: (id: string) => void;
   testIDPrefix: string;
 };
+
+/** A spinner and a line while the chips are being made from a photo. */
+export function ChipsReading({ testID }: { testID?: string }) {
+  const theme = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <View style={styles.reading} accessibilityRole="progressbar" accessibilityLabel="Reading the photo" testID={testID}>
+      <ActivityIndicator color={theme.color.primary} />
+      <Text style={styles.readingText}>Reading the photo…</Text>
+    </View>
+  );
+}
 
 /** The day's chips as on/off toggles (D38): what stays on is what the report may talk about. */
 export function ChipSuggestions({ chips, off, onToggle, onRemove, testIDPrefix }: Props) {
@@ -73,6 +85,8 @@ const makeStyles = (theme: Theme) =>
     remove: { flexShrink: 0, minWidth: 36, minHeight: 44, alignItems: "center", justifyContent: "center", marginLeft: -theme.spacing.sm },
     removeText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
     pressed: { opacity: 0.6 },
+    reading: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm, minHeight: theme.layout.touchTarget },
+    readingText: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     text: { ...selectable(theme).label, flexShrink: 1, fontSize: theme.fontSize.small },
     textOn: selectable(theme).labelOn,
   });
