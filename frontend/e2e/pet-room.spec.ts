@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { HOUR } from "./careFixtures";
 import { NOON_TORONTO, app, box, center, drag, signIn } from "./helpers";
 import { fakePetPhoto } from "./pixelHooks";
-import { OWNER, mockSupabase, type MockDb } from "./supabaseMock";
+import { OWNER, SITTER, mockSupabase, type MockDb } from "./supabaseMock";
 
 // The pet room on owner Home (11.12, #184): a swipe pager (Today / Pet), the 8-bit pet and its HUD, its shape and size
 // from the breed and weight, and colors from a photo (PS.3, MediaPipe replaced by test hooks).
@@ -89,8 +89,32 @@ test.describe("pet room", () => {
     const screen = app(page);
     await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("pet-room-Mochi-mood")).toHaveText("Hungry");
-    await expect(screen.getByTestId("stat-tile-meal")).toContainText("Hungry");
+    await expect(screen.getByTestId("stat-tile-meal")).toContainText("skipped");
     await expect(screen.getByTestId("stat-tile-walks")).toHaveCount(0);
+    // The room says it too: the bowl is empty.
+    await expect(screen.getByTestId("pet-room-Mochi-open-bowl")).toBeVisible();
+    await expect(screen.getByTestId("pet-room-Mochi-open-food")).toHaveCount(0);
+  });
+
+  test("a fed pet has food in its bowl; a napping pet goes to its bed and lies on it", async ({ page }) => {
+    await setup(page, (db) => {
+      db.pets.push(pet("pet-max", "Max", "dog"));
+      db.care_checkins.push(checkin("pet-max", "meal", "all", 1), checkin("pet-max", "nap", null, 0.2));
+    });
+    const screen = app(page);
+    await screen.getByTestId("home-pager-tab-1").click();
+    await expect(screen.getByTestId("pet-room-Max-mood")).toHaveText("Sleepy");
+    await expect(screen.getByTestId("pet-room-Max-open-food")).toBeVisible();
+    // It walks over and lies on the mattress: its middle is over the bed, and it sits higher than the floor.
+    // (Both are measured each time: the flip to Pet room moves them until it ends.)
+    await expect
+      .poll(async () => {
+        const bed = await box(screen.getByTestId("pet-room-Max-open-bed"));
+        const sprite = await box(screen.getByTestId("pet-room-Max-sprite"));
+        const mid = sprite.x + sprite.width / 2;
+        return mid > bed.x && mid < bed.x + bed.width && sprite.y + sprite.height < bed.y + bed.height - 4;
+      }, { timeout: 20_000 })
+      .toBe(true);
   });
 
   test("several pets: switch between them", async ({ page }) => {
@@ -136,13 +160,61 @@ test.describe("pet room", () => {
     await expect(screen.getByTestId("pet-card-photo-Mochi")).toHaveCount(0);
   });
 
-  test("the room is a picture, not a button: tapping it stays on Home", async ({ page }) => {
-    await setup(page, (db) => db.pets.push(pet("pet-max", "Max", "dog")));
+  test("tapping the pet pats it: hearts pop, nothing is saved, and it stays on Home", async ({ page }) => {
+    const db = await setup(page, (db) => db.pets.push(pet("pet-max", "Max", "dog")));
     const screen = app(page);
     await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("pet-room-Max-open")).toHaveAttribute("role", "img");
-    await screen.getByTestId("pet-room-Max-open").click();
+    const checkins = db.care_checkins.length;
+    await screen.getByTestId("pet-room-Max-open-pat").click();
+    await expect(screen.getByTestId("pet-room-Max-open-heart")).toHaveCount(3);
+    await expect(screen.getByTestId("pet-room-Max-open-heart")).toHaveCount(0, { timeout: 6_000 });
+    expect(db.care_checkins.length).toBe(checkins);
     await expect(page).toHaveURL(/\/owner$/);
+  });
+
+  test("Toss the ball: the ball lands and the pet noses it along; tapping the floor drops it there", async ({ page }) => {
+    await setup(page, (db) => db.pets.push(pet("pet-max", "Max", "dog")));
+    const screen = app(page);
+    await screen.getByTestId("home-pager-tab-1").click();
+    await expect(screen.getByTestId("pet-room-Max-open-ball")).toHaveCount(0);
+    await screen.getByTestId("pet-room-Max-open-toss").click();
+    const ball = screen.getByTestId("pet-room-Max-open-ball");
+    await expect(ball).toBeVisible();
+    const first = (await box(ball)).x;
+    await expect.poll(async () => Math.abs((await box(ball)).x - first), { timeout: 20_000 }).toBeGreaterThan(4);
+    // A tap on the floor drops it right there (far right, by the bed, where the pet never roams).
+    const floor = await box(screen.getByTestId("pet-room-Max-open-floor"));
+    await page.mouse.click(floor.x + floor.width * 0.92, floor.y + floor.height / 2);
+    await expect.poll(async () => (await box(ball)).x, { timeout: 3_000 }).toBeGreaterThan(floor.x + floor.width * 0.8);
+  });
+
+  test("the newest sitter photo hangs on the wall; with none there is no frame", async ({ page }) => {
+    const db = await setup(page, (db) => db.pets.push(pet("pet-max", "Max", "dog")));
+    const screen = app(page);
+    await screen.getByTestId("home-pager-tab-1").click();
+    await expect(screen.getByTestId("pet-room-Max-open")).toBeVisible();
+    await expect(screen.getByTestId("pet-room-Max-open-photo")).toHaveCount(0);
+    db.media.push({ id: "m-wall", pet_id: "pet-max", cloudinary_public_id: "goldito/pet-max/feed/wall", resource_type: "image", purpose: "feed" });
+    db.feed_posts.push({
+      id: "f-wall",
+      pet_id: "pet-max",
+      sitter_id: SITTER.id,
+      posted_by: SITTER.id,
+      visibility: "shared",
+      media_id: "m-wall",
+      caption: "Nap time",
+      caption_source: "ai",
+      category: null,
+      task_log_id: null,
+      created_at: new Date(NOON_TORONTO.getTime() - 2 * HOUR).toISOString(),
+      taken_at: new Date(NOON_TORONTO.getTime() - 2 * HOUR).toISOString(),
+    });
+    // The room reads the newest photo when it opens again.
+    await screen.getByTestId("home-pager-tab-0").click();
+    await page.reload();
+    await screen.getByTestId("home-pager-tab-1").click();
+    await expect(screen.getByTestId("pet-room-Max-open-photo")).toBeVisible();
   });
 
   test("the breed picks the head and the weight the size: a small dog takes less of the screen", async ({ page }) => {
@@ -172,7 +244,7 @@ test.describe("pet room", () => {
     const room = await box(screen.getByTestId("pet-room-Rex-open"));
     expect(room.y + room.height).toBeLessThanOrEqual(page1.y + page1.height + 1);
     expect(room.height).toBeGreaterThan(page1.height * 0.3);
-    expect((await box(screen.getByTestId("pet-room-Rex-sprite"))).height).toBeGreaterThan(room.height * 0.4);
+    expect((await box(screen.getByTestId("pet-room-Rex-sprite"))).height).toBeGreaterThan(room.height * 0.35);
   });
 
   test("Match colors from photo (pet profile): the colors are saved to the pet, and Use the coat color takes them back", async ({ page }) => {

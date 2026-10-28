@@ -4,6 +4,7 @@ import { formatTime, isoToZoned } from "../../features/schedule/dates";
 import type { HatId } from "../../features/pets/sprites/hats";
 import type { PetRecipe } from "../../features/pets/sprites/petLook";
 import type { PixelColors } from "../../features/pets/sprites/photoColors";
+import { useLatestSitterPhoto } from "../../features/pets/useLatestSitterPhoto";
 import { usePetRoom } from "../../features/pets/usePetRoom";
 import type { PetMood, PetStatus } from "../../lib/petStatus";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
@@ -42,7 +43,7 @@ function petTiles(status: PetStatus, species: Species): StatTile[] {
     status.meal === "fed"
       ? { key: "meal", icon: "meal", art: "owner/care-bowl", value: "Fed", label: "ate well", ground: tokens.color.blockMint }
       : status.meal === "hungry"
-        ? { key: "meal", icon: "meal", art: "owner/care-bowl", value: "Hungry", label: "needs a meal", ground: tokens.color.blockMint, warn: true }
+        ? { key: "meal", icon: "meal", art: "owner/care-bowl", value: "Meal", label: "skipped", ground: tokens.color.blockMint, warn: true }
         : { key: "meal", icon: "meal", art: "owner/care-bowl", value: "Meal", label: "not logged yet", ground: tokens.color.blockMint },
   ];
   const potty = species === "cat" ? "owner/potty-scoop" : "owner/potty-bags";
@@ -67,11 +68,13 @@ export function OwnerPetRoom({ pet }: { pet: Pet }) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { status, event, updatedAt } = usePetRoom(pet.id);
+  const photo = useLatestSitterPhoto(pet.id);
   const mood = MOOD[status?.mood ?? "calm"];
 
   return (
     <View style={styles.root} testID={`pet-room-${pet.name}`}>
       <PetRoomScene
+        name={pet.name}
         species={pet.species}
         coat={pet.coat}
         breed={pet.breed}
@@ -80,6 +83,8 @@ export function OwnerPetRoom({ pet }: { pet: Pet }) {
         hat={pet.hat}
         look={pet.look}
         mood={status?.mood ?? "calm"}
+        hungry={status?.meal === "hungry"}
+        photo={photo}
         event={event}
         label={`${pet.name}'s room. ${mood.label}.`}
         testID={`pet-room-${pet.name}-open`}
