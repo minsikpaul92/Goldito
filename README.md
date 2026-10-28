@@ -16,7 +16,7 @@ the server owns every fact, and a person approves every word.
 [![Tavily](https://img.shields.io/badge/search-Tavily-4f46e5?style=flat-square)](#tavily-live-answers-from-trusted-sites)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-<img src="docs/assets/readme/chat-draft.gif" alt="Inquiry chat between owner Paul and sitter Peter: reply chips draft a message, then a Meet & Greet request, acceptance, quote, and payment" width="340">
+<img src="docs/assets/readme/chat-draft.gif" alt="The sitter's phone in the booking chat with owner Robert: reply chips draft a message, then a Meet & Greet, the final quote, and payment" width="340">
 
 <sub><i>Booking chat: reply chips, Meet &amp; Greet, quote, and payment in one thread</i></sub>
 
@@ -69,9 +69,9 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 | A treat label is photographed | Reads it, applies the rule table, searches trusted sites (Tavily), and reasons about hidden sources | Nemotron 3.5 **Super VL** → Nemotron 3 **Ultra** | Danger needs an explicit "I understand" |
 | The stay ends | Writes the pet's Life Record and indexes it | Nemotron 3 **Super** + Qwen3 Embedding | The owner reads it |
 
-<img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner adds a photo of Mumu, the AI reads breed and coat color, and Goldito builds Mumu as an 8-bit pet" width="340">
+<img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner picks a photo of Max and answers a few questions by voice or text, then Goldito builds Max as an 8-bit pet" width="340">
 
-<sub><i>Sign-up: a photo becomes your pet as an 8-bit character</i></sub>
+<sub><i>Sign-up: a photo and a few answers become your pet as an 8-bit character</i></sub>
 
 **Guardrails.** The model never writes a price, a date, or an entry code (a draft whose numbers do not match the server is rewritten once, then falls back to plain words). Entry codes never enter a prompt or the RAG index. Life Records and spoken profile facts need recorded evidence or a matching quote, and safety answers are never pre-filled. The treat verdict is never below the rule table. If a model is slow or down, the screen shows fixed chips or a plain list, never an error.
 
@@ -158,7 +158,7 @@ What we used, what worked, and what got in the way, written down as it happened.
 - **Danger is loud:** a DANGER verdict opens a red screen that only "I understand" closes, and a sitter's DANGER also notifies the owner.
 - Code: [`services/tavily.py`](backend/app/services/tavily.py) · [`services/breed_needs.py`](backend/app/services/breed_needs.py) · [`routers/ai_safety_check.py`](backend/app/routers/ai_safety_check.py)
 
-<img src="docs/assets/readme/treat-check.gif" alt="Two treat labels are checked for Biscuit, who is allergic to chicken: a label with hidden chicken sources gets a WARNING, and a label that names chicken and garlic powder gets a red DANGER screen" width="360">
+<img src="docs/assets/readme/treat-check.gif" alt="Owner and sitter phones side by side: a treat label is checked for Max, who is allergic to chicken, and a red DANGER screen appears with sources" width="560">
 
 <sub><i>Treat check: one label gets a WARNING, another a red DANGER</i></sub>
 
@@ -175,11 +175,9 @@ What we used, what worked, and what got in the way, written down as it happened.
       └──────────────── the next stay starts with everything Goldito learned ─────────┘
 ```
 
-<!-- TODO(image): five phone screenshots (402 x 874), one per stage. Uncomment the table when the files are in docs/assets/readme/.
 | ① Inquiry | ② Meet & Greet | ③ Booking | ④ Care & Transit | ⑤ Completion |
 | :---: | :---: | :---: | :---: | :---: |
-| <img src="docs/assets/readme/stage-1-chat.png" alt="Booking chat with AI reply chips" width="150"> | <img src="docs/assets/readme/stage-2-checklist.png" alt="Care request turned into a checklist" width="150"> | <img src="docs/assets/readme/stage-3-checkout.png" alt="Final quote, consents, and demo payment" width="150"> | <img src="docs/assets/readme/stage-4-daily-note.png" alt="The 5-second check and the AI daily note" width="150"> | <img src="docs/assets/readme/stage-5-life-record.png" alt="Home safe and the pet's Life Record" width="150"> |
--->
+| <img src="docs/assets/readme/stage-1-chat.png" alt="Booking chat with AI reply chips" width="150"> | <img src="docs/assets/readme/stage-2-checklist.png" alt="Meet & Greet checklist: care needs, quirks, route, handoff, heads-up" width="150"> | <img src="docs/assets/readme/stage-3-checkout.png" alt="Consents, a typed signature, and the demo payment" width="150"> | <img src="docs/assets/readme/stage-4-daily-note.png" alt="The diary page the AI wrote from the day's chips, with stickers" width="150"> | <img src="docs/assets/readme/stage-5-life-record.png" alt="Home safe and the pet's Life Record" width="150"> |
 
 | Stage | What happens | What the AI does |
 | :--- | :--- | :--- |
@@ -196,6 +194,8 @@ Tap a stage for the details.
 
 - The owner searches sitters by dates, times, pets, and distance from home (1 to 100 km), opens a profile, and taps **Start chat**. The chat opens with a stay card (dates, times, pets) and a hello. That chat carries the whole stay: quote, Meet & Greet, agreement, payment, trips, photos, the daily note, and the reviews. The same owner and sitter always come back to the same chat.
 - **The AI suggests, a person sends.** For the message the other side just wrote, Nemotron 3 Super offers two or three reply chips for *my* side. Tapping one drafts a short message in my voice (a sitter's voice is learned from their own anonymized past replies) that I can edit before I tap **Send**. When the next step is clear (send a quote, request a Meet & Greet, pay), the AI can point at one action chip, but only from the list of steps the code says are possible right now.
+<p align="center"><img src="docs/assets/readme/stage-1-chat.png" alt="Booking chat with AI reply chips" width="240"></p>
+
 - **The model never writes a price or a date.** The sitter's calendar, rates, and quote (with **holiday** and **multi-pet** rates) come from the database. The facts also include the sitter's policy, the pet's profile and allergies, and the pet's **Life Record** (RAG on pgvector).
 
 </details>
@@ -205,6 +205,8 @@ Tap a stage for the details.
 
 - The owner writes a **care & medication request** like a note, or taps Quick add chips: *"8 AM: 1 cup of kibble · 2 PM: skin pill in a treat · No knocking, text me · Keep other dogs away on walks."* Nemotron 3 Super turns it into timed tasks and **Heads-up** cards; the owner reviews them before saving. While a stay is on, changes go through a request the sitter approves.
 - When the sitter's own words say yes (Nemotron 3 Nano reads them), the chat brings up the **Meet & Greet** card and the dates are held for this owner. First-time pairs meet **in person** (Goldito suggests a park near the owner's home from OpenStreetMap) or **online**, where the backend creates a **Google Meet** link and calendar invite. Either side can ask to skip; both must agree. Repeat clients skip this step.
+<p align="center"><img src="docs/assets/readme/stage-2-checklist.png" alt="Meet & Greet checklist: care needs, quirks, route, handoff, heads-up" width="240"></p>
+
 - No meeting time within 2 days? Both are asked to set one, skip it, or decline; after 3 more quiet days the request is cancelled and the dates are released.
 
 </details>
@@ -214,6 +216,8 @@ Tap a stage for the details.
 
 - After meeting, the owner taps **I'd like to book** (with the checklist, pets, times, and price in view) and the sitter taps **I accept**, in either order. Either side can still say no, with a reason chip.
 - The sitter sends the **final quote** with one tap; the server calculates it. The owner confirms it, signs the **consent forms** (Canada-first: 24-hour emergency vet authorization, lockbox / buzzer / fob use, sharing space with other pets, safe-return rules), and **pays (demo)**.
+<p align="center"><img src="docs/assets/readme/stage-3-checkout.png" alt="Consents, a typed signature, and the demo payment" width="240"></p>
+
 - **Timed unlock:** for boarding, the sitter's address, visitor parking, and a packing list appear right after payment. Entry info for the owner's home (lockbox code, buzzer) **unlocks for the sitter only 2 hours before the visit**, and the owner is told when it opens.
 
 </details>
@@ -228,22 +232,24 @@ Tap a stage for the details.
 
 **Care, played like a game.** The sitter taps **Feed**, **Walk**, **Poop**, or **Nap** on the pet's 8-bit room. The pet acts it out and the owner is told right away, so a care update feels like play instead of a chore.
 
-<img src="docs/assets/readme/care-room.gif" alt="The sitter taps Feed, Walk, Poop, and Nap on Biscuit's 8-bit room; the pet eats, walks, and sleeps, and each tap tells the owner" width="320">
+<img src="docs/assets/readme/care-room.gif" alt="The sitter taps quick check-ins, then Feed, Walk, Poop, and Nap on Max's 8-bit room; the pet eats, walks, and sleeps, and each tap tells the owner" width="320">
 
 <sub><i>The 8-bit care room: the sitter taps Feed, Walk, Poop, or Nap</i></sub>
 
-<img src="docs/assets/readme/care-checkin.gif" alt="The sitter taps check-ins and adds a photo for Biscuit while the owner's Home updates live: meals, potty, walks, and mood" width="560">
+<img src="docs/assets/readme/care-checkin.gif" alt="The sitter taps check-ins, adds a photo, and makes a sticker for Max while the owner's Home updates live" width="560">
 
 <sub><i>Check-ins and photos: the sitter taps, the owner's Home updates live</i></sub>
 
-<img src="docs/assets/readme/diary-page.gif" alt="The sitter writes the diary page from the day's chips and photo, adds stickers, and sends it to the owner" width="320">
+<img src="docs/assets/readme/diary-page.gif" alt="The sitter adds a photo and a line to the diary page, the AI writes it from the day's chips, and stickers decorate it before it goes to the owner" width="320">
 
 <sub><i>Diary: a page written from the day's chips and a photo, with stickers</i></sub>
+
+<img src="docs/assets/readme/stage-4-daily-note.png" alt="The diary page the AI wrote from the day's chips, with stickers" width="240">
 
 > *"Max took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited. It was adorable. Her potty was perfectly healthy, too. 🐶"*
 > From an AI daily note built from a few chips, two photos, and one short line from the sitter
 
-<img src="docs/assets/readme/trip-live.gif" alt="The owner starts a simulated drive and the sitter watches the live map and ETA until Peter has arrived" width="560">
+<img src="docs/assets/readme/trip-live.gif" alt="Live trip on both phones: the map and ETA count down until Robert has arrived at Chloe's place" width="560">
 
 <sub><i>Live trip: the owner's map and ETA until the sitter arrives</i></sub>
 
@@ -253,6 +259,11 @@ Tap a stage for the details.
 <summary><b>⑤ Completion: home safe, reviews both ways, and a record that remembers</b></summary>
 
 - The final handoff comes with *"Max is home safe 🏠"*, then a **5-star review** request. The owner rates the sitter and can add them to favorites; the sitter reviews the owner (other sitters can read it) and gives each pet a medal.
+<p align="center">
+  <img src="docs/assets/readme/stage-5-review.png" alt="Home safe: a medal and a review for Max" width="240">
+  <img src="docs/assets/readme/stage-5-life-record.png" alt="Max's Life Record: potty, behavior, heads-up, sitter tips" width="240">
+</p>
+
 - Nemotron 3 Super turns the whole stay (check-ins, tasks, daily notes) into the pet's **Life Record**: eating habits, potty patterns, medication response, behavior, and cautions. Sentences with no recorded evidence are dropped.
 - The Life Record goes into a **RAG knowledge base** (Qwen3 Embedding 8B, pgvector). On the next stay, even with a **new sitter**, the chat drafts, the checklist, and the sitter's request card already know the pet.
 
@@ -271,6 +282,8 @@ Tap a stage for the details.
 <summary><b>Snap tab: treat check, pet mood, stickers</b> (owners and sitters)</summary>
 
 - **Treat check:** pick the pet, snap the label. Nemotron 3.5 Super VL reads the ingredients; a rule table checks the pet's allergens and species toxins; Tavily searches trusted vet and FDA pages; Nemotron 3 Ultra reasons about hidden sources (for example, chicken in "animal fat"). The answer is **SAFE · WARNING · DANGER** with sources, never below what the rule table says.
+<p align="center"><img src="docs/assets/readme/snap-mood.png" alt="Mood result for a dog photo: excited, happy, relaxed" width="240"></p>
+
 - **Mood** *(for fun only)*: MediaPipe finds each pet in the browser, the vision model picks only visible body-language tags, and a fixed server rule table turns them into eight emotion percentages, so the same photo always gives the same numbers. Nemotron 3 Nano writes one "seems" line.
 - **Sticker:** the pet is cut out in the browser (MediaPipe) into a transparent sticker with a white outline, ready to decorate a diary page.
 
