@@ -296,6 +296,7 @@ const CARE_SCRIPT: ScriptStep[] = [
   // The diary page, with a line in her own words first (it goes into the page).
   // Max is the first pet, so his page is the one open.
   { tap: "feed-view-diary" },
+  { tap: "sitter-diary-view-today" },
   { wait: "report-chip-*", timeout: AI_MS },
   { tap: "report-custom-open-*" },
   { type: "report-custom-input-*", text: "Chased a squirrel at the park" },

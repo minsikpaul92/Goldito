@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Image, LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, LayoutChangeEvent, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { Button } from "../../components/ui/Button";
 import { Icon } from "../../components/ui/Icon";
@@ -28,6 +28,8 @@ const LINE = 30;
 const MIN_LINES = 6;
 /** The picture box is the same height for owner and sitter, so a sticker lands in the same spot for both. */
 const PICTURE_HEIGHT = 180;
+/** A white wash the page shows through (the floating buttons and the tray). */
+const SEE_THROUGH = "rgba(255,255,255,0.82)";
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 // Picture-diary handwriting (web): Gaegu, Google Fonts (SIL OFL). Native keeps the system font.
@@ -108,6 +110,8 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   const [picture, setPicture] = useState<string | null>(null);
   const [lines, setLines] = useState({ top: 0, height: MIN_LINES * LINE });
   const [editing, setEditing] = useState(false);
+  // The sticker tray folds away on the round button, so the page can be seen and the stickers dragged on it.
+  const [trayOpen, setTrayOpen] = useState(true);
   useEffect(() => {
     onEditingChange?.(editing);
   }, [editing, onEditingChange]);
@@ -168,6 +172,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
     setDraft(mine.map((item) => ({ ...item })));
     setSelected(null);
     setEditing(true);
+    setTrayOpen(true);
     try {
       setBox(await listStickers(petId));
     } catch {
@@ -350,92 +355,96 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
         />
       </View>
 
-      {Platform.OS !== "web" || !me || (!reportId && !pending) ? null : editing ? (
-        <View style={styles.tools} testID="decor-tools">
-          <Text style={styles.hint}>
-            {current ? "Drag to move. Drag the corner to size and turn." : "Add a sticker, then drag it anywhere on the page."}
-          </Text>
-
-          <Text style={styles.group}>Goldito stickers</Text>
-          <View style={styles.strip}>
-            {PRESET_STICKERS.map((preset) => (
-              <Pressable
-                key={preset.id}
-                accessibilityRole="button"
-                accessibilityLabel={`Add the ${preset.label} sticker`}
-                disabled={draft.length >= MAX_ITEMS}
-                onPress={() => add(presetRef(preset), presetRef(preset))}
-                style={styles.thumb}
-                testID={`decor-preset-${preset.id}`}
+      {Platform.OS !== "web" || !me || (!reportId && !pending) ? null : (
+        // Floats at the screen's bottom right while the page scrolls (a zero-height sticky slot), so it never sits on the words.
+        <View style={styles.floatSlot} pointerEvents="box-none">
+          <View style={styles.float} pointerEvents="box-none">
+            {editing && trayOpen ? (
+              <ScrollView
+                style={styles.tray}
+                contentContainerStyle={styles.trayContent}
+                showsVerticalScrollIndicator={false}
+                testID="decor-tools"
               >
-                <Image source={preset.source} style={styles.thumbImage} resizeMode="contain" />
-              </Pressable>
-            ))}
+                {box === null ? null : box.length === 0 ? (
+                  <View style={styles.trayEmpty}>
+                    <Text style={styles.hint} testID="decor-no-stickers">
+                      {`No stickers of ${petName} yet.`}
+                    </Text>
+                    <TextButton label="Make a sticker" onPress={() => role && router.push(`/${role}/snap/sticker`)} testID="decor-make" />
+                  </View>
+                ) : (
+                  box.map((sticker) => (
+                    <Pressable
+                      key={sticker.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Add this sticker of ${petName}`}
+                      disabled={draft.length >= MAX_ITEMS}
+                      onPress={() => add(sticker.publicId, sticker.id)}
+                      style={styles.thumb}
+                      testID="decor-add"
+                    >
+                      {stickerUrl(sticker.publicId) ? (
+                        <Image source={{ uri: stickerUrl(sticker.publicId) }} style={styles.thumbImage} resizeMode="contain" />
+                      ) : (
+                        <Text>🐾</Text>
+                      )}
+                    </Pressable>
+                  ))
+                )}
+                {PRESET_STICKERS.map((preset) => (
+                  <Pressable
+                    key={preset.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add the ${preset.label} sticker`}
+                    disabled={draft.length >= MAX_ITEMS}
+                    onPress={() => add(presetRef(preset), presetRef(preset))}
+                    style={styles.thumb}
+                    testID={`decor-preset-${preset.id}`}
+                  >
+                    <Image source={preset.source} style={styles.thumbImage} resizeMode="contain" />
+                  </Pressable>
+                ))}
+              </ScrollView>
+            ) : null}
+            <View style={styles.floatRow} pointerEvents="box-none">
+              {editing ? (
+                <>
+                  <RoundButton
+                    label="Cancel"
+                    onPress={() => {
+                      setEditing(false);
+                      setSelected(null);
+                    }}
+                    testID="decor-cancel"
+                  >
+                    <Icon name="close" size={22} color={theme.color.text} />
+                  </RoundButton>
+                  <RoundButton label={saving ? "Saving…" : "Save stickers"} onPress={() => void save()} disabled={saving} testID="decor-save">
+                    <Icon name="check" size={22} color={theme.color.text} />
+                  </RoundButton>
+                </>
+              ) : null}
+              <RoundButton
+                label={editing ? (trayOpen ? "Hide the stickers" : "Show the stickers") : "Decorate"}
+                onPress={() => (editing ? setTrayOpen((open) => !open) : void start())}
+                testID="decor-start"
+              >
+                <Icon name="sticker" size={22} color={theme.color.primary} />
+              </RoundButton>
+            </View>
           </View>
-
-          <Text style={styles.group}>{`${petName}'s stickers`}</Text>
-          {box === null ? null : box.length === 0 ? (
-            <View style={styles.row}>
-              <Text style={styles.hint} testID="decor-no-stickers">
-                {`No stickers of ${petName} yet. Make one in Snap.`}
-              </Text>
-              <TextButton label="Make a sticker" onPress={() => role && router.push(`/${role}/snap/sticker`)} testID="decor-make" />
-            </View>
-          ) : (
-            <View style={styles.strip}>
-              {box.map((sticker) => (
-                <Pressable
-                  key={sticker.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Add this sticker of ${petName}`}
-                  disabled={draft.length >= MAX_ITEMS}
-                  onPress={() => add(sticker.publicId, sticker.id)}
-                  style={styles.thumb}
-                  testID="decor-add"
-                >
-                  {stickerUrl(sticker.publicId) ? (
-                    <Image source={{ uri: stickerUrl(sticker.publicId) }} style={styles.thumbImage} resizeMode="contain" />
-                  ) : (
-                    <Text>🐾</Text>
-                  )}
-                </Pressable>
-              ))}
-            </View>
-          )}
-
-          <Button label={saving ? "Saving…" : "Save stickers"} onPress={() => void save()} disabled={saving} testID="decor-save" />
-          <TextButton
-            label="Cancel"
-            onPress={() => {
-              setEditing(false);
-              setSelected(null);
-            }}
-            testID="decor-cancel"
-          />
-        </View>
-      ) : (
-        // The page's actions as the design system's secondary Buttons with their icons, side by side (diary audit, Oct 27).
-        <View style={styles.actionsRow}>
-          <Button
-            label="Decorate"
-            variant="secondary"
-            icon={<Icon name="sticker" size={18} color={theme.color.primary} />}
-            onPress={() => void start()}
-            style={styles.action}
-            testID="decor-start"
-          />
-          {reportId && !writing ? (
-            <Button
-              label="Share"
-              variant="secondary"
-              icon={<Icon name="share" size={18} color={theme.color.primary} />}
-              onPress={() => setSharing(true)}
-              style={styles.action}
-              testID="decor-share"
-            />
-          ) : null}
         </View>
       )}
+      {reportId && !writing && !editing && Platform.OS === "web" ? (
+        <Button
+          label="Share"
+          variant="secondary"
+          icon={<Icon name="share" size={18} color={theme.color.primary} />}
+          onPress={() => setSharing(true)}
+          testID="decor-share"
+        />
+      ) : null}
       {reportId && !writing && Platform.OS === "web" ? (
         <SharePageSheet
           visible={sharing}
@@ -448,6 +457,23 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
         />
       ) : null}
     </View>
+  );
+}
+
+/** A round, see-through button with one icon (Decorate and its Save, Cancel). */
+function RoundButton({ label, onPress, disabled, testID, children }: { label: string; onPress: () => void; disabled?: boolean; testID: string; children: ReactNode }) {
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [styles.round, pressed && styles.roundPressed]}
+      testID={testID}
+    >
+      {children}
+    </Pressable>
   );
 }
 
@@ -479,8 +505,6 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.text,
       backgroundColor: theme.color.accent,
     },
-    actionsRow: { flexDirection: "row", gap: theme.spacing.sm },
-    action: { flex: 1 },
     pictureEmpty: { alignItems: "center", gap: theme.spacing.xs },
     pictureEmptyText: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     pictureActions: { position: "absolute", bottom: theme.spacing.sm, flexDirection: "row", gap: theme.spacing.sm },
@@ -491,11 +515,26 @@ const makeStyles = (theme: Theme) =>
     // No focus box on the web (the paper border shows focus instead).
     input: { padding: 0, borderWidth: 0, backgroundColor: "transparent", textAlignVertical: "top", ...(Platform.OS === "web" ? ({ outlineStyle: "none" } as object) : null) },
     body: { fontFamily: DIARY_FONT, fontSize: theme.fontSize.body + 4, lineHeight: LINE, color: theme.color.text },
-    tools: { gap: theme.spacing.sm },
-    group: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    row: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: theme.spacing.sm },
-    strip: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
+    // A zero-height slot at the end of the page that sticks to the bottom of the scrolling screen; the buttons stand up from it.
+    floatSlot: { ...(Platform.OS === "web" ? ({ position: "sticky" } as object) : null), bottom: theme.spacing.md, height: 0, zIndex: 20, overflow: "visible" },
+    float: { position: "absolute", right: 0, bottom: 0, alignItems: "flex-end", gap: theme.spacing.sm },
+    floatRow: { flexDirection: "row", gap: theme.spacing.sm },
+    // About four stickers show; the rest are a drag away.
+    tray: { maxHeight: 4 * 56 + 3 * theme.spacing.sm + 2 * theme.spacing.sm, borderRadius: theme.radius.md, backgroundColor: SEE_THROUGH, flexGrow: 0 },
+    trayContent: { gap: theme.spacing.sm, padding: theme.spacing.sm, alignItems: "center" },
+    trayEmpty: { gap: theme.spacing.xs, alignItems: "center", paddingHorizontal: theme.spacing.xs },
+    round: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: theme.color.borderStrong,
+      backgroundColor: SEE_THROUGH,
+    },
+    roundPressed: { opacity: 0.6 },
     thumb: {
       width: 56,
       height: 56,

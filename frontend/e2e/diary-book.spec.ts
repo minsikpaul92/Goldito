@@ -163,7 +163,6 @@ test.describe("diary book", () => {
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/sitter/diary");
     const screen = app(page);
-    await screen.getByTestId("sitter-diary-view-book").click();
     await screen.getByTestId("sitter-book-cover-" + MAX.id).click();
     await expect(screen.getByTestId("sitter-book-where")).toContainText("Max · Oct 7");
     await expect(screen.getByTestId("sitter-book-prev")).toBeEnabled();

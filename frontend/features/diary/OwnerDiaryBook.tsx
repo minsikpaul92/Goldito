@@ -2,6 +2,8 @@ import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { ALL_PETS, FeedPetPicker } from "../../components/FeedPetPicker";
+import { FeedBarRight } from "../../components/FeedSwitch";
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Icon } from "../../components/ui/Icon";
@@ -11,6 +13,7 @@ import { useNotifications } from "../../providers/NotificationsProvider";
 import { useSession } from "../../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+import { usePetFaces } from "../feed/usePetFaces";
 import { useMyPets } from "../pets/useMyPets";
 import { DiaryBook } from "./DiaryBook";
 import { OwnerEntrySheet } from "./OwnerEntrySheet";
@@ -31,6 +34,9 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
   const [pages, setPages] = useState<SentReport[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [writing, setWriting] = useState(false);
+  // The pet dropdown next to Photos / Diary: All pets (the covers) or one pet's pages.
+  const [petSel, setPetSel] = useState<string>(ALL_PETS);
+  const faces = usePetFaces(pets.map((p) => p.id));
   // A page just written: the book opens on it.
   const [written, setWritten] = useState<string | null>(null);
   const session = useSession();
@@ -64,11 +70,17 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
       </Screen>
     );
   }
+  const picker = !linked ? (
+    <FeedBarRight signature={`${petSel}|${pets.map((p) => p.id).join(",")}|${JSON.stringify(faces)}`}>
+      <FeedPetPicker groups={[{ key: "mine", pets }]} allPets={pets} value={petSel} onChange={setPetSel} faces={faces} testID="diary-pet" />
+    </FeedBarRight>
+  ) : null;
   const write = pets.length > 0 && !linked ? <Button label="Write a page" variant="secondary" onPress={() => setWriting(true)} testID="diary-write" /> : null;
   const sheet = (
     <OwnerEntrySheet
       visible={writing}
       pets={pets}
+      initialPetId={petSel === ALL_PETS ? null : petSel}
       onClose={() => setWriting(false)}
       onSaved={(reportId) => {
         setWriting(false);
@@ -80,6 +92,7 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
   if (!pages || pages.length === 0) {
     return (
       <Screen testID="owner-diary-screen" contentStyle={{ gap: 12 }} scrollbar>
+        {picker}
         <EmptyState
           emoji="📔"
           title="No diary yet"
@@ -92,8 +105,11 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
   }
   return (
     <Screen testID="owner-diary-screen" contentStyle={{ gap: 12 }} scrollbar>
+      {picker}
       {write}
       <DiaryBook
+        selectedPet={petSel === ALL_PETS ? null : petSel}
+        onPetChange={(id) => setPetSel(id ?? ALL_PETS)}
         key={openId ?? "book"}
         pages={pages}
         initialId={openId}

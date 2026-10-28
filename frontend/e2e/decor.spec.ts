@@ -331,6 +331,7 @@ test.describe("diary decorating", () => {
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/sitter/diary");
     const screen = app(page);
+    await screen.getByTestId("sitter-diary-view-today").click();
     const paper = screen.getByTestId(`report-sent-paper-${MAX.id}-paper`);
     await paper.waitFor();
 

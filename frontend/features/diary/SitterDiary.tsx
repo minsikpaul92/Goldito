@@ -1,8 +1,8 @@
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { FeedPetPicker } from "../../components/FeedPetPicker";
+import { ALL_PETS, FeedPetPicker } from "../../components/FeedPetPicker";
 import { FeedBarRight } from "../../components/FeedSwitch";
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -24,7 +24,7 @@ const STATUS_LABEL: Record<NonNullable<ReportStatus>, string> = { sent: "Sent �
 type View_ = "today" | "book";
 
 /**
- * Sitter Diary (D47b · Diary book): **Today** — the page for each pet in care, written by hand or by Goldito from the
+ * Sitter Diary (D47b · Diary book): opens on the **Book** like the owner's, with Write a page above it. **Today** — the page for each pet in care, written by hand or by Goldito from the
  * day's chips, checked and sent (phase-07 7.3; each composer keeps its page while switching pets, FB-19). **Book** —
  * every page this sitter sent, all pets they have cared for or one, oldest → newest.
  * One row of controls (#398): the pet chip and Book sit at the right of the Photos / Diary tabs, and Send floats at the
@@ -45,12 +45,20 @@ export function SitterDiary() {
   useEffect(() => {
     if (pageParam) setView("book");
   }, [pageParam]);
-  // With nobody in care there is nothing to write today: open the book.
-  const shownView: View_ = view ?? (state.status === "ready" && caring.length === 0 ? "book" : "today");
+  // The book first, as the owner's Diary does; Write a page opens today's page.
+  const shownView: View_ = view ?? "book";
   // A page deleted in the book: the Today cards start again (their "sent" state is stale).
   const [deleted, setDeleted] = useState(0);
   const [pages, setPages] = useState<SentReport[] | null>(null);
   const [bookError, setBookError] = useState<string | null>(null);
+  // The book's own pet picker (All pets, or one): the pets that have pages.
+  const [bookPet, setBookPet] = useState<string>(ALL_PETS);
+  const bookPets = useMemo(() => {
+    const seen = new Map<string, { id: string; name: string; species: "dog" | "cat" }>();
+    for (const page of pages ?? []) if (!seen.has(page.petId)) seen.set(page.petId, { id: page.petId, name: page.petName, species: page.species });
+    return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [pages]);
+  const bookFaces = usePetFaces(bookPets.map((p) => p.id));
   const onStatus = useCallback(
     (petId: string) => (status: ReportStatus) => setStatuses((prev) => (prev[petId] === status ? prev : { ...prev, [petId]: status })),
     [],
@@ -101,7 +109,6 @@ export function SitterDiary() {
     );
   }
   const current = caring.find((p) => p.id === selected) ?? caring[0];
-  const toBook = shownView === "today";
   const bar = shownView === "today" && current ? bars[current.id] : null;
   const hints = Object.fromEntries(
     Object.entries(statuses).flatMap(([id, s]) => (s ? [[id, STATUS_LABEL[s]]] : [])),
@@ -118,7 +125,9 @@ export function SitterDiary() {
         ) : undefined
       }
     >
-      <FeedBarRight signature={`${shownView}|${current?.id}|${caring.map((p) => p.id).join(",")}|${JSON.stringify(hints)}|${JSON.stringify(faces)}`}>
+      <FeedBarRight
+        signature={`${shownView}|${current?.id}|${bookPet}|${caring.map((p) => p.id).join(",")}|${bookPets.map((p) => p.id).join(",")}|${JSON.stringify(hints)}|${JSON.stringify(faces)}|${JSON.stringify(bookFaces)}`}
+      >
         {shownView === "today" && caring.length > 1 ? (
           <FeedPetPicker
             groups={[{ key: "caring", pets: caring }]}
@@ -130,23 +139,36 @@ export function SitterDiary() {
             testID="diary-pet"
           />
         ) : null}
-        {caring.length > 0 ? (
+        {shownView === "book" ? (
+          <FeedPetPicker
+            groups={[{ key: "book", pets: bookPets }]}
+            allPets={bookPets}
+            value={bookPet}
+            onChange={setBookPet}
+            faces={bookFaces}
+            testID="diary-book-pet"
+          />
+        ) : null}
+        {shownView === "today" ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={toBook ? "Diary book" : "Today's page"}
+            accessibilityLabel="Diary book"
             onPress={() => {
-              setView(toBook ? "book" : "today");
-              if (toBook) void loadBook();
+              setView("book");
+              void loadBook();
             }}
             style={({ pressed }) => [styles.toggle, pressed && styles.pressed]}
-            testID={toBook ? "sitter-diary-view-book" : "sitter-diary-view-today"}
+            testID="sitter-diary-view-book"
           >
-            <Icon name={toBook ? "diary" : "calendar"} size={16} color={theme.color.text} />
-            <Text style={styles.toggleText}>{toBook ? "Book" : "Today"}</Text>
+            <Icon name="diary" size={16} color={theme.color.text} />
+            <Text style={styles.toggleText}>Book</Text>
           </Pressable>
         ) : null}
       </FeedBarRight>
 
+      {shownView === "book" && caring.length > 0 ? (
+        <Button label="Write a page" variant="secondary" onPress={() => setView("today")} testID="sitter-diary-view-today" />
+      ) : null}
       {shownView === "today" && caring.length === 0 ? (
         <EmptyState emoji="📔" title="Diary" message="When you're caring for a pet, you can write and send the day's page from here." />
       ) : null}
@@ -169,6 +191,8 @@ export function SitterDiary() {
             key={pageParam ?? "book"}
             pages={pages}
             initialId={pageParam}
+            selectedPet={bookPet === ALL_PETS ? null : bookPet}
+            onPetChange={(id) => setBookPet(id ?? ALL_PETS)}
             footer={(page) => (
               <PageActions
                 reportId={page.id}

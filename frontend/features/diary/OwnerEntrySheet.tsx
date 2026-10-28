@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 
 import { Button } from "../../components/ui/Button";
-import { SegmentedControl } from "../../components/ui/SegmentedControl";
+import { FeedPetPicker } from "../../components/FeedPetPicker";
 import { Sheet } from "../../components/ui/Sheet";
 import { UploadError, uploadMedia } from "../../lib/cloudinary";
 import { FALLBACK_CAPTION, createFeedPost } from "../../lib/feed";
@@ -12,6 +12,7 @@ import { useSession } from "../../providers/SessionProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
+import { usePetFaces } from "../feed/usePetFaces";
 import { appToday } from "../schedule/dates";
 import { type DecorItem, saveDecor } from "../snap/decorApi";
 import { DecoratedReport } from "../snap/DecoratedReport";
@@ -19,7 +20,7 @@ import { REPORT_BODY_MAX, addOwnerEntry, setDiaryPagePhoto } from "./reportApi";
 
 type Props = {
   visible: boolean;
-  pets: { id: string; name: string }[];
+  pets: { id: string; name: string; species: "dog" | "cat" }[];
   /** Open on this pet (the one the book is showing). */
   initialPetId?: string | null;
   onClose: () => void;
@@ -38,6 +39,7 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
   const toast = useToast();
   const errorDialog = useErrorDialog();
   const [petId, setPetId] = useState<string | null>(null);
+  const faces = usePetFaces(pets.map((p) => p.id));
   const [body, setBody] = useState("");
   const [photo, setPhoto] = useState<PickedMedia | null>(null);
   /** Replace and Remove show over the photo after a tap on it. */
@@ -141,20 +143,16 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
       discardTitle="Discard your page?"
       visible={visible}
       title="New page"
+      headerExtra={
+        pets.length > 1 ? (
+          <FeedPetPicker groups={[{ key: "mine", pets }]} allPets={[]} value={petId ?? ""} onChange={setPetId} faces={faces} testID="diary-write-pet" />
+        ) : undefined
+      }
       onClose={onClose}
       scrollbar
       testID="diary-write-sheet"
       footer={<Button label={saving ? "Saving…" : "Save page"} onPress={() => void save()} disabled={saving || body.trim().length === 0} testID="diary-write-save" />}
     >
-      {pets.length > 1 ? (
-        <SegmentedControl
-          options={pets.map((p) => ({ value: p.id, label: p.name }))}
-          value={petId}
-          onChange={setPetId}
-          scrollable={pets.length > 3}
-          testID="diary-write-pet"
-        />
-      ) : null}
       {pet ? (
         <DecoratedReport
           reportId={null}

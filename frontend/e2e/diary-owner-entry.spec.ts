@@ -101,6 +101,7 @@ test.describe("owner diary page", () => {
     const db = await openOwnerDiary(page, (d) => caring(d, [MAX, MOCHI]));
     const screen = app(page);
     await screen.getByTestId("diary-write").click();
+    await screen.getByTestId("diary-write-pet").click();
     await screen.getByTestId(`diary-write-pet-${MOCHI.id}`).click();
     await expect(screen.getByTestId("diary-write-body")).toBeVisible();
     await screen.getByTestId("diary-write-body").fill("Mochi slept on the sofa.");
@@ -245,7 +246,6 @@ test.describe("owner diary page", () => {
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/sitter/diary");
     const screen = app(page);
-    await screen.getByTestId("sitter-diary-view-book").click();
     await screen.getByTestId("sitter-book-cover-" + MAX.id).click();
     await screen.getByTestId("diary-page-delete-s1").click();
     await expect(screen.getByText("It is deleted for good. The owner loses it too.")).toBeVisible();
@@ -267,7 +267,6 @@ test.describe("owner diary page", () => {
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/sitter/diary");
     const screen = app(page);
-    await screen.getByTestId("sitter-diary-view-book").click();
     await screen.getByTestId("sitter-book-cover-" + MAX.id).click();
     await expect(screen.getByTestId("sitter-book-body")).toContainText("Max napped a lot.");
     await expect(screen.getByTestId("sitter-book-prev")).toBeDisabled();

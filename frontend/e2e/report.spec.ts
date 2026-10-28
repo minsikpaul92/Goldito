@@ -66,6 +66,8 @@ async function openSitterDiary(page: import("@playwright/test").Page, extraChips
   await signIn(page, SITTER);
   await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
   await page.goto("/sitter/diary");
+  // The Diary opens on the book; Write a page opens today's page.
+  await app(page).getByTestId("sitter-diary-view-today").click();
   await app(page).getByTestId(`report-${MAX.id}`).waitFor();
   return { db, chipRequests, reportRequests, served };
 }

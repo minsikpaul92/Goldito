@@ -27,6 +27,10 @@ export type DiaryBookProps = {
   footer?: (page: SentReport) => React.ReactNode;
   /** False when the screen was opened on one page (a chat card): its header ← is the way out, so no "‹ Diaries". */
   showCovers?: boolean;
+  /** A pet picker outside the book (the Diary's dropdown): the pet to show, or null for the covers. Without it the book keeps its own. */
+  selectedPet?: string | null;
+  /** The book moved to a pet's pages, or back to the covers (null): keeps the picker outside in step. */
+  onPetChange?: (petId: string | null) => void;
   testID?: string;
 };
 
@@ -42,7 +46,7 @@ export function bookOrder(pages: SentReport[]): SentReport[] {
  * the next or the previous day; ‹ › do the same (DESIGN.md §7.7: never gesture-only). While a page is being
  * decorated the book holds still, so dragging a sticker never turns the page.
  */
-export function DiaryBook({ pages, initialId, header, footer, showCovers = true, testID = "diary-book" }: DiaryBookProps) {
+export function DiaryBook({ pages, initialId, header, footer, showCovers = true, selectedPet, onPetChange, testID = "diary-book" }: DiaryBookProps) {
   const styles = useThemedStyles(makeStyles);
   const session = useSession();
   const me = session.status === "signedIn" ? session.profile.id : null;
@@ -74,6 +78,20 @@ export function DiaryBook({ pages, initialId, header, footer, showCovers = true,
       live = false;
     };
   }, [pet, coverIds]);
+  // The picker outside the book chose another pet (or All): follow it. Not on the first render, which keeps `initialId`.
+  const lastSelected = useRef(selectedPet);
+  useEffect(() => {
+    if (selectedPet === lastSelected.current) return;
+    lastSelected.current = selectedPet;
+    if (selectedPet === undefined || selectedPet === pet) return;
+    if (selectedPet) pick(selectedPet);
+    else setPet(null);
+  }, [selectedPet]); // eslint-disable-line react-hooks/exhaustive-deps
+  const told = useRef(onPetChange);
+  told.current = onPetChange;
+  useEffect(() => {
+    told.current?.(pet);
+  }, [pet]);
   const [turning, setTurning] = useState<Turn | null>(null);
   const [decorating, setDecorating] = useState(false);
   const progress = useRef(new Animated.Value(0)).current;
