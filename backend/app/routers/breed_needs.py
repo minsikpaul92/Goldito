@@ -32,7 +32,7 @@ def breed_needs_route(body: BreedNeedsRequest, user: CurrentUser = Depends(get_c
     if not valid_breed_text(body.breed):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="That doesn't look like a breed.")
     if not breed_needs.ENABLED:
-        return breed_needs.Needs()
+        return breed_needs.from_list(body.species, body.breed)
 
     def limited_search(species: str, breed: str):
         if not _searches.allow(user.id, demo=(user.email or "").lower().endswith(limits.DEMO_DOMAIN)):

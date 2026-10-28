@@ -294,7 +294,7 @@ Tap a stage for the details.
 
 - One question per screen, with big buttons. A **pet photo** goes to Nemotron 3.5 Super VL, which reads up to three breed guesses and a coat color; the owner confirms them and adds the weight. Goldito then builds the **8-bit pet** from a library of breed presets: the breed picks the shape, the coat color paints it, and the weight sets the build. It lives on the owner's Home, and **Match colors from photo** can repaint it with the photo's own colors later.
 - **Speak instead of typing:** the recording becomes text (Groq Whisper), the owner can fix it, and Nemotron 3 Nano pulls out profile facts, each with the sentence it came from. The server drops any value without a matching quote, and safety answers are never pre-filled. Sitters can answer their onboarding questions the same way.
-- The pet gets an **at a glance** card (five traits, such as sociability and energy).
+- The pet gets an **at a glance** card (five traits, such as sociability and energy) and, for 28 common breeds, a short **breed note** (exercise, grooming, what to watch). Those notes are a list we wrote ourselves, not text from any website.
 
 </details>
 

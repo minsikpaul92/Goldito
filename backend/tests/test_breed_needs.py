@@ -297,12 +297,38 @@ def api(monkeypatch, listing):
     return state
 
 
-def test_the_lookup_is_off_so_it_answers_with_nothing_and_touches_no_search_or_db(client, monkeypatch) -> None:
+def test_while_search_is_off_only_our_own_list_answers_and_no_search_or_db_is_touched(client, monkeypatch) -> None:
     assert breed_needs.ENABLED is False
     monkeypatch.setattr(breed_needs, "search_needs", lambda *a: pytest.fail("must not search"))
     monkeypatch.setattr(router, "get_service_client", lambda: pytest.fail("must not touch the DB"))
-    out = client.post("/api/breed-needs", json={"species": "dog", "breed": "Maltese"}, headers=headers(owner_token())).json()
-    assert out == {"chips": [], "sources": [], "origin": "none", "basis": None}
+    ask = lambda species, breed: client.post("/api/breed-needs", json={"species": species, "breed": breed}, headers=headers(owner_token())).json()
+
+    listed = ask("dog", "Maltese")
+    assert listed["origin"] == "list" and listed["sources"] == [] and listed["basis"] is None
+    assert [c["kind"] for c in listed["chips"]] == ["exercise", "grooming", "care"]
+    assert ask("dog", "poodle mix")["basis"] == "Poodle"  # a mix is answered from its breed
+    assert ask("dog", "Yorkie")["origin"] == "list"  # an alias
+    assert ask("dog", "Pumi") == {"chips": [], "sources": [], "origin": "none", "basis": None}  # not listed: nothing
+    assert ask("cat", "Maltese")["origin"] == "none"  # species matter
+
+
+def test_our_own_breed_list_is_well_formed_and_cites_nothing() -> None:
+    data = json.loads(rules.DATA.read_text(encoding="utf-8"))
+    assert len(data["dog"]) >= 20 and len(data["cat"]) >= 8
+    names: set[str] = set()
+    for species, breeds in data.items():
+        for key, entry in breeds.items():
+            assert key == entry["name"].lower(), key
+            assert entry["sources"] == [], f"{key}: lines we wrote cite no website"
+            kinds = [c["kind"] for c in entry["chips"]]
+            assert 1 <= len(kinds) <= rules.MAX_CHIPS and len(set(kinds)) == len(kinds) and set(kinds) <= set(rules.KINDS), key
+            for chip in entry["chips"]:
+                assert 0 < len(chip["text"]) <= rules.MAX_TEXT, (key, chip["text"])
+                assert "source" not in chip and "quote" not in chip, key
+            for name in [entry["name"], *entry["aliases"]]:
+                norm = rules.normalize_breed(name)
+                assert (species, norm) not in names, f"{name} appears twice"
+                names.add((species, norm))
 
 
 def test_owners_and_sitters_can_ask_and_a_listed_breed_needs_no_search(client, api) -> None:

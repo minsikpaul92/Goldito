@@ -29,8 +29,8 @@ DOMAINS: dict[str, list[str]] = {"dog": [], "cat": []}
 class Chip(BaseModel):
     kind: Literal["exercise", "grooming", "care"]
     text: str
-    # Index into the needs' `sources` of the page this came from.
-    source: int
+    # Index into the needs' `sources` of the page this came from; none for a line we wrote ourselves.
+    source: int | None = None
     # Not stored or returned: the quote only proves the line is on the page, and we do not keep page text.
     quote: str | None = None
 

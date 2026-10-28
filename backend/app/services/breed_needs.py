@@ -37,8 +37,9 @@ EXCERPT_CHARS = 1500
 MODEL_TIMEOUT_S = 20.0
 
 
-# Off since 2026-10-28: the stored and searched text came from VCA (its terms forbid reuse and derivative works) and
-# Merck (its terms forbid scraping, data mining and AI use, and are for US residents), so no breed page is searched or summarized. The lookup answers with nothing and touches no search or DB.
+# Since 2026-10-28 no website is read for breed needs: the old text came from VCA (its terms forbid reuse and derivative
+# works) and Merck (its terms forbid scraping, data mining and AI use, and are for US residents). While this is False
+# the lookup answers only from the list we wrote ourselves (`app/data/breed_needs.json`) and touches no search or DB.
 ENABLED = False
 
 
@@ -103,6 +104,15 @@ def search_needs(species: str, breed: str) -> tuple[list[Chip], list[Source]] | 
         log.info("breed-needs: model failed (%s)", exc.__class__.__name__)
         return None
     return validate_chips(raw, hits)
+
+
+def from_list(species: str, breed: str) -> Needs:
+    """The list we wrote ourselves, nothing else: no search, no cache. A breed that is not listed shows nothing."""
+    key = normalize_breed(breed)
+    base = base_breed(key)
+    basis = base.title() if base != key else None
+    entry = reviewed_list().get(species, {}).get(key) or reviewed_list().get(species, {}).get(base)
+    return _from_entry(entry, "list", basis) if entry else Needs(origin="none", basis=basis)
 
 
 def lookup(species: str, breed: str, db, *, now: datetime | None = None, searcher=search_needs) -> Needs:

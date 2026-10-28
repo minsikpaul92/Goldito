@@ -1,4 +1,605 @@
 {
-  "dog": {},
-  "cat": {}
+  "dog": {
+    "labrador retriever": {
+      "name": "Labrador Retriever",
+      "aliases": [
+        "lab",
+        "labrador"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Daily walks plus play or fetch"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush weekly; sheds a lot"
+        },
+        {
+          "kind": "care",
+          "text": "Gains weight easily; watch the treats"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "golden retriever": {
+      "name": "Golden Retriever",
+      "aliases": [
+        "golden"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Daily walks and active play"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush a few times a week; sheds heavily"
+        },
+        {
+          "kind": "care",
+          "text": "Watch weight and joints as they age"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "french bulldog": {
+      "name": "French Bulldog",
+      "aliases": [
+        "frenchie"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Short, gentle walks"
+        },
+        {
+          "kind": "grooming",
+          "text": "Wipe the face folds daily"
+        },
+        {
+          "kind": "care",
+          "text": "Overheats easily; keep cool"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "german shepherd": {
+      "name": "German Shepherd",
+      "aliases": [
+        "german shepherd dog"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Needs a lot of daily exercise and a job"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush a few times a week; sheds heavily"
+        },
+        {
+          "kind": "care",
+          "text": "Watch the hips; needs mental work too"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "poodle": {
+      "name": "Poodle",
+      "aliases": [
+        "toy poodle",
+        "miniature poodle",
+        "standard poodle"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Daily walks and brain games"
+        },
+        {
+          "kind": "grooming",
+          "text": "Regular grooming; the coat mats if skipped"
+        },
+        {
+          "kind": "care",
+          "text": "Smart; gets bored without activity"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "bulldog": {
+      "name": "Bulldog",
+      "aliases": [
+        "english bulldog"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Short, easy walks"
+        },
+        {
+          "kind": "grooming",
+          "text": "Clean the face folds often"
+        },
+        {
+          "kind": "care",
+          "text": "Overheats easily; keep cool"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "beagle": {
+      "name": "Beagle",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Daily walks; follows scents, so keep a leash on"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush weekly"
+        },
+        {
+          "kind": "care",
+          "text": "Loves food; watch weight"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "rottweiler": {
+      "name": "Rottweiler",
+      "aliases": [
+        "rottie"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Daily walks and calm, steady training"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush weekly"
+        },
+        {
+          "kind": "care",
+          "text": "Strong dog; handle and train with care"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "dachshund": {
+      "name": "Dachshund",
+      "aliases": [
+        "wiener dog"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Moderate daily walks"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush weekly; more often for long coats"
+        },
+        {
+          "kind": "care",
+          "text": "Protect the back: no jumping off furniture"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "pembroke welsh corgi": {
+      "name": "Pembroke Welsh Corgi",
+      "aliases": [
+        "corgi",
+        "welsh corgi"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Daily walks and play"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush often; sheds a lot"
+        },
+        {
+          "kind": "care",
+          "text": "Watch weight and the back"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "siberian husky": {
+      "name": "Siberian Husky",
+      "aliases": [
+        "husky"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Lots of daily exercise; may run off if loose"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush often; sheds heavily"
+        },
+        {
+          "kind": "care",
+          "text": "Dislikes heat; keep cool"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "shih tzu": {
+      "name": "Shih Tzu",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Short daily walks"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush daily or keep a short cut"
+        },
+        {
+          "kind": "care",
+          "text": "Clean the eyes and face; keep cool"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "chihuahua": {
+      "name": "Chihuahua",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Short walks and indoor play"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush weekly"
+        },
+        {
+          "kind": "care",
+          "text": "Small and delicate; feels the cold"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "maltese": {
+      "name": "Maltese",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Short walks and play"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush daily; the coat tangles"
+        },
+        {
+          "kind": "care",
+          "text": "Wipe the eyes; small and delicate"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "pomeranian": {
+      "name": "Pomeranian",
+      "aliases": [
+        "pom"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Short walks and play"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush several times a week"
+        },
+        {
+          "kind": "care",
+          "text": "Small and delicate; keep cool"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "yorkshire terrier": {
+      "name": "Yorkshire Terrier",
+      "aliases": [
+        "yorkie"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Short walks and play"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush daily or keep a short cut"
+        },
+        {
+          "kind": "care",
+          "text": "Small and delicate; feels the cold"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "boston terrier": {
+      "name": "Boston Terrier",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Short, gentle walks"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush weekly"
+        },
+        {
+          "kind": "care",
+          "text": "Overheats easily; keep cool"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "cavalier king charles spaniel": {
+      "name": "Cavalier King Charles Spaniel",
+      "aliases": [
+        "cavalier",
+        "cavalier king charles"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Daily walks and play"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush a few times a week"
+        },
+        {
+          "kind": "care",
+          "text": "Wants company; avoid long hours alone"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "australian shepherd": {
+      "name": "Australian Shepherd",
+      "aliases": [
+        "aussie"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Needs a lot of daily exercise and a job"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush a few times a week"
+        },
+        {
+          "kind": "care",
+          "text": "Herds and gets bored; needs mental work"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "border collie": {
+      "name": "Border Collie",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Needs a lot of daily exercise and a job"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush a few times a week"
+        },
+        {
+          "kind": "care",
+          "text": "Gets bored easily; needs mental work"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    }
+  },
+  "cat": {
+    "domestic shorthair": {
+      "name": "Domestic Shorthair",
+      "aliases": [
+        "domestic short hair",
+        "dsh"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Daily play"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush weekly"
+        },
+        {
+          "kind": "care",
+          "text": "Indoor cats need climbing and scratching"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "domestic longhair": {
+      "name": "Domestic Longhair",
+      "aliases": [
+        "domestic long hair",
+        "dlh"
+      ],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Daily play"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush most days to stop mats"
+        },
+        {
+          "kind": "care",
+          "text": "Check for tangles under the legs"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "siamese": {
+      "name": "Siamese",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Plenty of play and climbing"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush weekly"
+        },
+        {
+          "kind": "care",
+          "text": "Vocal and social; dislikes being alone"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "maine coon": {
+      "name": "Maine Coon",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Daily play and climbing"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush several times a week"
+        },
+        {
+          "kind": "care",
+          "text": "Large; needs a sturdy tree and a big litter box"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "ragdoll": {
+      "name": "Ragdoll",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Gentle daily play"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush a few times a week"
+        },
+        {
+          "kind": "care",
+          "text": "Watch weight; best kept indoors"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "persian": {
+      "name": "Persian",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Gentle daily play"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush every day; the coat mats fast"
+        },
+        {
+          "kind": "care",
+          "text": "Wipe the eyes; a flat face can affect breathing"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "british shorthair": {
+      "name": "British Shorthair",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Moderate play"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush weekly"
+        },
+        {
+          "kind": "care",
+          "text": "Gains weight easily; watch portions"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    },
+    "bengal": {
+      "name": "Bengal",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Lots of active play and climbing"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush weekly"
+        },
+        {
+          "kind": "care",
+          "text": "Bored cats get destructive; give enrichment"
+        }
+      ],
+      "sources": [],
+      "reviewed": false
+    }
+  }
 }
