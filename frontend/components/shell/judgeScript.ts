@@ -395,6 +395,8 @@ export async function playScript(steps: ScriptStep[], color: string, pace = 1): 
         input.focus();
         for (let k = 1; k <= step.text.length; k += 1) {
           setValue(input, step.text.slice(0, k));
+          // A long text in a box that scrolls: follow the last line, as a person typing would see it.
+          input.scrollTop = input.scrollHeight;
           await wait(KEY_MS);
         }
       }
