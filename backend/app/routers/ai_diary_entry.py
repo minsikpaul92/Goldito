@@ -25,6 +25,7 @@ logger = logging.getLogger("goldito.ai")
 MAX_CHIPS = 8
 CHIP_MAX = 60
 NOTE_MAX = 600
+PHOTO_MAX = 120
 TIMEOUT_S = 25.0
 
 
@@ -32,6 +33,8 @@ class DiaryEntryRequest(BaseModel):
     pet_id: UUID
     chips: list[str] = Field(default_factory=list, max_length=MAX_CHIPS)
     note: str | None = None
+    # What the vision model said about the photos on the page (a photo with any chip turned off sends none).
+    photos: list[str] = Field(default_factory=list, max_length=4)
 
     @field_validator("chips", mode="before")
     @classmethod
@@ -39,6 +42,13 @@ class DiaryEntryRequest(BaseModel):
         if not isinstance(value, list):
             return []
         return [str(c).strip()[:CHIP_MAX] for c in value if str(c).strip()]
+
+    @field_validator("photos", mode="before")
+    @classmethod
+    def _photos(cls, value):
+        if not isinstance(value, list):
+            return []
+        return [str(p).strip()[:PHOTO_MAX] for p in value if str(p).strip()]
 
     @field_validator("note", mode="before")
     @classmethod
@@ -55,13 +65,13 @@ class DiaryEntryResponse(BaseModel):
 @router.post("/diary-entry", response_model=DiaryEntryResponse)
 def diary_entry(body: DiaryEntryRequest, user: CurrentUser = Depends(get_current_user)) -> DiaryEntryResponse:
     authz.assert_owner_of(user, body.pet_id)
-    if not body.chips and not body.note:
+    if not body.chips and not body.note and not body.photos:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Add a photo or a few words first.")
     pet = _one(get_service_client().table("pets").select("name, species").eq("id", str(body.pet_id)).limit(1).execute())
     if not pet:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pet not found.")
 
-    view = {"name": pet["name"], "species": pet["species"], "chips": body.chips, "note": body.note}
+    view = {"name": pet["name"], "species": pet["species"], "chips": body.chips, "photos": body.photos, "note": body.note}
     try:
         result = nebius.chat(
             "report",

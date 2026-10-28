@@ -53,6 +53,12 @@ def test_the_kept_chips_and_words_go_to_the_model_and_the_text_comes_back(client
     assert "Lying on a blanket" in sent and "A quiet one" in sent and "Max" in sent
 
 
+def test_the_photo_descriptions_go_to_the_model_too(client, setup):
+    chat = setup("Max watched a squirrel.")
+    assert post(client, photos=["Max looking up at a squirrel"]).status_code == 200
+    assert "Max looking up at a squirrel" in chat.calls[0]["messages"][1]["content"]
+
+
 def test_a_model_that_is_down_gives_the_plain_list(client, setup):
     setup(nebius.AIUnavailable("down"))
     response = post(client, chips=["Lying on a blanket", "Sniffing a toy"], note="A quiet one")

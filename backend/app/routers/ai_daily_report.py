@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 from app.ai import tone
 from app.ai.daily_report import (
     CHECK_KEYS,
-    NOTE_MAX,
+    SITTER_NOTE_MAX,
     after,
     broken_rules,
     build_snapshot,
@@ -55,7 +55,7 @@ class DailyReportRequest(BaseModel):
     # The chips the sitter kept (their text), a short note, up to two photo descriptions (7.7),
     # and the checks the sitter turned off ("meal" | "potty" | "walk" | "mood" | "meds").
     chips: list[str] = Field(default_factory=list, max_length=MAX_SENT_CHIPS)
-    sitter_note: str | None = Field(default=None, max_length=NOTE_MAX)
+    sitter_note: str | None = Field(default=None, max_length=SITTER_NOTE_MAX)
     photos: list[str] = Field(default_factory=list, max_length=2)
     skip: list[str] = Field(default_factory=list, max_length=len(CHECK_KEYS))
     # Corrections to a recorded value: {"meal": "most", "walk": "30"} (see `clean_overrides`).

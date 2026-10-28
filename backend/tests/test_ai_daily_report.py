@@ -463,8 +463,8 @@ def test_input_limits(client, setup):
     setup()
     assert post(client, chips=[f"c{i}" for i in range(31)]).status_code == 422
     assert post(client, photos=["a", "b", "c"]).status_code == 422
-    assert post(client, sitter_note="x" * 201).status_code == 422
-    assert post(client, sitter_note="x" * 200).status_code == 200
+    assert post(client, sitter_note="x" * 601).status_code == 422
+    assert post(client, sitter_note="x" * 600).status_code == 200
 
 
 # --- the pure helpers -----------------------------------------------------------------------------
