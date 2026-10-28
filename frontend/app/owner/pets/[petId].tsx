@@ -15,6 +15,7 @@ import { getPet, updatePet } from "../../../features/pets/petApi";
 import { petToFormValues } from "../../../features/pets/petValidation";
 import { useSession } from "../../../providers/SessionProvider";
 import { useToast } from "../../../providers/ToastProvider";
+import { tokens } from "../../../theme/tokens";
 import { Pet } from "../../../types/db";
 
 type State = { status: "loading" } | { status: "ready"; pet: Pet } | { status: "missing" } | { status: "error"; error: string };
@@ -75,7 +76,7 @@ export default function PetProfileScreen() {
       <PetAvatarEditor key={`avatar-${glanceKey}`} pet={pet} onChanged={() => setGlanceKey((k) => k + 1)} />
       <PetGlance key={glanceKey} petId={pet.id} />
       <PetPixelCard pet={pet} onChanged={() => void load()} />
-      <TextButton label="Retake personality" onPress={() => router.push(`/owner/pets/${pet.id}/personality`)} testID="open-personality" />
+      <TextButton label="Retake personality" style={{ marginTop: tokens.spacing.md }} onPress={() => router.push(`/owner/pets/${pet.id}/personality`)} testID="open-personality" />
       <PetForm
         key={pet.id}
         initial={petToFormValues(pet)}
