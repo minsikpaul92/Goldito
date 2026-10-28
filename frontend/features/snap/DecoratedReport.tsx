@@ -145,8 +145,10 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   const shownPicture = pictureUrl || picture;
   // Until the photo arrives the box shows a spinner, not a flat empty block (diary audit, Oct 27).
   const [loadedPicture, setLoadedPicture] = useState<string | null>(null);
+  // A page being written starts with an empty box: the writer adds the photo (no photo of the day is put there for them).
+  const blank = !!writing;
   useEffect(() => {
-    if (pictureUrl) return;
+    if (pictureUrl || blank) return;
     let live = true;
     listReportPhotos(petId, day, ownPage && role === "owner")
       .then((photos) => {
@@ -158,7 +160,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
     return () => {
       live = false;
     };
-  }, [petId, day, ownPage, role, pictureUrl]);
+  }, [petId, day, ownPage, role, pictureUrl, blank]);
 
   const drafting = !reportId && !!pending;
   const mine = drafting ? pending.items : (layers.find((l) => l.userId === me)?.items ?? []);
