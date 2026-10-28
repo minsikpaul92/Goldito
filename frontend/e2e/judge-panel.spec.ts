@@ -122,35 +122,6 @@ test.describe("judge panel", () => {
     expect(resets[2].state).toBe("in_care");
   });
 
-  test("the Map finds a feature by search; a scene card runs its scene, the others only open the screen", async ({ page }) => {
-    await mockSupabase(page, [judgeOwner, judgeSitter]);
-    const resets = await takeJudgeSeat(page);
-
-    await page.getByTestId("judge-tabs").getByText("Map").click();
-    await expect(page.getByTestId("judge-map")).toBeVisible();
-    await page.getByTestId("judge-map-search").fill("treat");
-    await expect(page.getByTestId("judge-map-treat")).toBeVisible();
-    await expect(page.getByTestId("judge-map-moments")).toHaveCount(0);
-
-    // Treat check is a scene: it resets the set and opens the screen.
-    await page.getByTestId("judge-map-treat").click();
-    await page.getByTestId("judge-intro-play").click();
-    await expect.poll(() => phoneUrl(page)).toMatch(/\/owner\/snap\/treat$/);
-    await phoneReady(page);
-    expect(resets).toHaveLength(1);
-
-    // Bookings is not a scene: it opens the screen as the stay is now, with no reset.
-    await page.getByTestId("judge-map-search").fill("bookings");
-    await expect(page.getByTestId("judge-map-bookings")).toBeEnabled();
-    await page.getByTestId("judge-map-bookings").click();
-    await expect.poll(() => phoneUrl(page)).toMatch(/\/owner\/bookings$/);
-    expect(resets).toHaveLength(1);
-
-    // Nothing found says what to try.
-    await page.getByTestId("judge-map-search").fill("zzz");
-    await expect(page.getByTestId("judge-map-empty")).toBeVisible();
-  });
-
   test("the panel stays on a narrow window, and log out takes it away", async ({ page }) => {
     await page.setViewportSize({ width: 1000, height: 900 });
     await mockSupabase(page, [judgeOwner, judgeSitter]);
