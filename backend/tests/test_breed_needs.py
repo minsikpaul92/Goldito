@@ -250,7 +250,7 @@ def test_cats_use_cat_sites(monkeypatch, key):
     seen = {}
     monkeypatch.setattr(tavily, "search", lambda q, *, api_key, timeout, domains=None, excerpt_chars=400: seen.update(d=domains) or [])
     assert breed_needs.search_needs("cat", "ragdoll") == ([], [])
-    assert "icatcare.org" in seen["d"]
+    assert seen["d"] == breed_needs.DOMAINS["cat"]
 
 
 def test_no_key_a_slow_site_or_a_model_failure_mean_could_not_run(monkeypatch, key):

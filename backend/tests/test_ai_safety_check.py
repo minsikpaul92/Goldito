@@ -99,7 +99,7 @@ def post(client, token=None, **over):
     )
 
 
-HIT = {"title": "People foods to avoid", "url": "https://www.aspca.org/foods", "domain": "aspca.org", "content": "Avoid..."}
+HIT = {"title": "People foods to avoid", "url": "https://www.fda.gov/foods", "domain": "fda.gov", "content": "Avoid..."}
 
 
 def test_an_owner_checks_a_plain_treat_and_it_is_saved_with_its_sources(client, setup):
@@ -107,7 +107,7 @@ def test_an_owner_checks_a_plain_treat_and_it_is_saved_with_its_sources(client, 
     body = post(client).json()
     assert body["safety_status"] == "SAFE" and body["double_checked"] is True and body["sources_unavailable"] is False
     assert body["detected_ingredients"] == ["sweet potato", "glycerin"] and body["product_name"] == "Crunchy Bites"
-    assert body["sources"] == [{"title": "People foods to avoid", "url": "https://www.aspca.org/foods", "domain": "aspca.org"}]
+    assert body["sources"] == [{"title": "People foods to avoid", "url": "https://www.fda.gov/foods", "domain": "fda.gov"}]
     assert body["model"] == "safety-model" and body["warning_message"] == "Looks fine for Max."
     (saved,) = ctx.db.tables["safety_checks"]
     assert body["safety_check_id"] == saved["id"]
@@ -120,7 +120,7 @@ def test_an_owner_checks_a_plain_treat_and_it_is_saved_with_its_sources(client, 
     assert vision["messages"][1]["content"][1]["image_url"]["url"].startswith("data:image/jpeg")
     assert ultra["role"] == "safety" and ultra["reasoning"] is True and ultra["timeout"] == 60.0
     facts = ultra["messages"][1]["content"]
-    assert '"allergies": ["chicken"]' in facts and '"source": "aspca.org"' in facts
+    assert '"allergies": ["chicken"]' in facts and '"source": "fda.gov"' in facts
     # Every check searches (D61), here with the first ingredients.
     assert [q.text for q in ctx.searches[0]][:1] == ["Crunchy Bites dog treat recall"]
 
@@ -137,7 +137,7 @@ def test_a_species_toxin_is_danger(client, setup):
     ctx = setup(label("lily extract", "salmon"), judged("WARNING"), db=make_db(allergens=(), species="cat"))
     body = post(client).json()
     assert body["safety_status"] == "DANGER" and body["toxic_ingredients"] == ["lily extract"]
-    assert any(s["domain"] == "aspca.org" for s in body["sources"])
+    assert body["sources"] == []  # the rule table adds no source link and this search found none
     assert ctx.searches[0][0].text == "lily extract toxic cats"
 
 

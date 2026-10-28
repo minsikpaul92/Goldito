@@ -345,25 +345,6 @@
       ],
       "reviewed": false
     },
-    "persian": {
-      "name": "Persian",
-      "aliases": [],
-      "chips": [
-        {
-          "kind": "grooming",
-          "text": "Daily grooming with metal comb",
-          "source": 0,
-          "quote": "Persian and Exotic type coats will require daily grooming with a wide, metal comb"
-        }
-      ],
-      "sources": [
-        {
-          "title": "Fluffy Coats and How to Properly Care For Them - The Cat Fanciers' Association",
-          "url": "https://cfa.org/cat-talk/fluffy-coats-and-how-to-properly-care-for-them"
-        }
-      ],
-      "reviewed": false
-    },
     "british shorthair": {
       "name": "British Shorthair",
       "aliases": [],

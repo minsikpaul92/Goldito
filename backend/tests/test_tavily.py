@@ -34,7 +34,7 @@ def test_one_search_sends_the_trusted_domains_and_keeps_only_their_hits(monkeypa
     def post(url, json, headers, timeout):
         sent.update(url=url, json=json, headers=headers)
         return FakeResponse([
-            {"title": "Grapes and raisins", "url": "https://www.aspca.org/grapes", "content": "Grapes  can\ncause kidney failure."},
+            {"title": "Grapes and raisins", "url": "https://www.fda.gov/grapes", "content": "Grapes  can\ncause kidney failure."},
             {"title": "Blog", "url": "https://randomblog.example/grapes", "content": "x"},
             {"title": "VCA", "url": "https://vcahospitals.com/know-your-pet/raisins", "content": "y"},
         ])
@@ -44,7 +44,7 @@ def test_one_search_sends_the_trusted_domains_and_keeps_only_their_hits(monkeypa
     assert sent["url"] == tavily.SEARCH_URL and sent["headers"]["Authorization"] == "Bearer k"
     assert sent["json"]["include_domains"] == tavily.TRUSTED_DOMAINS
     assert sent["json"]["topic"] == "news" and sent["json"]["time_range"] == "year"
-    assert [h["domain"] for h in hits] == ["aspca.org", "vcahospitals.com"]
+    assert [h["domain"] for h in hits] == ["fda.gov", "vcahospitals.com"]
     assert hits[0]["content"] == "Grapes can cause kidney failure."
 
 
@@ -60,13 +60,13 @@ def test_many_searches_merge_without_duplicates_and_skip_a_failure(monkeypatch, 
     def search(query, *, api_key, timeout):
         if query.text == "bad":
             raise httpx.ConnectError("down")
-        return [{"title": query.text, "url": "https://aspca.org/same", "domain": "aspca.org", "content": ""},
-                {"title": query.text, "url": f"https://aspca.org/{query.text}", "domain": "aspca.org", "content": ""}]
+        return [{"title": query.text, "url": "https://fda.gov/same", "domain": "fda.gov", "content": ""},
+                {"title": query.text, "url": f"https://fda.gov/{query.text}", "domain": "fda.gov", "content": ""}]
 
     monkeypatch.setattr(tavily, "search", search)
     hits, ran = tavily.search_many([Query("a"), Query("bad"), Query("b")])
     assert ran is True
-    assert [h["url"] for h in hits] == ["https://aspca.org/same", "https://aspca.org/a", "https://aspca.org/b"]
+    assert [h["url"] for h in hits] == ["https://fda.gov/same", "https://fda.gov/a", "https://fda.gov/b"]
 
 
 def test_every_search_failing_reports_that_search_did_not_run(monkeypatch, key):

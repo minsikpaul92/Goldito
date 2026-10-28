@@ -98,9 +98,6 @@ def check_rules(ingredients: list[str], allergens: list[str], species: str) -> R
             if _mentions_any(ingredient, rule["aliases"], rule.get("not")):
                 if ingredient not in found.toxic_ingredients:
                     found.toxic_ingredients.append(ingredient)
-                source = {"title": f"ASPCA: {rule['name']}", "url": rule["source"], "domain": "aspca.org"}
-                if source not in found.sources:
-                    found.sources.append(source)
 
     named = {i for i in ingredients for a in pet_allergens if _has_allergen(i, a)}
     for hidden in rules["hidden_sources"]:

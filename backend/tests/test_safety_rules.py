@@ -17,7 +17,7 @@ def test_toxic_ingredients_depend_on_the_species():
     assert safety.check_rules(["macadamia nut"], [], "cat").status == "SAFE"
     lily = safety.check_rules(["lily extract", "salmon"], [], "cat")
     assert lily.status == "DANGER" and lily.toxic_ingredients == ["lily extract"]
-    assert lily.sources and lily.sources[0]["domain"] == "aspca.org"
+    assert lily.sources == []
     assert safety.check_rules(["lily extract"], [], "dog").status == "SAFE"
 
 

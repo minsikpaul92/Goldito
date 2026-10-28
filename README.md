@@ -170,8 +170,8 @@ What we used, what worked, and what got in the way, written down as it happened.
 
 | Feature | What Tavily searches | Trusted domains |
 | :--- | :--- | :--- |
-| **Treat check** (Snap tab) | The label's hidden sources, toxic or unknown ingredients, and recent recalls of the product. The excerpts go to Nemotron 3 Ultra; the links are shown as sources | [aspca.org](https://www.aspca.org) · [fda.gov](https://www.fda.gov) · [avma.org](https://www.avma.org) · [petpoisonhelpline.com](https://www.petpoisonhelpline.com) · [vcahospitals.com](https://vcahospitals.com) |
-| **Breed needs** (sign-up, at a glance card) | One breed's care needs; Nemotron 3 Nano turns the result into short chips, each with its source | Dogs: [vcahospitals.com](https://vcahospitals.com) · [merckvetmanual.com](https://www.merckvetmanual.com) <br> Cats: [icatcare.org](https://icatcare.org) · [cfa.org](https://cfa.org) · [vcahospitals.com](https://vcahospitals.com) · [merckvetmanual.com](https://www.merckvetmanual.com) |
+| **Treat check** (Snap tab) | The label's hidden sources, toxic or unknown ingredients, and recent recalls of the product. The excerpts go to Nemotron 3 Ultra; the links are shown as sources | [fda.gov](https://www.fda.gov) · [avma.org](https://www.avma.org) · [petpoisonhelpline.com](https://www.petpoisonhelpline.com) · [vcahospitals.com](https://vcahospitals.com) |
+| **Breed needs** (sign-up, at a glance card) | One breed's care needs; Nemotron 3 Nano turns the result into short chips, each with its source | Dogs and cats: [vcahospitals.com](https://vcahospitals.com) · [merckvetmanual.com](https://www.merckvetmanual.com) |
 
 - **Example:** the search `xylitol toxic dogs` returned pages from petpoisonhelpline.com, vcahospitals.com, and fda.gov in 2.9 s.
 - **Fast and frugal:** basic depth (1 credit per search), every search in parallel under one 8-second budget. A search that fails or runs late is left out, and the check still answers from the label, the rules, and the model, and says that no sources were available.
@@ -588,14 +588,11 @@ Open `http://localhost:8081` and use **Try the demo**. Tests: `pytest -q` in `ba
 
 | Source | Used for |
 | :--- | :--- |
-| [ASPCA Animal Poison Control](https://www.aspca.org/pet-care/animal-poison-control) | The treat check's rule table (each toxic-ingredient rule links its ASPCA page) and live search |
 | [U.S. FDA](https://www.fda.gov) | Pet food recalls and ingredient safety, live search |
 | [AVMA](https://www.avma.org) | Veterinary guidance, live search |
 | [Pet Poison Helpline](https://www.petpoisonhelpline.com) | Toxins for dogs and cats, live search |
 | [VCA Animal Hospitals](https://vcahospitals.com) | Toxins and breed care, live search and the reviewed breed list |
 | [Merck Veterinary Manual](https://www.merckvetmanual.com) | Breed and care needs, live search |
-| [International Cat Care](https://icatcare.org) | Cat breed needs, live search |
-| [The Cat Fanciers' Association](https://cfa.org) | Cat breed needs, live search and the reviewed breed list |
 
 Goldito keeps only ingredient names, short excerpts, and links from these pages, and shows the link with every answer. AI output is not veterinary advice.
 
