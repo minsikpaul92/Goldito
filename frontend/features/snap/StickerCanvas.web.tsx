@@ -22,7 +22,7 @@ const span = (a: Point, b: Point) => ({ dist: Math.max(1, Math.hypot(b.x - a.x, 
  * trim sheet: pointer events give a real mouse drag inside the phone frame, and `data-gesture-owner` keeps
  * TouchEmulation from turning that drag into a scroll (DESIGN.md §7.7). Outside edit mode it ignores the mouse, so the text and buttons under it still work.
  */
-export function StickerCanvas({ which, zIndex, layers, editing, selected, onSelect, onMove, onTransform, onRemove, urlFor }: StickerCanvasProps) {
+export function StickerCanvas({ which, zIndex, layers, editing, grabbable = false, selected, onSelect, onMove, onTransform, onRemove, urlFor }: StickerCanvasProps) {
   const theme = useTheme();
   const root = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
@@ -118,7 +118,7 @@ export function StickerCanvas({ which, zIndex, layers, editing, selected, onSele
           // the text above the back canvas would otherwise catch the mouse. Saved, they go back under the writing.
           const lifted = editing && layer.mine && side === "back";
           if (which === "back" ? side !== "back" || lifted : side !== "front" && !lifted) return null;
-          const live = editing && layer.mine;
+          const live = (editing || grabbable) && layer.mine;
           const isSelected = live && selected === index;
           return (
             <div

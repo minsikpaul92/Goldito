@@ -112,6 +112,8 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   const [picture, setPicture] = useState<string | null>(null);
   const [lines, setLines] = useState({ top: 0, height: MIN_LINES * LINE });
   const [editing, setEditing] = useState(false);
+  // The sticker tray is out while Decorate is open; a tap on a sticker of mine edits it with the tray folded away.
+  const [trayOpen, setTrayOpen] = useState(true);
   useEffect(() => {
     onEditingChange?.(editing);
   }, [editing, onEditingChange]);
@@ -192,6 +194,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   }, [petId, day, ownPage, role, pictureUrl, pictureUrls, blank]);
 
   const drafting = !reportId && !!pending;
+  const canDecorate = Platform.OS === "web" && !!me && (!!reportId || !!pending);
   const mine = drafting ? pending.items : (layers.find((l) => l.userId === me)?.items ?? []);
   const others = layers.filter((l) => l.userId !== me);
   const shownMine = editing ? draft : mine;
@@ -203,6 +206,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
     setSelected(null);
     saved.current = JSON.stringify(mine);
     setEditing(true);
+    setTrayOpen(true);
     try {
       setBox(await listStickers(petId));
     } catch {
@@ -212,7 +216,20 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
 
   const topZ = (items: DecorItem[]) => items.reduce((z, item) => Math.max(z, item.z), 0) + 1;
 
+  /** A press on one of my stickers outside Decorate: edit it right there (move it, size it, take it off), no tray. */
+  const grab = (index: number) => {
+    setDraft(mine.map((item) => ({ ...item })));
+    saved.current = JSON.stringify(mine);
+    setEditing(true);
+    setTrayOpen(false);
+    setSelected(index);
+  };
+
   const select = (index: number | null) => {
+    if (!editing) {
+      if (index !== null) grab(index);
+      return;
+    }
     setSelected(index);
     if (index === null) return;
     // The picked sticker comes to the front of its side.
@@ -315,6 +332,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
           zIndex={1}
           layers={canvasLayers}
           editing={editing}
+          grabbable={canDecorate && !editing}
           selected={selected}
           onSelect={select}
           onMove={(index, x, y) => setDraft((items) => items.map((item, i) => (i === index ? { ...item, x, y } : item)))}
@@ -390,6 +408,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
           zIndex={3}
           layers={canvasLayers}
           editing={editing}
+          grabbable={canDecorate && !editing}
           selected={selected}
           onSelect={select}
           onMove={(index, x, y) => setDraft((items) => items.map((item, i) => (i === index ? { ...item, x, y } : item)))}
@@ -403,7 +422,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
         // Floats at the screen's bottom right while the page scrolls (a zero-height sticky slot), so it never sits on the words.
         <View style={styles.floatSlot} pointerEvents="box-none">
           <View style={styles.float} pointerEvents="box-none">
-            {editing ? (
+            {editing && trayOpen ? (
               <ScrollView
                 style={[styles.tray, box?.length === 0 && styles.trayWide]}
                 contentContainerStyle={styles.trayContent}
@@ -453,8 +472,8 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
             ) : null}
             <View pointerEvents="box-none">
               <RoundButton
-                label={editing ? "Hide the stickers" : "Decorate"}
-                onPress={() => (editing ? stop() : void start())}
+                label={editing ? (trayOpen ? "Hide the stickers" : "Show the stickers") : "Decorate"}
+                onPress={() => (editing ? (trayOpen ? stop() : setTrayOpen(true)) : void start())}
                 testID="decor-start"
               >
                 <Icon name="sticker" size={22} color={theme.color.primary} />

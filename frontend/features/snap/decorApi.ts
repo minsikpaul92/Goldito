@@ -53,6 +53,8 @@ export type StickerCanvasProps = {
   layers: { items: DecorItem[]; mine: boolean }[];
   /** My stickers can be picked and dragged; a click on the back canvas (bare paper) clears the pick. */
   editing: boolean;
+  /** My stickers can be grabbed even when not editing: a press picks one (the parent then goes into editing) and a drag moves it. */
+  grabbable?: boolean;
   /** Index into my layer's items. */
   selected: number | null;
   onSelect: (index: number | null) => void;

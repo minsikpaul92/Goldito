@@ -196,6 +196,23 @@ test.describe("diary decorating", () => {
     await expect(screen.getByTestId("decor-mine")).toHaveCount(1);
   });
 
+  test("a saved sticker is picked straight from the page: no Decorate first, then moved or taken off", async ({ page }) => {
+    const db = await openOwnerEntry(page, (d) => {
+      seedSticker(d, OWNER.id);
+      d.report_decor.push(layer(OWNER.id, 0.3, 0.6));
+    });
+    const screen = app(page);
+    await expect(screen.getByTestId("decor-tools")).toHaveCount(0);
+    await screen.getByTestId("decor-mine").click();
+    // Picked on its own: the × and the size handle show, the tray stays folded.
+    await expect(screen.getByTestId("decor-remove")).toBeVisible();
+    await expect(screen.getByTestId("decor-resize")).toBeVisible();
+    await expect(screen.getByTestId("decor-tools")).toHaveCount(0);
+    await screen.getByTestId("decor-remove").click();
+    await expect.poll(() => db.report_decor[0].items.length).toBe(0);
+    await expect(screen.getByTestId("decor-mine")).toHaveCount(0);
+  });
+
   test("a picture-diary page: new stickers go over the writing; one saved behind it stays there and still drags", async ({ page }) => {
     // No Behind text button any more (#369): a sticker saved behind the writing earlier keeps its side.
     const db = await openOwnerEntry(page, (d) =>
