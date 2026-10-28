@@ -1,6 +1,6 @@
 ## Inspiration
 
-After dozens of stays as pet sitters, many with the same dogs and cats, we kept seeing the same loop. Owners text *"Did they eat?" "Did you walk them?" "Send a photo."* Sitters spend the day answering DMs instead of caring for the pet. Apps connect owners and sitters, but the stay itself (replies, house rules, medication times, daily notes) is still typed by hand, and a lot of it happens outside the app. Keeping owners in the loop takes us **at least 40 minutes a day**. Goldito cuts that by about **85%** (our estimate), so sitters can focus on care.
+After dozens of stays as pet sitters, many with the same dogs and cats, we kept seeing the same loop. Owners text *"Did they eat?" "Did you walk them?" "Send a photo."* Sitters spend the day answering DMs instead of caring for the pet. Apps connect owners and sitters, but the stay itself (replies, house rules, medication times, daily notes) is still typed by hand, and a lot of it happens outside the app. Keeping owners in the loop takes us **at least 40 minutes a day**. Goldito cuts that to about **13 minutes** (our estimate), so sitters can focus on care.
 
 We also noticed who gets left out. Owners who find typing hard, often seniors, leave their pet's profile half empty. So we asked: what if the AI did the typing and people only approved?
 
