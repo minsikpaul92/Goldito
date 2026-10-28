@@ -31,7 +31,7 @@ import { Theme } from "../theme/themes";
 import type { CaringPet } from "../features/feed/caringPets";
 import { PageActions } from "../features/diary/PageActions";
 import { type DecorItem, saveDecor } from "../features/snap/decorApi";
-import { DecoratedReport } from "../features/snap/DecoratedReport";
+import { DecoratedReport, PHOTO_ASPECT } from "../features/snap/DecoratedReport";
 import { ChipSuggestions } from "./ChipSuggestions";
 import { Button } from "./ui/Button";
 import { Sheet } from "./ui/Sheet";
@@ -206,7 +206,7 @@ export function ReportComposer({
   const addPhoto = async () => {
     setPhotoMenu(false);
     if (busy || photos.length >= MAX_PAGE_PHOTOS) return;
-    const picked = await pickMedia({ purpose: "report", confirm: true, confirmLabel: "Use this photo" });
+    const picked = await pickMedia({ purpose: "report", confirm: true, confirmLabel: "Use this photo", frame: PHOTO_ASPECT });
     if (!picked) return;
     setBusy("chips");
     try {

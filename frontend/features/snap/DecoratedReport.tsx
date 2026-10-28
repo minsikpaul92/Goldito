@@ -26,8 +26,8 @@ const SCALE_MAX = 2.5;
 /** One ruled line of the diary (px): the text's line height, so the writing sits on the lines. */
 const LINE = 30;
 const MIN_LINES = 6;
-/** The picture box is the same height for owner and sitter, so a sticker lands in the same spot for both. */
-const PICTURE_HEIGHT = 180;
+/** The picture box's width / height, one shape for owner and sitter so a sticker lands in the same spot for both. A photo is framed to it before it goes on a page, so it fills the box. */
+export const PHOTO_ASPECT = 5 / 3;
 /** A white wash the page shows through (the floating buttons and the tray). */
 const SEE_THROUGH = "rgba(255,255,255,0.82)";
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -523,7 +523,7 @@ const makeStyles = (theme: Theme) =>
     headerText: { fontFamily: DIARY_FONT, fontSize: theme.fontSize.body + 2, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     picture: {
       zIndex: 0,
-      height: PICTURE_HEIGHT,
+      aspectRatio: PHOTO_ASPECT,
       alignItems: "center",
       justifyContent: "center",
       overflow: "hidden",

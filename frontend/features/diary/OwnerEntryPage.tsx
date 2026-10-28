@@ -11,7 +11,7 @@ import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
 import { appToday } from "../schedule/dates";
 import { type DecorItem, saveDecor } from "../snap/decorApi";
-import { DecoratedReport } from "../snap/DecoratedReport";
+import { DecoratedReport, PHOTO_ASPECT } from "../snap/DecoratedReport";
 import { REPORT_BODY_MAX, addOwnerEntry, setDiaryPagePhotos, suggestPhotoChips } from "./reportApi";
 
 /** The most photos on a page (015x). */
@@ -70,7 +70,7 @@ export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Pro
   const addPhoto = async () => {
     setPhotoMenu(false);
     if (!pet || uploading || photos.length >= MAX_PAGE_PHOTOS) return;
-    const picked = await pickMedia({ purpose: "feed", mediaTypes: ["image"] });
+    const picked = await pickMedia({ purpose: "feed", mediaTypes: ["image"], frame: PHOTO_ASPECT });
     if (!picked) return;
     setUploading(true);
     try {

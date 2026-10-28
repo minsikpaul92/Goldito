@@ -91,7 +91,9 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
   /** Picked and trimmed: done, or one more look first when the caller asked to confirm. */
   const accept = useCallback(
     (picked: PickedMedia) => {
-      if (current.current?.options.confirm) {
+      const options = current.current?.options;
+      // A frame always asks (it is where the photo is placed); only a photo can be framed.
+      if (options?.confirm || (options && options.frame > 0 && picked.file.type.startsWith("image/"))) {
         setTray(null);
         setTrimming(null);
         setConfirming(picked);
@@ -195,7 +197,8 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
           visible
           file={confirming.file}
           confirmLabel={current.current?.options.confirmLabel ?? "Use this photo"}
-          onConfirm={() => finish(confirming)}
+          frame={confirming.file.type.startsWith("image/") ? (current.current?.options.frame ?? 0) : 0}
+          onConfirm={(framed) => finish(framed ? { ...confirming, file: framed } : confirming)}
           onRetake={onRetake}
           onClose={() => finish(null)}
         />

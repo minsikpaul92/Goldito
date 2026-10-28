@@ -133,6 +133,7 @@ test.describe("owner diary page", () => {
     await expect(picture).toHaveCount(0);
     await screen.getByTestId("diary-write-photo").click();
     await screen.getByTestId("sample-walk").click();
+    await screen.getByTestId("media-confirm-use").click(); // the photo is placed in its frame first
     await expect(picture).toHaveCount(1);
     // The photo brings a line; tapping it puts it on the page.
     expect(asked[0]).toMatchObject({ pet_id: MAX.id, media_ids: ["media-own"] });
@@ -147,6 +148,7 @@ test.describe("owner diary page", () => {
     await expect(picture).toHaveCount(0);
     await screen.getByTestId("diary-write-photo").click();
     await screen.getByTestId("sample-walk").click();
+    await screen.getByTestId("media-confirm-use").click(); // the photo is placed in its frame first
     await expect(picture).toHaveCount(1);
     await screen.getByTestId("diary-write-save").click();
 
