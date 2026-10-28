@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AccessibilityInfo, GestureResponderEvent, Image, LayoutChangeEvent, Platform, Pressable, StyleSheet, View } from "react-native";
+import { AccessibilityInfo, GestureResponderEvent, Image, LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { thumbUrl } from "../../lib/cloudinary";
 import { isoToZoned, timeToMinutes } from "../../features/schedule/dates";
@@ -12,8 +12,8 @@ import type { PixelColors } from "../../features/pets/sprites/photoColors";
 import { POOP_SIZE, SCENE_SIZE, spritePoop } from "../../features/pets/sprites/scene";
 import { SIZE_SCALE, petSize } from "../../features/pets/sprites/sprites";
 import type { PetMood } from "../../lib/petStatus";
+import { useTheme } from "../../providers/ThemeProvider";
 import type { Species } from "../../types/db";
-import { Button } from "../ui/Button";
 import { useReduceMotion } from "../ui/useReduceMotion";
 import { PetSprite } from "./PetSprite";
 import { PixelGrid } from "./PixelGrid";
@@ -83,9 +83,10 @@ const AT_BOWL_X = 18;
 const UNDER_PHOTO_X = 44;
 /** Effects (hearts, ball, bubble, sparkle) move on their own clock. */
 const FX_MS = 120;
-/** The bubble shows for part of each cycle: about 3 of every 7.7 seconds. */
-const BUBBLE_CYCLE = 64;
-const BUBBLE_ON = 26;
+/** The bubble shows for about 3 seconds when something happens (the room opens, the mood changes, a pat), then rests. */
+const BUBBLE_TICKS = 26;
+/** Where the ball rests as a toy until someone plays with it (room pixels, on the floor between the bowl and the rug). */
+const TOY_X = 24;
 /** A pat lasts this many effect ticks (about 1.6 s); a woken pet keeps one eye open for about 1.4 s. */
 const PAT_TICKS = 14;
 const WAKE_TICKS = 12;
@@ -106,6 +107,7 @@ type Ball = { x: number; v: number; kicks: number; rest: number };
  * Reduce motion: the pet stands still at its spot, nothing flies, and the bubble just shows.
  */
 export function PetRoomScene(props: Props) {
+  const theme = useTheme();
   const { name, species, coat, breed, weightKg, colors, hat, look, mood, hungry, event, photo, label, testID, spriteTestID } = props;
   const still = useReduceMotion();
   const [width, setWidth] = useState(0);
@@ -129,6 +131,10 @@ export function PetRoomScene(props: Props) {
   const [ball, setBall] = useState<Ball | null>(null);
   const [photoNew, setPhotoNew] = useState(0);
   const [photoLook, setPhotoLook] = useState(0);
+  const [bubble, setBubble] = useState(BUBBLE_TICKS);
+  // The play hint under the room goes away once the owner has played (this visit).
+  const [played, setPlayed] = useState(false);
+  useEffect(() => setBubble(BUBBLE_TICKS), [mood, hungry]);
   const sleeping = mood === "sleepy" && wake <= 0;
   // Where the pet stood on the last frame: which side of a new ball it runs to.
   const lastX = useRef(0);
@@ -140,6 +146,7 @@ export function PetRoomScene(props: Props) {
     const fresh = Date.now() - Date.parse(photo.takenAt) < FRESH_PHOTO_MS;
     if ((seenPhoto.current !== undefined && seenPhoto.current !== photo.id) || (seenPhoto.current === undefined && fresh)) {
       setPhotoNew(PHOTO_SPARKLE);
+      setBubble(BUBBLE_TICKS);
       if (mood !== "sleepy") setPhotoLook(PHOTO_LOOK);
     }
     seenPhoto.current = photo.id;
@@ -185,6 +192,7 @@ export function PetRoomScene(props: Props) {
       setWake((v) => Math.max(0, v - 1));
       setPhotoNew((v) => Math.max(0, v - 1));
       setPhotoLook((v) => Math.max(0, v - 1));
+      setBubble((v) => Math.max(0, v - 1));
       setHearts((hs) => hs.map((h) => ({ ...h, y: still ? h.y : h.y - 0.6, life: h.life - 1 })).filter((h) => h.life > 0));
       setBall((bl) => {
         if (!bl) return bl;
@@ -219,11 +227,14 @@ export function PetRoomScene(props: Props) {
       return;
     }
     setPat(PAT_TICKS);
+    setBubble(BUBBLE_TICKS);
+    setPlayed(true);
     const head = BASE_Y - petW;
     setHearts((hs) => [...hs, ...[0, 1, 2].map((i) => ({ id: Date.now() + i, x: petRoomX + petW / 2 - 7 + i * 5, y: head - 2 - (i % 2) * 2, life: still ? 14 : 22 + i * 3 }))]);
     AccessibilityInfo.announceForAccessibility(`${name} loves that`);
   };
   const toss = (roomX: number) => {
+    setPlayed(true);
     setBall({ x: Math.max(2, Math.min(ROOM_W - 10, roomX - 4)), v: 0, kicks: 0, rest: 0 });
     AccessibilityInfo.announceForAccessibility(`${name} spots the ball`);
   };
@@ -247,7 +258,7 @@ export function PetRoomScene(props: Props) {
   const petBottom = (ROOM_H - BASE_Y) * p + (onBed ? 6 * p : 0) + bounce;
   const petLeft = ox + Math.round(petRoomX * p);
   const spriteSize = SCENE_SIZE * petPx;
-  const showBubble = still || fx % BUBBLE_CYCLE < BUBBLE_ON;
+  const showBubble = still || bubble > 0;
   const bubbleX = Math.min(ROOM_W - 14, petRoomX + petW * 0.62);
   const bubbleY = BASE_Y - petW - (onBed ? 6 : 0) - 4;
   const bubbleIcon = pat > 0 || mood === "excited" ? HEART : mood === "sleepy" ? ZZZ : mood === "hungry" || hungry ? MINI_BOWL : SPARK;
@@ -267,20 +278,15 @@ export function PetRoomScene(props: Props) {
       >
         {width > 0 ? (
           <>
-            {/* Wall with soft stripes, the baseboard, the floor with planks. */}
+            {/* Wall with a few soft stripes, the baseboard, the floor: quiet, so the pet stands out. */}
             <View style={[styles.fill, { height: FLOOR_Y * p, backgroundColor: ROOM_COLOR.wall }]} />
-            {Array.from({ length: Math.ceil(ROOM_W / 10) }, (_, i) => (
-              <View key={`s${i}`} style={[at(4 + i * 10, 0), { width: 3 * p, height: FLOOR_Y * p, backgroundColor: ROOM_COLOR.stripe }]} />
+            {Array.from({ length: Math.ceil(ROOM_W / 20) }, (_, i) => (
+              <View key={`s${i}`} style={[at(9 + i * 20, 0), { width: 2 * p, height: FLOOR_Y * p, backgroundColor: ROOM_COLOR.stripe }]} />
             ))}
             <View style={[styles.fill, { top: (FLOOR_Y - 2) * p, height: 2 * p, backgroundColor: ROOM_COLOR.baseboard }]} />
             <View style={[styles.fill, { top: FLOOR_Y * p, bottom: 0, backgroundColor: ROOM_COLOR.floor }]} />
-            {[0, 1, 2, 3].map((r) => (
-              <View key={`p${r}`}>
-                <View style={[styles.fill, { top: (FLOOR_Y + 6 + r * 7) * p, height: p, backgroundColor: ROOM_COLOR.plank }]} />
-                {Array.from({ length: 5 }, (_, i) => (
-                  <View key={i} style={[at((r % 2) * 14 + 6 + i * 28, FLOOR_Y + 1 + r * 7), { width: p, height: 6 * p, backgroundColor: ROOM_COLOR.plank }]} />
-                ))}
-              </View>
+            {[0, 1].map((r) => (
+              <View key={`p${r}`} style={[styles.fill, { top: (FLOOR_Y + 8 + r * 10) * p, height: p, backgroundColor: ROOM_COLOR.plank }]} />
             ))}
             {/* The window: the sky follows the clock. */}
             <View style={[at(8, 8), { width: 30 * p, height: 24 * p, backgroundColor: ROOM_COLOR.frame }]} />
@@ -347,7 +353,18 @@ export function PetRoomScene(props: Props) {
               <View pointerEvents="none" style={at(ball.x, BASE_Y - 8)} testID={testID ? `${testID}-ball` : undefined}>
                 {grid(BALL)}
               </View>
-            ) : null}
+            ) : (
+              // The ball waits on the floor: tap it to toss it (the hit area is 44 px or more).
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Toss the ball"
+                onPress={() => toss(48 + Math.random() * 16)}
+                style={[at(TOY_X + 4, BASE_Y - 4), styles.toy, { marginLeft: -22, marginTop: -22 }]}
+                testID={testID ? `${testID}-toss` : undefined}
+              >
+                {grid(BALL)}
+              </Pressable>
+            )}
             {/* The pet, with a tap area bigger than the sprite: a pat. */}
             <View pointerEvents="none" style={{ position: "absolute", left: petLeft, bottom: petBottom, width: spriteSize, height: spriteSize }}>
               <PetSprite
@@ -392,14 +409,19 @@ export function PetRoomScene(props: Props) {
           </>
         ) : null}
       </View>
-      <Button label="Toss the ball" variant="secondary" onPress={() => toss(40 + Math.random() * 20)} style={styles.toss} testID={testID ? `${testID}-toss` : undefined} />
+      {played ? null : (
+        <Text style={[styles.hint, { color: theme.color.textMuted }]} testID={testID ? `${testID}-hint` : undefined}>
+          {`Tap ${name} to say hi, or the ball to play.`}
+        </Text>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { gap: 10 },
+  root: { gap: 8 },
   room: { alignSelf: "stretch", minHeight: 160, borderRadius: 20, overflow: "hidden", backgroundColor: ROOM_COLOR.wall },
   fill: { position: "absolute", left: 0, right: 0, top: 0 },
-  toss: { alignSelf: "flex-start" },
+  toy: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  hint: { fontSize: 13, lineHeight: 18 },
 });

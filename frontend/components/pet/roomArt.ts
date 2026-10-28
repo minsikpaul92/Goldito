@@ -19,10 +19,10 @@ export function pixelsOf({ rows, pal }: Art): (string | null)[][] {
 
 export const ROOM_COLOR = {
   wall: "#FBEFC8",
-  stripe: "#F7E7BB",
+  stripe: "#F9EBC3",
   baseboard: "#E9D3A2",
   floor: "#FDE2CC",
-  plank: "#F6D3B6",
+  plank: "#F9DAC2",
   frame: "#FFFFFF",
   sun: "#F4A261",
   dusk: "#E76F51",

@@ -166,7 +166,11 @@ test.describe("pet room", () => {
     await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("pet-room-Max-open")).toHaveAttribute("role", "img");
     const checkins = db.care_checkins.length;
+    // A quiet hint says what can be tapped, until the first play.
+    await expect(screen.getByTestId("pet-room-Max-open-hint")).toHaveText("Tap Max to say hi, or the ball to play.");
+    await expect(screen.getByTestId("pet-room-Max-open-toss")).toHaveAccessibleName("Toss the ball");
     await screen.getByTestId("pet-room-Max-open-pat").click();
+    await expect(screen.getByTestId("pet-room-Max-open-hint")).toHaveCount(0);
     await expect(screen.getByTestId("pet-room-Max-open-heart")).toHaveCount(3);
     await expect(screen.getByTestId("pet-room-Max-open-heart")).toHaveCount(0, { timeout: 6_000 });
     expect(db.care_checkins.length).toBe(checkins);

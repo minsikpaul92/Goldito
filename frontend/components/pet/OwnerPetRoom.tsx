@@ -37,6 +37,9 @@ function sentence(name: string, status: PetStatus): string {
   return `${name} is relaxed.`;
 }
 
+/** Whether the sitter logged anything today that the tiles would show. */
+const logged = (status: PetStatus) => status.meal !== "unknown" || status.potty !== "unknown" || status.walkMinutes > 0;
+
 /** The pet's own tiles: meal, potty, and walks for a dog (cats have no walks, and no play check-in yet). */
 function petTiles(status: PetStatus, species: Species): StatTile[] {
   const tiles: StatTile[] = [
@@ -44,7 +47,7 @@ function petTiles(status: PetStatus, species: Species): StatTile[] {
       ? { key: "meal", icon: "meal", art: "owner/care-bowl", value: "Fed", label: "ate well", ground: tokens.color.blockMint }
       : status.meal === "hungry"
         ? { key: "meal", icon: "meal", art: "owner/care-bowl", value: "Meal", label: "skipped", ground: tokens.color.blockMint, warn: true }
-        : { key: "meal", icon: "meal", art: "owner/care-bowl", value: "Meal", label: "not logged yet", ground: tokens.color.blockMint },
+        : { key: "meal", icon: "meal", art: "owner/care-bowl", value: "Meal", label: "not yet", ground: tokens.color.blockMint },
   ];
   const potty = species === "cat" ? "owner/potty-scoop" : "owner/potty-bags";
   tiles.push(
@@ -52,7 +55,7 @@ function petTiles(status: PetStatus, species: Species): StatTile[] {
       ? { key: "potty", icon: "potty", art: potty, value: "Done", label: "potty today", ground: tokens.color.blockPeach }
       : status.potty === "due"
         ? { key: "potty", icon: "potty", art: potty, value: "Due", label: "no potty yet", ground: tokens.color.blockPeach, warn: true }
-        : { key: "potty", icon: "potty", art: potty, value: "Potty", label: "not logged yet", ground: tokens.color.blockPeach },
+        : { key: "potty", icon: "potty", art: potty, value: "Potty", label: "not yet", ground: tokens.color.blockPeach },
   );
   if (species === "dog") {
     tiles.push({ key: "walks", icon: "walk", art: "owner/walk-leash", value: walkLabel(status.walkMinutes), label: "of walks", ground: tokens.color.blockButter });
@@ -100,7 +103,8 @@ export function OwnerPetRoom({ pet }: { pet: Pet }) {
         {status ? <Text style={styles.sentence}>{sentence(pet.name, status)}</Text> : null}
         {updatedAt ? <Text style={styles.updated}>{`Updated ${formatTime(isoToZoned(updatedAt).time)}`}</Text> : null}
       </View>
-      {status ? <StatTileRow tiles={petTiles(status, pet.species)} testID="pet-stat-tiles" /> : null}
+      {/* Nothing logged yet: the sentence already says so, so no row of empty tiles. */}
+      {status && logged(status) ? <StatTileRow tiles={petTiles(status, pet.species)} testID="pet-stat-tiles" /> : null}
       {status?.nextTask ? (
         <View style={styles.next} testID={`pet-room-${pet.name}-next`}>
           <View style={styles.nextIcon}>
