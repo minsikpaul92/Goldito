@@ -339,7 +339,7 @@ export default function BookCare() {
             value={dropOff}
             minDay={today}
             sitterName={sitterName}
-            fixedPlace={houseSitting ? `🔑 ${sitterName ?? "The sitter"} comes to my place` : undefined}
+            fixedPlace={houseSitting ? `${sitterName ?? "The sitter"} comes to my place` : undefined}
             onChange={(value) => {
               setDropOff(value);
               // Keep the pick-up after the drop-off when the drop-off moves past it.
@@ -354,7 +354,7 @@ export default function BookCare() {
             value={pickUp}
             minDay={dropOff.day}
             sitterName={sitterName}
-            fixedPlace={houseSitting ? "🔑 At my place" : undefined}
+            fixedPlace={houseSitting ? "At my place" : undefined}
             onChange={setPickUp}
           />
         </Card>

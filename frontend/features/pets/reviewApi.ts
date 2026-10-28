@@ -86,7 +86,7 @@ export async function savePetReview(bookingId: string, petId: string, chips: str
   const db = getSupabase();
   const { data: auth } = await db.auth.getSession();
   const me = auth.session?.user.id;
-  if (!me) throw new Error("Sign in again to save the review.");
+  if (!me) throw new Error("Log in again to save the review.");
   const { error } = await db.from("pet_reviews").upsert(
     { booking_id: bookingId, pet_id: petId, sitter_id: me, chips, note: note.trim() || null },
     { onConflict: "booking_id,pet_id" },

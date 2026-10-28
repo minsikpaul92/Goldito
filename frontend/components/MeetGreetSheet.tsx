@@ -117,7 +117,7 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
           ) : null}
           <CheckRow
             radio
-            label="📍 Somewhere else"
+            label="Somewhere else"
             checked={spot === OTHER}
             onChange={() => setSpot(OTHER)}
             testID="meet-spot-other"

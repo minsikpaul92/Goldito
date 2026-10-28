@@ -801,7 +801,7 @@ export default function OwnerOnboarding() {
           testID="own-address"
         />
         <Button
-          label={locating ? "Locating…" : draft.home && !draft.homeAddress ? "📍 Read my location again" : "📍 Use my current location"}
+          label={locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location"}
           variant="secondary"
           onPress={() => void useCurrentLocation()}
           disabled={locating}
