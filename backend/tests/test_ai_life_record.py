@@ -71,6 +71,7 @@ def make_db(*, finished: bool = True, **extra) -> FakeDB:
             {"inquiry_id": "i1", "author": "sitter", "body": "SITTER REPLY", "created_at": at("01", "10:05")},
         ],
         pet_life_records=[],
+        pet_reviews=[],
         notifications=[],
     )
     tables.update(extra)
@@ -378,6 +379,54 @@ def test_the_record_is_capped_to_two_sentences_and_five_items(client, setup):
     summary_ctx = setup(long, {})
     summary = post(client).json()["records"][0]["summary"]
     assert summary["eats"] == "One. Two." and len(summary["sitter_tips"]) == 5 and summary_ctx.model.calls
+
+
+# --- the sitter's review ---------------------------------------------------------------------------------------------
+
+REVIEW = {"booking_id": BOOKING, "pet_id": MAX, "chips": ["Gentle on the leash"], "note": "A bit timid. Watch for squirrels coming close."}
+
+
+def test_the_sitters_review_of_the_pet_goes_to_the_model(client, setup):
+    ctx = setup(db=make_db(pet_reviews=[REVIEW, {**REVIEW, "booking_id": "another-stay", "note": "OTHER STAY"}]))
+    post(client)
+    assert ctx.model.snapshot(0)["sitter_review"] == {"chips": ["Gentle on the leash"], "note": "A bit timid. Watch for squirrels coming close."}
+    assert "sitter_review" not in ctx.model.snapshot(1)  # Mochi has no review
+    assert "OTHER STAY" not in json.dumps(ctx.model.snapshot(0))
+
+
+def refresh(client, pet_id=MAX):
+    return client.post(
+        "/api/ai/life-record",
+        headers={"Authorization": f"Bearer {sitter_token()}"},
+        json={"booking_id": BOOKING, "pet_id": pet_id, "refresh": True},
+    )
+
+
+def test_a_review_saved_after_the_record_writes_that_pets_record_again_in_place(client, setup):
+    db = UniqueRecordsDB(**make_db().tables)
+    ctx = setup(MAX_RECORD, {"eats": "Eats dinner."}, {**MAX_RECORD, "sitter_tips": ["Watch for small animals"]}, db=db)
+    first = post(client).json()["records"][0]
+    db.tables["pet_reviews"].append(REVIEW)
+    response = refresh(client)
+    assert response.status_code == 200
+    (record,) = response.json()["records"]
+    assert record["pet_name"] == "Max" and record["record_id"] == first["record_id"] and not record["reused"]
+    assert record["summary"]["sitter_tips"] == ["Watch for small animals"]
+    assert ctx.model.snapshot(2)["sitter_review"]["note"].startswith("A bit timid")
+    rows = [r for r in db.tables["pet_life_records"] if r["pet_id"] == MAX]
+    assert len(rows) == 1 and "Watch for small animals" in rows[0]["body"]
+    assert [i["pet_id"] for i in ctx.indexed] == [MAX, MOCHI, MAX]
+
+
+def test_a_refresh_before_any_record_writes_it(client, setup):
+    ctx = setup(db=make_db(pet_reviews=[REVIEW]))
+    (record,) = refresh(client).json()["records"]
+    assert record["pet_name"] == "Max" and len(ctx.db.tables["pet_life_records"]) == 1
+
+
+def test_a_refresh_for_a_pet_outside_the_booking_is_a_404(client, setup):
+    ctx = setup()
+    assert refresh(client, "00000000-0000-4000-8000-0000000000c9").status_code == 404 and ctx.model.calls == []
 
 
 # --- failure ---------------------------------------------------------------------------------------------------------

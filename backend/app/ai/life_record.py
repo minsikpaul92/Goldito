@@ -20,6 +20,7 @@ REPORTS_MAX = 5
 REPORT_CHARS = 500
 QUESTIONS_MAX = 5
 QUESTION_CHARS = 200
+REVIEW_CHARS = 200
 
 # Keys / words that must never be stored (D31, and contact details).
 FORBIDDEN_KEYS = ("lockbox", "buzzer", "address", "entry", "door", "phone", "email", "emergency", "password", "code")
@@ -77,6 +78,7 @@ def build_snapshot(
     end: datetime,
     now: datetime,
     tz,
+    review: dict | None = None,
 ) -> dict:
     """The model's whole input for one pet. No ids of media, no addresses, no contact details."""
     by_id = {t["id"]: t for t in tasks}
@@ -131,6 +133,12 @@ def build_snapshot(
         "owner_questions": [t for t in (_clean(q, QUESTION_CHARS) for q in owner_questions[:QUESTIONS_MAX]) if t],
         "previous_record": previous,
     }
+    # The sitter's review of the pet after the stay (015u): what they picked and wrote for the next sitter.
+    if review:
+        chips = [t for t in (_clean(c, 60) for c in review.get("chips") or []) if t]
+        note = _clean(review.get("note"), REVIEW_CHARS)
+        if chips or note:
+            snapshot["sitter_review"] = {**({"chips": chips} if chips else {}), **({"note": note} if note else {})}
     return snapshot
 
 

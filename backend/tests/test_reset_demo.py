@@ -282,9 +282,9 @@ def test_the_confirmed_state_books_after_everything_is_ready_and_pets_does_not()
     assert calls == [(OWNER, SITTER, TODAY, "confirmed", 3, 1)]
 
     calls.clear()
-    for state in ("ready", "in_care"):
+    for state in ("ready", "in_care", "returned"):
         demo_reset.reset(db, OWNER, SITTER, TODAY, state=state, apply=True, book=book)
-    assert [c[3] for c in calls] == ["ready", "in_care"]
+    assert [c[3] for c in calls] == ["ready", "in_care", "returned"]
 
 
 def test_a_dry_run_never_books_and_an_unknown_state_is_refused():
@@ -372,6 +372,21 @@ def test_the_stay_is_checked_out_then_received_in_the_right_order(monkeypatch):
         "sitter-token",
         "complete_handoff",
     )  # Received is the sitter's, after the owner paid
+    # `returned`: Received, a check-in per pet, then Returned, all the sitter's.
+    monkeypatch.setattr(
+        demo_reset,
+        "stay_checkins",
+        lambda *_: [("pet-1", [{"kind": "meal", "value": "all"}], "note")],
+    )
+    assert run("returned") == [
+        *base,
+        "required_consents",
+        "pay_booking_demo",
+        "complete_handoff",
+        "log_care_checkins",
+        "complete_handoff",
+    ]
+    assert all(token == "sitter-token" for token, _fn in calls[-3:])
 
 
 def test_a_pair_that_has_met_before_just_goes_on_without_a_first_yes(monkeypatch):
@@ -687,3 +702,18 @@ def test_a_sitter_reset_keeps_a_pet_the_owner_added():
     demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True, scope="sitter")
 
     assert "added" in ids(db, "pets")
+
+
+def test_the_returned_stay_has_a_walk_and_a_squirrel_for_the_dog_only():
+    from tests.fakes import FakeDB
+
+    db = FakeDB(
+        pets=[
+            {"id": "max", "owner_id": OWNER, "species": "dog"},
+            {"id": "mochi", "owner_id": OWNER, "species": "cat"},
+        ]
+    )
+    sent = {pet: (picks, note) for pet, picks, note in demo_reset.stay_checkins(db, OWNER)}
+    assert [p["kind"] for p in sent["max"][0]] == ["meal", "potty", "walk", "mood"]
+    assert "squirrel" in sent["max"][1]
+    assert [p["kind"] for p in sent["mochi"][0]] == ["meal", "potty", "mood"] and sent["mochi"][1] is None

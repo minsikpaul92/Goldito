@@ -1,6 +1,6 @@
 """Put one demo account (or a whole set) into a known test state (review FB-10 + the temporary demo reset).
 
-Six states, each a point to start a manual test from:
+Seven states, each a point to start a manual test from:
 
 - `empty`      the owner has no pets; the sitter has her schedule, services and prices
 - `pets`       the set's two pets (Max + Mochi for the default set), nothing else (no chat, no favorite, no booking, never met)
@@ -9,6 +9,8 @@ Six states, each a point to start a manual test from:
 - `confirmed`  `pets` + one booking the sitter accepted, before checkout (Finish booking)
 - `ready`      the same, paid; drop-off is in an hour, so the sitter's Received is open (it opens 2 h before)
 - `in_care`    paid and received a moment ago: the pets are with the sitter (check-ins, photos, reports)
+- `returned`   the stay of `in_care` with the day's check-ins sent and the pets brought home (Returned): the sitter can
+               give medals and review each pet, the owner sees Home safe
 
 What the two accounts did **with each other** is deleted first (their bookings and inquiries, the
 owner's pets' care data, the owner's inquiry index, the voice the sitter learned from those replies,
@@ -46,10 +48,10 @@ from app.services.demo_accounts import (
 )
 
 Scope = Literal["owner", "sitter", "both"]
-State = Literal["empty", "pets", "past", "confirmed", "ready", "in_care"]
-STATES: tuple[State, ...] = ("empty", "pets", "past", "confirmed", "ready", "in_care")
+State = Literal["empty", "pets", "past", "confirmed", "ready", "in_care", "returned"]
+STATES: tuple[State, ...] = ("empty", "pets", "past", "confirmed", "ready", "in_care", "returned")
 # The states that come with a past (finished stays, a cancelled request, pages and photos): the pair has met.
-WITH_HISTORY: tuple[State, ...] = ("past", "confirmed", "ready", "in_care")
+WITH_HISTORY: tuple[State, ...] = ("past", "confirmed", "ready", "in_care", "returned")
 
 OPEN_DAYS = 60
 # Knowledge chunks that come from stays; the sitter's own policy text (`sitter_policy`) stays.
@@ -378,7 +380,7 @@ def stay_times(state: State, now: datetime, today: date) -> tuple[datetime, date
     opens 2 h before the agreed drop-off, and care tools work from 30 min before it."""
     if state == "ready":
         drop_off = now + timedelta(hours=1)
-    elif state == "in_care":
+    elif state in ("in_care", "returned"):
         drop_off = now + timedelta(
             minutes=3
         )  # a request cannot start in the past, so a little ahead
@@ -449,7 +451,7 @@ def book_for_state(
     """The owner requests a boarding stay (both pets, the sitter's place), the Meet & Greet is skipped by
     agreement (after the sitter's first yes), then the owner says "I'd like to book" and the sitter accepts: the booking is
     confirmed and waits for payment. `ready` and `in_care` go on with the checkout (consents + demo payment); `in_care` also
-    has the sitter tap Received."""
+    has the sitter tap Received; `returned` then sends the day's check-ins and taps Returned."""
     owner_demo, sitter_demo = demo_set.owner, demo_set.sitter
     owner_token, sitter_token = sign_in(owner_demo.email), sign_in(sitter_demo.email)
     tz = ZoneInfo(get_settings().app_timezone)
@@ -485,13 +487,47 @@ def book_for_state(
     # Both say yes (014o): the booking is confirmed only when the owner and the sitter both did.
     authz.rpc_json(owner_token, "agree_to_book", {"p_booking": booking})
     authz.rpc_json(sitter_token, "respond_booking", {"p_booking": booking, "p_accept": True})
-    if state in ("ready", "in_care"):
+    if state in ("ready", "in_care", "returned"):
         _sign_and_pay(owner_token, owner_id, owner_demo.display_name, booking)
-    if state == "in_care":
+    if state in ("in_care", "returned"):
         authz.rpc_json(
             sitter_token, "complete_handoff", {"p_booking": booking, "p_kind": "drop_off"}
         )
+    if state == "returned":
+        # The day of care the Life Record and the review chips are written from, then the pets go home.
+        for pet_id, picks, note in stay_checkins(client, owner_id):
+            authz.rpc_json(
+                sitter_token,
+                "log_care_checkins",
+                {"p_pet": pet_id, "p_picks": picks, "p_note_text": note, "p_media_id": None},
+            )
+        authz.rpc_json(
+            sitter_token, "complete_handoff", {"p_booking": booking, "p_kind": "pick_up"}
+        )
     return booking
+
+
+def stay_checkins(client: Client, owner_id: str) -> list[tuple[str, list[dict], str | None]]:
+    """What the sitter sent during the `returned` stay, per pet: a dog has a walk (and a squirrel), a cat does not."""
+    pets = client.table("pets").select("id, species").eq("owner_id", owner_id).execute().data
+    out = []
+    for pet in pets:
+        if pet.get("species") == "dog":
+            picks = [
+                {"kind": "meal", "value": "all"},
+                {"kind": "potty", "value": "normal"},
+                {"kind": "walk", "value": "30"},
+                {"kind": "mood", "value": "playful"},
+            ]
+            out.append((pet["id"], picks, "Jumped back when a squirrel came close at the park"))
+        else:
+            picks = [
+                {"kind": "meal", "value": "most"},
+                {"kind": "potty", "value": "normal"},
+                {"kind": "mood", "value": "calm"},
+            ]
+            out.append((pet["id"], picks, None))
+    return out
 
 
 CANCEL_REASON = "Plans changed"
@@ -639,7 +675,7 @@ def reset(
     if keep_schedule:
         report.append(("schedule kept (the sitter has another owner's confirmed booking)", 0))
     if apply:
-        building = state in ("confirmed", "ready", "in_care")
+        building = state in ("confirmed", "ready", "in_care", "returned")
         # A stay needs pets and prices on both sides; this only adds what is missing, it never removes.
         if (owner_side and state != "empty") or building:
             ensure_pets(client, owner_id, today, demo_set.pets)

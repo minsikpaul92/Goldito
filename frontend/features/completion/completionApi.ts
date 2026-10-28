@@ -260,6 +260,11 @@ export function requestLifeRecord(bookingId: string): Promise<void> {
   return request;
 }
 
+/** After the sitter's review of a pet: that pet's Life Record is written again with the review in it. */
+export async function refreshLifeRecord(bookingId: string, petId: string): Promise<void> {
+  await apiPost("/api/ai/life-record", { booking_id: bookingId, pet_id: petId, refresh: true });
+}
+
 async function postLifeRecord(bookingId: string): Promise<void> {
   try {
     await apiPost("/api/ai/life-record", { booking_id: bookingId });

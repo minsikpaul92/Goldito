@@ -58,8 +58,12 @@ async function start(page: import("@playwright/test").Page) {
       body: JSON.stringify({ chips: ["Chased every squirrel", "Loved our walks", "A joy to look after"], source: "ai" }),
     });
   });
-  await page.route("**/api/ai/life-record", (route) => route.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
-  return { db, asked };
+  const records: unknown[] = [];
+  await page.route("**/api/ai/life-record", (route) => {
+    records.push(route.request().postDataJSON());
+    return route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+  });
+  return { db, asked, records };
 }
 
 function review(id: string, petId: string, chips: string[], note: string | null, createdAt: string) {
@@ -68,7 +72,7 @@ function review(id: string, petId: string, chips: string[], note: string | null,
 
 test.describe("pet reviews", () => {
   test("the sitter reviews each pet of a finished stay with chips and an optional note", async ({ page }) => {
-    const { db, asked } = await start(page);
+    const { db, asked, records } = await start(page);
     await signIn(page, SITTER);
     await page.goto(`/sitter/bookings/${BOOKING}`);
     const screen = app(page);
@@ -98,6 +102,8 @@ test.describe("pet reviews", () => {
       chips: ["Chased every squirrel", "Loved our walks"],
       note: "Sweetest boy",
     });
+    // The review goes into Max's Life Record: his record is written again.
+    expect(records).toContainEqual({ booking_id: BOOKING, pet_id: MAX, refresh: true });
     // Mochi waits for hers.
     await expect(screen.getByTestId(`pet-review-start-${MOCHI}`)).toBeVisible();
 

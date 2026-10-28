@@ -285,6 +285,8 @@ const CARE_SCRIPT: ScriptStep[] = [
   { tap: "media-confirm-use" },
   { wait: "checkin-photo-preview-*", timeout: 30_000 },
   { tap: "checkin-send-*" },
+  // Sent: the picks clear. ("Sent today" shows from the Home tiles already, so it can't tell.)
+  { gone: "checkin-ready-*-walk", timeout: 30_000 },
   { wait: "checkin-sent-*", timeout: 30_000 },
   { pause: 1_500 },
   { open: "/sitter/snap/sticker" },
@@ -297,8 +299,8 @@ const CARE_SCRIPT: ScriptStep[] = [
   // the page written by AI from the photo, the chips and her words, three stickers in the free spots, Send.
   { tap: "feed-view-diary" },
   { tap: "sitter-diary-view-today" },
-  // With two pets in care Write a diary asks which one; Max is the first.
-  { tapIf: "diary-pick-pet-*" },
+  // With two pets in care Write a diary asks which one: Max (the sheet's backdrop and Close match the * too).
+  { tapIf: "diary-pick-pet-*", prefer: "Max" },
   { wait: "report-body-*", timeout: 30_000 },
   { pause: 1_000 },
   { tap: "report-add-photo-*" },
@@ -336,49 +338,46 @@ const CARE_OWNER_SCRIPT: ScriptStep[] = [
   { wait: "feed-card-*", timeout: 30_000 },
   { pause: 3_000 },
   { tap: "feed-view-diary" },
-  { tap: "diary-entry-cover-*", timeout: 30_000 },
+  { tapBest: "diary-entry-cover-*", prefer: "Max", timeout: 30_000 },
   // The page as Chloe sent it: her photo, her words and the stickers.
   { pause: 6_000 },
 ];
 
-/** Before Chloe brings them home, a few check-ins, so the Life Record has a stay to write from. */
+/** What Chloe tells the next sitter about Max: it goes into his Life Record with the rest of the stay. */
+const MAX_REVIEW =
+  "Max is a little timid. When a squirrel came close at the park, he jumped back. Next sitter, please watch for small animals coming near him so he does not get startled.";
+
+/** The stay is over (Returned): Chloe gives Max a medal and reviews him; saving writes his Life Record again with it. */
 const HOME_SITTER_SCRIPT: ScriptStep[] = [
-  { tapBest: "caring-pet-*", prefer: "Max" },
-  { tap: "tile-ate" },
-  { tap: "tile-option-ate-most" },
-  { wait: "tile-sent-ate", timeout: 30_000 },
-  { pause: 2_000 },
-  { tap: "tile-walk" },
-  { tap: "tile-option-walk-30" },
-  { wait: "tile-sent-walk", timeout: 30_000 },
-  { pause: 2_000 },
-  { tap: "tile-mood" },
-  { tap: "tile-option-mood-happy" },
-  { wait: "tile-sent-mood", timeout: 30_000 },
+  { tapBest: "medal-give-*", prefer: "Max", timeout: 30_000 },
+  { wait: "medal-given-*", timeout: 30_000 },
   { pause: 1_500 },
-  { open: "/sitter/bookings/{booking}" },
-  { tap: "handoff-returned", timeout: 30_000 },
-  { pause: 1_500 },
-  { tap: "return-confirm" },
-  { signal: "returned" },
-  // How was Max? AI chips from the stay; Chloe keeps one and saves.
-  { tap: "pet-review-start-*", timeout: 30_000 },
+  // How was Max? A chip from the stay, then a few lines of her own for the next sitter.
+  { tapBest: "pet-review-start-*", prefer: "Max", timeout: 30_000 },
   { gone: "pet-review-loading-*", timeout: AI_MS },
-  { tap: "pet-review-chip-*", timeout: AI_MS },
+  { tapBest: "pet-review-chip-*", prefer: "squirrel|startl|small animal|jump|timid|nervous", timeout: AI_MS },
+  { pause: 800 },
+  { tap: "pet-review-note-open-*" },
+  { type: "pet-review-note-*", text: MAX_REVIEW },
   { pause: 1_000 },
   { tap: "pet-review-save-*" },
+  // Saved once the Life Record has the review.
+  { wait: "pet-review-edit-*", timeout: AI_MS },
+  { pause: 1_500 },
+  { signal: "reviewed" },
 ];
 
-/** Robert sees Home safe, the Life Record being written and the record itself, then Max's record page. */
+/** Robert sees Home safe and the Life Records (Max's with Chloe's review), then Max's record page. */
 const HOME_OWNER_SCRIPT: ScriptStep[] = [
-  { until: "returned", timeout: 300_000 },
-  { wait: "home-safe", timeout: AI_MS },
+  { until: "reviewed", timeout: 300_000 },
+  { open: "/owner/bookings/{booking}" },
+  { wait: "home-safe", timeout: 30_000 },
   { pause: 2_000 },
   { wait: "life-record-*", timeout: 120_000 },
   { pause: 4_000 },
   { open: "/owner/pets/{pet}/record" },
   { wait: "record-latest", timeout: 30_000 },
-  { pause: 3_000 },
+  { pause: 4_000 },
 ];
 
 const MOOD_SCRIPT: ScriptStep[] = [{ tap: "mood-pick" }, { tap: "sample-mood_tug" }, { wait: "mood-result", timeout: AI_MS }];
@@ -473,15 +472,16 @@ export const SCENES: Scene[] = [
   {
     key: "home",
     title: "Home safe",
-    hint: "Chloe brings them home. Robert gets Home safe and each pet's Life Record.",
-    state: "in_care",
+    hint: "Chloe gives Max a medal and reviews him. Robert gets Home safe and each pet's Life Record.",
+    // The stay is over: the check-ins are in and Chloe has brought them home.
+    state: "returned",
     lead: "sitter",
-    owner: { path: "/owner/bookings/{booking}", highlight: "home-safe", script: HOME_OWNER_SCRIPT },
-    sitter: { path: "/sitter", highlight: "handoff-returned", script: HOME_SITTER_SCRIPT },
+    owner: { path: "/owner", script: HOME_OWNER_SCRIPT },
+    sitter: { path: "/sitter/bookings/{booking}", highlight: "medal-buttons", script: HOME_SITTER_SCRIPT },
     tags: [SUPER, { label: "Qwen3 Embedding" }],
     intro: {
       title: "Home safe",
-      body: "Chloe brings Max and Mochi home. Robert is told they are home safe, and Goldito writes each pet's Life Record from the stay: what they ate, potty, behavior and tips for the next sitter. The record is saved so the next booking starts from it.",
+      body: "Max and Mochi are home. Chloe gives Max a medal and writes what the next sitter should know about him. Goldito writes each pet's Life Record from the stay and her review: what they ate, potty, behavior and tips for the next sitter. The next booking starts from it.",
       note: "AI can make mistakes. Always double-check.",
     },
   },

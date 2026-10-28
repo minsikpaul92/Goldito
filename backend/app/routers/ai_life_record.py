@@ -1,7 +1,8 @@
 """POST /api/ai/life-record — a finished stay → one Pet Life Record per pet (phase-07C 7C.4).
 
 Called by the app right after Returned (and by the booking page's Retry). One record per booking × pet: asking again
-returns what is saved. The record is written by Nemotron Super from a facts-only `source_snapshot`, checked against
+returns what is saved. The sitter's review of a pet comes after Returned, so saving it asks again with `pet_id` and
+`refresh`: that pet's record is written again with the review in it and replaces the saved one. The record is written by Nemotron Super from a facts-only `source_snapshot`, checked against
 that evidence, stored, indexed for search (so the NEXT sitter's request, inquiry answers and care checklist can use it)
 and the owner is told. A stay that was not finished is a 409; a model failure is a 503 and saves nothing for that pet.
 Two requests at once (the sitter's Returned and the owner opening the booking) write one record: the later one reuses
@@ -36,6 +37,9 @@ MAX_TOKENS = 700
 
 class LifeRecordRequest(BaseModel):
     booking_id: UUID
+    # One pet of the stay; with `refresh` its record is written again (after the sitter's review).
+    pet_id: UUID | None = None
+    refresh: bool = False
 
 
 class PetRecord(BaseModel):
@@ -75,6 +79,11 @@ def life_record(body: LifeRecordRequest, user: CurrentUser = Depends(get_current
     start = parse_ts((drop or {}).get("completed_at") or (drop or {}).get("scheduled_at") or pick["scheduled_at"])
     end = parse_ts(pick["completed_at"])
     pet_ids = [bp["pet_id"] for bp in db.table("booking_pets").select("pet_id").eq("booking_id", booking_id).execute().data]
+    if body.pet_id:
+        pet_ids = [p for p in pet_ids if str(p) == str(body.pet_id)]
+        if not pet_ids:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This pet isn't in the booking.")
+    refresh = body.refresh and body.pet_id is not None
 
     records: list[PetRecord] = []
     for pet_id in pet_ids:
@@ -82,7 +91,8 @@ def life_record(body: LifeRecordRequest, user: CurrentUser = Depends(get_current
         if not pet:
             continue
         pet = pet[0]
-        records.append(_saved_record(db, booking_id, pet) or _write_record(db, booking, pet, start, end, tz))
+        saved = None if refresh else _saved_record(db, booking_id, pet)
+        records.append(saved or _write_record(db, booking, pet, start, end, tz, replace=refresh))
     return LifeRecordResponse(records=records)
 
 
@@ -121,7 +131,13 @@ def _stay_questions(db, booking: dict, pet_id: str, end: datetime) -> list[str]:
     return [m["body"] for m in sorted(messages, key=lambda m: str(m["created_at"]))[-lr.QUESTIONS_MAX :]]
 
 
-def _write_record(db, booking: dict, pet: dict, start: datetime, end: datetime, tz) -> PetRecord:
+def _stay_review(db, booking_id: str, pet_id: str) -> dict | None:
+    """The sitter's review of this pet for this stay (015u), if they wrote one."""
+    found = db.table("pet_reviews").select("chips, note").eq("booking_id", booking_id).eq("pet_id", pet_id).limit(1).execute().data
+    return found[0] if found else None
+
+
+def _write_record(db, booking: dict, pet: dict, start: datetime, end: datetime, tz, *, replace: bool = False) -> PetRecord:
     pet_id = str(pet["id"])
     sitter_id = booking["sitter_id"]
     allergies = [a["allergen"] for a in db.table("pet_allergies").select("allergen").eq("pet_id", pet_id).execute().data]
@@ -139,12 +155,12 @@ def _write_record(db, booking: dict, pet: dict, start: datetime, end: datetime, 
     snapshot = lr.build_snapshot(
         pet=pet, allergies=allergies, cautions=cautions, tasks=tasks, task_logs=logs, checkins=checkins,
         reports=reports, owner_questions=questions, previous=earlier[-1]["summary"] if earlier else None,
-        start=start, end=end, now=_now(), tz=tz,
+        start=start, end=end, now=_now(), tz=tz, review=_stay_review(db, booking["id"], pet_id),
     )
     lr.assert_no_secrets(snapshot)
 
     # Another request may have stored it while the evidence was read: don't call the model for nothing.
-    if again := _saved_record(db, booking["id"], pet):
+    if not replace and (again := _saved_record(db, booking["id"], pet)):
         return again
     messages = [
         {"role": "system", "content": load_prompt("life_record/system.md")},
@@ -161,25 +177,24 @@ def _write_record(db, booking: dict, pet: dict, start: datetime, end: datetime, 
 
     summary = lr.enforce(parsed, snapshot)
     text = lr.record_text(summary)
+    values = {
+        "pet_id": pet_id, "booking_id": booking["id"], "sitter_id": sitter_id, "summary": summary,
+        "body": text, "source_snapshot": snapshot, "model": result.model,
+        "stay_from": snapshot["stay"]["from"], "stay_to": snapshot["stay"]["to"],
+    }
+    # A refresh (the sitter's review) replaces the saved record; otherwise a new one is stored.
+    old = _saved_record(db, booking["id"], pet) if replace else None
     try:
-        row = (
-            db.table("pet_life_records")
-            .insert(
-                {
-                    "pet_id": pet_id, "booking_id": booking["id"], "sitter_id": sitter_id, "summary": summary,
-                    "body": text, "source_snapshot": snapshot, "model": result.model,
-                    "stay_from": snapshot["stay"]["from"], "stay_to": snapshot["stay"]["to"],
-                }
-            )
-            .execute()
-            .data[0]
-        )
+        query = db.table("pet_life_records")
+        row = (query.update(values).eq("id", old.record_id) if old else query.insert(values)).execute().data[0]
     except APIError as exc:
         # unique (booking_id, pet_id): the other request finished first — its row was indexed and announced already.
-        if exc.code == "23505" and (other := _saved_record(db, booking["id"], pet)):
+        if exc.code != "23505" or not (other := _saved_record(db, booking["id"], pet)):
+            raise
+        if not replace:
             log.info("life-record: written by a concurrent request, reusing it")
             return other
-        raise
+        row = db.table("pet_life_records").update(values).eq("id", other.record_id).execute().data[0]
     if text:
         try:
             rag.index_source(db, source_type="life_record", source_id=str(row["id"]), text=text, pet_id=pet_id)

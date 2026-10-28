@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { refreshLifeRecord } from "../../features/completion/completionApi";
 import { PetReview, REVIEW_NOTE_MAX, listBookingReviews, savePetReview, suggestReviewChips } from "../../features/pets/reviewApi";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { useToast } from "../../providers/ToastProvider";
@@ -18,7 +19,8 @@ const sharedLine = (owner: string) => `${owner} and other sitters can see this.`
 
 /**
  * After Returned (#407): the sitter reviews each pet of the stay by picking chips from the stay (D38), with an
- * optional short note. Shared with the pet's owner and other sitters (015u). Saving again edits it.
+ * optional short note. Shared with the pet's owner and other sitters (015u). Saving again edits it; each save writes
+ * the pet's Life Record again with the review in it.
  */
 export function StayPetReviews({ bookingId, pets, ownerName }: Props) {
   const [reviews, setReviews] = useState<PetReview[] | null>(null);
@@ -89,8 +91,13 @@ function PetReviewCard({ bookingId, petId, petName, ownerName, review, onSaved }
     setError(null);
     try {
       await savePetReview(bookingId, petId, picked, note);
+      // The review goes into the pet's Life Record, for the next sitter.
+      const recorded = await refreshLifeRecord(bookingId, petId).then(
+        () => true,
+        () => false,
+      );
       setEditing(false);
-      toast.show(`Review saved. ${ownerName} can see it`);
+      toast.show(recorded ? `Review saved. ${ownerName} can see it` : `Review saved, but ${petName}'s Life Record wasn't updated.`);
       onSaved();
     } catch (e) {
       setError((e as Error).message);

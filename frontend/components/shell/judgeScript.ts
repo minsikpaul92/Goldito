@@ -32,8 +32,11 @@ export type ScriptStep =
   | { invite: string; text: string; await?: boolean }
   /** Outline a control with a note for a few seconds, then go on (a tour that explains the screens). */
   | { explain: string; text: string; ms?: number }
-  /** Tap a control only if it shows within a moment (an optional choice, e.g. a nearby meeting spot). */
-  | { tapIf: string }
+  /**
+   * Tap a control only if it shows within a moment (an optional choice, e.g. a nearby meeting spot). With `prefer`, only
+   * one whose words match (a pattern, any case): a `*` can also match a sheet's backdrop or Close.
+   */
+  | { tapIf: string; prefer?: string }
   /** Tap the first of these controls whose words match `prefer` (a pattern, any case), else the first one (an AI chip). */
   | { tapBest: string; prefer: string; timeout?: number }
   /** Tell the other phone this side got here (two phones taking turns in one scene). */
@@ -324,7 +327,15 @@ export async function playScript(steps: ScriptStep[], color: string, pace = 1): 
       await wait(BEAT_MS / 2);
       unmark();
     } else if ("tapIf" in step) {
-      const found = await until(() => query(step.tapIf), TAP_IF_MS, step.tapIf).catch(() => null);
+      const pattern = step.prefer ? new RegExp(step.prefer, "i") : null;
+      const found = await until(
+        () =>
+          pattern
+            ? (Array.from(document.querySelectorAll<HTMLElement>(selector(step.tapIf))).find((c) => visible(c) && pattern.test(c.innerText)) ?? null)
+            : query(step.tapIf),
+        TAP_IF_MS,
+        step.tapIf,
+      ).catch(() => null);
       if (found && enabled(found)) {
         const unmark = mark(found, color);
         await wait(BEAT_MS);
@@ -384,6 +395,8 @@ export async function playScript(steps: ScriptStep[], color: string, pace = 1): 
         input.focus();
         for (let k = 1; k <= step.text.length; k += 1) {
           setValue(input, step.text.slice(0, k));
+          // A long text in a box that scrolls: follow the last line, as a person typing would see it.
+          input.scrollTop = input.scrollHeight;
           await wait(KEY_MS);
         }
       }
