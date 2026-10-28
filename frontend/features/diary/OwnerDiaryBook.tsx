@@ -71,9 +71,10 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
       </Screen>
     );
   }
-  const picker = !linked ? (
+  // On the covers there is nothing to pick yet; once a pet's pages are open the dropdown switches pets.
+  const picker = !linked && petSel !== ALL_PETS ? (
     <FeedBarRight signature={`${petSel}|${pets.map((p) => p.id).join(",")}|${JSON.stringify(faces)}`}>
-      <FeedPetPicker groups={[{ key: "mine", pets }]} allPets={pets} value={petSel} onChange={setPetSel} faces={faces} testID="diary-pet" />
+      <FeedPetPicker groups={[{ key: "mine", pets }]} allPets={[]} value={petSel} onChange={setPetSel} faces={faces} testID="diary-pet" />
     </FeedBarRight>
   ) : null;
   // ← (one pet's pages back to the covers) sits left of Write a page: the one Back control, no "‹ Diaries" (DESIGN.md §7.8).

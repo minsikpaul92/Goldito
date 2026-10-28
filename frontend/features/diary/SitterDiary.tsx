@@ -140,10 +140,10 @@ export function SitterDiary() {
             testID="diary-pet"
           />
         ) : null}
-        {shownView === "book" ? (
+        {shownView === "book" && bookPet !== ALL_PETS ? (
           <FeedPetPicker
             groups={[{ key: "book", pets: bookPets }]}
-            allPets={bookPets}
+            allPets={[]}
             value={bookPet}
             onChange={setBookPet}
             faces={bookFaces}
