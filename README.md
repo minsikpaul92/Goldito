@@ -158,7 +158,7 @@ What we used, what worked, and what got in the way, written down as it happened.
 - **Danger is loud:** a DANGER verdict opens a red screen that only "I understand" closes, and a sitter's DANGER also notifies the owner.
 - Code: [`services/tavily.py`](backend/app/services/tavily.py) · [`services/breed_needs.py`](backend/app/services/breed_needs.py) · [`routers/ai_safety_check.py`](backend/app/routers/ai_safety_check.py)
 
-<img src="docs/assets/readme/treat-check.gif" alt="Owner and sitter phones side by side: a treat label is checked for Max, who is allergic to chicken, and a red DANGER screen appears with sources" width="560">
+<img src="docs/assets/readme/treat-check.gif" alt="The owner's phone: a treat label is checked for Max, who is allergic to chicken, and a red DANGER screen appears with sources" width="340">
 
 <sub><i>Treat check: one label gets a WARNING, another a red DANGER</i></sub>
 
@@ -225,12 +225,13 @@ Tap a stage for the details.
 <details>
 <summary><b>④ Care & Pet Transit: live trips, the 8-bit pet room, 5-second checks, AI daily notes</b></summary>
 
-- **Uber-style trips, inside the chat.** Drop-off and pick-up are agreed as one pair. Whoever drives taps **Start trip** (after a clear location prompt); the chat shows *on the way*, *N min away*, and *arrived*, and the other side gets a live map and ETA. On arrival the owner gets the sitter's place card (visitor parking, lobby notes) and the sitter gets the entry-info card. Anyone can **start without sharing**: the other side then sees the meeting place with **Open in Google Maps**.
-- **Care, snap, tap.** The sitter ticks timed tasks (the pill, with a photo), taps meal, walk, potty, or nap on the pet's **8-bit room**, and sends quick check-ins. The owner sees each update live, and their 8-bit pet on Home reflects the day. **Ask for a photo** sends the sitter a request that their next photo answers.
-- **5-second check:** in the evening Goldito suggests chips from the day's check-ins and from up to two photos (Nemotron 3.5 Super VL reads them): Meal · Potty · Walk 20 min · Meds · 🐿️ Squirrel at the park. The sitter turns off anything wrong and adds a short line if they want. **Nemotron 3 Super writes the daily note** in the sitter's voice from only those facts, and it is posted once the sitter approves it.
-- **Album and diary:** every photo gets an AI caption and is sorted into Meals · Walks · Naps · Play by day. Daily notes form a diary that both sides can decorate with pet stickers.
+**Uber-style trips, inside the chat.** Whoever drives taps **Start trip**, and the other side gets a live map and ETA.
 
-**Care, played like a game.** The sitter taps **Feed**, **Walk**, **Poop**, or **Nap** on the pet's 8-bit room. The pet acts it out and the owner is told right away, so a care update feels like play instead of a chore.
+<img src="docs/assets/readme/trip-live.gif" alt="Live trip on both phones: the map and ETA count down until Robert has arrived at Chloe's place" width="560">
+
+<sub><i>Live trip: the owner's map and ETA until the sitter arrives</i></sub>
+
+**Care, snap, tap.** The sitter ticks tasks and taps meal, walk, potty, or nap on the pet's 8-bit room, and the owner sees each update live.
 
 <img src="docs/assets/readme/care-room.gif" alt="The sitter taps quick check-ins, then Feed, Walk, Poop, and Nap on Max's 8-bit room; the pet eats, walks, and sleeps, and each tap tells the owner" width="320">
 
@@ -240,18 +241,18 @@ Tap a stage for the details.
 
 <sub><i>Check-ins and photos: the sitter taps, the owner's Home updates live</i></sub>
 
-<img src="docs/assets/readme/diary-page.gif" alt="The sitter adds a photo and a line to the diary page, the AI writes it from the day's chips, and stickers decorate it before it goes to the owner" width="320">
-
-<sub><i>Diary: a page written from the day's chips and a photo, with stickers</i></sub>
+**5-second check.** In the evening Goldito suggests chips from the day's check-ins and photos, and Nemotron 3 Super writes the daily note in the sitter's voice once the sitter approves them.
 
 <img src="docs/assets/readme/stage-4-daily-note.png" alt="The diary page the AI wrote from the day's chips, with stickers" width="240">
 
 > *"Max took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited. It was adorable. Her potty was perfectly healthy, too. 🐶"*
 > From an AI daily note built from a few chips, two photos, and one short line from the sitter
 
-<img src="docs/assets/readme/trip-live.gif" alt="Live trip on both phones: the map and ETA count down until Robert has arrived at Chloe's place" width="560">
+**Album and diary.** Every photo gets an AI caption, and the daily notes form a diary both sides can decorate with pet stickers.
 
-<sub><i>Live trip: the owner's map and ETA until the sitter arrives</i></sub>
+<img src="docs/assets/readme/diary-page.gif" alt="The sitter adds a photo and a line to the diary page, the AI writes it from the day's chips, and stickers decorate it before it goes to the owner" width="320">
+
+<sub><i>Diary: a page written from the day's chips and a photo, with stickers</i></sub>
 
 </details>
 
@@ -455,22 +456,70 @@ The live demo is the fastest way to see Goldito. To run your own copy you need a
 <details>
 <summary><h3>Setup steps: run your own copy (click to expand)</h3></summary>
 
+You need **Git**, **Python 3.12**, and **Node 20** or newer. Step 1 is the same on every OS; then pick yours.
+
+**1. Code and database**
+
 ```bash
-git clone https://github.com/minsikpaul92/Goldito.git && cd Goldito
-
-# 1. Database: run every file in supabase/migrations/ in name order (SQL Editor or psql; see supabase/README.md)
-
-# 2. Backend
-cd backend && cp .env.example .env            # fill SUPABASE_*, CLOUDINARY_*, NEBIUS_API_KEY, DEMO_PASSWORD
-python3.12 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python -m scripts.seed_demo                    # creates the demo owners and sitters (needs the keys above)
-uvicorn app.main:app --reload --port 8000
-
-# 3. Frontend (new terminal)
-cd frontend && cp .env.example .env            # fill EXPO_PUBLIC_SUPABASE_URL, _SUPABASE_ANON_KEY, _CLOUDINARY_CLOUD_NAME, _DEMO_PASSWORD (same value as the backend's)
-npm install && npx expo start --web --port 8081
+git clone https://github.com/minsikpaul92/Goldito.git
+cd Goldito
 ```
+
+Run every file in `supabase/migrations/` on your Supabase project, in name order (SQL Editor or psql; see [supabase/README.md](supabase/README.md)).
+
+<details>
+<summary><b>macOS / Linux</b></summary>
+
+```bash
+# 2. Backend (fill SUPABASE_*, CLOUDINARY_*, NEBIUS_API_KEY, DEMO_PASSWORD in .env)
+cd backend
+cp .env.example .env
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -m scripts.seed_demo        # creates the demo owners and sitters
+uvicorn app.main:app --reload --port 8000
+```
+
+```bash
+# 3. Frontend, in a new terminal from the repo root
+# (fill EXPO_PUBLIC_SUPABASE_URL, _SUPABASE_ANON_KEY, _CLOUDINARY_CLOUD_NAME, _DEMO_PASSWORD, same value as the backend's)
+cd frontend
+cp .env.example .env
+npm install
+npx expo start --web --port 8081
+```
+
+On Ubuntu or Debian, install `python3.12-venv` first.
+
+</details>
+
+<details>
+<summary><b>Windows (PowerShell)</b></summary>
+
+```powershell
+# 2. Backend (fill SUPABASE_*, CLOUDINARY_*, NEBIUS_API_KEY, DEMO_PASSWORD in .env)
+cd backend
+Copy-Item .env.example .env
+py -3.12 -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python -m scripts.seed_demo        # creates the demo owners and sitters
+uvicorn app.main:app --reload --port 8000
+```
+
+```powershell
+# 3. Frontend, in a new terminal from the repo root
+# (fill EXPO_PUBLIC_SUPABASE_URL, _SUPABASE_ANON_KEY, _CLOUDINARY_CLOUD_NAME, _DEMO_PASSWORD, same value as the backend's)
+cd frontend
+Copy-Item .env.example .env
+npm install
+npx expo start --web --port 8081
+```
+
+If PowerShell blocks the activate script, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once.
+
+</details>
 
 Open `http://localhost:8081` and use **Try the demo**. Tests: `pytest -q` in `backend/`, Playwright in `frontend/`.
 
