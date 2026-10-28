@@ -189,7 +189,7 @@ What we used, what worked, and what got in the way, written down as it happened.
 
 Tap a stage for the details.
 
-<details>
+<details open>
 <summary><b>① Inquiry: one chat per owner and sitter, with AI drafts in your own voice</b></summary>
 
 - The owner searches sitters by dates, times, pets, and distance from home (1 to 100 km), opens a profile, and taps **Start chat**. The chat opens with a stay card (dates, times, pets) and a hello. That chat carries the whole stay: quote, Meet & Greet, agreement, payment, trips, photos, the daily note, and the reviews. The same owner and sitter always come back to the same chat.
@@ -200,7 +200,7 @@ Tap a stage for the details.
 
 </details>
 
-<details>
+<details open>
 <summary><b>② Meet & Greet: the care request becomes a checklist, and first-time pairs meet</b></summary>
 
 - The owner writes a **care & medication request** like a note, or taps Quick add chips: *"8 AM: 1 cup of kibble · 2 PM: skin pill in a treat · No knocking, text me · Keep other dogs away on walks."* Nemotron 3 Super turns it into timed tasks and **Heads-up** cards; the owner reviews them before saving. While a stay is on, changes go through a request the sitter approves.
@@ -211,7 +211,7 @@ Tap a stage for the details.
 
 </details>
 
-<details>
+<details open>
 <summary><b>③ Booking: agreement, final quote, consents, payment, and secrets that unlock on time</b></summary>
 
 - After meeting, the owner taps **I'd like to book** (with the checklist, pets, times, and price in view) and the sitter taps **I accept**, in either order. Either side can still say no, with a reason chip.
@@ -222,7 +222,7 @@ Tap a stage for the details.
 
 </details>
 
-<details>
+<details open>
 <summary><b>④ Care & Pet Transit: live trips, the 8-bit pet room, 5-second checks, AI daily notes</b></summary>
 
 **Uber-style trips, inside the chat.** Whoever drives taps **Start trip**, and the other side gets a live map and ETA.
@@ -256,7 +256,7 @@ Tap a stage for the details.
 
 </details>
 
-<details>
+<details open>
 <summary><b>⑤ Completion: home safe, reviews both ways, and a record that remembers</b></summary>
 
 - The final handoff comes with *"Max is home safe 🏠"*, then a **5-star review** request. The owner rates the sitter and can add them to favorites; the sitter reviews the owner (other sitters can read it) and gives each pet a medal.
@@ -270,7 +270,7 @@ Tap a stage for the details.
 
 </details>
 
-<details>
+<details open>
 <summary><b>Sign-up by photo and voice, and the 8-bit pet</b> (owners and sitters)</summary>
 
 - One question per screen, with big buttons. A **pet photo** goes to Nemotron 3.5 Super VL, which reads up to three breed guesses and a coat color; the owner confirms them and adds the weight. Goldito then builds the **8-bit pet** from a library of breed presets: the breed picks the shape, the coat color paints it, and the weight sets the build. It lives on the owner's Home, and **Match colors from photo** can repaint it with the photo's own colors later.
@@ -279,7 +279,7 @@ Tap a stage for the details.
 
 </details>
 
-<details>
+<details open>
 <summary><b>Snap tab: treat check, pet mood, stickers</b> (owners and sitters)</summary>
 
 - **Treat check:** pick the pet, snap the label. Nemotron 3.5 Super VL reads the ingredients; a rule table checks the pet's allergens and species toxins; Tavily searches trusted vet and FDA pages; Nemotron 3 Ultra reasons about hidden sources (for example, chicken in "animal fat"). The answer is **SAFE · WARNING · DANGER** with sources, never below what the rule table says.
@@ -334,8 +334,8 @@ Tap a stage for the details.
           └── OpenStreetMap   → address lookup, a park to meet at, trip map tiles
 ```
 
-<details>
-<summary><b>Architecture diagram: who talks to what</b> (click to expand)</summary>
+<details open>
+<summary><b>Architecture diagram: who talks to what</b></summary>
 
 Dotted arrows are the memory loop and background calls.
 
@@ -453,8 +453,8 @@ class node_nebius,node_tavily,node_groq,node_cloudinary,node_google_meet,node_os
 
 The live demo is the fastest way to see Goldito. To run your own copy you need a **Supabase** project, a **Nebius Token Factory** key, and a **Cloudinary** account. **Tavily**, **Groq**, and **Google OAuth** keys are optional: without them the treat check answers without sources, voice sign-up is unavailable, and an online Meet & Greet gets no automatic Meet link.
 
-<details>
-<summary><h3>Setup steps: run your own copy (click to expand)</h3></summary>
+<details open>
+<summary><h3>Setup steps: run your own copy</h3></summary>
 
 You need **Git**, **Python 3.12**, and **Node 20** or newer. Step 1 is the same on every OS; then pick yours.
 
@@ -481,7 +481,7 @@ Run every file in `supabase/migrations/` on your Supabase project, in name order
 
 Details for each key: [docs/plan/env-setup.md](docs/plan/env-setup.md).
 
-<details>
+<details open>
 <summary><b>macOS / Linux</b></summary>
 
 ```bash
@@ -508,7 +508,7 @@ On Ubuntu or Debian, install `python3.12-venv` first.
 
 </details>
 
-<details>
+<details open>
 <summary><b>Windows (PowerShell)</b></summary>
 
 ```powershell
