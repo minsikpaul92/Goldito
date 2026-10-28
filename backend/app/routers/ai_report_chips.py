@@ -137,7 +137,7 @@ def _sitter_media(db, sitter_id: str, pet_id: str, media_ids: list[str]) -> list
     return out
 
 
-def _read_photos(pet_name: str, media: list[dict]) -> list[tuple[str, PhotoRead]]:
+def _read_photos(pet_name: str, media: list[dict], endpoint: str = "report-chips") -> list[tuple[str, PhotoRead]]:
     """Describe each photo with the vision model, in parallel. A photo that fails or runs late is dropped."""
     if not media:
         return []
@@ -149,7 +149,7 @@ def _read_photos(pet_name: str, media: list[dict]) -> list[tuple[str, PhotoRead]
             "vision",
             photo_messages(system, pet_name, data_url),
             PhotoRead,
-            endpoint="report-chips",
+            endpoint=endpoint,
             max_tokens=200,
             temperature=0.2,
             timeout=PHOTO_TIMEOUT_S,
