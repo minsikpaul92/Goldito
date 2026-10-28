@@ -6283,6 +6283,7 @@ declare
   v_draft uuid;
   v_own uuid;
   m_ok uuid;
+  m_ok2 uuid;
   m_robert uuid;
   m_other uuid;
   m_video uuid;
@@ -6303,6 +6304,8 @@ begin
   insert into public.report_decor (report_id, user_id, items) values (v_sit2, robert, '[]'), (v_sit2, chloe, '[]');
   insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
     values (pip, chloe, 'smoke/014t/ok', 'image', 'report') returning id into m_ok;
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/015x/ok2', 'image', 'report') returning id into m_ok2;
   insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
     values (pip, robert, 'smoke/014t/robert', 'image', 'feed') returning id into m_robert;
   insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
@@ -6360,6 +6363,28 @@ begin
   perform _t_as(chloe);
   perform public.set_diary_page_photo(v_sit2, null);
   perform _t_ok((select media_id from public.daily_reports where id = v_sit2) is null, '014t: the photo can be taken off');
+
+  -- 015x: up to four photos, the first is the main one
+  perform public.set_diary_page_photos(v_sit2, array[m_ok, m_ok2]);
+  perform _t_ok((select media_id from public.daily_reports where id = v_sit2) = m_ok
+      and (select more_media_ids from public.daily_reports where id = v_sit2) = array[m_ok2],
+    '015x: two photos, the first is the main one and the rest follow in order');
+  begin perform public.set_diary_page_photos(v_sit2, array[m_ok, m_ok]); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'bad_photo', '015x: …not the same photo twice');
+  begin perform public.set_diary_page_photos(v_sit2, array[m_ok, m_robert]); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'bad_photo', '015x: …not someone else''s photo');
+  begin perform public.set_diary_page_photos(v_sit2, array[m_ok, m_ok2, m_ok, m_ok2, m_ok]); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'too_many', '015x: …not more than four');
+  perform public.set_diary_page_photo(v_sit2, m_ok2);
+  perform _t_ok((select media_id from public.daily_reports where id = v_sit2) = m_ok2
+      and cardinality((select more_media_ids from public.daily_reports where id = v_sit2)) = 0,
+    '015x: one photo through the old function clears the others');
+  perform public.set_diary_page_photos(v_sit2, '{}');
+  perform _t_ok((select media_id from public.daily_reports where id = v_sit2) is null, '015x: an empty list takes every photo off');
+  perform _t_as(robert);
+  begin perform public.set_diary_page_photos(v_sit2, array[m_robert]); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_author', '015x: the owner cannot change a sitter''s page photos');
+  perform _t_as(chloe);
 
   -- Delete: only the author, the page and its stickers and notice go, the photo stays
   perform public.set_diary_page_photo(v_sit2, m_ok);

@@ -2058,6 +2058,25 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const media = p_media ? db.media.find((m) => m.id === p_media) : null;
     if (p_media && (!media || media.pet_id !== report.pet_id || media.resource_type !== "image")) return json(route, 400, { code: "P0001", message: "bad_photo" });
     report.media_id = p_media ?? null;
+    report.more_media_ids = [];
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/set_diary_page_photos") {
+    // 015x: the author's own images of that pet, the first is the main photo, the rest follow in order.
+    const { p_report, p_media } = request.postDataJSON();
+    const report = db.daily_reports.find((r) => r.id === p_report);
+    if (!report) return json(route, 400, { code: "P0001", message: "not_found" });
+    if (report.sitter_id !== me) return json(route, 400, { code: "P0001", message: "not_author" });
+    const ids: string[] = p_media ?? [];
+    if (ids.length > 4) return json(route, 400, { code: "P0001", message: "too_many" });
+    const ok = ids.every((id) => {
+      const m = db.media.find((x) => x.id === id);
+      return m && m.pet_id === report.pet_id && m.resource_type === "image";
+    });
+    if (!ok || new Set(ids).size !== ids.length) return json(route, 400, { code: "P0001", message: "bad_photo" });
+    report.media_id = ids[0] ?? null;
+    report.more_media_ids = ids.slice(1);
     return route.fulfill({ status: 204 });
   }
 
