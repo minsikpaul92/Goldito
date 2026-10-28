@@ -156,10 +156,9 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-pet-intro").fill("Loves the sofa.");
     await screen.getByTestId("own-next").click();
 
-    // Before the questions: where they come from, with links to the surveys they were inspired by.
-    await expect(screen.getByTestId("own-title")).toHaveText("Where these questions come from");
-    await expect(screen.getByTestId("own-sources")).toContainText("MCPQ-R");
-    await expect(screen.getByTestId("own-sources")).toContainText("C-BARQ");
+    // Before the questions: a short note that we wrote them ourselves (no survey is named or linked).
+    await expect(screen.getByTestId("own-title")).toHaveText("About these questions");
+    await expect(screen.getByText("We wrote them ourselves, in plain words.")).toBeVisible();
     await expect(screen.getByText("It is not a behavior test.")).toBeVisible();
     await screen.getByTestId("own-next").click();
 
@@ -275,7 +274,6 @@ test.describe("owner onboarding", () => {
       await screen.getByTestId("own-skip").click();
     }
     await expect(screen.getByTestId("own-step-about")).toBeVisible();
-    await expect(screen.getByTestId("own-sources")).toContainText("Feline Five");
     await screen.getByTestId("own-next").click();
     // Cat list: 10 chart questions, no dog-only wording.
     for (let i = 1; i <= 10; i++) {

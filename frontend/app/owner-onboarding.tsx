@@ -15,7 +15,6 @@ import { AddressInput } from "../components/AddressInput";
 import { Banner } from "../components/ui/Banner";
 import { Button } from "../components/ui/Button";
 import { LoadingView } from "../components/ui/LoadingView";
-import { LinkButton } from "../components/ui/LinkButton";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { Sheet } from "../components/ui/Sheet";
 import { Stepper } from "../components/ui/Stepper";
@@ -47,7 +46,6 @@ import { markOwnerOnboarded, newPetId, saveOwnerOnboarding } from "../features/o
 import {
   COATS,
   FOOD_CHIPS,
-  QUESTION_SOURCES,
   SAFETY_QUESTIONS,
   Score,
   chartQuestions,
@@ -567,16 +565,8 @@ export default function OwnerOnboarding() {
 
   if (step === "about" && species) {
     return frame(
-      "Where these questions come from",
-      <>
-        <Text style={styles.note}>We wrote them ourselves, in plain words. The ideas come from published pet personality surveys. It is not a behavior test.</Text>
-        <View style={styles.sources} testID="own-sources">
-          <Text style={styles.noteStrong}>Sources</Text>
-          {QUESTION_SOURCES[species].map((source, i) => (
-            <LinkButton key={source.url} label={source.label} href={source.url} look="text" testID={`own-source-${i + 1}`} />
-          ))}
-        </View>
-      </>,
+      "About these questions",
+      <Text style={styles.note}>We wrote them ourselves, in plain words. It is not a behavior test.</Text>,
       <>
         <Button label="Start" onPress={next} testID="own-next" />
         <TextButton label="Skip questions" onPress={skipAll} testID="own-skip-questions" />
@@ -943,7 +933,5 @@ const makeStyles = (theme: Theme) =>
     summaryLabel: { fontSize: 18, color: theme.color.textMuted },
     summaryValue: { fontSize: 20, lineHeight: 26, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     note: { fontSize: 18, lineHeight: 24, color: theme.color.textMuted },
-    noteStrong: { fontSize: 18, lineHeight: 24, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    sources: { gap: 0, alignItems: "flex-start" },
     heard: { fontSize: 18, lineHeight: 24, color: theme.color.primary },
   });
