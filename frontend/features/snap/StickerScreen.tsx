@@ -309,46 +309,48 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
         />
       )}
 
-      <View style={styles.section} testID="sticker-box">
-        <Text style={styles.label}>Sticker box</Text>
+      <View style={[styles.section, box.length === 0 && styles.sectionEmpty]} testID="sticker-box">
         {box.length === 0 ? (
-          <Text style={styles.hint} testID="sticker-box-empty">
-            No stickers yet.
-          </Text>
-        ) : (
-          <View style={styles.grid}>
-            {box.map((s) => (
-              <View key={s.id} style={styles.tile} testID="sticker-tile">
-                {deliveryUrl(s.publicId, 300) ? (
-                  <Image source={{ uri: deliveryUrl(s.publicId, 300) }} style={styles.tileImage} resizeMode="contain" />
-                ) : (
-                  <Text style={styles.tileEmoji}>🐾</Text>
-                )}
-                {downloadUrl(s.publicId, fileName) ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Download sticker"
-                    onPress={() => downloadFromUrl(downloadUrl(s.publicId, fileName.replace(/\.png$/, "")), fileName)}
-                    style={styles.save}
-                    testID="sticker-tile-download"
-                  >
-                    <Text style={styles.removeLabel}>⬇</Text>
-                  </Pressable>
-                ) : null}
-                {s.createdBy === me ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Delete sticker"
-                    onPress={() => setDeleting(s)}
-                    style={styles.remove}
-                    testID="sticker-delete"
-                  >
-                    <Text style={styles.removeLabel}>×</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            ))}
+          <View style={styles.sectionEmpty} testID="sticker-box-empty">
+            <EmptyState emoji="🐾" title="No stickers yet" message="Stickers you save go here." />
           </View>
+        ) : (
+          <>
+            <Text style={styles.label}>Sticker box</Text>
+            <View style={styles.grid}>
+              {box.map((s) => (
+                <View key={s.id} style={styles.tile} testID="sticker-tile">
+                  {deliveryUrl(s.publicId, 300) ? (
+                    <Image source={{ uri: deliveryUrl(s.publicId, 300) }} style={styles.tileImage} resizeMode="contain" />
+                  ) : (
+                    <Text style={styles.tileEmoji}>🐾</Text>
+                  )}
+                  {downloadUrl(s.publicId, fileName) ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Download sticker"
+                      onPress={() => downloadFromUrl(downloadUrl(s.publicId, fileName.replace(/\.png$/, "")), fileName)}
+                      style={styles.save}
+                      testID="sticker-tile-download"
+                    >
+                      <Text style={styles.removeLabel}>⬇</Text>
+                    </Pressable>
+                  ) : null}
+                  {s.createdBy === me ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Delete sticker"
+                      onPress={() => setDeleting(s)}
+                      style={styles.remove}
+                      testID="sticker-delete"
+                    >
+                      <Text style={styles.removeLabel}>×</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          </>
         )}
       </View>
 
@@ -365,6 +367,8 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: { gap: theme.spacing.md },
     section: { gap: theme.spacing.sm },
+    // An empty box takes the rest of the screen so its EmptyState sits in the middle, like the other screens.
+    sectionEmpty: { flexGrow: 1 },
     label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     photo: { width: "100%", borderRadius: theme.radius.md, overflow: "hidden", backgroundColor: theme.color.border },

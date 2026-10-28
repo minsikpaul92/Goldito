@@ -23,12 +23,6 @@ type Open = "place" | "stay" | "pets" | null;
 const TIME_STEP = 15;
 
 
-/**
- * One hotel-style line: a place (my home, here, an address or postal code), the stay (dates and times) and the
- * pets. Each part opens a sheet; the search runs by itself whenever anything changes.
- */
-const KM_PICKS = [2, 5, 10, 25];
-
 /** Stays people book most: tomorrow night, the coming weekend (Fri to Sun) and a week, from `today`. */
 function quickStays(today: string): { id: string; label: string; from: string; to: string }[] {
   const weekday = new Date(`${today}T12:00:00Z`).getUTCDay(); // 0 Sun … 6 Sat
@@ -41,6 +35,10 @@ function quickStays(today: string): { id: string; label: string; from: string; t
   ];
 }
 
+/**
+ * One hotel-style line: a place (my home, here, an address or postal code), the stay (dates and times) and the
+ * pets. Each part opens a sheet; the search runs by itself whenever anything changes.
+ */
 export function SitterSearchBar({ search }: { search: SitterSearch }) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -259,12 +257,6 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
         label="Search radius"
         valueText={`${search.radiusKm} km`}
         testID="radius-slider"
-      />
-      <ChoiceChips
-        options={KM_PICKS.map((k) => ({ value: String(k), label: `${k} km` }))}
-        value={KM_PICKS.includes(search.radiusKm) ? [String(search.radiusKm)] : []}
-        onChange={(v) => v[0] && search.setRadiusKm(Number(v[0]))}
-        testID="radius-quick"
       />
     </View>
     </View>

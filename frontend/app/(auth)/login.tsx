@@ -180,16 +180,19 @@ export default function LoginScreen() {
           <View style={styles.demo} testID="demo-block">
             <OrDivider label="or try the demo" />
             {isDemoToolsBuild ? (
-              <Select
-                label="Whose demo"
-                value={team}
-                options={[
-                  ...TEAM_SETS.map((set) => ({ value: set.key, label: set.label })),
-                  { value: JUDGES, label: "Judge seats" },
-                ]}
-                onChange={setTeam}
-                testID="demo-set"
-              />
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Demo accounts</Text>
+                <Select
+                  label="Demo accounts"
+                  value={team}
+                  options={[
+                    ...TEAM_SETS.map((set) => ({ value: set.key, label: set.label })),
+                    { value: JUDGES, label: "Judge seats" },
+                  ]}
+                  onChange={setTeam}
+                  testID="demo-set"
+                />
+              </View>
             ) : null}
             {judging ? (
               <ChoiceChips
@@ -288,6 +291,9 @@ const makeStyles = (theme: Theme) =>
     demo: {
       gap: theme.spacing.md,
     },
+    // Same as the Email and Password labels, so the picker reads as choosing whose demo (polish B, Oct 28).
+    field: { gap: theme.spacing.xs },
+    fieldLabel: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     demoButtons: {
       flexDirection: "row",
       gap: theme.spacing.sm,

@@ -1,12 +1,13 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { BookingCard } from "../../../components/BookingCard";
 import { PhotoViewerSheet } from "../../../components/PhotoViewerSheet";
 import { SitterResultCard } from "../../../components/SitterResultCard";
 import { SitterSearchBar } from "../../../components/SitterSearchBar";
 import { Button } from "../../../components/ui/Button";
+import { Icon } from "../../../components/ui/Icon";
 import { SegmentedControl } from "../../../components/ui/SegmentedControl";
 import { TextButton } from "../../../components/ui/TextButton";
 import { EmptyState } from "../../../components/ui/EmptyState";
@@ -17,7 +18,7 @@ import { ProfilePhoto, loadCoverPhotos, loadProfilePhotos, photoThumb } from "..
 import { useSitterSearch } from "../../../features/sitters/useSitterSearch";
 import { NearbySitter, OwnerBooking, OwnerBucket, listOwnerBookings, needsOwner, ownerBucket } from "../../../lib/bookings";
 import { useSession } from "../../../providers/SessionProvider";
-import { useThemedStyles } from "../../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../../providers/ThemeProvider";
 import { useOnBookingChange } from "../../../providers/NotificationsProvider";
 import { Theme } from "../../../theme/themes";
 import { tokens } from "../../../theme/tokens";
@@ -38,6 +39,7 @@ type State =
  * everyone nearby (3B.3). Past stays are one tap away either way.
  */
 export default function OwnerBookings() {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { profile } = useSession();
   const ownerId = profile?.id;
@@ -237,7 +239,21 @@ export default function OwnerBookings() {
         {/* Nothing under way: the bookings stay out of the way; the old ones are one tap down here. */}
         {active === 0 && past.length > 0 ? (
           <View style={styles.section} testID="past-bookings">
-            <TextButton label={pastOpen ? "Hide past bookings" : `Past bookings (${past.length})`} onPress={() => setPastOpen((v) => !v)} style={styles.left} testID="past-toggle" />
+            {/* A row that opens in place: the count on the right, the chevron turns when open (polish B, Oct 28). */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ expanded: pastOpen }}
+              accessibilityLabel={`Past bookings, ${past.length}`}
+              onPress={() => setPastOpen((v) => !v)}
+              style={({ pressed }) => [styles.pastRow, pressed && styles.pressed]}
+              testID="past-toggle"
+            >
+              <Text style={styles.pastTitle}>Past bookings</Text>
+              <Text style={styles.pastCount}>{past.length}</Text>
+              <View style={pastOpen ? styles.chevronOpen : null}>
+                <Icon name="expand" size={20} color={theme.color.text} />
+              </View>
+            </Pressable>
             {pastOpen ? (
               <View style={styles.rows}>
                 {past.map((booking) => (
@@ -272,6 +288,21 @@ const makeStyles = (theme: Theme) =>
     left: { alignSelf: "flex-start", paddingHorizontal: 0 },
     bookCare: { backgroundColor: tokens.color.primary, borderColor: tokens.color.primary },
     rows: { gap: theme.spacing.xs },
+    pastRow: {
+      minHeight: 56,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
+      paddingHorizontal: theme.spacing.md,
+      borderRadius: theme.ui.radius.card,
+      borderWidth: 1,
+      borderColor: theme.color.border,
+      backgroundColor: theme.color.surface,
+    },
+    pastTitle: { flex: 1, fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    pastCount: { fontSize: theme.fontSize.body, color: theme.color.textMuted },
+    chevronOpen: { transform: [{ rotate: "180deg" }] },
+    pressed: { opacity: 0.85 },
     row: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, paddingVertical: theme.spacing.xs },
     rowMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: theme.spacing.md },
     rowName: { flex: 1, fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },

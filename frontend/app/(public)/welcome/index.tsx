@@ -35,6 +35,8 @@ const STICKERS: {
   at: object;
   delay: number;
   tilt?: string;
+  /** Sits on the ground between Max and Mochi, wherever they end up. */
+  onGround?: boolean;
 }[] = [
   {
     src: require("../../../assets/stickers/star.png"),
@@ -54,6 +56,7 @@ const STICKERS: {
     size: 22,
     at: { right: 140, bottom: 12 },
     delay: 1200,
+    onGround: true,
   },
   {
     src: require("../../../assets/stickers/sun.png"),
@@ -72,6 +75,24 @@ export default function WelcomeLanding() {
   const styles = useThemedStyles(makeStyles);
   const [demoOpen, setDemoOpen] = useState(false);
   const { sitter, pets } = DEFAULT_DEMO_SET;
+  // The picture grows into the free space above the buttons; Max and Mochi grow with it (polish B, Oct 28).
+  const [hero, setHero] = useState({ width: 0, height: 0 });
+  const baseHero = isSocialSignInShown ? 96 : 120;
+  const grow = Math.min(1.6, Math.max(1, hero.height / baseHero));
+  const maxSize = isSocialSignInShown ? [54, 74] : [64, 88];
+  const mochiSize = isSocialSignInShown ? [92, 48] : [104, 54];
+  const petSize = ([w, h]: number[]) => ({
+    width: Math.round(w * grow),
+    height: Math.round(h * grow),
+  });
+  // Halfway between Max's right edge (left 16) and Mochi's left edge (right 10).
+  const groundLeft = (size: number) =>
+    hero.width
+      ? Math.round(
+          (16 + maxSize[0] * grow + hero.width - 10 - mochiSize[0] * grow) / 2 -
+            size / 2,
+        )
+      : null;
 
   const footer = (
     <View style={styles.footer}>
@@ -131,66 +152,87 @@ export default function WelcomeLanding() {
       <Screen contentStyle={styles.content} footer={footer}>
         <BrandLogo height={26} testID="welcome-brand" />
 
-        <View style={[styles.hero, isSocialSignInShown && styles.heroShort]}>
-          <View style={styles.sun} />
-          <View style={styles.ground} />
-          <View style={styles.tag}>
-            <Icon name="paw" size={14} color={theme.color.text} />
-            <Text style={styles.tagText}>{`Booked with ${sitter.name}`}</Text>
-          </View>
-          {STICKERS.map((s, k) => (
-            <Bob
-              key={k}
-              delay={s.delay}
+        <View style={styles.stage}>
+          <View
+            style={[styles.hero, isSocialSignInShown && styles.heroShort]}
+            onLayout={(e) => {
+              const { width, height } = e.nativeEvent.layout;
+              setHero({ width, height });
+            }}
+            testID="welcome-hero"
+          >
+            <View style={styles.sun} />
+            <View style={styles.ground} />
+            <View style={styles.tag}>
+              <Icon name="paw" size={14} color={theme.color.text} />
+              <Text style={styles.tagText}>{`Booked with ${sitter.name}`}</Text>
+            </View>
+            {STICKERS.map((s, k) => (
+              <Bob
+                key={k}
+                delay={s.delay}
+                style={[
+                  styles.sticker,
+                  s.onGround && groundLeft(s.size) != null
+                    ? { left: groundLeft(s.size), bottom: 12 }
+                    : s.at,
+                  s.tilt ? { transform: [{ rotate: s.tilt }] } : null,
+                ]}
+              >
+                <Image
+                  source={s.src}
+                  style={{ width: s.size, height: s.size }}
+                  resizeMode="contain"
+                  aria-hidden
+                />
+              </Bob>
+            ))}
+            <Image
+              source={MAX}
               style={[
-                styles.sticker,
-                s.at,
-                s.tilt ? { transform: [{ rotate: s.tilt }] } : null,
+                styles.max,
+                isSocialSignInShown && styles.maxShort,
+                petSize(maxSize),
               ]}
-            >
-              <Image
-                source={s.src}
-                style={{ width: s.size, height: s.size }}
-                resizeMode="contain"
-                aria-hidden
-              />
-            </Bob>
-          ))}
-          <Image
-            source={MAX}
-            style={[styles.max, isSocialSignInShown && styles.maxShort]}
-            resizeMode="contain"
-            accessibilityLabel={`${pets[0]}, a white dog`}
-          />
-          <Image
-            source={MOCHI}
-            style={[styles.mochi, isSocialSignInShown && styles.mochiShort]}
-            resizeMode="contain"
-            accessibilityLabel={`${pets[1]}, an orange cat`}
-          />
-        </View>
-
-        <Text accessibilityRole="header" style={styles.title}>
-          Leave your pet. Keep your peace of mind.
-        </Text>
-        <Text style={styles.lead}>
-          Updates from your sitter without asking. Care notes for sitters
-          without typing.
-        </Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="How it works, three short pages"
-          onPress={() => router.push("/welcome/how")}
-          style={({ pressed }) => [styles.how, pressed && styles.pressed]}
-          testID="welcome-how"
-        >
-          <Art name="snap/sticker-paw" size={36} />
-          <View style={styles.howText}>
-            <Text style={styles.howTitle}>How it works</Text>
-            <Text style={styles.howSub}>Three short pages, about a minute</Text>
+              resizeMode="contain"
+              accessibilityLabel={`${pets[0]}, a white dog`}
+            />
+            <Image
+              source={MOCHI}
+              style={[
+                styles.mochi,
+                isSocialSignInShown && styles.mochiShort,
+                petSize(mochiSize),
+              ]}
+              resizeMode="contain"
+              accessibilityLabel={`${pets[1]}, an orange cat`}
+            />
           </View>
-          <Icon name="forward" size={22} color={theme.color.text} />
-        </Pressable>
+
+          <Text accessibilityRole="header" style={styles.title}>
+            Leave your pet. Keep your peace of mind.
+          </Text>
+          <Text style={styles.lead}>
+            Updates from your sitter without asking. Care notes for sitters
+            without typing.
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="How it works, three short pages"
+            onPress={() => router.push("/welcome/how")}
+            style={({ pressed }) => [styles.how, pressed && styles.pressed]}
+            testID="welcome-how"
+          >
+            <Art name="snap/sticker-paw" size={36} />
+            <View style={styles.howText}>
+              <Text style={styles.howTitle}>How it works</Text>
+              <Text style={styles.howSub}>
+                Three short pages, about a minute
+              </Text>
+            </View>
+            <Icon name="forward" size={22} color={theme.color.text} />
+          </Pressable>
+        </View>
       </Screen>
       <DemoSheet visible={demoOpen} onClose={() => setDemoOpen(false)} />
     </View>
@@ -243,14 +285,18 @@ const makeStyles = (theme: Theme) => {
   return StyleSheet.create({
     root: { flex: 1 },
     content: { gap: theme.spacing.sm + 4 },
+    // Everything under the logo sits in the middle of the space above the buttons, so no gap opens on tall phones.
+    stage: { flexGrow: 1, justifyContent: "center", gap: theme.spacing.sm + 4 },
     hero: {
-      height: 120,
+      flexGrow: 1,
+      minHeight: 120,
+      maxHeight: 220,
       borderRadius: theme.radius.xl,
       backgroundColor: theme.color.blockMint,
       overflow: "hidden",
     },
     // Apple and Google take a row in the footer; a shorter picture keeps How it works in view.
-    heroShort: { height: 96 },
+    heroShort: { minHeight: 96, maxHeight: 180 },
     maxShort: { width: 54, height: 74, bottom: 6 },
     mochiShort: { width: 92, height: 48, bottom: 8 },
     sun: {
