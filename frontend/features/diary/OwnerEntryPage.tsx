@@ -1,9 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Button } from "../../components/ui/Button";
-import { FeedPetPicker } from "../../components/FeedPetPicker";
-import { Sheet } from "../../components/ui/Sheet";
 import { UploadError, uploadMedia } from "../../lib/cloudinary";
 import { FALLBACK_CAPTION, createFeedPost } from "../../lib/feed";
 import { pickMedia } from "../../lib/media";
@@ -12,7 +9,6 @@ import { useSession } from "../../providers/SessionProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
-import { usePetFaces } from "../feed/usePetFaces";
 import { appToday } from "../schedule/dates";
 import { type DecorItem, saveDecor } from "../snap/decorApi";
 import { DecoratedReport } from "../snap/DecoratedReport";
@@ -24,29 +20,31 @@ const MAX_PAGE_PHOTOS = 4;
 type PagePhoto = { mediaId: string; url: string };
 type PhotoChip = { id: string; label: string };
 
+export type SaveBar = { label: string; disabled: boolean; onPress: () => void };
+
 type Props = {
-  visible: boolean;
   pets: { id: string; name: string; species: "dog" | "cat" }[];
-  /** Open on this pet (the one the book is showing). */
-  initialPetId?: string | null;
-  onClose: () => void;
+  /** The pet the page is about (the Diary's dropdown picks it). */
+  petId: string | null;
+  /** Tells the Diary which Save page to pin at the bottom of the screen (the sitter's Send sits there too). */
+  onSaveBar: (bar: SaveBar | null) => void;
   /** The page is saved: the new page's id. */
   onSaved: (reportId: string, petId: string) => void;
+  /** Something is typed: the Diary asks before it drops the page. */
+  onDirty?: (dirty: boolean) => void;
 };
 
 /**
- * The owner's own diary page (014p, #186): write on the page, add a photo if you like, save. The page is sent to the
- * owner's book at once (no notice, the sitter never sees it). Up to four photos: the first is the main one, a tap on the
- * picture box offers Add and Remove, and each photo brings a few short lines (chips) that go onto the page when tapped.
- * The photos are also kept in Feed, private.
- * Stickers can go on while writing; they are saved with the page.
+ * The owner's own diary page (014p, #186), written on the Diary screen like the sitter's: write on the page, add up to
+ * four photos if you like (the first is the main one, a tap on the picture box offers Add and Remove, and each photo
+ * brings a few short lines that go onto the page when tapped), save. The page is sent to the owner's book at once (no
+ * notice, the sitter never sees it). The photos are also kept in Feed, private. Stickers go on while writing and are
+ * saved with the page.
  */
-export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved }: Props) {
+export function OwnerEntryPage({ pets, petId, onSaveBar, onSaved, onDirty }: Props) {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const errorDialog = useErrorDialog();
-  const [petId, setPetId] = useState<string | null>(null);
-  const faces = usePetFaces(pets.map((p) => p.id));
   const [body, setBody] = useState("");
   const [photos, setPhotos] = useState<PagePhoto[]>([]);
   /** Add and Remove show over the photo after a tap on it. */
@@ -59,16 +57,6 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
   const me = session.status === "signedIn" ? session.profile.id : null;
   const [saving, setSaving] = useState(false);
 
-  // Each time it opens: an empty page for the pet the book is on.
-  useEffect(() => {
-    if (!visible) return;
-    setPetId(initialPetId && pets.some((p) => p.id === initialPetId) ? initialPetId : (pets[0]?.id ?? null));
-    setBody("");
-    setPhotos([]);
-    setChips([]);
-    setPhotoMenu(false);
-    setStickers([]);
-  }, [visible, initialPetId, pets]);
   // A photo belongs to one pet: another pet starts without them.
   useEffect(() => {
     setPhotos([]);
@@ -175,22 +163,21 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
     }
   };
 
+  const dirty = body.trim() !== "";
+  useEffect(() => {
+    onDirty?.(dirty);
+  }, [dirty, onDirty]);
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  const barLabel = saving ? "Saving…" : "Save page";
+  const barDisabled = saving || uploading || !dirty;
+  useEffect(() => {
+    onSaveBar({ label: barLabel, disabled: barDisabled, onPress: () => void saveRef.current() });
+    return () => onSaveBar(null);
+  }, [barLabel, barDisabled, onSaveBar]);
+
   return (
-    <Sheet
-      dirty={body.trim() !== ""}
-      discardTitle="Discard your page?"
-      visible={visible}
-      title="New page"
-      headerExtra={
-        pets.length > 1 ? (
-          <FeedPetPicker groups={[{ key: "mine", pets }]} allPets={[]} value={petId ?? ""} onChange={setPetId} faces={faces} testID="diary-write-pet" />
-        ) : undefined
-      }
-      onClose={onClose}
-      scrollbar
-      testID="diary-write-sheet"
-      footer={<Button label={saving ? "Saving…" : "Save page"} onPress={() => void save()} disabled={saving || uploading || body.trim().length === 0} testID="diary-write-save" />}
-    >
+    <View style={styles.page}>
       {pet ? (
         <DecoratedReport
           reportId={null}
@@ -215,7 +202,7 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
           ))}
         </View>
       ) : null}
-    </Sheet>
+    </View>
   );
 }
 
@@ -239,6 +226,7 @@ const makeStyles = (theme: Theme) =>
       borderWidth: 1,
       borderColor: theme.color.border,
     },
+    page: { gap: theme.spacing.md },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
     actionLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
   });

@@ -1,6 +1,6 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ALL_PETS, FeedPetPicker } from "../../components/FeedPetPicker";
 import { FeedBarRight } from "../../components/FeedSwitch";
@@ -10,14 +10,16 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { Icon } from "../../components/ui/Icon";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { Screen } from "../../components/ui/Screen";
+import { HOME_TEXT } from "../../components/home/homeType";
 import { useNotifications } from "../../providers/NotificationsProvider";
 import { useSession } from "../../providers/SessionProvider";
+import { useToast } from "../../providers/ToastProvider";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { usePetFaces } from "../feed/usePetFaces";
 import { useMyPets } from "../pets/useMyPets";
 import { DiaryBook } from "./DiaryBook";
-import { OwnerEntrySheet } from "./OwnerEntrySheet";
+import { OwnerEntryPage, type SaveBar } from "./OwnerEntryPage";
 import { PageActions } from "./PageActions";
 import { SentReport, listBookPages } from "./reportApi";
 
@@ -34,7 +36,16 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
   const { pets } = useMyPets();
   const [pages, setPages] = useState<SentReport[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [writing, setWriting] = useState(false);
+  // The book, or the page being written (inline, like the sitter's Diary).
+  const [view, setView] = useState<"book" | "write">("book");
+  const [writePet, setWritePet] = useState<string | null>(null);
+  const [saveBar, setSaveBar] = useState<SaveBar | null>(null);
+  // A new page each time one is saved.
+  const [pageKey, setPageKey] = useState(0);
+  // Typed words are not dropped by one tap on Book: the first tap says so, the second leaves.
+  const [dirty, setDirty] = useState(false);
+  const [armed, setArmed] = useState(false);
+  const toast = useToast();
   // The pet dropdown next to Photos / Diary: All pets (the covers) or one pet's pages.
   const [petSel, setPetSel] = useState<string>(ALL_PETS);
   const faces = usePetFaces(pets.map((p) => p.id));
@@ -71,15 +82,53 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
       </Screen>
     );
   }
+  const writing = view === "write" && !linked;
+  const writePetId = writePet && pets.some((p) => p.id === writePet) ? writePet : (pets[0]?.id ?? null);
   // On the covers there is nothing to pick yet; once a pet's pages are open the dropdown switches pets.
-  const picker = !linked && petSel !== ALL_PETS ? (
+  const picker = linked ? null : writing ? (
+    <FeedBarRight signature={`write|${writePetId}|${pets.map((p) => p.id).join(",")}|${JSON.stringify(faces)}`}>
+      <FeedPetPicker groups={[{ key: "mine", pets }]} allPets={[]} value={writePetId ?? ""} onChange={setWritePet} faces={faces} testID="diary-write-pet" />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Diary book"
+        onPress={() => {
+          if (dirty && !armed) {
+            setArmed(true);
+            toast.show("Your page isn't saved. Tap Book again to leave it.");
+            return;
+          }
+          setArmed(false);
+          setDirty(false);
+          setPageKey((n) => n + 1);
+          setView("book");
+        }}
+        style={({ pressed }) => [styles.toggle, pressed && styles.pressed]}
+        testID="owner-diary-view-book"
+      >
+        <Icon name="diary" size={16} color={theme.color.text} />
+        <Text style={styles.toggleText}>Book</Text>
+      </Pressable>
+    </FeedBarRight>
+  ) : petSel !== ALL_PETS ? (
     <FeedBarRight signature={`${petSel}|${pets.map((p) => p.id).join(",")}|${JSON.stringify(faces)}`}>
       <FeedPetPicker groups={[{ key: "mine", pets }]} allPets={[]} value={petSel} onChange={setPetSel} faces={faces} testID="diary-pet" />
     </FeedBarRight>
   ) : null;
   // ← (one pet's pages back to the covers) sits left of Write a page: the one Back control, no "‹ Diaries" (DESIGN.md §7.8).
   const back = !linked && petSel !== ALL_PETS ? <BackLink onPress={() => setPetSel(ALL_PETS)} testID="diary-entry-covers" /> : null;
-  const writeButton = pets.length > 0 && !linked ? <Button label="Write a page" variant="secondary" onPress={() => setWriting(true)} testID="diary-write" style={styles.writeFill} /> : null;
+  const writeButton =
+    pets.length > 0 && !linked ? (
+      <Button
+        label="Write a page"
+        variant="secondary"
+        onPress={() => {
+          setWritePet(petSel === ALL_PETS ? null : petSel);
+          setView("write");
+        }}
+        testID="diary-write"
+        style={styles.writeFill}
+      />
+    ) : null;
   const write =
     back || writeButton ? (
       <View style={styles.writeRow}>
@@ -87,19 +136,31 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
         {writeButton}
       </View>
     ) : null;
-  const sheet = (
-    <OwnerEntrySheet
-      visible={writing}
+  const footer = writing && saveBar ? <Button label={saveBar.label} disabled={saveBar.disabled} onPress={saveBar.onPress} testID="diary-write-save" /> : undefined;
+  const composer = writing ? (
+    <OwnerEntryPage
+      key={pageKey}
       pets={pets}
-      initialPetId={petSel === ALL_PETS ? null : petSel}
-      onClose={() => setWriting(false)}
+      petId={writePetId}
+      onSaveBar={setSaveBar}
+      onDirty={setDirty}
       onSaved={(reportId) => {
-        setWriting(false);
+        setPageKey((n) => n + 1);
+        setDirty(false);
+        setView("book");
         // Open on the new page only once the book holds it.
         void load().then(() => setWritten(reportId));
       }}
     />
-  );
+  ) : null;
+  if (writing) {
+    return (
+      <Screen testID="owner-diary-screen" contentStyle={{ gap: 12 }} scrollbar footer={footer}>
+        {picker}
+        {composer}
+      </Screen>
+    );
+  }
   if (!pages || pages.length === 0) {
     return (
       <Screen testID="owner-diary-screen" contentStyle={{ gap: 12 }} scrollbar>
@@ -110,7 +171,6 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
           message="Your sitter's pages show up here during a stay, one for each day."
         />
         {write}
-        {sheet}
       </Screen>
     );
   }
@@ -163,7 +223,6 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
           </View>
         )}
       />
-      {sheet}
     </Screen>
   );
 }
@@ -173,6 +232,19 @@ const makeStyles = (theme: Theme) =>
     // Who wrote the page, above it: the photo viewer's meta line.
     byline: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.textMuted, paddingHorizontal: theme.spacing.xs, paddingBottom: theme.spacing.xs },
     footer: { gap: theme.spacing.sm, paddingTop: theme.spacing.xs },
+    toggle: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      minHeight: 40,
+      paddingHorizontal: 10,
+      borderRadius: theme.radius.pill,
+      borderWidth: 1,
+      borderColor: theme.color.borderStrong,
+      backgroundColor: theme.color.surface,
+    },
+    toggleText: { fontSize: HOME_TEXT.chip, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    pressed: { opacity: 0.6 },
     writeRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
     writeFill: { flex: 1 },
     // The day's tasks in a card, like TodayTasks' "Done today".

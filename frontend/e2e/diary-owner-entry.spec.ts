@@ -186,7 +186,7 @@ test.describe("owner diary page", () => {
     await screen.getByTestId("diary-write-body").fill("Sticker day.");
     await screen.getByTestId("diary-write-save").click();
     await expect(screen.getByText("Your page")).toBeVisible();
-    await expect(screen.getByTestId("diary-write-sheet")).toHaveCount(0); // the sheet has its own Decorate while open
+    await expect(screen.getByTestId("diary-write-body")).toHaveCount(0); // the writing page has its own Decorate while open
 
     await screen.getByTestId("decor-start").click();
     await screen.getByTestId("decor-preset-heart").click();
@@ -222,7 +222,7 @@ test.describe("owner diary page", () => {
     await screen.getByTestId("diary-write-body").fill("A page to delete.");
     await screen.getByTestId("diary-write-save").click();
     await expect(screen.getByText("Your page")).toBeVisible();
-    await expect(screen.getByTestId("diary-write-sheet")).toHaveCount(0);
+    await expect(screen.getByTestId("diary-write-body")).toHaveCount(0);
     const mine = db.daily_reports.find((r) => r.sitter_id === OWNER.id)!;
 
     await screen.getByTestId(`diary-page-delete-${mine.id}`).click();
