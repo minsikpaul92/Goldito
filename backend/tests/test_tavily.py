@@ -36,7 +36,7 @@ def test_one_search_sends_the_trusted_domains_and_keeps_only_their_hits(monkeypa
         return FakeResponse([
             {"title": "Grapes and raisins", "url": "https://www.fda.gov/grapes", "content": "Grapes  can\ncause kidney failure."},
             {"title": "Blog", "url": "https://randomblog.example/grapes", "content": "x"},
-            {"title": "Pet Poison Helpline", "url": "https://petpoisonhelpline.com/poison/raisins", "content": "y"},
+            {"title": "FDA label", "url": "https://accessdata.fda.gov/poison/raisins", "content": "y"},
         ])
 
     monkeypatch.setattr(tavily.httpx, "post", post)
@@ -44,7 +44,7 @@ def test_one_search_sends_the_trusted_domains_and_keeps_only_their_hits(monkeypa
     assert sent["url"] == tavily.SEARCH_URL and sent["headers"]["Authorization"] == "Bearer k"
     assert sent["json"]["include_domains"] == tavily.TRUSTED_DOMAINS
     assert sent["json"]["topic"] == "news" and sent["json"]["time_range"] == "year"
-    assert [h["domain"] for h in hits] == ["fda.gov", "petpoisonhelpline.com"]
+    assert [h["domain"] for h in hits] == ["fda.gov", "accessdata.fda.gov"]
     assert hits[0]["content"] == "Grapes can cause kidney failure."
 
 

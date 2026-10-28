@@ -87,7 +87,7 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 | The sitter says yes | Recognizes it and brings up the Meet & Greet card | Nemotron 3 **Nano** | Either side requests, accepts, or skips |
 | The owner writes a care request | Turns it into timed tasks and Heads-up cards | Nemotron 3 **Super** | The owner reviews and saves |
 | The day ends | Suggests chips from check-ins and photos, then writes the daily note | Nemotron 3.5 **Super VL** → Nemotron 3 **Super** | The sitter fixes the chips and approves |
-| A treat label is photographed | Reads it, applies the rule table, searches trusted sites (Tavily), and reasons about hidden sources | Nemotron 3.5 **Super VL** → Nemotron 3 **Ultra** | Danger needs an explicit "I understand" |
+| A treat label is photographed | Reads it, applies the rule table, searches FDA pages (Tavily), and reasons about hidden sources | Nemotron 3.5 **Super VL** → Nemotron 3 **Ultra** | Danger needs an explicit "I understand" |
 | The stay ends | Writes the pet's Life Record and indexes it | Nemotron 3 **Super** + Qwen3 Embedding | The owner reads it |
 
 <img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner picks a photo of Max and answers a few questions by voice or text, then Goldito builds Max as an 8-bit pet" width="340">
@@ -170,9 +170,9 @@ What we used, what worked, and what got in the way, written down as it happened.
 
 | Feature | What Tavily searches | Trusted domains |
 | :--- | :--- | :--- |
-| **Treat check** (Snap tab) | The label's hidden sources, toxic or unknown ingredients, and recent recalls of the product. The excerpts go to Nemotron 3 Ultra; a link is shown only if the model relied on that page and the page names the product or a flagged ingredient, and none when the pet's own allergy already settles the verdict | [fda.gov](https://www.fda.gov) · [petpoisonhelpline.com](https://www.petpoisonhelpline.com) |
+| **Treat check** (Snap tab) | The label's hidden sources, toxic or unknown ingredients, and recent recalls of the product. The excerpts go to Nemotron 3 Ultra; a link is shown only if the model relied on that page and the page names the product or a flagged ingredient, and none when the pet's own allergy already settles the verdict | [fda.gov](https://www.fda.gov) |
 
-- **Example:** the search `xylitol toxic dogs` returned pages from petpoisonhelpline.com and fda.gov in 2.6 s.
+- **Example:** the search `xylitol toxic dogs` returned three fda.gov pages in 2.2 s.
 - **Fast and frugal:** basic depth (1 credit per search), every search in parallel under one 8-second budget. A search that fails or runs late is left out, and the check still answers from the label, the rules, and the model, and says that no sources were available.
 - **Danger is loud:** a DANGER verdict opens a red screen that only "I understand" closes, and a sitter's DANGER also notifies the owner.
 - Code: [`services/tavily.py`](backend/app/services/tavily.py) · [`services/breed_needs.py`](backend/app/services/breed_needs.py) · [`routers/ai_safety_check.py`](backend/app/routers/ai_safety_check.py)
@@ -301,7 +301,7 @@ Tap a stage for the details.
 <details open>
 <summary><b>Snap tab: treat check, pet mood, stickers</b> (owners and sitters)</summary>
 
-- **Treat check:** pick the pet, snap the label. Nemotron 3.5 Super VL reads the ingredients; a rule table checks the pet's allergens and species toxins; Tavily searches trusted vet and FDA pages; Nemotron 3 Ultra reasons about hidden sources (for example, chicken in "animal fat"). The answer is **SAFE · WARNING · DANGER** with sources, never below what the rule table says.
+- **Treat check:** pick the pet, snap the label. Nemotron 3.5 Super VL reads the ingredients; a rule table checks the pet's allergens and species toxins; Tavily searches FDA pages; Nemotron 3 Ultra reasons about hidden sources (for example, chicken in "animal fat"). The answer is **SAFE · WARNING · DANGER** with sources, never below what the rule table says.
 <p align="center"><img src="docs/assets/readme/snap-mood.png" alt="Mood result for a dog photo: excited, happy, relaxed" width="240"></p>
 
 - **Mood** *(for fun only)*: MediaPipe finds each pet in the browser, the vision model picks only visible body-language tags, and a fixed server rule table turns them into eight emotion percentages, so the same photo always gives the same numbers. Nemotron 3 Nano writes one "seems" line.
@@ -345,7 +345,7 @@ Tap a stage for the details.
           │     ├── Nemotron 3 Ultra  → treat check reasoning
           │     ├── Nemotron 3.5 Super VL → labels, captions, album, photo chips, breed guess, mood tags
           │     └── Qwen3 Embedding   → RAG and tone examples
-          ├── Tavily       → trusted vet, FDA, and breed pages
+          ├── Tavily       → FDA pages
           ├── Groq Whisper → speech to text for voice sign-up
           ├── Supabase     → PostgreSQL + RLS · Auth · Realtime · pgvector
           ├── Cloudinary   → photo and video storage, compression, thumbnails
@@ -587,7 +587,6 @@ Open `http://localhost:8081` and use **Try the demo**. Tests: `pytest -q` in `ba
 | Source | Used for |
 | :--- | :--- |
 | [U.S. FDA](https://www.fda.gov) | Pet food recalls and ingredient safety, live search |
-| [Pet Poison Helpline](https://www.petpoisonhelpline.com) | Toxins for dogs and cats, live search |
 
 Goldito reads short excerpts when it searches and does not store them. It keeps only ingredient names, its own short summary lines, and links, and shows the link with every answer. AI output is not veterinary advice.
 

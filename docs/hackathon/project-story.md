@@ -28,7 +28,7 @@ Every photo the sitter (or you) shares lands in a warm, Kidsnote-style timeline 
 The Diary is your pet's own picture diary. Every stay becomes a page: the daily note, the photos, the little things like a squirrel at the park. You can stick on stickers, write your own lines, and decorate each page. Owner and sitter each decorate on their own layer, so one ordinary Tuesday becomes something you will want to look back on. Stickers are made from your own pet: the pet is cut out in the browser into a transparent sticker with a white outline.
 
 ### Snap: safety and a bit of play (both roles)
-- **Treat check:** snap a treat label. Nemotron 3.5 Super VL reads it, a rule table checks the pet's allergens and species toxins, **Tavily** pulls trusted vet and FDA pages, and Nemotron Ultra double-checks hidden sources (like chicken in "animal fat"). The result is SAFE, WARNING, or DANGER with sources. DANGER opens a red screen that only "I understand" closes, and notifies the owner.
+- **Treat check:** snap a treat label. Nemotron 3.5 Super VL reads it, a rule table checks the pet's allergens and species toxins, **Tavily** pulls FDA pages, and Nemotron Ultra double-checks hidden sources (like chicken in "animal fat"). The result is SAFE, WARNING, or DANGER with sources. DANGER opens a red screen that only "I understand" closes, and notifies the owner.
 - **Pet mood:** a photo or short clip gets a box around each pet and eight emotions in percent. For fun. The vision model only names visible body-language tags, and a fixed rule table turns them into the numbers, so the same photo always gives the same result.
 - **Stickers:** cut your pet out of any photo and drop it into the Diary.
 
