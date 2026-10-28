@@ -5,14 +5,15 @@ import type { HatId } from "../../features/pets/sprites/hats";
 import type { PetRecipe } from "../../features/pets/sprites/petLook";
 import type { PixelColors } from "../../features/pets/sprites/photoColors";
 import { useLatestSitterPhoto } from "../../features/pets/useLatestSitterPhoto";
-import { usePetRoom } from "../../features/pets/usePetRoom";
-import type { PetMood, PetStatus } from "../../lib/petStatus";
+import { usePetRoom, type LatestCheckins } from "../../features/pets/usePetRoom";
+import type { PetMood, PetStatus, StatusCheckin } from "../../lib/petStatus";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { tokens } from "../../theme/tokens";
 import type { Species } from "../../types/db";
+import type { ArtName } from "../../assets/art/artSvgs";
+import { Art } from "../art/Art";
 import { HOME_TEXT } from "../home/homeType";
-import { StatTile, StatTileRow, walkLabel } from "../home/StatTiles";
 import { Icon, IconName } from "../ui/Icon";
 import { Tag, TagTone } from "../ui/Tag";
 import { PetRoomScene } from "./PetRoomScene";
@@ -37,30 +38,39 @@ function sentence(name: string, status: PetStatus): string {
   return `${name} is relaxed.`;
 }
 
-/** Whether the sitter logged anything today that the tiles would show. */
+/** Whether the sitter logged anything today that the rows would show. */
 const logged = (status: PetStatus) => status.meal !== "unknown" || status.potty !== "unknown" || status.walkMinutes > 0;
 
-/** The pet's own tiles: meal, potty, and walks for a dog (cats have no walks, and no play check-in yet). */
-function petTiles(status: PetStatus, species: Species): StatTile[] {
-  const tiles: StatTile[] = [
-    status.meal === "fed"
-      ? { key: "meal", icon: "meal", art: "owner/care-bowl", value: "Fed", label: "ate well", ground: tokens.color.blockMint }
-      : status.meal === "hungry"
-        ? { key: "meal", icon: "meal", art: "owner/care-bowl", value: "Meal", label: "skipped", ground: tokens.color.blockMint, warn: true }
-        : { key: "meal", icon: "meal", art: "owner/care-bowl", value: "Meal", label: "not yet", ground: tokens.color.blockMint },
+type Row = { key: string; art: ArtName; ground: string; label: string; value: string; warn?: boolean };
+
+const at = (c: StatusCheckin) => formatTime(isoToZoned(c.at).time);
+
+/**
+ * The pet's day in one grammar (Mook's pick C, Oct 28): a row per thing, what it is on the left, what happened and when
+ * on the right. Meal, potty, and walks for a dog (cats have no walks, and no play check-in yet).
+ */
+function petRows(status: PetStatus, species: Species, latest: LatestCheckins): Row[] {
+  const meal = latest.meal;
+  const mealText =
+    status.meal === "fed" && meal
+      ? `${meal.value === "most" ? "Left a little" : "Ate well"} · ${at(meal)}`
+      : status.meal === "hungry" && meal
+        ? meal.value === "all" || meal.value === "most"
+          ? `Last at ${at(meal)}`
+          : `${meal.value === "none" ? "Skipped" : "Ate a little"} · ${at(meal)}`
+        : status.meal === "hungry"
+          ? "None yet"
+          : "Not yet";
+  const potty = latest.potty;
+  const pottyText = status.potty === "done" && potty ? (potty.value === "soft" ? `Soft · ${at(potty)}` : at(potty)) : status.potty === "due" ? "None yet" : "Not yet";
+  const rows: Row[] = [
+    { key: "meal", art: "owner/care-bowl", ground: tokens.color.blockMint, label: "Meal", value: mealText, warn: status.meal === "hungry" },
+    { key: "potty", art: species === "cat" ? "owner/potty-scoop" : "owner/potty-bags", ground: tokens.color.blockPeach, label: "Potty", value: pottyText, warn: status.potty === "due" },
   ];
-  const potty = species === "cat" ? "owner/potty-scoop" : "owner/potty-bags";
-  tiles.push(
-    status.potty === "done"
-      ? { key: "potty", icon: "potty", art: potty, value: "Done", label: "potty today", ground: tokens.color.blockPeach }
-      : status.potty === "due"
-        ? { key: "potty", icon: "potty", art: potty, value: "Due", label: "no potty yet", ground: tokens.color.blockPeach, warn: true }
-        : { key: "potty", icon: "potty", art: potty, value: "Potty", label: "not yet", ground: tokens.color.blockPeach },
-  );
   if (species === "dog") {
-    tiles.push({ key: "walks", icon: "walk", art: "owner/walk-leash", value: walkLabel(status.walkMinutes), label: "of walks", ground: tokens.color.blockButter });
+    rows.push({ key: "walks", art: "owner/walk-leash", ground: tokens.color.blockButter, label: "Walks", value: status.walkMinutes > 0 ? `${status.walkMinutes} min today` : "Not yet" });
   }
-  return tiles;
+  return rows;
 }
 
 /**
@@ -70,7 +80,7 @@ function petTiles(status: PetStatus, species: Species): StatTile[] {
 export function OwnerPetRoom({ pet }: { pet: Pet }) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const { status, event, updatedAt } = usePetRoom(pet.id);
+  const { status, event, updatedAt, latest } = usePetRoom(pet.id);
   const photo = useLatestSitterPhoto(pet.id);
   const mood = MOOD[status?.mood ?? "calm"];
 
@@ -103,8 +113,20 @@ export function OwnerPetRoom({ pet }: { pet: Pet }) {
         {status ? <Text style={styles.sentence}>{sentence(pet.name, status)}</Text> : null}
         {updatedAt ? <Text style={styles.updated}>{`Updated ${formatTime(isoToZoned(updatedAt).time)}`}</Text> : null}
       </View>
-      {/* Nothing logged yet: the sentence already says so, so no row of empty tiles. */}
-      {status && logged(status) ? <StatTileRow tiles={petTiles(status, pet.species)} testID="pet-stat-tiles" /> : null}
+      {/* Nothing logged yet: the sentence already says so, so no card of empty rows. */}
+      {status && logged(status) ? (
+        <View style={styles.card} testID="pet-status">
+          {petRows(status, pet.species, latest).map((row, i) => (
+            <View key={row.key} style={[styles.row, i > 0 && styles.rowLine]} testID={`pet-status-${row.key}`}>
+              <View style={[styles.rowArt, { backgroundColor: row.warn ? tokens.color.warningSurface : row.ground }, row.warn && styles.rowArtWarn]}>
+                <Art name={row.art} size={30} />
+              </View>
+              <Text style={styles.rowLabel}>{row.label}</Text>
+              <Text style={[styles.rowValue, row.warn && styles.rowValueWarn]}>{row.value}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
       {status?.nextTask ? (
         <View style={styles.next} testID={`pet-room-${pet.name}-next`}>
           <View style={styles.nextIcon}>
@@ -133,6 +155,15 @@ const makeStyles = (theme: Theme) =>
     },
     sentence: { fontSize: theme.fontSize.body, lineHeight: theme.lineHeight.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     updated: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.textMuted },
+    // The pet's day: one quiet card, a row per thing (DESIGN.md list rows).
+    card: { borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.color.border, backgroundColor: theme.color.surface },
+    row: { flexDirection: "row", alignItems: "center", gap: theme.spacing.md, minHeight: 56, paddingVertical: theme.spacing.sm, paddingHorizontal: theme.spacing.md },
+    rowLine: { borderTopWidth: 1, borderTopColor: theme.color.border },
+    rowArt: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+    rowArtWarn: { borderWidth: 1.5, borderColor: tokens.color.warning },
+    rowLabel: { flex: 1, fontSize: theme.fontSize.body, lineHeight: theme.lineHeight.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    rowValue: { flexShrink: 1, textAlign: "right", fontSize: theme.fontSize.small + 1, lineHeight: 18, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
+    rowValueWarn: { color: tokens.color.warning },
     next: {
       flexDirection: "row",
       alignItems: "center",

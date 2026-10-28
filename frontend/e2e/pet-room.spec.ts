@@ -56,6 +56,7 @@ test.describe("pet room", () => {
     // Nothing logged today: calm, no HUD.
     await expect(screen.getByTestId("pet-room-Max-mood")).toHaveText("Calm");
     await expect(screen.getByTestId("pet-room-Max")).toContainText("No updates on Max yet today.");
+    await expect(screen.getByTestId("pet-status")).toHaveCount(0);
     await screen.getByTestId("home-pager-tab-0").click();
     await expect(screen.getByTestId("pet-card-Max")).toBeVisible();
   });
@@ -75,9 +76,11 @@ test.describe("pet room", () => {
     const room = screen.getByTestId("pet-room-Max");
     await expect(screen.getByTestId("pet-room-Max-mood")).toHaveText("Happy");
     await expect(room).toContainText("Max is in a playful mood.");
-    await expect(screen.getByTestId("stat-tile-meal")).toContainText("Fed");
-    await expect(screen.getByTestId("stat-tile-potty")).toContainText("Done");
-    await expect(screen.getByTestId("stat-tile-walks")).toContainText("30m");
+    // One row per thing: what it is, then what happened and when.
+    await expect(screen.getByTestId("pet-status-meal")).toContainText("Meal");
+    await expect(screen.getByTestId("pet-status-meal")).toContainText(/Ate well · \d{1,2}:\d{2} (AM|PM)/);
+    await expect(screen.getByTestId("pet-status-potty")).toContainText(/Potty\s*\d{1,2}:\d{2} (AM|PM)/);
+    await expect(screen.getByTestId("pet-status-walks")).toContainText("30 min today");
     await expect(room).toContainText("Updated");
   });
 
@@ -89,8 +92,8 @@ test.describe("pet room", () => {
     const screen = app(page);
     await screen.getByTestId("home-pager-tab-1").click();
     await expect(screen.getByTestId("pet-room-Mochi-mood")).toHaveText("Hungry");
-    await expect(screen.getByTestId("stat-tile-meal")).toContainText("skipped");
-    await expect(screen.getByTestId("stat-tile-walks")).toHaveCount(0);
+    await expect(screen.getByTestId("pet-status-meal")).toContainText(/Skipped · \d{1,2}:\d{2} (AM|PM)/);
+    await expect(screen.getByTestId("pet-status-walks")).toHaveCount(0);
     // The room says it too: the bowl is empty.
     await expect(screen.getByTestId("pet-room-Mochi-open-bowl")).toBeVisible();
     await expect(screen.getByTestId("pet-room-Mochi-open-food")).toHaveCount(0);
