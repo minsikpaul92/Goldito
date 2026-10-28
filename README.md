@@ -21,7 +21,7 @@ the server owns every fact, and a person approves every word.
 
 <sub><i>Booking chat: reply chips, Meet &amp; Greet, quote, and payment in one thread</i></sub>
 
-**[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up) · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
+**[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up) · **[Watch the video](https://youtu.be/hjruk-XOlJE?si=uVOkhnTdrsbyxrQl)** · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
 
 </div>
 
@@ -126,8 +126,6 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 
 What we used, what worked, and what got in the way, written down as it happened. Details and numbers: [model-ids.md](docs/plan/phases/notes/model-ids.md) · [nebius-ai-cloud-feedback.md](docs/plan/phases/notes/nebius-ai-cloud-feedback.md).
 
-<!-- TODO(submission): Nemotron 3.5 Super VL and Qwen3 Embedding 8B still need one line in the team's own words on "would we build with it again, and why". Do not invent it. -->
-
 **Nebius Token Factory**
 - *Onboarding:* the catalog check and the first answers on the same day (2026-09-29): a Nano text call and a vision image call through the OpenAI SDK, with only the base URL and key changed.
 - *Worked:* one OpenAI-compatible API for chat, vision, and embeddings; `GET /v1/models` for scripted checks; JSON mode and tool calling (`tools` + `tool_choice="auto"`) on Nano and Super, about 0.9 s per call; base64 data URLs as image input.
@@ -151,9 +149,11 @@ What we used, what worked, and what got in the way, written down as it happened.
 **Nemotron 3.5 Super VL**
 - *Worked:* it read all six sample labels with no missed ingredient across blur, small size, rotation, and cut-off versions, and said "incomplete" on every cut-off label; about 1 to 1.4 s per photo.
 - *Got in the way:* thinking is on by default and fills `max_tokens` before any answer (we send `enable_thinking: false`); only on the global base URL, not the us-central1 one.
+- *Again?* Yes. It worked well, it was fast, and we liked using it. It read our six sample labels without missing an ingredient, in about 1 to 1.4 s per photo, so a treat check or a photo caption feels instant on a phone. Once thinking was switched off it was easy to build on. We will keep it as our default for vision.
 
 **Qwen3 Embedding 8B**
 - *Worked:* `dimensions: 1024` on both base URLs, so it fits a pgvector HNSW index (2000 dimensions at most); 539 ms median per query embedding.
+- *Again?* Yes. It worked well, it was fast, and we liked using it. `dimensions: 1024` fit our pgvector index without any extra work. We will keep it for retrieval.
 
 **Nebius AI Cloud** (Serverless endpoint, tried and not used)
 - *Worked:* a clear endpoint form with a live cost estimate; a public GHCR image needs no registry credentials; a whole `.env` can be mounted as a file.
