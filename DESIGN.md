@@ -408,7 +408,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | Component | Rules |
 | :--- | :--- |
 | `Screen` | Wraps every screen: safe area, scroll, `background`, 16 padding, max width 480 |
-| `BackLink` | Standard back control: the ← arrow alone (`<Icon name="arrowBack" />`, `text` color, 44 × 44), read aloud as **Back**. Use wherever a screen draws its own top bar: Log in, How it works, Settings, What's new, Privacy, Terms. `StepHeader` and `StepFrame` draw the same arrow. See [§7.8](#78-back-close-and-leaving) |
+| `BackLink` | Standard back control: the ← arrow alone (`<Icon name="arrowBack" />`, `text` color, 44 × 44), read aloud as **Back**. Every stack header draws it too (`headerBack` in `RoleTabs.tsx`), its arrow on the screen's text edge. Use it in a page only where a screen has no stack header: Log in, How it works. `StepHeader` and `StepFrame` draw the same arrow. See [§7.8](#78-back-close-and-leaving) |
 | `MediaPlaceholder` (`components/`) | Onboarding photo/video slot (~4:3, dashed `accent` frame). Centered in leftover tour height; title + brief for Mook’s asset brief. Replace with real media later — see [§7.9](#79-welcome--role-onboarding) |
 | `Card` | `surface`, `radius.lg`, 16 padding, 1 px `border` |
 | `Button` | `primary` (filled) and `secondary` (`surface` + `borderStrong` border, `primary` label); `radius.md`, 44 min height, 8 / 16 padding, semibold label. Pressed = `motion.pressOpacity` + `motion.pressScale`; disabled = `border` fill + `textMuted` label (Figma Button, Style × State) |
@@ -600,7 +600,7 @@ Four jobs, four controls. Pick by the job, never by the screen. The [UX audit](h
 
 | Job | Control | Where | Label |
 | :--- | :--- | :--- | :--- |
-| **Go back** to the screen you came from | The **← arrow** alone (`Icon name="arrowBack"`: `BackLink`, `StepHeader`, `StepFrame`, or the native header with `headerBackButtonDisplayMode: "minimal"` and `headerBackTitle: "Back"`) | Top left, `text` color, 44 × 44 | Read aloud as **Back**. No visible word: next to a title or a progress bar it crowds the row (D20). Not "Back to the booking", not "‹ Diaries" |
+| **Go back** to the screen you came from | The **← arrow** alone (`Icon name="arrowBack"`: `BackLink`, `StepHeader`, `StepFrame`, or the stack header, which draws `BackLink` through `headerBack`) | Top left, `text` color, 44 × 44 | Read aloud as **Back**. No visible word: next to a title or a progress bar it crowds the row (D20). Not "Back to the booking", not "‹ Diaries" |
 | **Step back** inside a flow (onboarding, booking, checkout) | The same ← arrow, top left. It goes one step; on step 1 it leaves the flow | Top left only. **No second Back at the bottom** | Read aloud as **Back** |
 | **Dismiss** a sheet, dialog, menu or full-screen viewer | **Close** text (sheets, dialogs) or ✕ icon labelled "Close" (full-screen photo viewers, the menu drawer) | Sheets: top right. Viewers: top left, white on the dark fade, 44 px, visible whenever the details are | **Close**. One per surface: never Close *and* Cancel |
 | **Finish** a task | The primary button that says what it does (**Save**, **Send**, **Pay**) | Pinned footer (§7.12) | A verb. After it, go back to where the task started (`router.dismissTo`), not forward to a copy of it |
@@ -630,7 +630,7 @@ Public intro for **signed-out** visitors (`/welcome`, `/welcome/how`, `/login`, 
 | Demo roles | The demo sheet and the Log in demo tiles show what each side gets (`RoleArt`): the owner's home with a photo of Max arriving; the sitter with Max and Mochi and the camera. |
 | How it works 2 | Chloe's checks reach Robert along a dashed line with a "Goldito sends the update" pill on it, the step Goldito takes for them. |
 | Apple / Google | `SocialSignIn` stays hidden until they work; when shown, Apple and Google share one row of two so Welcome keeps How it works in view (`EXPO_PUBLIC_SOCIAL_SIGN_IN=1` shows them); a judge never taps a "Coming soon" button. |
-| Privacy and Terms | One `LegalPage`: `BackLink`, `ScreenHeader` (title, Last updated), then one `Collapsible` card per section, one open at a time. No native header on top of it. Welcome links to both from a small caption line under the buttons. |
+| Privacy and Terms | One `LegalPage`: the stack header (← Title), "Last updated" as a small line, then one `Collapsible` card per section, one open at a time. Welcome links to both from a small caption line under the buttons. |
 
 ### 7.10 Dates and times
 

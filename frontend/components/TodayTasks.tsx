@@ -12,7 +12,7 @@ import { careArt } from "./careArt";
 import { TaskDoneSheet } from "./TaskDoneSheet";
 import { Button } from "./ui/Button";
 import { Icon } from "./ui/Icon";
-import { ScreenHeader } from "./ui/ScreenHeader";
+import { ScreenSubtitle } from "./ui/ScreenHeader";
 import { sectionTitleStyle } from "./ui/SectionTitle";
 import { Tag } from "./ui/Tag";
 
@@ -44,7 +44,8 @@ export function TodayTasks({ pets }: { pets: TaskPet[] }) {
 
   return (
     <View style={styles.section} testID="today-tasks">
-      <ScreenHeader title="Today's tasks" subtitle={counts ? `${names} · ${counts}` : names} testID="tasks-count" />
+      {/* The screen's title ("Tasks") is in the stack header. */}
+      <ScreenSubtitle testID="tasks-count">{counts ? `${names} · ${counts}` : names}</ScreenSubtitle>
 
       {state.status === "loading" ? <Text style={styles.muted}>Loading…</Text> : null}
       {state.status === "error" ? (
