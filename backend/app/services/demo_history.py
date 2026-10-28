@@ -381,7 +381,7 @@ def seed_history(
     for which, start in enumerate((date(year, 8, 12), date(year, 9, 16))):
         seed_past_stay(client, owner_id, sitter_id, pets, start, photos, which)
     seed_owner_pages(client, owner_id, pets, today, photos)
-    if state == "in_care":
+    if state in ("in_care", "returned"):
         seed_today_photos(client, sitter_id, pets, photos)
     if cancelled:
         client.table("notifications").delete().eq("booking_id", cancelled).execute()

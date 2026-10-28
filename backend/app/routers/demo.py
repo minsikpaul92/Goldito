@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 # One reset per demo set at a time: two overlapping runs delete and rebuild the same pair's rows under each other.
 _running: dict[str, threading.Lock] = {}
 
-DemoState = Literal["empty", "pets", "past", "confirmed", "ready", "in_care"]
+DemoState = Literal["empty", "pets", "past", "confirmed", "ready", "in_care", "returned"]
 # Where a judge starts after taking a seat: the two pets, never met (a clean stay).
 JUDGE_START: DemoState = "pets"
 

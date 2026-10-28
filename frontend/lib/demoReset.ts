@@ -7,7 +7,7 @@ import { holderId } from "./judgeSeat";
  * a known state. Shown only while `EXPO_PUBLIC_DEMO_TOOLS=1`; remove with the backend route before
  * judging (fixed demo accounts, see the GitHub issues).
  */
-export type DemoState = "empty" | "pets" | "past" | "confirmed" | "ready" | "in_care";
+export type DemoState = "empty" | "pets" | "past" | "confirmed" | "ready" | "in_care" | "returned";
 
 /**
  * The states to reset to. Each account resets on its own: an owner resets the owner side, a sitter the sitter side.
@@ -21,6 +21,7 @@ export function demoStates(role: "owner" | "sitter", sitterName: string, pets: [
     { value: "confirmed", label: "Booking accepted", hint: `${sitterName} accepted a stay. Next: Finish booking.` },
     { value: "ready", label: "Ready for drop-off", hint: `Paid, drop-off in an hour. ${sitterName} can tap Received.` },
     { value: "in_care", label: "In care", hint: `${pets[0]} and ${pets[1]} are with ${sitterName}.` },
+    { value: "returned", label: "Back home", hint: `${pets[0]} and ${pets[1]} are home. ${sitterName} can review them.` },
   ];
   return role === "owner" ? states : states.filter((s) => s.value !== "empty");
 }

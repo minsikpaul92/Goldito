@@ -56,7 +56,7 @@ On the sign-in screen, **Try the demo** → the **Demo owner** / **Demo sitter**
 - Drop-off done (10/4), **pick-up planned 10/7 05:37 UTC (Toronto 10/7 1:37 AM)**.
 - So **right now Chloe is "in care"** → the tasks · check-ins on the sitter Home show.
 - ⚠️ **Once the pick-up time has passed**, the sitter-side scenarios (TASK · CHK) are blocked with "Tasks open once the stay has started" and similar. Then make a new booking and mark the drop-off done, or use the seed script (Phase 10, 10.1).
-- **The state depends on who did what last.** To reset to the start state you want (`empty` · `pets` · `confirmed` · `ready` · `in_care`), see test-run.md §1 (`backend/scripts/reset_demo.py`, dry run first, on Minsik's PC; after the backend is deployed, Profile → Demo tools in the app).
+- **The state depends on who did what last.** To reset to the start state you want (`empty` · `pets` · `confirmed` · `ready` · `in_care` · `returned`), see test-run.md §1 (`backend/scripts/reset_demo.py`, dry run first, on Minsik's PC; after the backend is deployed, Profile → Demo tools in the app).
 
 ### 1.4 Data that tests leave behind
 
@@ -800,8 +800,9 @@ Feedback and fix ideas: the 2026-10-08 feedback (removed; in git history).
 
 | SEEDH-1 | Profile → Demo tools, reset to **Past stays** (`past`) or a later state (Cloudinary photos after running `python -m scripts.seed_photos --apply` once). Owner Bookings → Past | 2 stays, Aug 12 to 15 · Sep 16 to 19 (Max + Mochi, completed), and 1 cancelled request (3 weeks later). Sitter Bookings → Past has the same 2 + 1 cancelled | 🤖 `test_demo_history.py` | Waiting for a person to check (after `seed_photos` runs) |
 | SEEDH-2 | Same reset → owner Moments → Photos · Diary | For each day the sitter cared, per pet, 1 shared photo + 1 sent Diary page (2 stays x 4 days x 2 pets = 16), plus 3 private owner photos and 3 private Diary pages for Aug · Sep · Oct (hidden from the sitter) | 🤖 `test_demo_history.py` | Waiting for a person to check |
-| SEEDH-3 | Reset to `in_care` → owner · sitter Moments | Today's 4 shared photos from the sitter (2 per pet) show to both; 1 private sitter photo shows only to the sitter. The bell stays quiet (no cancelled-request notification) | 🤖 `test_demo_history.py` | Waiting for a person to check |
+| SEEDH-3 | Reset to `in_care` (or `returned`) → owner · sitter Moments | Today's 4 shared photos from the sitter (2 per pet) show to both; 1 private sitter photo shows only to the sitter. The bell stays quiet (no cancelled-request notification) | 🤖 `test_demo_history.py` | Waiting for a person to check |
 | SEEDH-4 | Reset the same set again | Photos · bookings do not double; the counts stay the same | 🤖 `test_demo_history.py` | Waiting for a person to check |
+| SEEDH-5 | Reset to `returned` (Demo tools: **Back home**) | The stay of `in_care`, with the day's check-ins sent (Max: ate all, potty, 30 min walk, playful, and the note about the squirrel; Mochi: ate most, potty, calm) and Returned tapped: the sitter's booking shows "Stay complete 🐾", the medals and **Review Max / Mochi**; the owner's booking shows Home safe and writes the Life Records | pytest `test_reset_demo` (the RPC order, the check-ins) | Waiting for a person to check (hosted DB) |
 
 ### 3.30 Expressive look (EXP) · *Before: nothing. `?skin=default` for the old look*
 
