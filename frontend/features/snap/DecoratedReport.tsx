@@ -508,7 +508,7 @@ const makeStyles = (theme: Theme) =>
     floatSlot: { ...(Platform.OS === "web" ? ({ position: "sticky" } as object) : null), bottom: theme.spacing.md, height: 0, zIndex: 20, overflow: "visible" },
     float: { position: "absolute", right: 0, bottom: 0, alignItems: "flex-end", gap: theme.spacing.sm },
     // About four stickers show; the rest are a drag away.
-    tray: { width: 48, maxHeight: 4 * 48 + 3 * theme.spacing.sm + 2 * theme.spacing.sm, borderRadius: theme.radius.md, backgroundColor: SEE_THROUGH, flexGrow: 0 },
+    tray: { width: 48, maxHeight: 4 * 48 + 3 * theme.spacing.sm + 2 * theme.spacing.sm, flexGrow: 0 },
     trayContent: { gap: theme.spacing.sm, paddingVertical: theme.spacing.sm, alignItems: "center" },
     trayWide: { width: 140 },
     trayEmpty: { gap: theme.spacing.xs, alignItems: "center", padding: theme.spacing.xs },
