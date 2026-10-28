@@ -23,7 +23,6 @@ export function Chip({ label, onRemove, testID }: Props) {
           accessibilityRole="button"
           accessibilityLabel={`Remove ${label}`}
           onPress={onRemove}
-          hitSlop={theme.spacing.sm}
           style={styles.remove}
         >
           <Icon name="close" size={theme.fontSize.small} color={theme.color.textMuted} />
@@ -50,7 +49,12 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.small,
       color: theme.color.text,
     },
+    // 44 px to tap, still 18 px in the layout (hitSlop does nothing on the web).
     remove: {
-      padding: 2,
+      width: theme.layout.touchTarget,
+      height: theme.layout.touchTarget,
+      margin: -(theme.layout.touchTarget - 18) / 2,
+      alignItems: "center",
+      justifyContent: "center",
     },
   });

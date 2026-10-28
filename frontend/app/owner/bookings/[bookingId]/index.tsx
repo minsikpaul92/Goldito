@@ -141,7 +141,7 @@ export default function OwnerBookingDetail() {
   if (state.status === "missing") {
     return (
       <Screen>
-        <EmptyState emoji="📅" title="Booking not found" message="It may have been removed." />
+        <EmptyState icon="calendar" title="Booking not found" message="It may have been removed." />
       </Screen>
     );
   }
@@ -149,7 +149,7 @@ export default function OwnerBookingDetail() {
     return (
       <Screen>
         <EmptyState
-          emoji="📅"
+          icon="calendar"
           title="Couldn't load this booking"
           message={state.message}
           action={{ label: "Try again", onPress: () => void load() }}

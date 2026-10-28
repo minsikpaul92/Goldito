@@ -254,7 +254,7 @@ export function NotificationsCenter({ role }: { role: Role }) {
   if (list.status === "error" && items.length === 0) {
     return (
       <EmptyState
-        emoji="🔔"
+        icon="bell"
         title="Couldn't load notifications"
         message={list.message}
         action={{ label: "Try again", onPress: () => void load(false) }}
@@ -265,7 +265,7 @@ export function NotificationsCenter({ role }: { role: Role }) {
   if (items.length === 0) {
     return (
       <EmptyState
-        emoji="🔔"
+        icon="bell"
         title="You're all caught up."
         message="New updates from your stay will show up here."
         action={role === "owner" ? { label: "History", onPress: () => router.push("/owner/history") } : undefined}

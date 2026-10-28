@@ -229,6 +229,6 @@ test.describe("treat check", () => {
     await screen.getByTestId("treat-danger-acknowledge").click();
     await expect(screen.getByTestId("treat-danger")).toHaveCount(0);
     await expect(screen.getByTestId("treat-result-danger")).toBeVisible();
-    await expect(screen.getByTestId(`treat-pet-${MAX}`)).toHaveAttribute("aria-selected", "true");
+    await expect(screen.getByTestId(`treat-pet-${MAX}`)).toHaveAttribute("aria-pressed", "true");
   });
 });

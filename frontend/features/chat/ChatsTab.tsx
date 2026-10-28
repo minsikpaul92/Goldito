@@ -20,7 +20,7 @@ export function ChatsTab({ emptyMessage, showPets }: { emptyMessage: string; sho
   return (
     <Screen contentStyle={styles.content} testID="chats-tab">
       {chats.items.length === 0 ? (
-        <EmptyState emoji="✉️" title="No chats yet" message={emptyMessage} />
+        <EmptyState icon="chats" title="No chats yet" message={emptyMessage} />
       ) : (
         <ChatList items={chats.items} onLeave={(id) => void chats.leave(id)} highlightId={newest?.threadId ?? null} showPets={showPets} />
       )}

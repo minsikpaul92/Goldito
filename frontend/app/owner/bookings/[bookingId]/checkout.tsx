@@ -172,7 +172,7 @@ export default function CheckoutScreen() {
     return (
       <Screen>
         <EmptyState
-          emoji="💳"
+          icon="card"
           title="Can't open checkout"
           message={loadError}
           action={{ label: "Back", onPress: () => router.back() }}

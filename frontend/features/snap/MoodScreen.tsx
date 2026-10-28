@@ -63,7 +63,7 @@ export function MoodScreen({ role }: { role: Role }) {
   if (Platform.OS !== "web") {
     return (
       <Screen>
-        <EmptyState emoji="😊" title="Mood" message="Mood works in the web app for now." />
+        <EmptyState icon="moodHappy" title="Mood" message="Mood works in the web app for now." />
       </Screen>
     );
   }
@@ -265,7 +265,7 @@ function MoodResultView({
             <Pressable
               key={index}
               accessibilityRole="button"
-              aria-selected={index === selected}
+              aria-pressed={index === selected}
               onPress={() => onSelect(index)}
               style={[styles.tab, index === selected && styles.tabSelected]}
               testID={`mood-pet-${index}`}

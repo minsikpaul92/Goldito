@@ -109,7 +109,7 @@ export default function OwnerBookings() {
     return (
       <Screen>
         <EmptyState
-          emoji="📅"
+          icon="calendar"
           title="Couldn't load your bookings"
           message={state.message}
           action={{ label: "Try again", onPress: () => void load() }}

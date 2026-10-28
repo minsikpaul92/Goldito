@@ -84,14 +84,14 @@ export function TripScreen({ role }: { role: Role }) {
   if (state.status === "missing") {
     return (
       <Screen>
-        <EmptyState emoji="📅" title="Booking not found" message="It may have been cancelled or removed." />
+        <EmptyState icon="calendar" title="Booking not found" message="It may have been cancelled or removed." />
       </Screen>
     );
   }
   if (state.status === "error") {
     return (
       <Screen>
-        <EmptyState emoji="📬" title="Couldn't load this trip" message={state.message} action={{ label: "Try again", onPress: () => void load() }} />
+        <EmptyState icon="car" title="Couldn't load this trip" message={state.message} action={{ label: "Try again", onPress: () => void load() }} />
       </Screen>
     );
   }

@@ -106,12 +106,13 @@ export function PetAvatarEditor({ pet, onChanged }: { pet: Pet; onChanged: () =>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Delete photo ${i + 1}`}
-                hitSlop={6}
                 onPress={() => void remove(photo)}
-                style={styles.minus}
+                style={styles.minusHit}
                 testID={`pet-photo-delete-${i + 1}`}
               >
-                <Icon name="remove" size={14} color={theme.color.primaryText} strokeWidth={3} />
+                <View style={styles.minus}>
+                  <Icon name="remove" size={14} color={theme.color.primaryText} strokeWidth={3} />
+                </View>
               </Pressable>
             </View>
           ))}
@@ -142,10 +143,17 @@ const makeStyles = (theme: Theme) =>
     tile: { width: TILE, height: TILE, borderRadius: TILE / 2, backgroundColor: theme.color.border },
     plus: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: theme.color.borderStrong, backgroundColor: theme.color.surface },
     // A red circle with a white minus on the photo's corner, like the camera badge on the cover.
-    minus: {
+    // A 44 px hit area centered on the 24 px circle (hitSlop does nothing on the web).
+    minusHit: {
       position: "absolute",
-      top: -4,
-      right: -4,
+      top: -14,
+      right: -14,
+      width: theme.layout.touchTarget,
+      height: theme.layout.touchTarget,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    minus: {
       width: 24,
       height: 24,
       borderRadius: 12,

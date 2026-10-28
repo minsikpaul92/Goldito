@@ -65,7 +65,7 @@ test.describe("snap sticker", () => {
   test("owner: the pet is cut out, a tap cuts again, and Save puts only the PNG in Max's sticker box", async ({ page }) => {
     const { db, taps, signed, uploads } = await open(page, OWNER, { seed: max });
     const screen = app(page);
-    await expect(screen.getByTestId(`sticker-pet-${MAX}`)).toHaveAttribute("aria-selected", "true"); // the only pet
+    await expect(screen.getByTestId(`sticker-pet-${MAX}`)).toHaveAttribute("aria-pressed", "true"); // the only pet
     await expect(screen.getByTestId("sticker-box-empty")).toBeVisible();
 
     await screen.getByTestId("sticker-pick").click();

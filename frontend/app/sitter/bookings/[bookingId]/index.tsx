@@ -169,7 +169,7 @@ export default function SitterBookingDetail() {
   if (state.status === "missing") {
     return (
       <Screen>
-        <EmptyState emoji="📅" title="Booking not found" message="It may have been cancelled or removed." />
+        <EmptyState icon="calendar" title="Booking not found" message="It may have been cancelled or removed." />
       </Screen>
     );
   }
@@ -177,7 +177,7 @@ export default function SitterBookingDetail() {
     return (
       <Screen>
         <EmptyState
-          emoji="📬"
+          icon="calendar"
           title="Couldn't load this booking"
           message={state.message}
           action={{ label: "Try again", onPress: () => void load() }}

@@ -112,7 +112,7 @@ export default function SitterProfileScreen() {
   if (profile.status === "missing") {
     return (
       <Screen>
-        <EmptyState emoji="🐾" title="Sitter not found" message="This sitter may have left Goldito." />
+        <EmptyState icon="paw" title="Sitter not found" message="This sitter may have left Goldito." />
       </Screen>
     );
   }
@@ -121,7 +121,7 @@ export default function SitterProfileScreen() {
     return (
       <Screen>
         <EmptyState
-          emoji="🐾"
+          icon="paw"
           title="Couldn't load this sitter"
           message={profile.message}
           action={{ label: "Try again", onPress: () => void loadProfile() }}

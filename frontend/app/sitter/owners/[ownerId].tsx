@@ -38,7 +38,7 @@ export default function OwnerForSitterScreen() {
   if (!contact || contact.otherId !== ownerId) {
     return (
       <Screen>
-        <EmptyState emoji="👤" title="Owner not available" message="Open this from your chat." />
+        <EmptyState icon="person" title="Owner not available" message="Open this from your chat." />
       </Screen>
     );
   }

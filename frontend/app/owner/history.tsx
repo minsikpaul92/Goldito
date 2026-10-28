@@ -77,7 +77,7 @@ export default function OwnerHistory() {
       <Screen>
         <BackLink onPress={goBack} testID="history-back" />
         <EmptyState
-          emoji="🕘"
+          icon="clock"
           title="Couldn't load your pets"
           message={petsError ?? "Try again."}
           action={{ label: "Try again", onPress: () => void reloadPets() }}
@@ -89,7 +89,7 @@ export default function OwnerHistory() {
     return (
       <Screen>
         <BackLink onPress={goBack} testID="history-back" />
-        <EmptyState emoji="🐾" title="No pets yet" message="Add a pet on Home first." />
+        <EmptyState icon="paw" title="No pets yet" message="Add a pet on Home first." />
       </Screen>
     );
   }
@@ -109,7 +109,7 @@ export default function OwnerHistory() {
               <Pressable
                 key={p.id}
                 accessibilityRole="radio"
-                accessibilityState={{ checked: on }}
+                aria-checked={on}
                 onPress={() => setPetId(p.id)}
                 style={[styles.chip, on && styles.chipOn]}
                 testID={`diary-pet-${p.id}`}
@@ -125,7 +125,7 @@ export default function OwnerHistory() {
       {state.status === "loading" ? <LoadingView /> : null}
       {state.status === "error" ? (
         <EmptyState
-          emoji="🕘"
+          icon="clock"
           title="Couldn't load the diary"
           message={state.message}
           action={{ label: "Try again", onPress: () => void load() }}
@@ -133,7 +133,7 @@ export default function OwnerHistory() {
       ) : null}
       {state.status === "ready" && state.entries.length === 0 ? (
         <EmptyState
-          emoji="🕘"
+          icon="clock"
           title="No history yet"
           message={`What your sitter does during a stay is kept here. Showing today and the last ${DIARY_DAYS} days.`}
         />

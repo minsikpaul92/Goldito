@@ -207,7 +207,7 @@ export function SlotCalendar({
                   key={day}
                   accessibilityRole="button"
                   accessibilityLabel={label}
-                  aria-selected={selected}
+                  aria-pressed={selected}
                   disabled={past}
                   onPress={() => onSelectDay(day)}
                   style={[styles.cell, styles.day, selected && styles.selected, past && styles.past]}

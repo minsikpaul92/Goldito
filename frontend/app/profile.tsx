@@ -285,7 +285,7 @@ export default function ProfileScreen() {
   if (loadError) {
     return (
       <Screen>
-        <EmptyState emoji="🐾" title="Couldn't load your profile" message="Check your connection and try again." />
+        <EmptyState icon="paw" title="Couldn't load your profile" message="Check your connection and try again." />
       </Screen>
     );
   }

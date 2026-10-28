@@ -69,8 +69,7 @@ export function PetChips({
           <Pressable
             key={p.id}
             accessibilityRole="button"
-            accessibilityState={{ selected }}
-            aria-selected={selected}
+            aria-pressed={selected}
             disabled={disabled}
             onPress={() => onSelect(selected ? (optional ? null : p.id) : p.id)}
             style={[styles.pet, selected && styles.petSelected]}

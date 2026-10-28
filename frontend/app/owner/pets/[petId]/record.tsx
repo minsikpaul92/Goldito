@@ -42,7 +42,7 @@ export default function PetLifeRecord() {
   if (state.status === "error") {
     return (
       <Screen>
-        <EmptyState emoji="📖" title="Couldn't load the Life Record" message={state.message} action={{ label: "Try again", onPress: () => void load() }} />
+        <EmptyState icon="record" title="Couldn't load the Life Record" message={state.message} action={{ label: "Try again", onPress: () => void load() }} />
       </Screen>
     );
   }
@@ -52,7 +52,7 @@ export default function PetLifeRecord() {
       <Screen>
         <Stack.Screen options={{ title: `${state.name} · Life Record` }} />
         <EmptyState
-          emoji="📖"
+          icon="record"
           title="No Life Record yet"
           message={`After ${state.name}'s first stay, what the sitter learned shows up here.`}
         />

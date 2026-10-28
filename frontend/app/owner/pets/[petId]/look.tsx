@@ -96,9 +96,9 @@ export default function PetLookScreen() {
     return own ? [...list.filter((p) => p.name === own.name), ...list.filter((p) => p.name !== own.name)] : list;
   }, [cat, query, own]);
 
-  if (!admin) return <Screen><EmptyState emoji="🐾" title="Looks are set by the Goldito team" message="Your pet's look comes from its profile." /></Screen>;
+  if (!admin) return <Screen><EmptyState icon="paw" title="Looks are set by the Goldito team" message="Your pet's look comes from its profile." /></Screen>;
   if (pet === undefined || (pet && !look)) return <LoadingView />;
-  if (!pet || !look) return <Screen><EmptyState emoji="🐾" title="Pet not found" message="It may have been removed." /></Screen>;
+  if (!pet || !look) return <Screen><EmptyState icon="paw" title="Pet not found" message="It may have been removed." /></Screen>;
 
   const recipe = look.recipe;
   const change = (next: PetRecipe) => setLook((s) => (s ? { ...s, recipe: next, history: [...s.history.slice(-40), s.recipe] } : s));

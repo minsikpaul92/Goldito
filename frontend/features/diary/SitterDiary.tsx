@@ -107,7 +107,7 @@ export function SitterDiary() {
     return (
       <Screen>
         <EmptyState
-          emoji="📔"
+          icon="diary"
           title="Couldn't load your pets"
           message={state.message}
           action={{ label: "Try again", onPress: () => void reload() }}
@@ -215,7 +215,7 @@ export function SitterDiary() {
         </View>
       ) : null}
       {shownView === "today" && caring.length === 0 ? (
-        <EmptyState emoji="📔" title="Diary" message="When you're caring for a pet, you can write and send the day's page from here." />
+        <EmptyState icon="diary" title="Diary" message="When you're caring for a pet, you can write and send the day's page from here." />
       ) : null}
       {caring.map((pet) => (
         // Every pet's composer stays mounted (its chips, lines and page survive switching); only the picked one shows.
@@ -228,9 +228,9 @@ export function SitterDiary() {
         pages === null && !bookError ? (
           <LoadingView />
         ) : bookError && !pages ? (
-          <EmptyState emoji="📔" title="Couldn't load the diary" message={bookError} action={{ label: "Try again", onPress: () => void loadBook() }} />
+          <EmptyState icon="diary" title="Couldn't load the diary" message={bookError} action={{ label: "Try again", onPress: () => void loadBook() }} />
         ) : !pages || pages.length === 0 ? (
-          <EmptyState emoji="📔" title="No pages yet" message="Every page you send collects here, one pet at a time or all together." />
+          <EmptyState icon="diary" title="No pages yet" message="Every page you send collects here, one pet at a time or all together." />
         ) : (
           <DiaryBook
             key={pageParam ?? "book"}

@@ -48,7 +48,7 @@ export default function SitterOnboarding() {
 
   if (session.status === "loading") return <LoadingView />;
   if (session.status !== "signedIn" || session.profile.role !== "sitter") return <Redirect href="/" />;
-  if (loadError) return <EmptyState emoji="🐾" title="Couldn't load your answers" message={loadError} />;
+  if (loadError) return <EmptyState icon="paw" title="Couldn't load your answers" message={loadError} />;
   if (!draft) return <LoadingView />;
 
   const done = () => {

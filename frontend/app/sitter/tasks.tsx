@@ -18,7 +18,7 @@ export default function SitterTasks() {
       <Screen>
         <BackLink onPress={goBack} testID="tasks-back" />
         <EmptyState
-          emoji="🐾"
+          icon="paw"
           title="Couldn't load tasks"
           message={state.message}
           action={{ label: "Try again", onPress: () => void reload() }}
@@ -30,7 +30,7 @@ export default function SitterTasks() {
     return (
       <Screen>
         <BackLink onPress={goBack} testID="tasks-back" />
-        <EmptyState emoji="🐾" title="No pets in your care right now" message="Tasks show up here while a stay is on." />
+        <EmptyState icon="paw" title="No pets in your care right now" message="Tasks show up here while a stay is on." />
       </Screen>
     );
   }

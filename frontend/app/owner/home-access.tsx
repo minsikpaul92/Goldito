@@ -61,7 +61,7 @@ export default function HomeAccessScreen() {
   if (loadError) {
     return (
       <Screen>
-        <EmptyState emoji="🔑" title="Couldn't load entry info" message={loadError} />
+        <EmptyState icon="key" title="Couldn't load entry info" message={loadError} />
       </Screen>
     );
   }

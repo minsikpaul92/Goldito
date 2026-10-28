@@ -47,7 +47,7 @@ export default function OwnerHome() {
     return (
       <Screen>
         <EmptyState
-          emoji="🐾"
+          icon="paw"
           title="Couldn't load your pets"
           message={error ?? "Check your connection and try again."}
           action={{ label: "Try again", onPress: () => void reload() }}
@@ -60,7 +60,7 @@ export default function OwnerHome() {
     return (
       <Screen>
         <EmptyState
-          emoji="🐶"
+          icon="paw"
           title="No pets yet"
           message="Add your dog or cat to start getting care updates."
           action={{ label: "Add pet", onPress: addPet }}

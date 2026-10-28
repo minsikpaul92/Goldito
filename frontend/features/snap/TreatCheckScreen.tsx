@@ -155,7 +155,7 @@ function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
   if (pets.status === "error") {
     return (
       <Screen>
-        <EmptyState emoji="🏷️" title="Couldn't load your pets" message={pets.message} />
+        <EmptyState icon="label" title="Couldn't load your pets" message={pets.message} />
       </Screen>
     );
   }
@@ -165,13 +165,13 @@ function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
         <View testID="treat-no-pets">
           {role === "sitter" ? (
             <EmptyState
-              emoji="🏷️"
+              icon="label"
               title="No pet in your care right now"
               message="Treat check opens for the pets you look after, while their stay is on."
             />
           ) : (
             <EmptyState
-              emoji="🏷️"
+              icon="label"
               title="Add a pet first"
               message="Treat check reads a label against your pet's allergies and foods unsafe for their species."
               action={{ label: "Add pet", onPress: () => router.push("/owner-onboarding?add=1") }}

@@ -3,12 +3,15 @@ import ArrowUp from "lucide-react-native/icons/arrow-up";
 import Bell from "lucide-react-native/icons/bell";
 import Bone from "lucide-react-native/icons/bone";
 import Search from "lucide-react-native/icons/search";
+import BookHeart from "lucide-react-native/icons/book-heart";
 import BookOpen from "lucide-react-native/icons/book-open";
 import Calendar from "lucide-react-native/icons/calendar";
 import Camera from "lucide-react-native/icons/camera";
 import Car from "lucide-react-native/icons/car";
 import ChevronDown from "lucide-react-native/icons/chevron-down";
 import Check from "lucide-react-native/icons/check";
+import ClipboardList from "lucide-react-native/icons/clipboard-list";
+import CreditCard from "lucide-react-native/icons/credit-card";
 import Clock from "lucide-react-native/icons/clock";
 import ArrowLeft from "lucide-react-native/icons/arrow-left";
 import ChevronLeft from "lucide-react-native/icons/chevron-left";
@@ -27,6 +30,7 @@ import Leaf from "lucide-react-native/icons/leaf";
 import LocateFixed from "lucide-react-native/icons/locate-fixed";
 import House from "lucide-react-native/icons/house";
 import Image from "lucide-react-native/icons/image";
+import KeyRound from "lucide-react-native/icons/key-round";
 import Images from "lucide-react-native/icons/images";
 import LogIn from "lucide-react-native/icons/log-in";
 import LogOut from "lucide-react-native/icons/log-out";
@@ -47,6 +51,7 @@ import RefreshCw from "lucide-react-native/icons/refresh-cw";
 import CloudRain from "lucide-react-native/icons/cloud-rain";
 import Settings from "lucide-react-native/icons/settings";
 import Share from "lucide-react-native/icons/share";
+import Sun from "lucide-react-native/icons/sun";
 import Sprout from "lucide-react-native/icons/sprout";
 import Sparkles from "lucide-react-native/icons/sparkles";
 import Square from "lucide-react-native/icons/square";
@@ -122,11 +127,19 @@ const ICONS = {
   place: MapPin,
   recenter: LocateFixed,
   price: Tag,
+  /** A food label: treat checks. */
+  label: Tag,
   chat: MessageCircleMore,
   car: Car,
   received: LogIn,
   returned: LogOut,
   photo: Image,
+  key: KeyRound,
+  card: CreditCard,
+  request: ClipboardList,
+  /** The Pet Life Record. */
+  record: BookHeart,
+  today: Sun,
   // A Diary page's two actions (diary audit, Oct 27): Decorate and Share.
   sticker: Sticker,
   share: Share,

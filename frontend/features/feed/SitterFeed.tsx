@@ -73,13 +73,13 @@ export function SitterFeed() {
   }, [petParam]);
 
   if (error && !pets) {
-    return <EmptyState emoji="📸" title="Couldn't load pets" message={error} action={{ label: "Try again", onPress: () => void load() }} />;
+    return <EmptyState icon="camera" title="Couldn't load pets" message={error} action={{ label: "Try again", onPress: () => void load() }} />;
   }
   if (!pets) return <LoadingView />;
   if (pets.length === 0) {
     return (
       <EmptyState
-        emoji="📸"
+        icon="camera"
         title="Share a moment"
         message="When you're caring for a pet, open them here to share photos with the owner."
       />

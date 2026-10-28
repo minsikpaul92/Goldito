@@ -83,7 +83,7 @@ export default function SitterHome() {
     return (
       <Screen>
         <EmptyState
-          emoji="🌤️"
+          icon="today"
           title="Couldn't load today"
           message={state.message}
           action={{ label: "Try again", onPress: () => void load() }}
@@ -115,7 +115,7 @@ export default function SitterHome() {
     return (
       <Screen>
         <EmptyState
-          emoji="🌤️"
+          icon="today"
           title="No pets in your care today"
           message="Open your schedule to take bookings."
           action={{ label: "Open your schedule", onPress: () => router.push("/sitter/schedule") }}
