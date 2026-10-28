@@ -170,7 +170,7 @@ What we used, what worked, and what got in the way, written down as it happened.
 
 | Feature | What Tavily searches | Trusted domains |
 | :--- | :--- | :--- |
-| **Treat check** (Snap tab) | The label's hidden sources, toxic or unknown ingredients, and recent recalls of the product. The excerpts go to Nemotron 3 Ultra; a link is shown only if the model relied on that page and the page names the product or a flagged ingredient, and none when the pet's own allergy already settles the verdict | [fda.gov](https://www.fda.gov) · [avma.org](https://www.avma.org) · [petpoisonhelpline.com](https://www.petpoisonhelpline.com) · [vcahospitals.com](https://vcahospitals.com) |
+| **Treat check** (Snap tab) | The label's hidden sources, toxic or unknown ingredients, and recent recalls of the product. The excerpts go to Nemotron 3 Ultra; a link is shown only if the model relied on that page and the page names the product or a flagged ingredient, and none when the pet's own allergy already settles the verdict | [fda.gov](https://www.fda.gov) · [petpoisonhelpline.com](https://www.petpoisonhelpline.com) |
 
 - **Example:** the search `xylitol toxic dogs` returned pages from petpoisonhelpline.com and fda.gov in 2.6 s.
 - **Fast and frugal:** basic depth (1 credit per search), every search in parallel under one 8-second budget. A search that fails or runs late is left out, and the check still answers from the label, the rules, and the model, and says that no sources were available.
@@ -587,7 +587,6 @@ Open `http://localhost:8081` and use **Try the demo**. Tests: `pytest -q` in `ba
 | Source | Used for |
 | :--- | :--- |
 | [U.S. FDA](https://www.fda.gov) | Pet food recalls and ingredient safety, live search |
-| [AVMA](https://www.avma.org) | Veterinary guidance, live search |
 | [Pet Poison Helpline](https://www.petpoisonhelpline.com) | Toxins for dogs and cats, live search |
 
 Goldito reads short excerpts when it searches and does not store them. It keeps only ingredient names, its own short summary lines, and links, and shows the link with every answer. AI output is not veterinary advice.
