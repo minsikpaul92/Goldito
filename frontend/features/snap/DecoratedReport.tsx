@@ -530,7 +530,7 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
       borderRadius: theme.radius.sm,
       borderWidth: 1,
-      borderColor: theme.color.borderStrong,
+      borderColor: "#FFFFFF",
     },
     thumbImage: { width: 40, height: 40 },
   });
