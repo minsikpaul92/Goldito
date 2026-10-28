@@ -160,7 +160,7 @@ What we used, what worked, and what got in the way, written down as it happened.
 
 <img src="docs/assets/readme/treat-check.gif" alt="The owner's phone: a treat label is checked for Max, who is allergic to chicken, and a red DANGER screen appears with sources" width="340">
 
-<sub><i>Treat check: one label gets a WARNING, another a red DANGER</i></sub>
+<sub><i>Treat check: chicken on the label gets a red DANGER, with sources</i></sub>
 
 ---
 
@@ -467,11 +467,25 @@ cd Goldito
 
 Run every file in `supabase/migrations/` on your Supabase project, in name order (SQL Editor or psql; see [supabase/README.md](supabase/README.md)).
 
+**Keys to fill in** (everything else in `.env.example` has a default or is optional; the model IDs are pre-filled)
+
+| File | Keys | Where from |
+| :--- | :--- | :--- |
+| `backend/.env` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Supabase, Project Settings, API |
+| | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Cloudinary dashboard |
+| | `NEBIUS_API_KEY` | Nebius Token Factory |
+| | `DEMO_PASSWORD` | any value you choose |
+| `frontend/.env` | `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase, Project Settings, API |
+| | `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary dashboard |
+| | `EXPO_PUBLIC_DEMO_PASSWORD` | the same value as the backend's `DEMO_PASSWORD` |
+
+Details for each key: [docs/plan/env-setup.md](docs/plan/env-setup.md).
+
 <details>
 <summary><b>macOS / Linux</b></summary>
 
 ```bash
-# 2. Backend (fill SUPABASE_*, CLOUDINARY_*, NEBIUS_API_KEY, DEMO_PASSWORD in .env)
+# 2. Backend (fill backend/.env with the keys above)
 cd backend
 cp .env.example .env
 python3.12 -m venv .venv
@@ -483,7 +497,7 @@ uvicorn app.main:app --reload --port 8000
 
 ```bash
 # 3. Frontend, in a new terminal from the repo root
-# (fill EXPO_PUBLIC_SUPABASE_URL, _SUPABASE_ANON_KEY, _CLOUDINARY_CLOUD_NAME, _DEMO_PASSWORD, same value as the backend's)
+# (fill frontend/.env with the keys above)
 cd frontend
 cp .env.example .env
 npm install
@@ -498,7 +512,7 @@ On Ubuntu or Debian, install `python3.12-venv` first.
 <summary><b>Windows (PowerShell)</b></summary>
 
 ```powershell
-# 2. Backend (fill SUPABASE_*, CLOUDINARY_*, NEBIUS_API_KEY, DEMO_PASSWORD in .env)
+# 2. Backend (fill backend/.env with the keys above)
 cd backend
 Copy-Item .env.example .env
 py -3.12 -m venv .venv
@@ -510,7 +524,7 @@ uvicorn app.main:app --reload --port 8000
 
 ```powershell
 # 3. Frontend, in a new terminal from the repo root
-# (fill EXPO_PUBLIC_SUPABASE_URL, _SUPABASE_ANON_KEY, _CLOUDINARY_CLOUD_NAME, _DEMO_PASSWORD, same value as the backend's)
+# (fill frontend/.env with the keys above)
 cd frontend
 Copy-Item .env.example .env
 npm install
