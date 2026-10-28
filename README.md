@@ -596,7 +596,7 @@ Open `http://localhost:8081` and use **Try the demo**. Tests: `pytest -q` in `ba
 
 Goldito reads short excerpts when it searches and does not store them. It keeps only ingredient names, its own short summary lines, and links, and shows the link with every answer. AI output is not veterinary advice.
 
-**Maps and models:** map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors (address lookup through Nominatim) · [MediaPipe](https://ai.google.dev/edge/mediapipe) object detector (EfficientDet-Lite0) and interactive segmenter (Magic Touch), running in the browser.
+**Maps and models:** map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors (address lookup through Nominatim) · Canadian postal areas from [GeoNames](https://www.geonames.org/postalcodes/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) · [MediaPipe](https://ai.google.dev/edge/mediapipe) object detector (EfficientDet-Lite0) and interactive segmenter (Magic Touch), running in the browser.
 
 **Design:** icons from [Lucide](https://lucide.dev) · fonts Fredoka and Plus Jakarta Sans from Google Fonts.
 
