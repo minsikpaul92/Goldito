@@ -23,8 +23,8 @@ DATA = Path(__file__).resolve().parent.parent / "data" / "breed_needs.json"
 
 # Only trusted veterinary and breed-club sites, per species (README.md, Tavily section).
 DOMAINS = {
-    "dog": ["vcahospitals.com", "merckvetmanual.com"],
-    "cat": ["vcahospitals.com", "merckvetmanual.com"],
+    "dog": ["merckvetmanual.com"],
+    "cat": ["merckvetmanual.com"],
 }
 
 

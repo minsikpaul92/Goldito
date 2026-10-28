@@ -46,7 +46,7 @@ The Diary is your pet's own picture diary. Every stay becomes a page: the daily 
 | AI | **Nebius Token Factory**, called from the backend only · **Tavily** search · Groq Whisper for speech to text |
 
 **Models on Token Factory**
-- **NVIDIA Nemotron 3 Nano:** the sitter's "yes", spoken profile facts, breed needs, the mood line
+- **NVIDIA Nemotron 3 Nano:** the sitter's "yes", spoken profile facts, the mood line
 - **NVIDIA Nemotron 3 Super:** chat chips and drafts, checklists, daily notes, Life Records
 - **NVIDIA Nemotron 3 Ultra:** treat-check reasoning
 - **NVIDIA Nemotron 3.5 Super VL:** reads treat labels and photos: captions, album sorting, breed guess, mood tags

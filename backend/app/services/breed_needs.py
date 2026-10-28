@@ -37,6 +37,11 @@ EXCERPT_CHARS = 1500
 MODEL_TIMEOUT_S = 20.0
 
 
+# Off since 2026-10-28: the sites this read from (VCA, Merck) do not allow reuse of their content without written
+# permission, so no breed page is searched or summarized. The lookup answers with nothing and touches no search or DB.
+ENABLED = False
+
+
 class Needs(BaseModel):
     chips: list[Chip] = []
     sources: list[Source] = []

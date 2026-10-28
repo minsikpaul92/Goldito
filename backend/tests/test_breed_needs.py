@@ -238,7 +238,7 @@ def test_the_search_uses_the_species_domains_and_keeps_only_quoted_lines(monkeyp
     monkeypatch.setattr(tavily, "search", search)
     monkeypatch.setattr(nebius, "chat_json", chat_json)
     chips, sources = breed_needs.search_needs("dog", "poodle")
-    assert sent["domains"] == ["vcahospitals.com", "merckvetmanual.com"]
+    assert sent["domains"] == ["merckvetmanual.com"]
     assert "poodle" in sent["query"] and "dog" in sent["query"]
     assert "<results>" in sent["prompt"]
     assert [c.kind for c in chips] == ["exercise"]
@@ -277,6 +277,7 @@ def api(monkeypatch, listing):
     notes = Notes()
     monkeypatch.setattr(router, "get_service_client", lambda: notes)
     router._searches.reset()
+    monkeypatch.setattr(breed_needs, "ENABLED", True)
     state = {"searches": 0}
 
     def search_needs(species, breed):
@@ -285,6 +286,14 @@ def api(monkeypatch, listing):
 
     monkeypatch.setattr(breed_needs, "search_needs", search_needs)
     return state
+
+
+def test_the_lookup_is_off_so_it_answers_with_nothing_and_touches_no_search_or_db(client, monkeypatch) -> None:
+    assert breed_needs.ENABLED is False
+    monkeypatch.setattr(breed_needs, "search_needs", lambda *a: pytest.fail("must not search"))
+    monkeypatch.setattr(router, "get_service_client", lambda: pytest.fail("must not touch the DB"))
+    out = client.post("/api/breed-needs", json={"species": "dog", "breed": "Maltese"}, headers=headers(owner_token())).json()
+    assert out == {"chips": [], "sources": [], "origin": "none", "basis": None}
 
 
 def test_owners_and_sitters_can_ask_and_a_listed_breed_needs_no_search(client, api) -> None:

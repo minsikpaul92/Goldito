@@ -82,7 +82,7 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 
 | When this happens | The agent | Model | A person decides |
 | :--- | :--- | :--- | :--- |
-| A new owner registers a pet | Turns a photo and a few spoken sentences into profile suggestions and looks up breed needs | Nemotron 3.5 **Super VL** · Groq Whisper → Nemotron 3 **Nano** | The owner confirms every suggestion |
+| A new owner registers a pet | Turns a photo and a few spoken sentences into profile suggestions | Nemotron 3.5 **Super VL** · Groq Whisper → Nemotron 3 **Nano** | The owner confirms every suggestion |
 | A message arrives in the chat | Suggests reply chips and drafts a message in my voice, from the calendar, quote, policy, pet profile, and Life Record; points at the next step only if the code allows it | Nemotron 3 **Super** + Qwen3 Embedding | Taps a chip, edits, and taps **Send** |
 | The sitter says yes | Recognizes it and brings up the Meet & Greet card | Nemotron 3 **Nano** | Either side requests, accepts, or skips |
 | The owner writes a care request | Turns it into timed tasks and Heads-up cards | Nemotron 3 **Super** | The owner reviews and saves |
@@ -101,7 +101,7 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 | Model (Token Factory ID) | Used for | Measured |
 | :--- | :--- | :--- |
 | **Nemotron 3 Super** `nvidia/nemotron-3-super-120b-a12b` | Chat reply chips and drafts · care request → checklist · daily notes · Life Records | About 1 s per chip set or draft. In simulated 20-message chats, Nano drafts repeated themselves and fell back to bare chip words; Super did not, so the chat runs on Super |
-| **Nemotron 3 Nano** `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | The sitter's "yes" · spoken profile → facts with quotes · sitter onboarding by voice · breed needs from search results · the mood line | Fast extraction where the server checks every value |
+| **Nemotron 3 Nano** `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | The sitter's "yes" · spoken profile → facts with quotes · sitter onboarding by voice · the mood line | Fast extraction where the server checks every value |
 | **Nemotron 3 Ultra** `nvidia/Nemotron-3-Ultra-550b-a55b` | Treat check: allergens and hidden sources over the label, the rules, and Tavily excerpts | About 2.7 s with thinking on; the whole check about 7 to 8 s |
 | **Nemotron 3.5 Super VL** `nvidia/Nemotron-3.5-Super-VL` ¹ | Treat labels · photo captions and album · daily-note photo chips · breed guess from a pet photo · mood tags · handoff photo check (server API, not in the app yet) | About 1 to 1.4 s per photo with thinking off. On six sample labels (5 variants, 60 calls) it missed no ingredient and said "incomplete" on every cut-off label |
 | **Qwen3 Embedding 8B** `Qwen/Qwen3-Embedding-8B` | RAG over Life Records, sitter policies, and care requests · picking a sitter's own past replies as tone examples | `dimensions: 1024` fits a pgvector HNSW index |
@@ -171,11 +171,9 @@ What we used, what worked, and what got in the way, written down as it happened.
 | Feature | What Tavily searches | Trusted domains |
 | :--- | :--- | :--- |
 | **Treat check** (Snap tab) | The label's hidden sources, toxic or unknown ingredients, and recent recalls of the product. The excerpts go to Nemotron 3 Ultra; a link is shown only if the model relied on that page and the page names the product or a flagged ingredient, and none when the pet's own allergy already settles the verdict | [fda.gov](https://www.fda.gov) · [avma.org](https://www.avma.org) · [petpoisonhelpline.com](https://www.petpoisonhelpline.com) · [vcahospitals.com](https://vcahospitals.com) |
-| **Breed needs** (sign-up, at a glance card) | One breed's care needs; Nemotron 3 Nano turns the result into short chips, each with its source | Dogs and cats: [vcahospitals.com](https://vcahospitals.com) · [merckvetmanual.com](https://www.merckvetmanual.com) |
 
-- **Example:** the search `xylitol toxic dogs` returned pages from petpoisonhelpline.com, vcahospitals.com, and fda.gov in 2.9 s.
+- **Example:** the search `xylitol toxic dogs` returned pages from petpoisonhelpline.com and fda.gov in 2.6 s.
 - **Fast and frugal:** basic depth (1 credit per search), every search in parallel under one 8-second budget. A search that fails or runs late is left out, and the check still answers from the label, the rules, and the model, and says that no sources were available.
-- **Breed answers are cached:** a reviewed list of common breeds first, then a found result for 30 days, an empty one for 3 days.
 - **Danger is loud:** a DANGER verdict opens a red screen that only "I understand" closes, and a sitter's DANGER also notifies the owner.
 - Code: [`services/tavily.py`](backend/app/services/tavily.py) · [`services/breed_needs.py`](backend/app/services/breed_needs.py) · [`routers/ai_safety_check.py`](backend/app/routers/ai_safety_check.py)
 
@@ -296,7 +294,7 @@ Tap a stage for the details.
 
 - One question per screen, with big buttons. A **pet photo** goes to Nemotron 3.5 Super VL, which reads up to three breed guesses and a coat color; the owner confirms them and adds the weight. Goldito then builds the **8-bit pet** from a library of breed presets: the breed picks the shape, the coat color paints it, and the weight sets the build. It lives on the owner's Home, and **Match colors from photo** can repaint it with the photo's own colors later.
 - **Speak instead of typing:** the recording becomes text (Groq Whisper), the owner can fix it, and Nemotron 3 Nano pulls out profile facts, each with the sentence it came from. The server drops any value without a matching quote, and safety answers are never pre-filled. Sitters can answer their onboarding questions the same way.
-- The pet gets an **at a glance** card (five traits, such as sociability and energy) and a **breed needs** line found with Tavily on trusted breed and vet sites.
+- The pet gets an **at a glance** card (five traits, such as sociability and energy).
 
 </details>
 
@@ -342,7 +340,7 @@ Tap a stage for the details.
                  ▼
         FastAPI (Python 3.12) · Docker on Render
           ├── Nebius Token Factory
-          │     ├── Nemotron 3 Nano   → chat "yes", voice → profile facts, breed needs, mood line
+          │     ├── Nemotron 3 Nano   → chat "yes", voice → profile facts, mood line
           │     ├── Nemotron 3 Super  → chat chips and drafts, checklists, daily notes, Life Records
           │     ├── Nemotron 3 Ultra  → treat check reasoning
           │     ├── Nemotron 3.5 Super VL → labels, captions, album, photo chips, breed guess, mood tags
@@ -388,7 +386,7 @@ subgraph group_ai["<b>AI And Memory</b>"]
   node_ai_caption["Photo Captions"]
   node_ai_safety["Treat Check"]
   node_ai_life["Life Record"]
-  node_ai_profile["Pet Profile And Breed Needs"]
+  node_ai_profile["Pet Profile"]
   node_ai_mood["Mood Meter"]
   node_rag["Pet Memory"]
 end
@@ -584,15 +582,13 @@ Open `http://localhost:8081` and use **Try the demo**. Tests: `pytest -q` in `ba
 
 ## Sources and Credits
 
-**Pet safety and breed information** (what the treat check and breed needs read)
+**Pet safety information** (what the treat check reads)
 
 | Source | Used for |
 | :--- | :--- |
 | [U.S. FDA](https://www.fda.gov) | Pet food recalls and ingredient safety, live search |
 | [AVMA](https://www.avma.org) | Veterinary guidance, live search |
 | [Pet Poison Helpline](https://www.petpoisonhelpline.com) | Toxins for dogs and cats, live search |
-| [VCA Animal Hospitals](https://vcahospitals.com) | Toxins and breed care, live search and the reviewed breed list |
-| [Merck Veterinary Manual](https://www.merckvetmanual.com) | Breed and care needs, live search |
 
 Goldito reads short excerpts when it searches and does not store them. It keeps only ingredient names, its own short summary lines, and links, and shows the link with every answer. AI output is not veterinary advice.
 

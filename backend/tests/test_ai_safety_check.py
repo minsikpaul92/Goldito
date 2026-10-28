@@ -151,14 +151,14 @@ def test_a_possible_hidden_allergen_is_a_warning_with_the_reason(client, setup):
 
 FAT_HIT = {
     "title": "Animal fat in pet food",
-    "url": "https://vcahospitals.com/animal-fat",
-    "domain": "vcahospitals.com",
+    "url": "https://avma.org/animal-fat",
+    "domain": "avma.org",
     "content": "Animal fat in pet food is often poultry-derived and the label may not say which animal.",
 }
 OFF_TOPIC_HIT = {
     "title": "Bland diet instructions",
-    "url": "https://vcahospitals.com/bland-diet",
-    "domain": "vcahospitals.com",
+    "url": "https://avma.org/bland-diet",
+    "domain": "avma.org",
     "content": "Feed boiled rice and plain cooked meat for two days.",
 }
 
@@ -166,13 +166,13 @@ OFF_TOPIC_HIT = {
 def test_a_page_is_shown_only_when_the_model_cited_it_and_it_is_about_the_finding(client, setup):
     setup(label("sweet potato", "animal fat"), judged("WARNING", "Ask the owner first.", sources=[1]), hits=[FAT_HIT, OFF_TOPIC_HIT])
     body = post(client).json()
-    assert [s["url"] for s in body["sources"]] == ["https://vcahospitals.com/animal-fat"]
+    assert [s["url"] for s in body["sources"]] == ["https://avma.org/animal-fat"]
 
 
 def test_a_cited_page_that_is_not_about_the_finding_is_never_shown(client, setup):
     setup(label("sweet potato", "animal fat"), judged("WARNING", "Ask the owner first.", sources=[1, 2]), hits=[OFF_TOPIC_HIT, FAT_HIT])
     body = post(client).json()
-    assert [s["url"] for s in body["sources"]] == ["https://vcahospitals.com/animal-fat"]
+    assert [s["url"] for s in body["sources"]] == ["https://avma.org/animal-fat"]
 
 
 def test_a_page_the_model_did_not_cite_is_not_shown_even_if_it_fits(client, setup):
