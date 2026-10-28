@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ALL_PETS, FeedPetPicker } from "../../components/FeedPetPicker";
 import { FeedBarRight } from "../../components/FeedSwitch";
+import { PetChoiceSheet } from "../../components/PetChoiceSheet";
 import { BackLink } from "../../components/ui/BackLink";
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -39,6 +40,7 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
   // The book, or the page being written (inline, like the sitter's Diary).
   const [view, setView] = useState<"book" | "write">("book");
   const [writePet, setWritePet] = useState<string | null>(null);
+  const [choosing, setChoosing] = useState(false);
   const [saveBar, setSaveBar] = useState<SaveBar | null>(null);
   // A new page each time one is saved.
   const [pageKey, setPageKey] = useState(0);
@@ -119,9 +121,11 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
   const writeButton =
     pets.length > 0 && !linked ? (
       <Button
-        label="Write a page"
+        label="Write a diary"
         variant="secondary"
         onPress={() => {
+          // With two or more pets and none open in the book, it asks which one the diary is about.
+          if (petSel === ALL_PETS && pets.length > 1) return setChoosing(true);
           setWritePet(petSel === ALL_PETS ? null : petSel);
           setView("write");
         }}
@@ -189,6 +193,17 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
           message="Your sitter's pages show up here during a stay, one for each day."
         />
         {write}
+        <PetChoiceSheet
+          visible={choosing}
+          pets={pets}
+          faces={faces}
+          onPick={(id) => {
+            setChoosing(false);
+            setWritePet(id);
+            setView("write");
+          }}
+          onClose={() => setChoosing(false)}
+        />
       </Screen>
     );
   }
@@ -240,6 +255,17 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
             )}
           </View>
         )}
+      />
+      <PetChoiceSheet
+        visible={choosing}
+        pets={pets}
+        faces={faces}
+        onPick={(id) => {
+          setChoosing(false);
+          setWritePet(id);
+          setView("write");
+        }}
+        onClose={() => setChoosing(false)}
       />
     </Screen>
   );

@@ -70,10 +70,13 @@ export type SendBar = {
  */
 export function ReportComposer({
   pet,
+  startFresh = false,
   onStatus,
   onSendBar,
 }: {
   pet: CaringPet;
+  /** Write a diary: start a new page even if one was already sent today (it stays in the book). */
+  startFresh?: boolean;
   onStatus?: (status: ReportStatus) => void;
   onSendBar?: (bar: SendBar | null) => void;
 }) {
@@ -134,7 +137,9 @@ export function ReportComposer({
       try {
         const existing = sitterId ? await getTodayReport(pet.id, sitterId) : null;
         if (!isLive()) return;
-        if (existing?.status === "sent") {
+        if (existing?.status === "sent" && startFresh) {
+          // Write a diary starts a new page: the one already sent today stays in the book.
+        } else if (existing?.status === "sent") {
           setSent(true);
           setSentId(existing.id);
           setSentPhotos(existing.photoUrls ?? (existing.photoUrl ? [existing.photoUrl] : []));

@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ALL_PETS, FeedPetPicker } from "../../components/FeedPetPicker";
 import { FeedBarRight } from "../../components/FeedSwitch";
+import { PetChoiceSheet } from "../../components/PetChoiceSheet";
 import { BackLink } from "../../components/ui/BackLink";
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -52,6 +53,9 @@ export function SitterDiary() {
   const [deleted, setDeleted] = useState(0);
   // A pet whose unsent page was cancelled starts again (only that pet's composer).
   const [resets, setResets] = useState<Record<string, number>>({});
+  // A pet whose composer was reopened for a new page after one was sent today.
+  const [fresh, setFresh] = useState<Record<string, boolean>>({});
+  const [choosing, setChoosing] = useState(false);
   const [pages, setPages] = useState<SentReport[] | null>(null);
   const [bookError, setBookError] = useState<string | null>(null);
   // The book's own pet picker (All pets, or one): the pets that have pages.
@@ -112,6 +116,22 @@ export function SitterDiary() {
     );
   }
   const current = caring.find((p) => p.id === selected) ?? caring[0];
+  /** Write a diary: a new page for one pet. With more than one pet in care and none open in the book, it asks which. */
+  const write = (petId: string) => {
+    setSelected(petId);
+    // Today's page was already sent: this one is a new page (the sent one stays in the book).
+    if (statuses[petId] === "sent") {
+      setResets((prev) => ({ ...prev, [petId]: (prev[petId] ?? 0) + 1 }));
+      setFresh((prev) => ({ ...prev, [petId]: true }));
+    }
+    setView("today");
+  };
+  const startWriting = () => {
+    const open = caring.find((p) => p.id === bookPet);
+    if (open) return write(open.id);
+    if (caring.length > 1) return setChoosing(true);
+    if (caring[0]) write(caring[0].id);
+  };
   const bar = shownView === "today" && current ? bars[current.id] : null;
   const hints = Object.fromEntries(
     Object.entries(statuses).flatMap(([id, s]) => (s ? [[id, STATUS_LABEL[s]]] : [])),
@@ -190,7 +210,7 @@ export function SitterDiary() {
         <View style={styles.writeRow}>
           {bookPet !== ALL_PETS ? <BackLink onPress={() => setBookPet(ALL_PETS)} testID="sitter-book-covers" /> : null}
           {caring.length > 0 ? (
-            <Button label="Write a page" variant="secondary" onPress={() => setView("today")} style={styles.writeFill} testID="sitter-diary-view-today" />
+            <Button label="Write a diary" variant="secondary" onPress={startWriting} style={styles.writeFill} testID="sitter-diary-view-today" />
           ) : null}
         </View>
       ) : null}
@@ -200,7 +220,7 @@ export function SitterDiary() {
       {caring.map((pet) => (
         // Every pet's composer stays mounted (its chips, lines and page survive switching); only the picked one shows.
         <View key={pet.id} style={shownView === "today" && pet.id === current?.id ? undefined : styles.hidden}>
-          <ReportComposer key={`${deleted}-${resets[pet.id] ?? 0}`} pet={pet} onStatus={onStatus(pet.id)} onSendBar={onSendBar(pet.id)} />
+          <ReportComposer key={`${deleted}-${resets[pet.id] ?? 0}`} pet={pet} startFresh={fresh[pet.id] ?? false} onStatus={onStatus(pet.id)} onSendBar={onSendBar(pet.id)} />
         </View>
       ))}
 
@@ -233,6 +253,16 @@ export function SitterDiary() {
           />
         )
       ) : null}
+      <PetChoiceSheet
+        visible={choosing}
+        pets={caring}
+        faces={faces}
+        onPick={(id) => {
+          setChoosing(false);
+          write(id);
+        }}
+        onClose={() => setChoosing(false)}
+      />
     </Screen>
   );
 }

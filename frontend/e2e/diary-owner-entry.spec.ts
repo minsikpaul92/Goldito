@@ -101,8 +101,8 @@ test.describe("owner diary page", () => {
     const db = await openOwnerDiary(page, (d) => caring(d, [MAX, MOCHI]));
     const screen = app(page);
     await screen.getByTestId("diary-write").click();
-    await screen.getByTestId("diary-write-pet").click();
-    await screen.getByTestId(`diary-write-pet-${MOCHI.id}`).click();
+    // Two pets: it asks which one the diary is about.
+    await screen.getByTestId(`diary-pick-pet-${MOCHI.id}`).click();
     await expect(screen.getByTestId("diary-write-body")).toBeVisible();
     await screen.getByTestId("diary-write-body").fill("Mochi slept on the sofa.");
     await screen.getByTestId("diary-write-save").click();

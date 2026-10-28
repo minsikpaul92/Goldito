@@ -297,6 +297,8 @@ const CARE_SCRIPT: ScriptStep[] = [
   // Max is the first pet, so his page is the one open.
   { tap: "feed-view-diary" },
   { tap: "sitter-diary-view-today" },
+  // With two pets in care Write a diary asks which one; Max is the first.
+  { tapIf: "diary-pick-pet-*" },
   { wait: "report-chip-*", timeout: AI_MS },
   { tap: "report-custom-open-*" },
   { type: "report-custom-input-*", text: "Chased a squirrel at the park" },

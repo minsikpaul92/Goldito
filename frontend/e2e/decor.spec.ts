@@ -333,7 +333,7 @@ test.describe("diary decorating", () => {
     await expect(page).toHaveURL(/\/owner\/snap\/sticker$/);
   });
 
-  test("sitter: today's sent report shows the owner's stickers, and the sitter adds her own layer", async ({ page }) => {
+  test("sitter: a sent page in the book shows the owner's stickers, and the sitter adds her own layer", async ({ page }) => {
     await page.clock.setFixedTime(NOON_TORONTO);
     const { db } = await mockSupabase(page, [OWNER, SITTER], { now: NOON_TORONTO });
     caring(db, [MAX], NOON_TORONTO);
@@ -347,19 +347,21 @@ test.describe("diary decorating", () => {
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/sitter/diary");
     const screen = app(page);
-    await screen.getByTestId("sitter-diary-view-today").click();
-    const paper = screen.getByTestId(`report-sent-paper-${MAX.id}-paper`);
+    // The sent page is read in the book (Write a diary starts a new page).
+    await screen.getByTestId("sitter-book-cover-" + MAX.id).click();
+    const paper = screen.getByTestId("sitter-book-paper");
     await paper.waitFor();
 
-    const other = screen.getByTestId("decor-other");
+    // (Today's composer sits hidden behind the book with the same page: look at the one in sight.)
+    const other = screen.locator('[data-testid="decor-other"]:visible');
     await expect(other).toHaveCount(1);
     const o = await spot(other, paper);
     expect(o.x).toBeCloseTo(0.25, 1);
     expect(o.y).toBeCloseTo(0.7, 1);
 
-    await screen.getByTestId("decor-start").click();
-    await screen.getByTestId("decor-add").click();
-    await screen.getByTestId("decor-start").click(); // folds the tray; the stickers are already saved
+    await screen.locator('[data-testid="decor-start"]:visible').click();
+    await screen.locator('[data-testid="decor-add"]:visible').click();
+    await screen.locator('[data-testid="decor-start"]:visible').click(); // folds the tray; the stickers are already saved
     await page.waitForTimeout(300);
     expect(db.report_decor.map((r) => r.user_id).sort()).toEqual([OWNER.id, SITTER.id].sort());
   });

@@ -68,6 +68,8 @@ async function openSitterDiary(page: import("@playwright/test").Page, extraChips
   await page.goto("/sitter/diary");
   // The Diary opens on the book; Write a page opens today's page.
   await app(page).getByTestId("sitter-diary-view-today").click();
+  // With two pets in care it asks which one the diary is about.
+  if (pets.length > 1) await app(page).getByTestId(`diary-pick-pet-${MAX.id}`).click();
   await app(page).getByTestId(`report-${MAX.id}`).waitFor();
   return { db, chipRequests, reportRequests, served };
 }
@@ -402,6 +404,30 @@ test.describe("daily report", () => {
     expect(db.daily_reports).toHaveLength(1);
     expect(db.daily_reports[0]).toMatchObject({ status: "sent", body: "We played fetch until Max flopped on the grass.", sitter_id: SITTER.id });
     expect(db.notifications.find((n) => n.type === "report_sent")?.ref_id).toBe(db.daily_reports[0].id);
+  });
+
+  test("Write a diary after a page was sent today opens a new page, not the sent one", async ({ page }) => {
+    const { db } = await openSitterDiary(page);
+    const screen = app(page);
+    await screen.getByTestId(`report-body-${MAX.id}`).fill("The first page of the day.");
+    await screen.getByTestId(`report-send-${MAX.id}`).click();
+    await expect(screen.getByTestId(`report-sent-${MAX.id}`)).toBeVisible();
+    await screen.getByTestId("sitter-diary-view-book").click();
+    await screen.getByTestId("sitter-diary-view-today").click();
+    await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue("");
+    await expect(screen.getByTestId(`report-sent-${MAX.id}`)).toHaveCount(0);
+    expect(db.daily_reports).toHaveLength(1); // the sent page stays in the book
+  });
+
+  test("with two pets in care, Write a diary asks which one", async ({ page }) => {
+    await openSitterDiary(page, [], [MAX, MOCHI]);
+    const screen = app(page);
+    await expect(screen.getByTestId(`report-body-${MAX.id}`)).toBeVisible();
+    await screen.getByTestId(`report-cancel-${MAX.id}`).click();
+    await screen.getByTestId("sitter-diary-view-today").click();
+    await expect(screen.getByTestId("diary-pick-pet")).toBeVisible();
+    await screen.getByTestId(`diary-pick-pet-${MOCHI.id}`).click();
+    await expect(screen.getByTestId(`report-body-${MOCHI.id}`)).toBeVisible();
   });
 
   test("stickers go on the page before Send and are saved with the sent report", async ({ page }) => {
