@@ -29,6 +29,16 @@ export function ScreenHeader({ title, subtitle, right, style, testID }: Props) {
   );
 }
 
+/** The small line under a pushed screen's header ("← Title" in the stack header), at the top of the page. */
+export function ScreenSubtitle({ children, testID }: { children: ReactNode; testID?: string }) {
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <Text style={styles.subtitle} testID={testID}>
+      {children}
+    </Text>
+  );
+}
+
 const makeStyles = (theme: Theme) => {
   const display = theme.fontFamily.display;
   return StyleSheet.create({
