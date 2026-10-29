@@ -108,6 +108,8 @@ class Judgement(BaseModel):
     toxic_ingredients: list[str] = Field(default_factory=list)
     unknown_ingredients: list[str] = Field(default_factory=list)
     warning_message: str = ""
+    # The numbers (`id`) of the site excerpts the verdict relied on. The server still checks each one (safety.sources_to_show).
+    sources: list[int] = Field(default_factory=list)
 
     @field_validator("safety_status", mode="before")
     @classmethod
@@ -118,6 +120,13 @@ class Judgement(BaseModel):
     @classmethod
     def _lists(cls, value):
         return _clean_list(value, 20)
+
+    @field_validator("sources", mode="before")
+    @classmethod
+    def _used(cls, value):
+        if not isinstance(value, list):
+            return []
+        return [n for n in value if isinstance(n, int) and not isinstance(n, bool)][:MAX_SOURCES]
 
     @field_validator("hidden_sources", mode="before")
     @classmethod
@@ -257,7 +266,7 @@ def safety_check(body: SafetyCheckRequest, user: CurrentUser = Depends(get_curre
             "toxic_ingredients": rules.toxic_ingredients,
             "hidden_sources": rules.hidden_sources,
         },
-        "site_excerpts": [{"source": h["domain"], "title": h["title"], "text": h["content"]} for h in hits[:8]],
+        "site_excerpts": [{"id": i, "source": h["domain"], "title": h["title"], "text": h["content"]} for i, h in enumerate(hits[:8], 1)],
     }
     judgement: Judgement | None = None
     model_name = vision.model
@@ -296,10 +305,24 @@ def safety_check(body: SafetyCheckRequest, user: CurrentUser = Depends(get_curre
     for item in judgement.hidden_sources if judgement else []:
         if all(h.ingredient != item.ingredient for h in hidden):
             hidden.append(item)
-    sources = [Source(title=h["title"], url=h["url"], domain=h["domain"]) for h in hits]
-    for rule_source in rules.sources:
-        if all(s.url != rule_source["url"] for s in sources):
-            sources.append(Source(**rule_source))
+    # Pages the owner sees: only ones the model cited that are about this verdict, and none when the pet's own allergy
+    # and the label already settle it (a search result there is noise, not proof).
+    terms = [
+        *rules.matched_allergens,
+        *rules.toxic_ingredients,
+        *(judgement.toxic_ingredients if judgement else []),
+        *(judgement.unknown_ingredients if judgement else []),
+        *(x for h in hidden for x in (h.ingredient, h.may_contain)),
+        *([label.product_name] if label.product_name else []),
+    ]
+    shown = safety.sources_to_show(
+        hits[:8],
+        judgement.sources if judgement else [],
+        terms,
+        rule_allergen_hit=bool(rules.matched_allergens),
+        limit=MAX_SOURCES,
+    )
+    sources = [Source(title=h["title"], url=h["url"], domain=h["domain"]) for h in shown]
 
     result = SafetyCheckResponse(
         safety_check_id="",
@@ -310,7 +333,7 @@ def safety_check(body: SafetyCheckRequest, user: CurrentUser = Depends(get_curre
         hidden_sources=hidden,
         toxic_ingredients=_union(rules.toxic_ingredients, judgement.toxic_ingredients if judgement else []),
         unknown_ingredients=judgement.unknown_ingredients if judgement else [],
-        sources=sources[:MAX_SOURCES],
+        sources=sources,
         sources_unavailable=not searched,
         double_checked=judgement is not None,
         partial_label=partial,

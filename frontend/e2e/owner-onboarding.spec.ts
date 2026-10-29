@@ -88,7 +88,7 @@ test.describe("owner onboarding", () => {
         contentType: "application/json",
         body: JSON.stringify({
           chips: [{ kind: "grooming", text: "Brush daily", source: 0 }],
-          sources: [{ title: "AKC", url: "https://www.akc.org/dog-breeds/maltese/" }],
+          sources: [{ title: "VCA", url: "https://vcahospitals.com/know-your-pet/maltese" }],
           origin: "list",
           basis: null,
         }),
@@ -156,11 +156,8 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-pet-intro").fill("Loves the sofa.");
     await screen.getByTestId("own-next").click();
 
-    // Before the questions: where they come from, with links to the surveys they were inspired by.
-    await expect(screen.getByTestId("own-title")).toHaveText("Where these questions come from");
-    await expect(screen.getByTestId("own-sources")).toContainText("MCPQ-R");
-    await expect(screen.getByTestId("own-sources")).toContainText("C-BARQ");
-    await expect(screen.getByText("It is not a behavior test.")).toBeVisible();
+    // Before the questions: just a title and Start (no survey is named or linked, no explanation).
+    await expect(screen.getByTestId("own-title")).toHaveText("A few quick questions");
     await screen.getByTestId("own-next").click();
 
     // The 12 chart questions: the name is in every question, a tap goes on by itself.
@@ -275,7 +272,6 @@ test.describe("owner onboarding", () => {
       await screen.getByTestId("own-skip").click();
     }
     await expect(screen.getByTestId("own-step-about")).toBeVisible();
-    await expect(screen.getByTestId("own-sources")).toContainText("Feline Five");
     await screen.getByTestId("own-next").click();
     // Cat list: 10 chart questions, no dog-only wording.
     for (let i = 1; i <= 10; i++) {

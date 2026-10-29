@@ -17,8 +17,23 @@ def test_toxic_ingredients_depend_on_the_species():
     assert safety.check_rules(["macadamia nut"], [], "cat").status == "SAFE"
     lily = safety.check_rules(["lily extract", "salmon"], [], "cat")
     assert lily.status == "DANGER" and lily.toxic_ingredients == ["lily extract"]
-    assert lily.sources and lily.sources[0]["domain"] == "aspca.org"
+    assert lily.sources == []
     assert safety.check_rules(["lily extract"], [], "dog").status == "SAFE"
+
+
+def test_a_page_is_shown_only_when_cited_and_about_a_term():
+    hits = [
+        {"title": "Raisins and grapes", "content": "Raisins can cause kidney failure in dogs."},
+        {"title": "Bland diet", "content": "Boiled rice and chicken."},
+    ]
+    show = safety.sources_to_show
+    assert show(hits, [1], ["raisins"], rule_allergen_hit=False, limit=5) == [hits[0]]
+    assert show(hits, [2], ["raisins"], rule_allergen_hit=False, limit=5) == []  # cited, but not about a term
+    assert show(hits, [], ["raisins"], rule_allergen_hit=False, limit=5) == []  # fits, but not cited
+    assert show(hits, [1, 1], ["raisin"], rule_allergen_hit=False, limit=5) == [hits[0]]  # no duplicates, plural form
+    assert show(hits, [1], ["raisins"], rule_allergen_hit=True, limit=5) == []  # the pet's allergy settled it
+    assert show(hits, [0, 3], ["raisins"], rule_allergen_hit=False, limit=5) == []  # numbers out of range
+    assert show(hits, [1], ["rais"], rule_allergen_hit=False, limit=5) == []  # whole words only
 
 
 def test_whole_words_only_and_listed_exceptions_do_not_trip():

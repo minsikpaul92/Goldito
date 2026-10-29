@@ -1,6 +1,6 @@
 ## Inspiration
 
-After dozens of stays as pet sitters, many with the same dogs and cats, we kept seeing the same loop. Owners text *"Did they eat?" "Did you walk them?" "Send a photo."* Sitters spend the day answering DMs instead of caring for the pet. Apps connect owners and sitters, but the stay itself (replies, house rules, medication times, daily notes) is still typed by hand, and a lot of it happens outside the app. Keeping owners in the loop takes us **at least 40 minutes a day**. Goldito cuts that by about **85%** (our estimate), so sitters can focus on care.
+After dozens of stays as pet sitters, many with the same dogs and cats, we kept seeing the same loop. Owners text *"Did they eat?" "Did you walk them?" "Send a photo."* Sitters spend the day answering DMs instead of caring for the pet. Apps connect owners and sitters, but the stay itself (replies, house rules, medication times, daily notes) is still typed by hand, and a lot of it happens outside the app. Keeping owners in the loop takes us **at least 40 minutes a day**. Goldito cuts that to about **13 minutes** (our estimate), so sitters can focus on care.
 
 We also noticed who gets left out. Owners who find typing hard, often seniors, leave their pet's profile half empty. So we asked: what if the AI did the typing and people only approved?
 
@@ -28,7 +28,7 @@ Every photo the sitter (or you) shares lands in a warm, Kidsnote-style timeline 
 The Diary is your pet's own picture diary. Every stay becomes a page: the daily note, the photos, the little things like a squirrel at the park. You can stick on stickers, write your own lines, and decorate each page. Owner and sitter each decorate on their own layer, so one ordinary Tuesday becomes something you will want to look back on. Stickers are made from your own pet: the pet is cut out in the browser into a transparent sticker with a white outline.
 
 ### Snap: safety and a bit of play (both roles)
-- **Treat check:** snap a treat label. Nemotron 3.5 Super VL reads it, a rule table checks the pet's allergens and species toxins, **Tavily** pulls trusted vet and FDA pages, and Nemotron Ultra double-checks hidden sources (like chicken in "animal fat"). The result is SAFE, WARNING, or DANGER with sources. DANGER opens a red screen that only "I understand" closes, and notifies the owner.
+- **Treat check:** snap a treat label. Nemotron 3.5 Super VL reads it, a rule table checks the pet's allergens and species toxins, **Tavily** pulls FDA pages, and Nemotron Ultra double-checks hidden sources (like chicken in "animal fat"). The result is SAFE, WARNING, or DANGER with sources. DANGER opens a red screen that only "I understand" closes, and notifies the owner.
 - **Pet mood:** a photo or short clip gets a box around each pet and eight emotions in percent. For fun. The vision model only names visible body-language tags, and a fixed rule table turns them into the numbers, so the same photo always gives the same result.
 - **Stickers:** cut your pet out of any photo and drop it into the Diary.
 
@@ -46,7 +46,7 @@ The Diary is your pet's own picture diary. Every stay becomes a page: the daily 
 | AI | **Nebius Token Factory**, called from the backend only · **Tavily** search · Groq Whisper for speech to text |
 
 **Models on Token Factory**
-- **NVIDIA Nemotron 3 Nano:** the sitter's "yes", spoken profile facts, breed needs, the mood line
+- **NVIDIA Nemotron 3 Nano:** the sitter's "yes", spoken profile facts, the mood line
 - **NVIDIA Nemotron 3 Super:** chat chips and drafts, checklists, daily notes, Life Records
 - **NVIDIA Nemotron 3 Ultra:** treat-check reasoning
 - **NVIDIA Nemotron 3.5 Super VL:** reads treat labels and photos: captions, album sorting, breed guess, mood tags

@@ -30,7 +30,7 @@ client = base.client
 
 NOW = datetime(2026, 10, 21, 12, 0, tzinfo=UTC)
 HITS = [
-    {"title": "Poodle", "url": "https://www.akc.org/poodle", "domain": "akc.org", "content": "The Poodle needs about an hour of exercise every day. Brush the coat daily."},
+    {"title": "Poodle", "url": "https://allowed.example/poodle", "domain": "allowed.example", "content": "The Poodle needs about an hour of exercise every day. Brush the coat daily."},
     {"title": "Poodle care", "url": "https://vcahospitals.com/poodle", "domain": "vcahospitals.com", "content": "Poodles can be prone to hip problems in later life."},
 ]
 
@@ -70,8 +70,8 @@ def test_lines_with_a_real_quote_are_kept_and_only_their_pages_are_listed():
         HITS,
     )
     assert [(c.kind, c.source) for c in chips] == [("exercise", 0), ("care", 1)]
-    assert chips[0].quote == "needs about an hour of exercise every day"
-    assert [s.url for s in sources] == ["https://www.akc.org/poodle", "https://vcahospitals.com/poodle"]
+    assert chips[0].quote is None  # the quote proves the line, and is not kept
+    assert [s.url for s in sources] == ["https://allowed.example/poodle", "https://vcahospitals.com/poodle"]
 
 
 def test_a_line_that_the_page_does_not_say_is_dropped():
@@ -118,7 +118,7 @@ def test_a_kind_is_used_once_and_there_are_at_most_three_lines():
 @pytest.fixture
 def listing(tmp_path, monkeypatch):
     data = {
-        "dog": {"maltese": {"name": "Maltese", "aliases": ["maltese dog"], "chips": [{"kind": "grooming", "text": "Brush daily", "source": 0}], "sources": [{"title": "AKC", "url": "https://www.akc.org/m"}], "reviewed": True}},
+        "dog": {"maltese": {"name": "Maltese", "aliases": ["maltese dog"], "chips": [{"kind": "grooming", "text": "Brush daily", "source": 0}], "sources": [{"title": "VCA", "url": "https://vcahospitals.com/m"}], "reviewed": True}},
         "cat": {},
     }
     path = tmp_path / "breed_needs.json"
@@ -178,7 +178,7 @@ def test_a_breed_in_the_list_is_answered_without_a_search_or_the_cache(listing):
 
 def test_a_new_breed_is_searched_once_and_then_comes_from_the_cache(listing):
     notes = Notes()
-    found = ([Chip(kind="grooming", text="Brush daily", source=0)], [rules.Source(title="AKC", url="https://www.akc.org/p")])
+    found = ([Chip(kind="grooming", text="Brush daily", source=0)], [rules.Source(title="VCA", url="https://vcahospitals.com/p")])
     calls = []
 
     def searcher(species, breed):
@@ -237,20 +237,29 @@ def test_the_search_uses_the_species_domains_and_keeps_only_quoted_lines(monkeyp
 
     monkeypatch.setattr(tavily, "search", search)
     monkeypatch.setattr(nebius, "chat_json", chat_json)
+    monkeypatch.setitem(rules.DOMAINS, "dog", ["allowed.example"])
     chips, sources = breed_needs.search_needs("dog", "poodle")
-    assert sent["domains"] == ["akc.org", "vcahospitals.com", "merckvetmanual.com"]
+    assert sent["domains"] == ["allowed.example"]
     assert "poodle" in sent["query"] and "dog" in sent["query"]
     assert "<results>" in sent["prompt"]
     assert [c.kind for c in chips] == ["exercise"]
-    assert [s.url for s in sources] == ["https://www.akc.org/poodle"]
+    assert [s.url for s in sources] == ["https://allowed.example/poodle"]
     assert tavily.TRUSTED_DOMAINS != sent["domains"]  # the treat check's list is untouched
 
 
 def test_cats_use_cat_sites(monkeypatch, key):
     seen = {}
     monkeypatch.setattr(tavily, "search", lambda q, *, api_key, timeout, domains=None, excerpt_chars=400: seen.update(d=domains) or [])
+    monkeypatch.setitem(rules.DOMAINS, "cat", ["cats.example"])
     assert breed_needs.search_needs("cat", "ragdoll") == ([], [])
-    assert "icatcare.org" in seen["d"] and "akc.org" not in seen["d"]
+    assert seen["d"] == ["cats.example"]
+
+
+def test_with_no_site_to_read_from_nothing_is_searched(monkeypatch, key):
+    assert rules.DOMAINS == {"dog": [], "cat": []}
+    monkeypatch.setattr(tavily, "search", lambda *a, **k: pytest.fail("must not search with no site"))
+    assert breed_needs.search_needs("dog", "poodle") is None
+    assert breed_needs.search_needs("cat", "ragdoll") is None
 
 
 def test_no_key_a_slow_site_or_a_model_failure_mean_could_not_run(monkeypatch, key):
@@ -277,14 +286,51 @@ def api(monkeypatch, listing):
     notes = Notes()
     monkeypatch.setattr(router, "get_service_client", lambda: notes)
     router._searches.reset()
+    monkeypatch.setattr(breed_needs, "ENABLED", True)
     state = {"searches": 0}
 
     def search_needs(species, breed):
         state["searches"] += 1
-        return [Chip(kind="grooming", text="Brush daily", source=0)], [rules.Source(title="AKC", url="https://www.akc.org/p")]
+        return [Chip(kind="grooming", text="Brush daily", source=0)], [rules.Source(title="VCA", url="https://vcahospitals.com/p")]
 
     monkeypatch.setattr(breed_needs, "search_needs", search_needs)
     return state
+
+
+def test_while_search_is_off_only_our_own_list_answers_and_no_search_or_db_is_touched(client, monkeypatch) -> None:
+    assert breed_needs.ENABLED is False
+    monkeypatch.setattr(breed_needs, "search_needs", lambda *a: pytest.fail("must not search"))
+    monkeypatch.setattr(router, "get_service_client", lambda: pytest.fail("must not touch the DB"))
+
+    def ask(species, breed):
+        return client.post("/api/breed-needs", json={"species": species, "breed": breed}, headers=headers(owner_token())).json()
+
+    listed = ask("dog", "Maltese")
+    assert listed["origin"] == "list" and listed["sources"] == [] and listed["basis"] is None
+    assert [c["kind"] for c in listed["chips"]] == ["exercise", "grooming", "care"]
+    assert ask("dog", "poodle mix")["basis"] == "Poodle"  # a mix is answered from its breed
+    assert ask("dog", "Yorkie")["origin"] == "list"  # an alias
+    assert ask("dog", "Pumi") == {"chips": [], "sources": [], "origin": "none", "basis": None}  # not listed: nothing
+    assert ask("cat", "Maltese")["origin"] == "none"  # species matter
+
+
+def test_our_own_breed_list_is_well_formed_and_cites_nothing() -> None:
+    data = json.loads(rules.DATA.read_text(encoding="utf-8"))
+    assert len(data["dog"]) >= 20 and len(data["cat"]) >= 8
+    names: set[str] = set()
+    for species, breeds in data.items():
+        for key, entry in breeds.items():
+            assert key == entry["name"].lower(), key
+            assert entry["sources"] == [], f"{key}: lines we wrote cite no website"
+            kinds = [c["kind"] for c in entry["chips"]]
+            assert 1 <= len(kinds) <= rules.MAX_CHIPS and len(set(kinds)) == len(kinds) and set(kinds) <= set(rules.KINDS), key
+            for chip in entry["chips"]:
+                assert 0 < len(chip["text"]) <= rules.MAX_TEXT, (key, chip["text"])
+                assert "source" not in chip and "quote" not in chip, key
+            for name in [entry["name"], *entry["aliases"]]:
+                norm = rules.normalize_breed(name)
+                assert (species, norm) not in names, f"{name} appears twice"
+                names.add((species, norm))
 
 
 def test_owners_and_sitters_can_ask_and_a_listed_breed_needs_no_search(client, api) -> None:

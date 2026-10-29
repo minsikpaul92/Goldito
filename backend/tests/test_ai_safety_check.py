@@ -99,15 +99,15 @@ def post(client, token=None, **over):
     )
 
 
-HIT = {"title": "People foods to avoid", "url": "https://www.aspca.org/foods", "domain": "aspca.org", "content": "Avoid..."}
+HIT = {"title": "People foods to avoid", "url": "https://www.fda.gov/foods", "domain": "fda.gov", "content": "Avoid..."}
 
 
-def test_an_owner_checks_a_plain_treat_and_it_is_saved_with_its_sources(client, setup):
+def test_an_owner_checks_a_plain_treat_and_it_is_saved(client, setup):
     ctx = setup(label("sweet potato", "glycerin"), judged("SAFE", "Looks fine for Max."), hits=[HIT])
     body = post(client).json()
     assert body["safety_status"] == "SAFE" and body["double_checked"] is True and body["sources_unavailable"] is False
     assert body["detected_ingredients"] == ["sweet potato", "glycerin"] and body["product_name"] == "Crunchy Bites"
-    assert body["sources"] == [{"title": "People foods to avoid", "url": "https://www.aspca.org/foods", "domain": "aspca.org"}]
+    assert body["sources"] == []  # the search ran, but the model cited nothing: no page is shown
     assert body["model"] == "safety-model" and body["warning_message"] == "Looks fine for Max."
     (saved,) = ctx.db.tables["safety_checks"]
     assert body["safety_check_id"] == saved["id"]
@@ -120,7 +120,7 @@ def test_an_owner_checks_a_plain_treat_and_it_is_saved_with_its_sources(client, 
     assert vision["messages"][1]["content"][1]["image_url"]["url"].startswith("data:image/jpeg")
     assert ultra["role"] == "safety" and ultra["reasoning"] is True and ultra["timeout"] == 60.0
     facts = ultra["messages"][1]["content"]
-    assert '"allergies": ["chicken"]' in facts and '"source": "aspca.org"' in facts
+    assert '"allergies": ["chicken"]' in facts and '"source": "fda.gov"' in facts
     # Every check searches (D61), here with the first ingredients.
     assert [q.text for q in ctx.searches[0]][:1] == ["Crunchy Bites dog treat recall"]
 
@@ -137,7 +137,7 @@ def test_a_species_toxin_is_danger(client, setup):
     ctx = setup(label("lily extract", "salmon"), judged("WARNING"), db=make_db(allergens=(), species="cat"))
     body = post(client).json()
     assert body["safety_status"] == "DANGER" and body["toxic_ingredients"] == ["lily extract"]
-    assert any(s["domain"] == "aspca.org" for s in body["sources"])
+    assert body["sources"] == []  # the rule table adds no source link and this search found none
     assert ctx.searches[0][0].text == "lily extract toxic cats"
 
 
@@ -147,6 +147,50 @@ def test_a_possible_hidden_allergen_is_a_warning_with_the_reason(client, setup):
     assert body["safety_status"] == "WARNING"
     assert body["hidden_sources"][0]["ingredient"] == "animal fat" and body["hidden_sources"][0]["may_contain"] == "chicken"
     assert ctx.searches[0][0].text == "animal fat chicken derived"
+
+
+FAT_HIT = {
+    "title": "Animal fat in pet food",
+    "url": "https://fda.gov/animal-fat",
+    "domain": "fda.gov",
+    "content": "Animal fat in pet food is often poultry-derived and the label may not say which animal.",
+}
+OFF_TOPIC_HIT = {
+    "title": "Bland diet instructions",
+    "url": "https://fda.gov/bland-diet",
+    "domain": "fda.gov",
+    "content": "Feed boiled rice and plain cooked meat for two days.",
+}
+
+
+def test_a_page_is_shown_only_when_the_model_cited_it_and_it_is_about_the_finding(client, setup):
+    setup(label("sweet potato", "animal fat"), judged("WARNING", "Ask the owner first.", sources=[1]), hits=[FAT_HIT, OFF_TOPIC_HIT])
+    body = post(client).json()
+    assert [s["url"] for s in body["sources"]] == ["https://fda.gov/animal-fat"]
+
+
+def test_a_cited_page_that_is_not_about_the_finding_is_never_shown(client, setup):
+    setup(label("sweet potato", "animal fat"), judged("WARNING", "Ask the owner first.", sources=[1, 2]), hits=[OFF_TOPIC_HIT, FAT_HIT])
+    body = post(client).json()
+    assert [s["url"] for s in body["sources"]] == ["https://fda.gov/animal-fat"]
+
+
+def test_a_page_the_model_did_not_cite_is_not_shown_even_if_it_fits(client, setup):
+    setup(label("sweet potato", "animal fat"), judged("WARNING", "Ask the owner first.", sources=[]), hits=[FAT_HIT])
+    assert post(client).json()["sources"] == []
+
+
+def test_made_up_source_numbers_are_ignored(client, setup):
+    setup(label("sweet potato", "animal fat"), judged("WARNING", "Ask the owner first.", sources=[0, 7, 99, "x"]), hits=[FAT_HIT])
+    assert post(client).json()["sources"] == []
+
+
+def test_the_pets_own_allergy_shows_no_pages_even_when_one_is_cited(client, setup):
+    chicken_hit = {**FAT_HIT, "title": "Chicken in pet food", "content": "Chicken breast is a common allergen in dog treats."}
+    setup(label("chicken breast", "rice"), judged("DANGER", "Don't feed it.", sources=[1]), hits=[chicken_hit])
+    body = post(client).json()
+    assert body["safety_status"] == "DANGER" and body["matched_allergens"] == ["chicken"]
+    assert body["sources"] == []
 
 
 def test_the_model_can_raise_the_status_but_not_lower_it(client, setup):
