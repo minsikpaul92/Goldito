@@ -2,7 +2,7 @@
 
 **Last catalog check:** 2026-10-01 (`GET /v1/models?verbose=true` on both base URLs, API key in local `backend/.env` only). First check 2026-09-29.
 
-**UI:** Token Factory → **Model endpoints** → Public endpoints (shared API, no dedicated deploy). Matches API list for NVIDIA Nemotron + OpenBMB vision below.
+**UI:** Token Factory → **Model endpoints** → Public endpoints (shared API, no dedicated deploy). Matches the API list for the NVIDIA Nemotron models below.
 
 ---
 
@@ -25,28 +25,11 @@
 | **Dev smoke / cheap tests** | 07.1 | `scripts/test_nebius.py` | `MODEL_FAST` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Fast, low-cost Nemotron for “hello world” and JSON/format checks before wiring Super/Ultra. |
 | **Optional: fast text** | — | (stretch) | — | `nvidia/Nemotron-3_5-Lightning` | Cheaper/faster text if we split caption **wording polish** from vision (P1 only if needed). |
 
-**Not on the shared API (do not rely on for demo):** `nvidia/nemotron-3-nano-omni` — dedicated endpoint only (2026-10-02, see the NVIDIA catalog check below); **vision is `nvidia/Nemotron-3.5-Super-VL`** since 2026-10-27 (see the switch note below); MiniCPM-V-4_5 is the rollback. **Qwen-2.5-VL** (named in the team's Full Process scenario) is not in the catalog either (2026-10-01).
+**Not on the shared API (do not rely on for demo):** `nvidia/nemotron-3-nano-omni` — dedicated endpoint only (2026-10-02, see the NVIDIA catalog check below); **vision is `nvidia/Nemotron-3.5-Super-VL`** since 2026-10-27 (see the switch note below). **Qwen-2.5-VL** (named in the team's Full Process scenario) is not in the catalog either (2026-10-01).
 
-**Image-input models in the catalog (2026-10-01, `architecture.modality = text+image->text`):** `openbmb/MiniCPM-V-4_5` (both base URLs) and `moonshotai/Kimi-K2.6` (both) — plus `moonshotai/Kimi-K3`, `zai-org/GLM-5.3-Flash`, `deepseek-ai/DeepSeek-V4.1-Flash` on the eu-north1 gateway only. On 2026-10-01 no NVIDIA vision or embedding model was listed; `Nemotron-3.5-Super-VL` appeared on the global base URL later (seen 2026-10-27). Still no NVIDIA embedding model.
+**Image-input models in the catalog (2026-10-01, `architecture.modality = text+image->text`):** `moonshotai/Kimi-K2.6` (both base URLs) — plus `moonshotai/Kimi-K3`, `zai-org/GLM-5.3-Flash`, `deepseek-ai/DeepSeek-V4.1-Flash` on the eu-north1 gateway only. On 2026-10-01 no NVIDIA vision or embedding model was listed; `Nemotron-3.5-Super-VL` appeared on the global base URL later (seen 2026-10-27). Still no NVIDIA embedding model.
 
 **Tavily:** not a Nebius model — web search for unknown ingredients/recalls (Phase 08.7 stretch, 11.3 fallback). See tavily.md.
-
----
-
-## What is `openbmb/MiniCPM-V-4_5`?
-
-Since 2026-10-27 this is the rollback vision model; the live one is `nvidia/Nemotron-3.5-Super-VL` (switch note above). The numbers below are from when MiniCPM-V was live.
-
-OpenBMB **MiniCPM-V-4.5** is a **multimodal (vision) model** on the same Token Factory public API:
-
-- **Input:** image(s) (+ prompt), including OCR-style label/PDF-style text in photos.
-- **Goldito use:** anything that must **see** Cloudinary media (base64 data URL from backend, architecture D12):
-  1. **Caption** — “what is in this picture?”
-  2. **Safety step 1** — “list ingredients from this packaging photo.”
-
-Step 2 safety **judgment** is **Ultra** (text-only Nemotron), not MiniCPM — two-step pipeline in phase-08-safety.md.
-
-**Hackathon note:** Still **NVIDIA Nemotron on Token Factory** for core AI story; MiniCPM (OpenBMB, **not an NVIDIA model**) is an **additional** vision endpoint on the same Token Factory API; the hackathon rule (at least one NVIDIA model) is met by Nano (inquiry replies) and Super (checklists, reports, Life Records); Ultra runs only in the Phase 08 safety stretch. Mention Nemotron and MiniCPM in README feedback and the demo script. (Superseded 2026-10-27: vision is Nemotron-3.5-Super-VL, see the switch note below.)
 
 ---
 
@@ -70,7 +53,6 @@ Use the **exact** `id` string from `GET /v1/models` when calling `chat/completio
 | Nemotron-3-Super-120b-a12b | `nvidia/nemotron-3-super-120b-a12b` |
 | Nemotron-3-Nano-30B-A3B | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` |
 | Nemotron-3.5-Super-VL (Vision, global URL only) | `nvidia/Nemotron-3.5-Super-VL` |
-| MiniCPM-V-4.5 (Vision, rollback) | `openbmb/MiniCPM-V-4_5` |
 
 ---
 
@@ -79,7 +61,7 @@ Use the **exact** `id` string from `GET /v1/models` when calling `chat/completio
 | Test | Model | Base URL | Result |
 | :--- | :--- | :--- | :--- |
 | Text chat | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | `https://api.tokenfactory.nebius.com/v1/` | **200** — assistant `content`: `OK` (use `max_tokens` ≥ 64; model may fill `reasoning` first) |
-| Vision + image | `openbmb/MiniCPM-V-4_5` | `https://api.tokenfactory.us-central1.nebius.com/v1/` | **200** — `data:image/png;base64,...` in `image_url` works (architecture D12). External image URLs may fail if Nebius cannot fetch them. |
+| Vision + image | an earlier vision model | `https://api.tokenfactory.us-central1.nebius.com/v1/` | **200** — `data:image/png;base64,...` in `image_url` works (architecture D12). External image URLs may fail if Nebius cannot fetch them. |
 
 Phase 00 DoD for Nebius: **met** (catalog + role mapping + one Fast + one Vision call).
 
@@ -95,7 +77,7 @@ Input: one fictional sentence ("Max is a Maltese who is allergic to chicken."). 
 
 ## Model policy (D39) and NVIDIA catalog check (2026-10-02)
 
-**Policy:** prefer US-made models, and NVIDIA models wherever a feature allows it. Chinese-origin models are allowed only when there is no US/NVIDIA alternative or the cost/quality gap is large — record the reason here. Current exceptions: `Qwen/Qwen3-Embedding-8B` (**final, decided 2026-10-02 — no NVIDIA embedding in the catalog, already verified at 1024 dims, no other embedding model will be evaluated**) and `openbmb/MiniCPM-V-4_5` (**final for the hackathon, decided 2026-10-02** — the NVIDIA vision models are Dedicated-Endpoint-only, see below).
+**Policy:** prefer US-made models, and NVIDIA models wherever a feature allows it. Chinese-origin models are allowed only when there is no US/NVIDIA alternative or the cost/quality gap is large — record the reason here. Current exceptions: `Qwen/Qwen3-Embedding-8B` (**final, decided 2026-10-02 — no NVIDIA embedding in the catalog, already verified at 1024 dims, no other embedding model will be evaluated**).
 
 **Console "Model catalog" (provider = NVIDIA) vs. our API key (`GET /v1/models`, both base URLs, 2026-10-02):**
 
@@ -108,9 +90,9 @@ Input: one fictional sentence ("Max is a Maltese who is allergic to chicken."). 
 | Llama-3_1-Nemotron-Ultra-253B-v1 | Llama-based, NVIDIA-tuned | text | not listed on our key |
 | GLM-4.7-NVFP4, MiniMax-M2.5/M2.7-NVFP4, Qwen3.5-397B-A17B-NVFP4 | **Chinese originals**, only quantized by NVIDIA | text | not counted as NVIDIA models |
 
-**Decision (2026-10-02): keep `openbmb/MiniCPM-V-4_5` for vision.** The three NVIDIA vision/omni models can only be deployed as Dedicated Endpoints. An always-on endpoint costs L40S $2/GPU-hour (about $48/day; enough for the 12B model) or H100 $4.7/GPU-hour (about $113/day; needed for the 33B FP16 Cosmos model) — more than the $125 balance over the weeks the demo must stay up. A short-lived endpoint just to record the demo video is possible later (not planned).
+**Decision (2026-10-02): no NVIDIA vision model yet.** The three NVIDIA vision/omni models can only be deployed as Dedicated Endpoints. An always-on endpoint costs L40S $2/GPU-hour (about $48/day; enough for the 12B model) or H100 $4.7/GPU-hour (about $113/day; needed for the 33B FP16 Cosmos model) — more than the $125 balance over the weeks the demo must stay up. A short-lived endpoint just to record the demo video is possible later (not planned).
 
-**Switch (2026-10-27): vision is `nvidia/Nemotron-3.5-Super-VL`.** It appeared in `GET /v1/models` on `https://api.tokenfactory.nebius.com/v1/` only (not on the us-central1 URL), so `MODEL_VISION_BASE_URL` moves to the global URL. Thinking is on by default and fills `max_tokens` before any answer (caption 0/6 right, 300 tokens, about 3.7 s), so `nebius.chat` sends `enable_thinking: false` for every non-`openbmb/` model. Same prompts and photos, thinking off, one run per call: caption category 4/6 for both models; breed guess 10/12 (Super VL) against 9/12 (MiniCPM-V); handoff photos not comparable (both read the demo images as placeholders); median 1.0 to 1.4 s for both. Treat labels: six sample labels in five versions (original, blur, 35% size at JPEG quality 35, rotated 7 degrees, right 40% cut off), two runs each, 60 calls per model: neither model missed an ingredient in the four readable versions, and neither disagreed with itself; on the cut-off labels MiniCPM-V said `complete: true` 10 of 10 times, Super VL 0 of 10. Clean sample labels and small samples, not real packaging. Rollback is two environment variables: `MODEL_VISION=openbmb/MiniCPM-V-4_5`, `MODEL_VISION_BASE_URL=https://api.tokenfactory.us-central1.nebius.com/v1/`.
+**Switch (2026-10-27): vision is `nvidia/Nemotron-3.5-Super-VL`.** We compared it with one other vision model (not NVIDIA) first; only Nemotron is used. It appeared in `GET /v1/models` on `https://api.tokenfactory.nebius.com/v1/` only (not on the us-central1 URL), so `MODEL_VISION_BASE_URL` moves to the global URL. Thinking is on by default and fills `max_tokens` before any answer (caption 0/6 right, 300 tokens, about 3.7 s), so `nebius.chat` sends `enable_thinking: false` for vision calls. Same prompts and photos, thinking off, one run per call: caption category 4/6 for both models; breed guess 10/12 (Super VL) against 9/12 (the other model we compared); handoff photos not comparable (both read the demo images as placeholders); median 1.0 to 1.4 s for both. Treat labels: six sample labels in five versions (original, blur, 35% size at JPEG quality 35, rotated 7 degrees, right 40% cut off), two runs each, 60 calls per model: neither model missed an ingredient in the four readable versions, and neither disagreed with itself; on the cut-off labels the other model said `complete: true` 10 of 10 times, Super VL 0 of 10. Clean sample labels and small samples, not real packaging.
 
 **Fine-tuning (11.7):** confirmed in the console — `google/gemma-4-E4B-it` appears in the fine-tuning wizard (LoRA or Full fine-tuning, $0.40 / 1M tokens, 8K context); **Nemotron models do not appear, and their model pages show Full / LoRA fine-tuning "Not available"** (the catalog's generic "Fine-tuning" badge is misleading). So the SFT candidate is **Gemma-4-E4B-it (LoRA)** — **showcase only, not wired into the app (D43)**. A tuned Gemma 4 most likely needs a Dedicated Endpoint (L40S $2/GPU-hour, H100 $4.7). Account balance on 2026-10-02: $125. RFT is not being pursued (no application).
 
@@ -118,15 +100,15 @@ Input: one fictional sentence ("Max is a Maltese who is allergic to chicken."). 
 
 ## Speech-to-text check (2026-10-10)
 
-`GET /v1/models` with our key (read-only): **25 models** on `api.tokenfactory.nebius.com`, **18** on the us-central1 URL. **No speech-to-text / audio model** (no whisper · asr · speech · audio · parakeet · canary · voxtral). Image-input models in the list: `openbmb/MiniCPM-V-4_5`, `moonshotai/Kimi-K2.6` (and K3 on the first URL), `google/gemma-3-27b-it`. So voice input in the pet profile onboarding (pet-profile-onboarding.md §6.2) records audio in the browser, turns it into text with an **external speech-to-text service — Groq `whisper-large-v3-turbo`, free plan (decided 2026-10-10)** — and uses Nemotron only to extract facts from the text. Check Safari / Chrome recordings and Groq's terms when building. Re-check the list if a speech model is announced.
+`GET /v1/models` with our key (read-only): **25 models** on `api.tokenfactory.nebius.com`, **18** on the us-central1 URL. **No speech-to-text / audio model** (no whisper · asr · speech · audio · parakeet · canary · voxtral). Image-input models in the list: `moonshotai/Kimi-K2.6` (and K3 on the first URL), `google/gemma-3-27b-it`. So voice input in the pet profile onboarding (pet-profile-onboarding.md §6.2) records audio in the browser, turns it into text with an **external speech-to-text service — Groq `whisper-large-v3-turbo`, free plan (decided 2026-10-10)** — and uses Nemotron only to extract facts from the text. Check Safari / Chrome recordings and Groq's terms when building. Re-check the list if a speech model is announced.
 
 ## Treat check calls (12.1, 2026-10-14)
 
-Direct HTTP calls with the keys in local `backend/.env` (the same prompts and parameters as `routers/ai_safety_check.py`; not through the FastAPI route, Cloudinary or the DB — no local Python on that machine; `scripts/measure_safety.py` is still to write). `GET /v1/models`: `MODEL_VISION` `openbmb/MiniCPM-V-4_5`, `MODEL_SAFETY` `nvidia/Nemotron-3-Ultra-550b-a55b`, `MODEL_REPORT`, `MODEL_FAST` all listed.
+Direct HTTP calls with the keys in local `backend/.env` (the same prompts and parameters as `routers/ai_safety_check.py`; not through the FastAPI route, Cloudinary or the DB — no local Python on that machine; `scripts/measure_safety.py` is still to write). `GET /v1/models`: `MODEL_VISION` (an earlier vision model), `MODEL_SAFETY` `nvidia/Nemotron-3-Ultra-550b-a55b`, `MODEL_REPORT`, `MODEL_FAST` all listed.
 
 | Step | Result |
 | :--- | :--- |
-| **Vision** (MiniCPM-V-4.5, `vision_system.md`, JSON mode, temperature 0) on the four made-up sample labels | All four `readable: true`, product name and every ingredient right, in order — **0.9–1.4 s** each. Bracketed text stays on the ingredient (`"animal fat (preserved with mixed tocopherols)"`, `"mixed tocopherols (preservative)"`) instead of being split as the prompt asks; the rule table still matches `animal fat` (whole word). |
+| **Vision** (an earlier vision model, `vision_system.md`, JSON mode, temperature 0) on the four made-up sample labels | All four `readable: true`, product name and every ingredient right, in order — **0.9–1.4 s** each. Bracketed text stays on the ingredient (`"animal fat (preserved with mixed tocopherols)"`, `"mixed tocopherols (preservative)"`) instead of being split as the prompt asks; the rule table still matches `animal fat` (whole word). |
 | **Tavily** (`search_depth: basic`, 3 results, the five trusted domains) — `xylitol toxic dogs` | 3 results (petpoisonhelpline.com · vcahospitals.com · fda.gov) in **2.9 s** |
 | **Ultra** (thinking on, `reasoning_system.md`, JSON mode, `max_tokens` 2000) — Max (chicken allergy) + the animal-fat biscuit with the rule findings and one excerpt | **WARNING** (matches the rules), both hidden sources kept, message names Max and the chicken risk — **2.7 s**, 614 completion tokens, `finish_reason: stop` (2000 is enough) |
 
@@ -134,7 +116,7 @@ Estimated route total ≈ vision 1.4 s + Tavily ≤ 3 s (parallel, 8 s cap) + Ul
 
 ## Photo caption latency (09.1, 2026-10-07)
 
-`backend/scripts/measure_caption.py` — the 3 demo photos × 3 runs, MiniCPM-V-4.5, JSON `{caption, category}`, reasoning n/a, 120 max tokens, temperature 0.8, local images (no Cloudinary / DB). **Category right 8 / 9, latency median ≈ 1.2 s, max ≈ 1.3 s.** The first prompt got 4 / 9 because the sample "meal" photo is a dog beside a carrot and the sample "nap" photo is a dog lying on a bed with its mouth open; the category hints now say food next to or in the mouth of the pet is a meal, and lying calmly on a bed / blanket / rug is a nap. Captions are 1 short sentence, warm, name used once; no medical claims. Real-world accuracy still needs the team's 5-photo read (phase-09 DoD 1).
+`backend/scripts/measure_caption.py` — the 3 demo photos × 3 runs, an earlier vision model, JSON `{caption, category}`, reasoning n/a, 120 max tokens, temperature 0.8, local images (no Cloudinary / DB). **Category right 8 / 9, latency median ≈ 1.2 s, max ≈ 1.3 s.** The first prompt got 4 / 9 because the sample "meal" photo is a dog beside a carrot and the sample "nap" photo is a dog lying on a bed with its mouth open; the category hints now say food next to or in the mouth of the pet is a meal, and lying calmly on a bed / blanket / rug is a nap. Captions are 1 short sentence, warm, name used once; no medical claims. Real-world accuracy still needs the team's 5-photo read (phase-09 DoD 1).
 
 ## Inquiry reply latency (07B.7, 2026-10-07)
 
@@ -189,18 +171,15 @@ Same local simulation, now with a booking that moves along (request at message 6
 
 ## Open questions (Phase 07.1 / 08 spike)
 
-- [x] NVIDIA vision models (Nemotron-Nano-V2-12b, Cosmos3-Super-Reasoner, Nemotron-3-Nano-Omni): Dedicated Endpoint only, not callable on the shared API → MiniCPM-V stays (2026-10-02)
+- [x] NVIDIA vision models (Nemotron-Nano-V2-12b, Cosmos3-Super-Reasoner, Nemotron-3-Nano-Omni): Dedicated Endpoint only, not callable on the shared API → a shared-API vision model instead (Nemotron-3.5-Super-VL since 2026-10-27)
 - [x] Fine-tuning: wizard offers Gemma-4-E4B-it, no Nemotron (2026-10-02)
 - [x] Gemma-4-E4B-it offers **LoRA fine-tuning** in the wizard's Training type step (2026-10-02) — use LoRA for the tone tuning (style only, cheaper, less forgetting)
 - [x] LoRA serving for Gemma 4: the price list has only Gemma-4 *Fine-tuning* SKUs (no Input/Output or `-LoRa` serving SKUs), so a tuned Gemma 4 most likely needs a Dedicated Endpoint. Per the fine-tuning docs, serverless LoRA deploy is listed only for Llama-3.1-8B-Instruct and Llama-3.3-70B-Instruct; Qwen3-14B/32B are trainable but not on that list, so a Chinese model does not fix serving (2026-10-02)
 - **Decision (D43):** SFT is a showcase only — the app runtime uses Nemotron + style card + few-shot; no serving of a tuned model (phase-11 11.7)
 - [ ] Tone: compare Nemotron-3 Nano / Super / gpt-oss-120b / gemma-3-27b-it on the same few-shot tone prompt (07B.8), blind-rated by the sitter
 
-- [ ] MiniCPM: English caption quality on **real pet** photos (not app icon)
-- [ ] MiniCPM: ingredient list JSON reliability on label photos
 - [ ] Ultra/Super: `response_format` / JSON schema adherence
-- [x] Image input: base64 data URL (D12) accepted by MiniCPM on Token Factory — smoke 2026-09-29
-- [ ] MiniCPM: crate / seatbelt detection on car photos (6B.5) — compare Kimi-K2.6 if < 3/4 samples pass
+- [x] Image input: base64 data URL (D12) accepted by the vision model on Token Factory — smoke 2026-09-29
 - [x] Nano: inquiry reply p50 latency with ~2k-token grounding JSON — **p50 ≈ 3.2 s, max ≈ 6.1 s** over 10 runs (2026-10-07, see "Inquiry reply latency" below; target < 10 s)
 - [x] Nemotron tool calling on Token Factory: **works** on both `NVIDIA-Nemotron-3-Nano-30B-A3B` (≈ 0.9 s) and `nemotron-3-super-120b-a12b` (≈ 0.9 s) with `tools` + `tool_choice="auto"` and `enable_thinking: false` — returns a proper `tool_calls` entry with valid JSON arguments (2026-10-07). Used only by the optional agent mode (7B.11)
 
@@ -212,7 +191,7 @@ Same local simulation, now with a booking that moves along (request at message 6
 cd backend
 export $(grep -v '^#' .env | grep NEBIUS_API_KEY | xargs)
 curl -s "https://api.tokenfactory.us-central1.nebius.com/v1/models" \
-  -H "Authorization: Bearer $NEBIUS_API_KEY" | python3 -c "import sys,json; d=json.load(sys.stdin); print([m['id'] for m in d['data'] if 'nemotron' in m['id'].lower() or 'MiniCPM' in m['id']])"
+  -H "Authorization: Bearer $NEBIUS_API_KEY" | python3 -c "import sys,json; d=json.load(sys.stdin); print([m['id'] for m in d['data'] if 'nemotron' in m['id'].lower()])"
 ```
 
 
@@ -227,7 +206,7 @@ curl -s "https://api.tokenfactory.us-central1.nebius.com/v1/models" \
 | fast | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | 642 ms | 782 ms | Hello! 😊 |
 | report | `nvidia/nemotron-3-super-120b-a12b` | 195 ms | 197 ms | Hi! 👋 |
 | safety | `nvidia/Nemotron-3-Ultra-550b-a55b` | 172 ms | 185 ms | Hi there! |
-| vision | `openbmb/MiniCPM-V-4_5` | 1146 ms | 1266 ms | A small white dog with its mouth open is sitting on a white surface. |
+| vision | an earlier vision model | 1146 ms | 1266 ms | A small white dog with its mouth open is sitting on a white surface. |
 
 Embeddings: `Qwen/Qwen3-Embedding-8B` returns 1024 dimensions with `dimensions=1024`.
 
