@@ -565,7 +565,7 @@ export const TUTORIAL: Scene = {
     script: tour(
       "Home: pets in your care, check-ins and the 5-second check",
       "Pet room: tap feed, walk, potty or nap and Robert is told",
-      "Bookings: requests, Meet & Greets and past stays",
+      "Bookings: requests, meets and past stays",
       "Chat: talk with Robert, AI chips write the reply",
       "Moments: the photos you sent and the diary you write",
       "Snap: treat check, mood and stickers",

@@ -70,7 +70,7 @@ export const QUESTIONS: SitterQuestion[] = [
     multi: true,
     choices: [
       { value: "small", label: "Small (<15 lbs / 7 kg)" },
-      { value: "medium", label: "Medium (16–40 lbs / 7–18 kg)" },
+      { value: "medium", label: "Medium (16 to 40 lbs / 7 to 18 kg)" },
       { value: "large", label: "Large (41+ lbs / 18+ kg)" },
     ],
   },

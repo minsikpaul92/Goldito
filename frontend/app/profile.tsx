@@ -140,8 +140,8 @@ const MAX_PACKING = 20;
 type Service = "boarding" | "house_sitting";
 
 const SERVICES: { value: Service; label: string; hint: string }[] = [
-  { value: "boarding", label: "🏠 Boarding", hint: "Pets stay at your place" },
-  { value: "house_sitting", label: "🔑 House sitting", hint: "You care for them at the owner's place" },
+  { value: "boarding", label: "Boarding", hint: "Pets stay at your place" },
+  { value: "house_sitting", label: "House sitting", hint: "You care for them at the owner's place" },
 ];
 
 /** Text fields only — services and meeting spots have their own controls. */
@@ -475,7 +475,7 @@ export default function ProfileScreen() {
                 testID="profile-home_address"
               />
               <Button
-                label={locating ? "Locating…" : "📍 Use my current location"}
+                label={locating ? "Locating…" : "Use my current location"}
                 variant="secondary"
                 onPress={() => void useCurrentLocation()}
                 disabled={locating}

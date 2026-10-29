@@ -120,14 +120,14 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
           testID="place-use-address"
         />
         <CheckRow
-          label="🏠 My home" // tokens-ok: the existing place row (as 📍 Current location); #268 only adds the address under it
+          label="My home" // #268 only adds the address under it
           hint={search.homeAddress ?? undefined}
           checked={place.kind === "home"}
           onChange={() => search.useHome()}
           testID="place-home"
         />
         <CheckRow
-          label="📍 Current location"
+          label="Current location"
           hint={place.kind === "here" ? (place.label ?? undefined) : undefined}
           checked={place.kind === "here"}
           onChange={() => void search.useHere()}

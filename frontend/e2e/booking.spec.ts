@@ -210,13 +210,13 @@ test.describe("book care", () => {
 
     await screen.getByTestId("service-house_sitting").click();
     await expect(screen.getByTestId("drop_off-place-fixed")).toContainText("comes to my place");
-    await expect(screen.getByTestId("pick_up-place-fixed")).toHaveText("🔑 At my place");
+    await expect(screen.getByTestId("pick_up-place-fixed")).toHaveText("At my place");
     await expect(screen.getByTestId("drop_off-place-sitter_home")).toHaveCount(0);
 
     await expect(screen.getByTestId("pick-sitter-Chloe")).toContainText("Doesn't offer house sitting");
     await expect(screen.getByTestId("pick-sitter-Chloe")).toHaveAttribute("aria-disabled", "true");
     await screen.getByTestId("pick-sitter-Paul").click();
-    await expect(screen.getByTestId("drop_off-place-fixed")).toHaveText("🔑 Paul comes to my place");
+    await expect(screen.getByTestId("drop_off-place-fixed")).toHaveText("Paul comes to my place");
     await screen.getByTestId("request-booking").click();
 
     await expect(screen.getByTestId("toast")).toContainText("Request sent to Paul");
