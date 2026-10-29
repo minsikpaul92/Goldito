@@ -363,37 +363,39 @@ function ResultCard({
         </Text>
       ) : null}
 
-      <View style={styles.section}>
-        <Text style={styles.label}>Sources</Text>
-        {result.sources_unavailable && result.sources.length === 0 ? (
-          <Text style={styles.note} testID="treat-sources-unavailable">
-            Sources unavailable right now.
-          </Text>
-        ) : (
-          <View style={styles.chips}>
-            {result.sources.map((s) => (
-              <Pressable
-                key={s.url}
-                accessibilityRole="link"
-                accessibilityLabel={`${s.title} (${s.domain})`}
-                onPress={() => void Linking.openURL(s.url)}
-                style={styles.source}
-                testID="treat-source"
-              >
-                <Text style={styles.sourceTitle} numberOfLines={1}>
-                  {s.title}
-                </Text>
-                <Text style={styles.sourceDomain}>{s.domain}</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
-        {result.sources_unavailable && result.sources.length > 0 ? (
-          <Text style={styles.note} testID="treat-sources-unavailable">
-            Live sources are down. These come from our safety list.
-          </Text>
+      {result.sources.length > 0 || result.sources_unavailable ? (
+        <View style={styles.section}>
+          <Text style={styles.label}>Sources</Text>
+          {result.sources_unavailable && result.sources.length === 0 ? (
+            <Text style={styles.note} testID="treat-sources-unavailable">
+              Sources unavailable right now.
+            </Text>
+          ) : (
+            <View style={styles.chips}>
+              {result.sources.map((s) => (
+                <Pressable
+                  key={s.url}
+                  accessibilityRole="link"
+                  accessibilityLabel={`${s.title} (${s.domain})`}
+                  onPress={() => void Linking.openURL(s.url)}
+                  style={styles.source}
+                  testID="treat-source"
+                >
+                  <Text style={styles.sourceTitle} numberOfLines={1}>
+                    {s.title}
+                  </Text>
+                  <Text style={styles.sourceDomain}>{s.domain}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+          {result.sources_unavailable && result.sources.length > 0 ? (
+            <Text style={styles.note} testID="treat-sources-unavailable">
+              Live sources are down. These come from our safety list.
+            </Text>
         ) : null}
       </View>
+      ) : null}
 
       {result.detected_ingredients.length > 0 ? (
         <View style={styles.section}>

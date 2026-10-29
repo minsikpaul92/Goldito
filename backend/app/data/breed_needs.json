@@ -2,155 +2,137 @@
   "dog": {
     "labrador retriever": {
       "name": "Labrador Retriever",
-      "aliases": [],
+      "aliases": [
+        "lab",
+        "labrador"
+      ],
       "chips": [
         {
           "kind": "exercise",
-          "text": "Daily walks and play sessions",
-          "source": 0,
-          "quote": "Can be a calm housedog if given adequate exercise. Needs daily walks, jogs, hikes or play sessions."
+          "text": "Daily walks plus play or fetch"
         },
         {
           "kind": "grooming",
-          "text": "Brush weekly",
-          "source": 0,
-          "quote": "Brushing once a week is adequate; more during shedding seasons."
-        }
-      ],
-      "sources": [
+          "text": "Brush weekly; sheds a lot"
+        },
         {
-          "title": "Labrador Retriever | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/know-your-pet/dog-breeds/labrador-retriever"
+          "kind": "care",
+          "text": "Gains weight easily; watch the treats"
         }
       ],
+      "sources": [],
       "reviewed": false
     },
     "golden retriever": {
       "name": "Golden Retriever",
-      "aliases": [],
+      "aliases": [
+        "golden"
+      ],
       "chips": [
         {
           "kind": "exercise",
-          "text": "Daily walks and play",
-          "source": 0,
-          "quote": "Daily walks, jogs, hikes or play sessions"
+          "text": "Daily walks and active play"
         },
         {
           "kind": "grooming",
-          "text": "Brush twice weekly",
-          "source": 1,
-          "quote": "brushing once or twice a week"
+          "text": "Brush a few times a week; sheds heavily"
         },
         {
           "kind": "care",
-          "text": "Watch for heat sensitivity",
-          "source": 2,
-          "quote": "Sensitive to heat due to coat density"
+          "text": "Watch weight and joints as they age"
         }
       ],
-      "sources": [
+      "sources": [],
+      "reviewed": false
+    },
+    "french bulldog": {
+      "name": "French Bulldog",
+      "aliases": [
+        "frenchie"
+      ],
+      "chips": [
         {
-          "title": "Golden Retriever | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/beardall/know-your-pet/dog-breeds/golden-retriever"
+          "kind": "exercise",
+          "text": "Short, gentle walks"
         },
         {
-          "title": "Is the Golden Retriever the Right Dog Breed for You?",
-          "url": "https://www.akc.org/expert-advice/dog-breeds/golden-retriever-right-for-you"
+          "kind": "grooming",
+          "text": "Wipe the face folds daily"
         },
         {
-          "title": "Golden Retriever | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/know-your-pet/golden-retriever"
+          "kind": "care",
+          "text": "Overheats easily; keep cool"
         }
       ],
+      "sources": [],
       "reviewed": false
     },
     "german shepherd": {
       "name": "German Shepherd",
-      "aliases": [],
+      "aliases": [
+        "german shepherd dog"
+      ],
       "chips": [
         {
           "kind": "exercise",
-          "text": "Daily walks jogs hikes play sessions",
-          "source": 0,
-          "quote": "Needs daily walks jogs hikes or play sessions"
+          "text": "Needs a lot of daily exercise and a job"
         },
         {
           "kind": "grooming",
-          "text": "Brush regularly to control shedding",
-          "source": 1,
-          "quote": "regular grooming to control shedding and maintain coat and skin health"
-        }
-      ],
-      "sources": [
-        {
-          "title": "German Shepherd | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/know-your-pet/dog-breeds/german-shepherd"
+          "text": "Brush a few times a week; sheds heavily"
         },
         {
-          "title": "How to Train a German Shepherd Puppy: Timeline 8 Weeks to 2 Years",
-          "url": "https://www.akc.org/expert-advice/dog-breeds/puppy-training-timeline-for-your-german-shepherd-dog"
+          "kind": "care",
+          "text": "Watch the hips; needs mental work too"
         }
       ],
+      "sources": [],
       "reviewed": false
     },
     "poodle": {
       "name": "Poodle",
-      "aliases": [],
+      "aliases": [
+        "toy poodle",
+        "miniature poodle",
+        "standard poodle"
+      ],
       "chips": [
         {
           "kind": "exercise",
-          "text": "Daily walk and play sessions",
-          "source": 0,
-          "quote": "A daily walk around the block, coupled with several play sessions, will meet its exercise needs."
+          "text": "Daily walks and brain games"
         },
         {
           "kind": "grooming",
-          "text": "Professional grooming recommended",
-          "source": 1,
-          "quote": "Although they may need professional grooming, Poodles make very rewarding companions."
+          "text": "Regular grooming; the coat mats if skipped"
         },
         {
           "kind": "care",
-          "text": "Watch for chilling",
-          "source": 0,
-          "quote": "Its thick coat provides some protection against cold weather, but its small body size makes it vulnerable to chilling."
+          "text": "Smart; gets bored without activity"
         }
       ],
-      "sources": [
-        {
-          "title": "Toy Poodle | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/know-your-pet/dog-breeds/toy-poodle"
-        },
-        {
-          "title": "6 Unique Dog Breeds That Require a Lot of Grooming",
-          "url": "https://www.akc.org/expert-advice/lifestyle/dog-breeds-that-require-a-lot-of-grooming"
-        }
-      ],
+      "sources": [],
       "reviewed": false
     },
     "bulldog": {
       "name": "Bulldog",
-      "aliases": [],
+      "aliases": [
+        "english bulldog"
+      ],
       "chips": [
         {
+          "kind": "exercise",
+          "text": "Short, easy walks"
+        },
+        {
           "kind": "grooming",
-          "text": "Brush coat weekly",
-          "source": 0,
-          "quote": "Bulldogs should be brushed 2-3 times a week to keep their coats glossy"
+          "text": "Clean the face folds often"
         },
         {
           "kind": "care",
-          "text": "Check skin folds daily",
-          "source": 0,
-          "quote": "Wrinkles should be checked regularly to ensure their skin is clean and dry"
+          "text": "Overheats easily; keep cool"
         }
       ],
-      "sources": [
-        {
-          "title": "Is the Bulldog the Right Dog Breed for Your Lifestyle?",
-          "url": "https://www.akc.org/expert-advice/dog-breeds/bulldog-right-for-you"
-        }
-      ],
+      "sources": [],
       "reviewed": false
     },
     "beagle": {
@@ -158,136 +140,108 @@
       "aliases": [],
       "chips": [
         {
+          "kind": "exercise",
+          "text": "Daily walks; follows scents, so keep a leash on"
+        },
+        {
           "kind": "grooming",
-          "text": "weekly brushings",
-          "source": 0,
-          "quote": "weekly brushings"
+          "text": "Brush weekly"
         },
         {
           "kind": "care",
-          "text": "moderate shedding",
-          "source": 1,
-          "quote": "shed moderately throughout the year"
+          "text": "Loves food; watch weight"
         }
       ],
-      "sources": [
-        {
-          "title": "Dog Breeds With Minimal Grooming Needs",
-          "url": "https://www.akc.org/expert-advice/health/dog-breeds-minimal-grooming"
-        },
-        {
-          "title": "Is the Beagle the Right Breed for Your Lifestyle? Learn More",
-          "url": "https://www.akc.org/expert-advice/dog-breeds/beagle-right-for-you"
-        }
-      ],
+      "sources": [],
       "reviewed": false
     },
     "rottweiler": {
       "name": "Rottweiler",
-      "aliases": [],
+      "aliases": [
+        "rottie"
+      ],
       "chips": [
         {
           "kind": "exercise",
-          "text": "Daily walk or jog",
-          "source": 0,
-          "quote": "Requires daily exercise in the form of a long walk, jog, or energetic games."
+          "text": "Daily walks and calm, steady training"
         },
         {
           "kind": "grooming",
-          "text": "Weekly brushing",
-          "source": 0,
-          "quote": "The coat needs only occasional brushing, once every week or so, to remove dead hair."
+          "text": "Brush weekly"
         },
         {
           "kind": "care",
-          "text": "Watch for overheating",
-          "source": 0,
-          "quote": "May overheat easily in warm weather."
+          "text": "Strong dog; handle and train with care"
         }
       ],
-      "sources": [
-        {
-          "title": "Rottweiler | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/know-your-pet/dog-breeds/rottweiler"
-        }
-      ],
+      "sources": [],
       "reviewed": false
     },
     "dachshund": {
       "name": "Dachshund",
-      "aliases": [],
+      "aliases": [
+        "wiener dog"
+      ],
       "chips": [
         {
           "kind": "exercise",
-          "text": "Ample exercise required",
-          "source": 0,
-          "quote": "need ample exercise"
-        }
-      ],
-      "sources": [
+          "text": "Moderate daily walks"
+        },
         {
-          "title": "Dog Breeds With Minimal Grooming Needs",
-          "url": "https://www.akc.org/content/dog-care/articles/dog-breeds-minimal-grooming"
+          "kind": "grooming",
+          "text": "Brush weekly; more often for long coats"
+        },
+        {
+          "kind": "care",
+          "text": "Protect the back: no jumping off furniture"
         }
       ],
+      "sources": [],
       "reviewed": false
     },
     "pembroke welsh corgi": {
       "name": "Pembroke Welsh Corgi",
-      "aliases": [],
+      "aliases": [
+        "corgi",
+        "welsh corgi"
+      ],
       "chips": [
         {
-          "kind": "grooming",
-          "text": "daily brushing to manage shedding",
-          "source": 0,
-          "quote": "Brushing out your Corgi daily removes dead hair and prevents some of the shedding"
-        },
-        {
           "kind": "exercise",
-          "text": "moderate walks and jogs",
-          "source": 1,
-          "quote": "They’re happy to accompany their loved ones on long walks or a slow jog, but moderate exercise is easiest on their little legs"
-        }
-      ],
-      "sources": [
-        {
-          "title": "How to Train a Corgi: Corgi Puppy Training Timeline, American Kennel Club",
-          "url": "https://www.akc.org/expert-advice/training/train-corgi-corgi-puppy-training-timeline"
+          "text": "Daily walks and play"
         },
         {
-          "title": "Is the Pembroke Welsch Corgi a Good Fir for Your Lifestyle?",
-          "url": "https://www.akc.org/expert-advice/dog-breeds/pembroke-welsh-corgi-right-for-you"
+          "kind": "grooming",
+          "text": "Brush often; sheds a lot"
+        },
+        {
+          "kind": "care",
+          "text": "Watch weight and the back"
         }
       ],
+      "sources": [],
       "reviewed": false
     },
     "siberian husky": {
       "name": "Siberian Husky",
-      "aliases": [],
+      "aliases": [
+        "husky"
+      ],
       "chips": [
         {
-          "kind": "grooming",
-          "text": "Brush weekly to manage shedding",
-          "source": 0,
-          "quote": "Weekly brushing will help keep a Siberian Husky’s coat and skin healthy"
-        },
-        {
           "kind": "exercise",
-          "text": "Regular exercise required",
-          "source": 1,
-          "quote": "exercise, grooming, a regular dental check"
-        }
-      ],
-      "sources": [
-        {
-          "title": "Is the Siberian Husky the Right Fit for Your Lifestyle?",
-          "url": "https://www.akc.org/expert-advice/dog-breeds/siberian-husky-right-for-you"
+          "text": "Lots of daily exercise; may run off if loose"
         },
         {
-          "title": "[PDF] Siberian Husky - American Kennel Club",
-          "url": "https://cdn.akc.org/SiberianHusky-club-flier.pdf"
+          "kind": "grooming",
+          "text": "Brush often; sheds heavily"
+        },
+        {
+          "kind": "care",
+          "text": "Dislikes heat; keep cool"
         }
       ],
+      "sources": [],
       "reviewed": false
     },
     "shih tzu": {
@@ -295,18 +249,19 @@
       "aliases": [],
       "chips": [
         {
-          "kind": "grooming",
-          "text": "Brush coat daily to prevent tangles and mats",
-          "source": 0,
-          "quote": "If their coats are not brushed frequently and kept clean, they tangle and mat"
-        }
-      ],
-      "sources": [
+          "kind": "exercise",
+          "text": "Short daily walks"
+        },
         {
-          "title": "Shih Tzu",
-          "url": "https://cdn.akc.org/ShihTzu-club-flyer.pdf"
+          "kind": "grooming",
+          "text": "Brush daily or keep a short cut"
+        },
+        {
+          "kind": "care",
+          "text": "Clean the eyes and face; keep cool"
         }
       ],
+      "sources": [],
       "reviewed": false
     },
     "chihuahua": {
@@ -314,18 +269,19 @@
       "aliases": [],
       "chips": [
         {
-          "kind": "grooming",
-          "text": "Brush weekly to prevent tangles",
-          "source": 0,
-          "quote": "Chihuahuas with long coats should be brushed once a week to avoid tangles or mats."
-        }
-      ],
-      "sources": [
+          "kind": "exercise",
+          "text": "Short walks and indoor play"
+        },
         {
-          "title": "Is the Chihuahua the Right Breed for Your Lifestyle?",
-          "url": "https://www.akc.org/expert-advice/dog-breeds/chihuahua-right-for-you"
+          "kind": "grooming",
+          "text": "Brush weekly"
+        },
+        {
+          "kind": "care",
+          "text": "Small and delicate; feels the cold"
         }
       ],
+      "sources": [],
       "reviewed": false
     },
     "maltese": {
@@ -333,56 +289,63 @@
       "aliases": [],
       "chips": [
         {
-          "kind": "grooming",
-          "text": "Brush weekly",
-          "source": 0,
-          "quote": "require very little more than weekly brushing"
-        }
-      ],
-      "sources": [
+          "kind": "exercise",
+          "text": "Short walks and play"
+        },
         {
-          "title": "Dog Breeds With Minimal Grooming Needs",
-          "url": "https://www.akc.org/expert-advice/health/dog-breeds-minimal-grooming"
+          "kind": "grooming",
+          "text": "Brush daily; the coat tangles"
+        },
+        {
+          "kind": "care",
+          "text": "Wipe the eyes; small and delicate"
         }
       ],
+      "sources": [],
       "reviewed": false
     },
     "pomeranian": {
       "name": "Pomeranian",
-      "aliases": [],
+      "aliases": [
+        "pom"
+      ],
       "chips": [
         {
-          "kind": "care",
-          "text": "Keep nails short",
-          "source": 0,
-          "quote": "keep a Pomeranian’s nails short"
-        }
-      ],
-      "sources": [
+          "kind": "exercise",
+          "text": "Short walks and play"
+        },
         {
-          "title": "Is the Pomeranian the Right Breed for Your Lifestyle?",
-          "url": "https://www.akc.org/expert-advice/dog-breeds/pomeranian-right-for-you"
+          "kind": "grooming",
+          "text": "Brush several times a week"
+        },
+        {
+          "kind": "care",
+          "text": "Small and delicate; keep cool"
         }
       ],
+      "sources": [],
       "reviewed": false
     },
     "yorkshire terrier": {
       "name": "Yorkshire Terrier",
-      "aliases": [],
+      "aliases": [
+        "yorkie"
+      ],
       "chips": [
         {
           "kind": "exercise",
-          "text": "Indoor games and short walks",
-          "source": 0,
-          "quote": "Although many of its physical exercise needs can be met with indoor games, it still needs the mental stimulation of walking and sniffing outdoors."
-        }
-      ],
-      "sources": [
+          "text": "Short walks and play"
+        },
         {
-          "title": "Yorkshire Terrier | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/know-your-pet/dog-breeds/yorkshire-terrier"
+          "kind": "grooming",
+          "text": "Brush daily or keep a short cut"
+        },
+        {
+          "kind": "care",
+          "text": "Small and delicate; feels the cold"
         }
       ],
+      "sources": [],
       "reviewed": false
     },
     "boston terrier": {
@@ -391,67 +354,63 @@
       "chips": [
         {
           "kind": "exercise",
-          "text": "Daily walk or short jog",
-          "source": 0,
-          "quote": "Requires daily exercise in the form of a walk, short jog, or energetic games"
+          "text": "Short, gentle walks"
         },
         {
           "kind": "grooming",
-          "text": "Weekly brushing",
-          "source": 0,
-          "quote": "The coat needs only weekly brushing to remove dead hair"
-        }
-      ],
-      "sources": [
+          "text": "Brush weekly"
+        },
         {
-          "title": "Boston Terrier | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/chatoak/know-your-pet/dog-breeds/boston-terrier"
+          "kind": "care",
+          "text": "Overheats easily; keep cool"
         }
       ],
+      "sources": [],
       "reviewed": false
     },
     "cavalier king charles spaniel": {
       "name": "Cavalier King Charles Spaniel",
-      "aliases": [],
+      "aliases": [
+        "cavalier",
+        "cavalier king charles"
+      ],
       "chips": [
         {
+          "kind": "exercise",
+          "text": "Daily walks and play"
+        },
+        {
           "kind": "grooming",
-          "text": "brush coat weekly",
-          "source": 0,
-          "quote": "Regular brushing and occasional baths will help maintain their glossy coats"
+          "text": "Brush a few times a week"
         },
         {
           "kind": "care",
-          "text": "check ears weekly",
-          "source": 0,
-          "quote": "check Cavaliers’ ears weekly for any signs of infection"
+          "text": "Wants company; avoid long hours alone"
         }
       ],
-      "sources": [
-        {
-          "title": "Is the Cavalier King Charles Spaniel the Right Breed for Your Lifestyle?",
-          "url": "https://www.akc.org/expert-advice/dog-breeds/is-the-cavalier-king-charles-spaniel-right-for-you"
-        }
-      ],
+      "sources": [],
       "reviewed": false
     },
     "australian shepherd": {
       "name": "Australian Shepherd",
-      "aliases": [],
+      "aliases": [
+        "aussie"
+      ],
       "chips": [
         {
-          "kind": "grooming",
-          "text": "Brush frequently to manage shedding",
-          "source": 0,
-          "quote": "Australian Shepherds do shed quite a bit, so brushing frequently is recommended"
-        }
-      ],
-      "sources": [
+          "kind": "exercise",
+          "text": "Needs a lot of daily exercise and a job"
+        },
         {
-          "title": "Is the Australian Shepherd the Right Dog Breed for You?",
-          "url": "https://www.akc.org/expert-advice/dog-breeds/australian-shepherd-right-for-you"
+          "kind": "grooming",
+          "text": "Brush a few times a week"
+        },
+        {
+          "kind": "care",
+          "text": "Herds and gets bored; needs mental work"
         }
       ],
+      "sources": [],
       "reviewed": false
     },
     "border collie": {
@@ -460,155 +419,66 @@
       "chips": [
         {
           "kind": "exercise",
-          "text": "High energy needs daily exercise",
-          "source": 0,
-          "quote": "Border Collies need significant daily exercise that includes both physical and mental activity"
+          "text": "Needs a lot of daily exercise and a job"
         },
         {
           "kind": "grooming",
-          "text": "Brush weekly to prevent mats",
-          "source": 1,
-          "quote": "Brushing your Border with a pin brush once or twice a week will ensure their coat is free of mats"
-        }
-      ],
-      "sources": [
-        {
-          "title": "Border Collie | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/know-your-pet/border-collie"
-        },
-        {
-          "title": "Is the Border Collie the Right Breed for Your Lifestyle?",
-          "url": "https://www.akc.org/expert-advice/dog-breeds/border-collie-right-for-you"
-        }
-      ],
-      "reviewed": false
-    },
-    "french bulldog": {
-      "name": "French Bulldog",
-      "aliases": [],
-      "chips": [
-        {
-          "kind": "grooming",
-          "text": "Brush coat weekly",
-          "source": 0,
-          "quote": "The coat needs only occasional brushing, once every week or so, to remove dead hair."
+          "text": "Brush a few times a week"
         },
         {
           "kind": "care",
-          "text": "Watch for overheating",
-          "source": 0,
-          "quote": "Extremely prone to overheating because of its flat face."
+          "text": "Gets bored easily; needs mental work"
         }
       ],
-      "sources": [
-        {
-          "title": "French Bulldog | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/willow-creek/know-your-pet/dog-breeds/french-bulldog"
-        }
-      ],
+      "sources": [],
       "reviewed": false
     }
   },
   "cat": {
     "domestic shorthair": {
       "name": "Domestic Shorthair",
-      "aliases": [],
+      "aliases": [
+        "domestic short hair",
+        "dsh"
+      ],
       "chips": [
         {
-          "kind": "grooming",
-          "text": "Weekly combing and brushing",
-          "source": 0,
-          "quote": "requires weekly combing and brushing"
-        }
-      ],
-      "sources": [
+          "kind": "exercise",
+          "text": "Daily play"
+        },
         {
-          "title": "American Shorthair | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/know-your-pet/cat-breeds/american-shorthair"
+          "kind": "grooming",
+          "text": "Brush weekly"
+        },
+        {
+          "kind": "care",
+          "text": "Indoor cats need climbing and scratching"
         }
       ],
+      "sources": [],
       "reviewed": false
     },
     "domestic longhair": {
       "name": "Domestic Longhair",
-      "aliases": [],
+      "aliases": [
+        "domestic long hair",
+        "dlh"
+      ],
       "chips": [
         {
-          "kind": "grooming",
-          "text": "Daily brushing to prevent mats",
-          "source": 0,
-          "quote": "This breed's coat is prone to mats and requires daily brushing"
-        }
-      ],
-      "sources": [
-        {
-          "title": "Domestic Long Hair | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/salem/know-your-pet/cat-breeds/domestic-long-hair"
-        }
-      ],
-      "reviewed": false
-    },
-    "maine coon": {
-      "name": "Maine Coon",
-      "aliases": [],
-      "chips": [
+          "kind": "exercise",
+          "text": "Daily play"
+        },
         {
           "kind": "grooming",
-          "text": "Daily brushing to prevent tangles and mats",
-          "source": 0,
-          "quote": "Cats with long, silky, or curly coats require daily brushing to keep their hair from becoming tangled or matted"
-        }
-      ],
-      "sources": [
-        {
-          "title": "Grooming and Coat Care for Your Cat | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/know-your-pet/grooming-and-coat-care-for-your-cat"
-        }
-      ],
-      "reviewed": false
-    },
-    "ragdoll": {
-      "name": "Ragdoll",
-      "aliases": [],
-      "chips": [
-        {
-          "kind": "grooming",
-          "text": "Weekly combing to remove loose hairs",
-          "source": 0,
-          "quote": "Comb coat weekly to remove loose hairs"
+          "text": "Brush most days to stop mats"
         },
         {
           "kind": "care",
-          "text": "Watch for obesity due to low activity",
-          "source": 0,
-          "quote": "Prone to obesity because they are not active cats"
+          "text": "Check for tangles under the legs"
         }
       ],
-      "sources": [
-        {
-          "title": "Ragdoll | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/know-your-pet/cat-breeds/ragdoll"
-        }
-      ],
-      "reviewed": false
-    },
-    "bengal": {
-      "name": "Bengal",
-      "aliases": [],
-      "chips": [
-        {
-          "kind": "grooming",
-          "text": "Brush daily to prevent tangles",
-          "source": 0,
-          "quote": "Cats with long, silky, or curly coats require daily brushing to keep their hair from becoming tangled or matted"
-        }
-      ],
-      "sources": [
-        {
-          "title": "Grooming and Coat Care for Your Cat | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/know-your-pet/grooming-and-coat-care-for-your-cat"
-        }
-      ],
+      "sources": [],
       "reviewed": false
     },
     "siamese": {
@@ -616,24 +486,59 @@
       "aliases": [],
       "chips": [
         {
+          "kind": "exercise",
+          "text": "Plenty of play and climbing"
+        },
+        {
           "kind": "grooming",
-          "text": "Weekly combing removes dead hair",
-          "source": 0,
-          "quote": "Running a quick comb once a week is ample to remove dead hair in the coat"
+          "text": "Brush weekly"
         },
         {
           "kind": "care",
-          "text": "May develop anxiety when left alone",
-          "source": 0,
-          "quote": "Siamese rarely needs to be bathed. Suggested Nutritional Needs for Siamese [...] Can exhibit anxiety from being left home alone by over grooming, possibly leading to psychogenic alopecia"
+          "text": "Vocal and social; dislikes being alone"
         }
       ],
-      "sources": [
+      "sources": [],
+      "reviewed": false
+    },
+    "maine coon": {
+      "name": "Maine Coon",
+      "aliases": [],
+      "chips": [
         {
-          "title": "Siamese | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/know-your-pet/cat-breeds/siamese"
+          "kind": "exercise",
+          "text": "Daily play and climbing"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush several times a week"
+        },
+        {
+          "kind": "care",
+          "text": "Large; needs a sturdy tree and a big litter box"
         }
       ],
+      "sources": [],
+      "reviewed": false
+    },
+    "ragdoll": {
+      "name": "Ragdoll",
+      "aliases": [],
+      "chips": [
+        {
+          "kind": "exercise",
+          "text": "Gentle daily play"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush a few times a week"
+        },
+        {
+          "kind": "care",
+          "text": "Watch weight; best kept indoors"
+        }
+      ],
+      "sources": [],
       "reviewed": false
     },
     "persian": {
@@ -641,18 +546,19 @@
       "aliases": [],
       "chips": [
         {
-          "kind": "grooming",
-          "text": "Daily grooming with metal comb",
-          "source": 0,
-          "quote": "Persian and Exotic type coats will require daily grooming with a wide, metal comb"
-        }
-      ],
-      "sources": [
+          "kind": "exercise",
+          "text": "Gentle daily play"
+        },
         {
-          "title": "Fluffy Coats and How to Properly Care For Them - The Cat Fanciers' Association",
-          "url": "https://cfa.org/cat-talk/fluffy-coats-and-how-to-properly-care-for-them"
+          "kind": "grooming",
+          "text": "Brush every day; the coat mats fast"
+        },
+        {
+          "kind": "care",
+          "text": "Wipe the eyes; a flat face can affect breathing"
         }
       ],
+      "sources": [],
       "reviewed": false
     },
     "british shorthair": {
@@ -660,25 +566,40 @@
       "aliases": [],
       "chips": [
         {
+          "kind": "exercise",
+          "text": "Moderate play"
+        },
+        {
           "kind": "grooming",
-          "text": "Weekly combing to keep coat mat-free",
-          "source": 0,
-          "quote": "Run a comb through its coat at least weekly to keep it mat-free and looking healthy."
+          "text": "Brush weekly"
         },
         {
           "kind": "care",
-          "text": "Measure food portions to prevent becoming overweight",
-          "source": 0,
-          "quote": "measure food portions to prevent this breed from becoming overweight."
+          "text": "Gains weight easily; watch portions"
         }
       ],
-      "sources": [
+      "sources": [],
+      "reviewed": false
+    },
+    "bengal": {
+      "name": "Bengal",
+      "aliases": [],
+      "chips": [
         {
-          "title": "British Shorthair | VCA Animal Hospitals",
-          "url": "https://vcahospitals.com/know-your-pet/cat-breeds/british-shorthair"
+          "kind": "exercise",
+          "text": "Lots of active play and climbing"
+        },
+        {
+          "kind": "grooming",
+          "text": "Brush weekly"
+        },
+        {
+          "kind": "care",
+          "text": "Bored cats get destructive; give enrichment"
         }
       ],
-      "reviewed": true
+      "sources": [],
+      "reviewed": false
     }
   }
 }

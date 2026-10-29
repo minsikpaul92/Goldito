@@ -1,17 +1,13 @@
-import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 
 import { DiaryTimeline } from "../../components/DiaryTimeline";
-import { BackLink } from "../../components/ui/BackLink";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { Screen } from "../../components/ui/Screen";
-import { ScreenHeader } from "../../components/ui/ScreenHeader";
+import { ScreenSubtitle } from "../../components/ui/ScreenHeader";
 import { useCaringPets } from "../../features/care/useCaringPets";
 import { DIARY_DAYS, DiaryEntry, listDiary, listMySentReports } from "../../features/diary/diaryApi";
 import { useSession } from "../../providers/SessionProvider";
-
-const goBack = () => (router.canGoBack() ? router.back() : router.replace("/sitter"));
 
 type State = { status: "loading" } | { status: "ready"; entries: DiaryEntry[] } | { status: "error"; message: string };
 
@@ -49,15 +45,13 @@ export default function SitterHistory() {
   if (!pets || pets.length === 0) {
     return (
       <Screen>
-        <BackLink onPress={goBack} testID="history-back" />
-        <EmptyState icon="clock" title="Nothing to show yet" message="What you send during a stay shows up here." />
+        <EmptyState emoji="🕘" title="Nothing to show yet" message="What you send during a stay shows up here." />
       </Screen>
     );
   }
   return (
     <Screen contentStyle={{ gap: 16 }} testID="sitter-history-screen">
-      <BackLink onPress={goBack} testID="history-back" />
-      <ScreenHeader title="My history" subtitle={`What you sent · today and the last ${DIARY_DAYS} days`} />
+      <ScreenSubtitle>{`What you sent · today and the last ${DIARY_DAYS} days`}</ScreenSubtitle>
       {state.status === "error" ? (
         <EmptyState
           icon="clock"

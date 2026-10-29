@@ -13,7 +13,7 @@ const MOCHI = "00000000-0000-4000-8000-0000000000bb";
 const OTHER = "00000000-0000-4000-8000-0000000000cc";
 const CHECK = "00000000-0000-4000-8000-00000000c001";
 
-const ASPCA = { title: "People Foods to Avoid Feeding Your Pets", url: "https://www.aspca.org/pet-care/foods", domain: "aspca.org" };
+const FDA = { title: "People Foods to Avoid Feeding Your Pets", url: "https://www.fda.gov/animal-veterinary/foods", domain: "fda.gov" };
 
 function result(status: "SAFE" | "WARNING" | "DANGER", extra: object = {}) {
   return {
@@ -25,7 +25,7 @@ function result(status: "SAFE" | "WARNING" | "DANGER", extra: object = {}) {
     hidden_sources: [],
     toxic_ingredients: [],
     unknown_ingredients: [],
-    sources: [ASPCA],
+    sources: [FDA],
     sources_unavailable: false,
     double_checked: true,
     partial_label: false,
@@ -144,7 +144,7 @@ test.describe("treat check", () => {
     const card = screen.getByTestId("treat-result-warning");
     await expect(card).toContainText("Ask the owner first");
     await expect(screen.getByTestId("treat-hidden")).toContainText("animal fat may contain chicken");
-    await expect(screen.getByTestId("treat-source")).toContainText("aspca.org");
+    await expect(screen.getByTestId("treat-source")).toContainText("fda.gov");
     await expect(screen.getByTestId("treat-danger")).toHaveCount(0);
     await screen.getByTestId("treat-ingredients-toggle").click();
     await expect(screen.getByTestId("treat-ingredients")).toContainText("sweet potato");

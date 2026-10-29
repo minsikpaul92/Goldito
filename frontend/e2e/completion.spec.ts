@@ -267,7 +267,7 @@ test.describe("life record", () => {
     await page.goto(`/owner/bookings/${BOOKING}`);
     const screen = app(page);
     await expect(screen.getByTestId("record-writing")).toBeVisible();
-    await screen.getByRole("link", { name: /back/ }).click(); // leave while the request runs…
+    await screen.getByTestId("bookings-back").click(); // leave while the request runs…
     await expect(screen.getByTestId("record-writing")).toHaveCount(0);
     await screen.getByRole("tab", { name: /Bookings/ }).click(); // …and come back to the booking in the app
     await screen.getByTestId("past-toggle").click();

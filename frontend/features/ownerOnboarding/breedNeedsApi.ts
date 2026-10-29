@@ -4,7 +4,7 @@ import { apiPost } from "../../lib/api";
 import type { Species } from "../../types/db";
 
 export type BreedNeeds = {
-  chips: { kind: "exercise" | "grooming" | "care"; text: string; source: number }[];
+  chips: { kind: "exercise" | "grooming" | "care"; text: string; source?: number | null }[];
   sources: { title: string; url: string }[];
   /** The breed the lookup was made for when it differs from what the owner wrote ("Poodle mix" is looked up as "Poodle"). */
   basis: string | null;

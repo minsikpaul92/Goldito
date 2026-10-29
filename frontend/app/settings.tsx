@@ -4,11 +4,9 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Avatar } from "../components/ui/Avatar";
-import { BackLink } from "../components/ui/BackLink";
 import { List, ListRow } from "../components/ui/ListRow";
 import { LoadingView } from "../components/ui/LoadingView";
 import { Screen } from "../components/ui/Screen";
-import { ScreenHeader } from "../components/ui/ScreenHeader";
 import { useMyPets } from "../features/pets/useMyPets";
 import { loadCoverPhoto, photoThumb } from "../features/profile/profilePhotosApi";
 import { useNotificationPrefs } from "../features/settings/notificationPrefs";
@@ -18,7 +16,7 @@ import { Theme } from "../theme/themes";
 import { tokens } from "../theme/tokens";
 import { usePlayfulWords } from "../features/settings/playfulWords";
 
-/** The person's cover photo on a round ground, or their first letter when they have none (Figma: top right and the green block). */
+/** The person's cover photo on a round ground, or their first letter when they have none (Figma: the green block). */
 function Face({ profileId, name, background, color }: { profileId: string; name: string; background: string; color: string }) {
   const styles = useThemedStyles(makeStyles);
   const [uri, setUri] = useState<string | null>(null);
@@ -69,12 +67,6 @@ export default function SettingsScreen() {
 
   return (
     <Screen contentStyle={styles.content} testID="settings">
-      <BackLink onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} testID="settings-back" />
-      <ScreenHeader
-        title="Settings"
-        right={<Face profileId={profile.id} name={profile.displayName} background={theme.color.accent} color={theme.color.text} />}
-      />
-
       <View style={styles.me} testID="settings-account">
         <Face profileId={profile.id} name={profile.displayName} background={tokens.color.gold} color={theme.color.text} />
         <View style={styles.meText}>

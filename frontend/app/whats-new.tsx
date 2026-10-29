@@ -1,12 +1,11 @@
-import { Redirect, router } from "expo-router";
+import { Redirect } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
-import { BackLink } from "../components/ui/BackLink";
 import { Card } from "../components/ui/Card";
 import { EmptyState } from "../components/ui/EmptyState";
 import { LoadingView } from "../components/ui/LoadingView";
 import { Screen } from "../components/ui/Screen";
-import { ScreenHeader } from "../components/ui/ScreenHeader";
+import { ScreenSubtitle } from "../components/ui/ScreenHeader";
 import changelog from "../features/settings/changelog.json";
 import { useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
@@ -44,8 +43,7 @@ export default function WhatsNewScreen() {
 
   return (
     <Screen contentStyle={styles.content} testID="whats-new">
-      <BackLink onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} testID="whats-new-back" />
-      <ScreenHeader title="What's New" subtitle="Small updates, in plain words" />
+      <ScreenSubtitle>Small updates, in plain words</ScreenSubtitle>
       {RELEASES.length === 0 ? (
         <EmptyState icon="whatsNew" title="Nothing new yet" message="New features show here." />
       ) : (

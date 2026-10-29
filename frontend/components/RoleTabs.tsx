@@ -4,6 +4,7 @@ import { ColorValue, Platform, Pressable, StyleProp, Text, View, ViewStyle } fro
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { BackLink } from "./ui/BackLink";
 import { Icon, IconName } from "./ui/Icon";
 import { HeaderActions } from "./HeaderActions";
 import { LoadingView } from "./ui/LoadingView";
@@ -93,6 +94,21 @@ export function headerOptions(theme: Theme) {
   };
 }
 
+type BackNav = { goBack: () => void };
+
+/**
+ * The ← in every stack header: the same 44 px BackLink as in a page, its drawn arrow on the screen's text edge (the
+ * header's left slot starts at 0, the page text at spacing.md). testID `<first route segment>-back`, e.g. `terms-back`.
+ */
+export function headerBack(theme: Theme, navigation: BackNav, routeName: string) {
+  return ({ canGoBack }: { canGoBack?: boolean }) =>
+    canGoBack ? (
+      <View style={{ marginLeft: theme.spacing.md }}>
+        <BackLink onPress={() => navigation.goBack()} testID={`${routeName.split("/")[0]}-back`} />
+      </View>
+    ) : null;
+}
+
 /** A tab's header title with "Name · Role" under it, so the header says who is signed in (team pick, Oct 22). */
 function HeaderTitle({ children }: { children: string }) {
   const theme = useTheme();
@@ -142,10 +158,11 @@ export function RoleStack({ role, children }: StackProps) {
 
   return (
     <Stack
-      screenOptions={{
+      screenOptions={({ navigation, route }) => ({
         ...headerOptions(theme),
+        headerLeft: headerBack(theme, navigation, route.name),
         contentStyle: { backgroundColor: theme.color.background },
-      }}
+      })}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       {children}

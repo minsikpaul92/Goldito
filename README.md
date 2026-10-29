@@ -9,30 +9,51 @@
 A pet-sitting app for dogs and cats where an **NVIDIA Nemotron** agent does the typing for the whole stay,<br>
 the server owns every fact, and a person approves every word.
 
-[![Live demo](https://img.shields.io/badge/live%20demo-goldito--petcare.vercel.app-0070f3?style=flat-square)](https://goldito-petcare.vercel.app)
+[![Try the live demo](https://img.shields.io/badge/%E2%96%B6%20Try%20the%20live%20demo-goldito--petcare.vercel.app-0070f3?style=for-the-badge)](https://goldito-petcare.vercel.app)
+
 [![Track: Best Apps and Agents](https://img.shields.io/badge/track-Best%20Apps%20%26%20Agents-76b900?style=flat-square)](docs/hackathon/README.md)
 [![NVIDIA Nemotron 3](https://img.shields.io/badge/NVIDIA-Nemotron%203%20Nano%20%C2%B7%20Super%20%C2%B7%20Ultra-76b900?style=flat-square)](#powered-by-nvidia-nemotron-on-nebius-token-factory)
 [![Nebius Token Factory](https://img.shields.io/badge/runs%20on-Nebius%20Token%20Factory-052b42?style=flat-square)](#powered-by-nvidia-nemotron-on-nebius-token-factory)
 [![Tavily](https://img.shields.io/badge/search-Tavily-4f46e5?style=flat-square)](#tavily-live-answers-from-trusted-sites)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-<img src="docs/assets/readme/chat-draft.gif" alt="Inquiry chat between owner Paul and sitter Peter: reply chips draft a message, then a Meet & Greet request, acceptance, quote, and payment" width="340">
+<img src="docs/assets/readme/chat-draft.gif" alt="The sitter's phone in the booking chat with owner Robert: reply chips draft a message, then a Meet & Greet, the final quote, and payment" width="340">
 
 <sub><i>Booking chat: reply chips, Meet &amp; Greet, quote, and payment in one thread</i></sub>
 
-**[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up) · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
+**[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up needed) · **[Watch the video](https://youtu.be/hjruk-XOlJE?si=uVOkhnTdrsbyxrQl)** · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
 
 </div>
 
 > The backend runs on a free plan, so the first load after a quiet spell can take 30 to 50 seconds.
 
-> **Judges:** tap **Try the demo**, then **Robert, the owner** or **Chloe, the sitter**, for a free Judge seat (Judge 1 to 4). A seat is yours alone: it starts from a clean stay and frees itself when you log out or leave for 10 minutes. On a computer, **[Show both phones](https://goldito-petcare.vercel.app/?view=split)** and use the panel left of the phones to run the five scenes. Demo accounts and pets are fictional.
+> **Judges:** tap **Try the demo**, then pick a free Judge seat (Judge 1 to 4). A seat is yours alone: it starts from a clean stay and frees itself when you log out or leave for 10 minutes. On a computer, both phones open side by side (owner left, sitter right); use the panel left of the phones to run the five scenes, and **Jump to** for the step you want. Demo accounts and pets are fictional.
+
+---
+
+## Contents
+
+1. [Goldito in 30 seconds](#goldito-in-30-seconds)
+2. [Powered by NVIDIA Nemotron on Nebius Token Factory](#powered-by-nvidia-nemotron-on-nebius-token-factory)
+   - [The agent loop](#the-agent-loop)
+   - [Models and measurements](#models-and-measurements)
+3. [Where Token Factory accelerated our workflow](#where-token-factory-accelerated-our-workflow)
+4. [Tavily: live answers from trusted sites](#tavily-live-answers-from-trusted-sites)
+5. [How Goldito works](#how-goldito-works)
+6. [Who it's for](#who-its-for)
+7. [Architecture](#architecture)
+8. [Privacy & Safety by Design](#privacy--safety-by-design)
+9. [Run it yourself](#run-it-yourself)
+10. [What's Next](#whats-next)
+11. [Sources and Credits](#sources-and-credits)
+12. [Team](#team)
+13. [License](#license)
 
 ---
 
 ## Goldito in 30 seconds
 
-**The insight.** *"The pet isn't anxious. The owner is."* That is Chloe, a pet sitter, and we have seen it for three years as sitters ourselves. With no news, owners text again, ask for a photo, and ask for it twice. Keeping owners in the loop takes us **at least 40 minutes a day**: the replies, the pill schedule, the evening update, the photos. Goldito cuts that by about **85%** (our estimate), and sending an update becomes the fun part: a tap, a photo, a sticker.
+**The insight.** *"The pet isn't anxious. The owner is."* That is Chloe, a pet sitter, and we have seen it for three years as sitters ourselves. With no news, owners text again, ask for a photo, and ask for it twice. Keeping owners in the loop takes us **at least 40 minutes a day**: the replies, the pill schedule, the evening update, the photos. Goldito cuts that to about **13 minutes** (our estimate), and sending an update becomes the fun part: a tap, a photo, a sticker.
 
 **What Goldito does.** Goldito cares for the owner too. One chat per owner and sitter carries the whole stay: inquiry, Meet & Greet, booking, the trip, daily care, and the ride home. While the pet is in care, the sitter sends small care messages with a tap, so the owner hears from the sitter before they have to ask.
 
@@ -61,17 +82,17 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 
 | When this happens | The agent | Model | A person decides |
 | :--- | :--- | :--- | :--- |
-| A new owner registers a pet | Turns a photo and a few spoken sentences into profile suggestions and looks up breed needs | Nemotron 3.5 **Super VL** · Groq Whisper → Nemotron 3 **Nano** | The owner confirms every suggestion |
+| A new owner registers a pet | Turns a photo and a few spoken sentences into profile suggestions | Nemotron 3.5 **Super VL** · Groq Whisper → Nemotron 3 **Nano** | The owner confirms every suggestion |
 | A message arrives in the chat | Suggests reply chips and drafts a message in my voice, from the calendar, quote, policy, pet profile, and Life Record; points at the next step only if the code allows it | Nemotron 3 **Super** + Qwen3 Embedding | Taps a chip, edits, and taps **Send** |
 | The sitter says yes | Recognizes it and brings up the Meet & Greet card | Nemotron 3 **Nano** | Either side requests, accepts, or skips |
 | The owner writes a care request | Turns it into timed tasks and Heads-up cards | Nemotron 3 **Super** | The owner reviews and saves |
 | The day ends | Suggests chips from check-ins and photos, then writes the daily note | Nemotron 3.5 **Super VL** → Nemotron 3 **Super** | The sitter fixes the chips and approves |
-| A treat label is photographed | Reads it, applies the rule table, searches trusted sites (Tavily), and reasons about hidden sources | Nemotron 3.5 **Super VL** → Nemotron 3 **Ultra** | Danger needs an explicit "I understand" |
+| A treat label is photographed | Reads it, applies the rule table, searches FDA pages (Tavily), and reasons about hidden sources | Nemotron 3.5 **Super VL** → Nemotron 3 **Ultra** | Danger needs an explicit "I understand" |
 | The stay ends | Writes the pet's Life Record and indexes it | Nemotron 3 **Super** + Qwen3 Embedding | The owner reads it |
 
-<img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner adds a photo of Mumu, the AI reads breed and coat color, and Goldito builds Mumu as an 8-bit pet" width="340">
+<img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner picks a photo of Max and answers a few questions by voice or text, then Goldito builds Max as an 8-bit pet" width="340">
 
-<sub><i>Sign-up: a photo becomes your pet as an 8-bit character</i></sub>
+<sub><i>Sign-up: a photo and a few answers become your pet as an 8-bit character</i></sub>
 
 **Guardrails.** The model never writes a price, a date, or an entry code (a draft whose numbers do not match the server is rewritten once, then falls back to plain words). Entry codes never enter a prompt or the RAG index. Life Records and spoken profile facts need recorded evidence or a matching quote, and safety answers are never pre-filled. The treat verdict is never below the rule table. If a model is slow or down, the screen shows fixed chips or a plain list, never an error.
 
@@ -80,7 +101,7 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 | Model (Token Factory ID) | Used for | Measured |
 | :--- | :--- | :--- |
 | **Nemotron 3 Super** `nvidia/nemotron-3-super-120b-a12b` | Chat reply chips and drafts · care request → checklist · daily notes · Life Records | About 1 s per chip set or draft. In simulated 20-message chats, Nano drafts repeated themselves and fell back to bare chip words; Super did not, so the chat runs on Super |
-| **Nemotron 3 Nano** `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | The sitter's "yes" · spoken profile → facts with quotes · sitter onboarding by voice · breed needs from search results · the mood line | Fast extraction where the server checks every value |
+| **Nemotron 3 Nano** `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | The sitter's "yes" · spoken profile → facts with quotes · sitter onboarding by voice · the mood line | Fast extraction where the server checks every value |
 | **Nemotron 3 Ultra** `nvidia/Nemotron-3-Ultra-550b-a55b` | Treat check: allergens and hidden sources over the label, the rules, and Tavily excerpts | About 2.7 s with thinking on; the whole check about 7 to 8 s |
 | **Nemotron 3.5 Super VL** `nvidia/Nemotron-3.5-Super-VL` ¹ | Treat labels · photo captions and album · daily-note photo chips · breed guess from a pet photo · mood tags · handoff photo check (server API, not in the app yet) | About 1 to 1.4 s per photo with thinking off. On six sample labels (5 variants, 60 calls) it missed no ingredient and said "incomplete" on every cut-off label |
 | **Qwen3 Embedding 8B** `Qwen/Qwen3-Embedding-8B` | RAG over Life Records, sitter policies, and care requests · picking a sitter's own past replies as tone examples | `dimensions: 1024` fits a pgvector HNSW index |
@@ -103,9 +124,7 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 <details open>
 <summary><h3>Feedback log: Token Factory, AI Cloud, and each model</h3></summary>
 
-What we used, what worked, and what got in the way, written down as it happened. Details and numbers: [model-ids.md](docs/plan/phases/notes/model-ids.md) · [nebius-ai-cloud-feedback.md](docs/plan/phases/notes/nebius-ai-cloud-feedback.md).
-
-<!-- TODO(submission): Nemotron 3.5 Super VL and Qwen3 Embedding 8B still need one line in the team's own words on "would we build with it again, and why". Do not invent it. -->
+What we used, what worked, and what got in the way, written down as it happened. Details and numbers: [model-ids.md](docs/plan/phases/notes/model-ids.md).
 
 **Nebius Token Factory**
 - *Onboarding:* the catalog check and the first answers on the same day (2026-09-29): a Nano text call and a vision image call through the OpenAI SDK, with only the base URL and key changed.
@@ -125,18 +144,20 @@ What we used, what worked, and what got in the way, written down as it happened.
 
 **NVIDIA Nemotron 3 Ultra**
 - *Worked:* the treat check verdict in about 2.7 s with thinking on and JSON mode, 614 completion tokens, keeping both hidden sources in our test label. We also used it to rate whole simulated chats when choosing the chat model.
-- *Again?* Yes. It met the quality, speed, and JSON reliability we needed for its job, at a price that suits a small product. We will keep Nemotron as our default for text.
+- *Again?* Yes. It met the quality, speed, and JSON reliability we needed for safety reasoning, at a price that suits a small product. We will keep it for the treat check.
 
 **Nemotron 3.5 Super VL**
 - *Worked:* it read all six sample labels with no missed ingredient across blur, small size, rotation, and cut-off versions, and said "incomplete" on every cut-off label; about 1 to 1.4 s per photo.
 - *Got in the way:* thinking is on by default and fills `max_tokens` before any answer (we send `enable_thinking: false`); only on the global base URL, not the us-central1 one.
+- *Again?* Yes. It worked well, it was fast, and we liked using it. It read our six sample labels without missing an ingredient, in about 1 to 1.4 s per photo, so a treat check or a photo caption feels instant on a phone. Once thinking was switched off it was easy to build on. We will keep it as our default for vision.
 
 **Qwen3 Embedding 8B**
 - *Worked:* `dimensions: 1024` on both base URLs, so it fits a pgvector HNSW index (2000 dimensions at most); 539 ms median per query embedding.
+- *Again?* Yes. It worked well, it was fast, and we liked using it. `dimensions: 1024` fit our pgvector index without any extra work. We will keep it for retrieval.
 
 **Nebius AI Cloud** (Serverless endpoint, tried and not used)
 - *Worked:* a clear endpoint form with a live cost estimate; a public GHCR image needs no registry credentials; a whole `.env` can be mounted as a file.
-- *Got in the way:* saving secret environment variables failed with a permission error and no hint on the missing role; no bulk env import; a $25 card top-up at Create while the event credit was not visible; the endpoint's Bearer token clashes with an app's own `Authorization` header; a 100 GiB minimum disk for a 300 MB image; no scale to zero, so staying up until judging ends would cost about $128 on the smallest CPU preset.
+- *Got in the way:* saving secret environment variables failed with a permission error and no hint on the missing role; no bulk env import; a $25 card top-up at Create while the event credit was not visible; the endpoint's Bearer token clashes with an app's own `Authorization` header; a 100 GiB minimum disk for a 300 MB image; no scale to zero, so staying up until judging ends (Dec 15) would cost about $128 on the smallest CPU preset.
 - *Again?* For GPU or model serving, yes: the form and the cost estimate are good. For a small always-on CPU API, the billing step and the secrets permission were the blockers.
 
 </details>
@@ -149,18 +170,16 @@ What we used, what worked, and what got in the way, written down as it happened.
 
 | Feature | What Tavily searches | Trusted domains |
 | :--- | :--- | :--- |
-| **Treat check** (Snap tab) | The label's hidden sources, toxic or unknown ingredients, and recent recalls of the product. The excerpts go to Nemotron 3 Ultra; the links are shown as sources | [aspca.org](https://www.aspca.org) · [fda.gov](https://www.fda.gov) · [avma.org](https://www.avma.org) · [petpoisonhelpline.com](https://www.petpoisonhelpline.com) · [vcahospitals.com](https://vcahospitals.com) |
-| **Breed needs** (sign-up, at a glance card) | One breed's care needs; Nemotron 3 Nano turns the result into short chips, each with its source | Dogs: [akc.org](https://www.akc.org) · [vcahospitals.com](https://vcahospitals.com) · [merckvetmanual.com](https://www.merckvetmanual.com) <br> Cats: [icatcare.org](https://icatcare.org) · [cfa.org](https://cfa.org) · [vcahospitals.com](https://vcahospitals.com) · [merckvetmanual.com](https://www.merckvetmanual.com) |
+| **Treat check** (Snap tab) | The label's hidden sources, toxic or unknown ingredients, and recent recalls of the product. The excerpts go to Nemotron 3 Ultra; a link is shown only if the model relied on that page and the page names the product or a flagged ingredient, and none when the pet's own allergy already settles the verdict | [fda.gov](https://www.fda.gov) |
 
-- **Example:** the search `xylitol toxic dogs` returned pages from petpoisonhelpline.com, vcahospitals.com, and fda.gov in 2.9 s.
+- **Example:** the search `xylitol toxic dogs` returned three fda.gov pages in 2.2 s.
 - **Fast and frugal:** basic depth (1 credit per search), every search in parallel under one 8-second budget. A search that fails or runs late is left out, and the check still answers from the label, the rules, and the model, and says that no sources were available.
-- **Breed answers are cached:** a reviewed list of common breeds first, then a found result for 30 days, an empty one for 3 days.
 - **Danger is loud:** a DANGER verdict opens a red screen that only "I understand" closes, and a sitter's DANGER also notifies the owner.
-- Code: [`services/tavily.py`](backend/app/services/tavily.py) · [`services/breed_needs.py`](backend/app/services/breed_needs.py) · [`routers/ai_safety_check.py`](backend/app/routers/ai_safety_check.py)
+- Code: [`services/tavily.py`](backend/app/services/tavily.py) · [`routers/ai_safety_check.py`](backend/app/routers/ai_safety_check.py)
 
-<img src="docs/assets/readme/treat-check.gif" alt="Two treat labels are checked for Biscuit, who is allergic to chicken: a label with hidden chicken sources gets a WARNING, and a label that names chicken and garlic powder gets a red DANGER screen" width="360">
+<img src="docs/assets/readme/treat-check.gif" alt="The owner's phone: a treat label is checked for Max, who is allergic to chicken, and a red DANGER screen appears" width="340">
 
-<sub><i>Treat check: one label gets a WARNING, another a red DANGER</i></sub>
+<sub><i>Treat check: chicken on the label gets a red DANGER</i></sub>
 
 ---
 
@@ -175,11 +194,9 @@ What we used, what worked, and what got in the way, written down as it happened.
       └──────────────── the next stay starts with everything Goldito learned ─────────┘
 ```
 
-<!-- TODO(image): five phone screenshots (402 x 874), one per stage. Uncomment the table when the files are in docs/assets/readme/.
 | ① Inquiry | ② Meet & Greet | ③ Booking | ④ Care & Transit | ⑤ Completion |
 | :---: | :---: | :---: | :---: | :---: |
-| <img src="docs/assets/readme/stage-1-chat.png" alt="Booking chat with AI reply chips" width="150"> | <img src="docs/assets/readme/stage-2-checklist.png" alt="Care request turned into a checklist" width="150"> | <img src="docs/assets/readme/stage-3-checkout.png" alt="Final quote, consents, and demo payment" width="150"> | <img src="docs/assets/readme/stage-4-daily-note.png" alt="The 5-second check and the AI daily note" width="150"> | <img src="docs/assets/readme/stage-5-life-record.png" alt="Home safe and the pet's Life Record" width="150"> |
--->
+| <img src="docs/assets/readme/stage-1-chat.png" alt="Booking chat with AI reply chips" width="150"> | <img src="docs/assets/readme/stage-2-checklist.png" alt="Meet & Greet checklist: care needs, quirks, route, handoff, heads-up" width="150"> | <img src="docs/assets/readme/stage-3-checkout.png" alt="Consents, a typed signature, and the demo payment" width="150"> | <img src="docs/assets/readme/stage-4-daily-note.png" alt="The diary page the AI wrote from the day's chips, with stickers" width="150"> | <img src="docs/assets/readme/stage-5-life-record.png" alt="Home safe and the pet's Life Record" width="150"> |
 
 | Stage | What happens | What the AI does |
 | :--- | :--- | :--- |
@@ -191,86 +208,102 @@ What we used, what worked, and what got in the way, written down as it happened.
 
 Tap a stage for the details.
 
-<details>
+<details open>
 <summary><b>① Inquiry: one chat per owner and sitter, with AI drafts in your own voice</b></summary>
 
 - The owner searches sitters by dates, times, pets, and distance from home (1 to 100 km), opens a profile, and taps **Start chat**. The chat opens with a stay card (dates, times, pets) and a hello. That chat carries the whole stay: quote, Meet & Greet, agreement, payment, trips, photos, the daily note, and the reviews. The same owner and sitter always come back to the same chat.
 - **The AI suggests, a person sends.** For the message the other side just wrote, Nemotron 3 Super offers two or three reply chips for *my* side. Tapping one drafts a short message in my voice (a sitter's voice is learned from their own anonymized past replies) that I can edit before I tap **Send**. When the next step is clear (send a quote, request a Meet & Greet, pay), the AI can point at one action chip, but only from the list of steps the code says are possible right now.
+<p align="center"><img src="docs/assets/readme/stage-1-chat.png" alt="Booking chat with AI reply chips" width="240"></p>
+
 - **The model never writes a price or a date.** The sitter's calendar, rates, and quote (with **holiday** and **multi-pet** rates) come from the database. The facts also include the sitter's policy, the pet's profile and allergies, and the pet's **Life Record** (RAG on pgvector).
 
 </details>
 
-<details>
+<details open>
 <summary><b>② Meet & Greet: the care request becomes a checklist, and first-time pairs meet</b></summary>
 
 - The owner writes a **care & medication request** like a note, or taps Quick add chips: *"8 AM: 1 cup of kibble · 2 PM: skin pill in a treat · No knocking, text me · Keep other dogs away on walks."* Nemotron 3 Super turns it into timed tasks and **Heads-up** cards; the owner reviews them before saving. While a stay is on, changes go through a request the sitter approves.
 - When the sitter's own words say yes (Nemotron 3 Nano reads them), the chat brings up the **Meet & Greet** card and the dates are held for this owner. First-time pairs meet **in person** (Goldito suggests a park near the owner's home from OpenStreetMap) or **online**, where the backend creates a **Google Meet** link and calendar invite. Either side can ask to skip; both must agree. Repeat clients skip this step.
+<p align="center"><img src="docs/assets/readme/stage-2-checklist.png" alt="Meet & Greet checklist: care needs, quirks, route, handoff, heads-up" width="240"></p>
+
 - No meeting time within 2 days? Both are asked to set one, skip it, or decline; after 3 more quiet days the request is cancelled and the dates are released.
 
 </details>
 
-<details>
+<details open>
 <summary><b>③ Booking: agreement, final quote, consents, payment, and secrets that unlock on time</b></summary>
 
 - After meeting, the owner taps **I'd like to book** (with the checklist, pets, times, and price in view) and the sitter taps **I accept**, in either order. Either side can still say no, with a reason chip.
 - The sitter sends the **final quote** with one tap; the server calculates it. The owner confirms it, signs the **consent forms** (Canada-first: 24-hour emergency vet authorization, lockbox / buzzer / fob use, sharing space with other pets, safe-return rules), and **pays (demo)**.
+<p align="center"><img src="docs/assets/readme/stage-3-checkout.png" alt="Consents, a typed signature, and the demo payment" width="240"></p>
+
 - **Timed unlock:** for boarding, the sitter's address, visitor parking, and a packing list appear right after payment. Entry info for the owner's home (lockbox code, buzzer) **unlocks for the sitter only 2 hours before the visit**, and the owner is told when it opens.
 
 </details>
 
-<details>
+<details open>
 <summary><b>④ Care & Pet Transit: live trips, the 8-bit pet room, 5-second checks, AI daily notes</b></summary>
 
-- **Uber-style trips, inside the chat.** Drop-off and pick-up are agreed as one pair. Whoever drives taps **Start trip** (after a clear location prompt); the chat shows *on the way*, *N min away*, and *arrived*, and the other side gets a live map and ETA. On arrival the owner gets the sitter's place card (visitor parking, lobby notes) and the sitter gets the entry-info card. Anyone can **start without sharing**: the other side then sees the meeting place with **Open in Google Maps**.
-- **Care, snap, tap.** The sitter ticks timed tasks (the pill, with a photo), taps meal, walk, potty, or nap on the pet's **8-bit room**, and sends quick check-ins. The owner sees each update live, and their 8-bit pet on Home reflects the day. **Ask for a photo** sends the sitter a request that their next photo answers.
-- **5-second check:** in the evening Goldito suggests chips from the day's check-ins and from up to two photos (Nemotron 3.5 Super VL reads them): Meal · Potty · Walk 20 min · Meds · 🐿️ Squirrel at the park. The sitter turns off anything wrong and adds a short line if they want. **Nemotron 3 Super writes the daily note** in the sitter's voice from only those facts, and it is posted once the sitter approves it.
-- **Album and diary:** every photo gets an AI caption and is sorted into Meals · Walks · Naps · Play by day. Daily notes form a diary that both sides can decorate with pet stickers.
+**Uber-style trips, inside the chat.** Whoever drives taps **Start trip**, and the other side gets a live map and ETA.
 
-**Care, played like a game.** The sitter taps **Feed**, **Walk**, **Poop**, or **Nap** on the pet's 8-bit room. The pet acts it out and the owner is told right away, so a care update feels like play instead of a chore.
+<img src="docs/assets/readme/trip-live.gif" alt="Live trip on both phones: the map and ETA count down until Robert has arrived at Chloe's place" width="560">
 
-<img src="docs/assets/readme/care-room.gif" alt="The sitter taps Feed, Walk, Poop, and Nap on Biscuit's 8-bit room; the pet eats, walks, and sleeps, and each tap tells the owner" width="320">
+<sub><i>Live trip: the owner's map and ETA until the sitter arrives</i></sub>
+
+**Care, snap, tap.** The sitter ticks tasks and taps meal, walk, potty, or nap on the pet's 8-bit room, and the owner sees each update live.
+
+<img src="docs/assets/readme/care-room.gif" alt="The sitter taps quick check-ins, then Feed, Walk, Poop, and Nap on Max's 8-bit room; the pet eats, walks, and sleeps, and each tap tells the owner" width="320">
 
 <sub><i>The 8-bit care room: the sitter taps Feed, Walk, Poop, or Nap</i></sub>
 
-<img src="docs/assets/readme/care-checkin.gif" alt="The sitter taps check-ins and adds a photo for Biscuit while the owner's Home updates live: meals, potty, walks, and mood" width="560">
+<img src="docs/assets/readme/care-checkin.gif" alt="The sitter taps check-ins, adds a photo, and makes a sticker for Max while the owner's Home updates live" width="560">
 
 <sub><i>Check-ins and photos: the sitter taps, the owner's Home updates live</i></sub>
 
-<img src="docs/assets/readme/diary-page.gif" alt="The sitter writes the diary page from the day's chips and photo, adds stickers, and sends it to the owner" width="320">
+**5-second check.** In the evening Goldito suggests chips from the day's check-ins and photos, and Nemotron 3 Super writes the daily note in the sitter's voice once the sitter approves them.
 
-<sub><i>Diary: a page written from the day's chips and a photo, with stickers</i></sub>
+<img src="docs/assets/readme/stage-4-daily-note.png" alt="The diary page the AI wrote from the day's chips, with stickers" width="240">
 
 > *"Max took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited. It was adorable. Her potty was perfectly healthy, too. 🐶"*
 > From an AI daily note built from a few chips, two photos, and one short line from the sitter
 
-<img src="docs/assets/readme/trip-live.gif" alt="The owner starts a simulated drive and the sitter watches the live map and ETA until Peter has arrived" width="560">
+**Album and diary.** Every photo gets an AI caption, and the daily notes form a diary both sides can decorate with pet stickers.
 
-<sub><i>Live trip: the owner's map and ETA until the sitter arrives</i></sub>
+<img src="docs/assets/readme/diary-page.gif" alt="The sitter adds a photo and a line to the diary page, the AI writes it from the day's chips, and stickers decorate it before it goes to the owner" width="320">
+
+<sub><i>Diary: a page written from the day's chips and a photo, with stickers</i></sub>
 
 </details>
 
-<details>
+<details open>
 <summary><b>⑤ Completion: home safe, reviews both ways, and a record that remembers</b></summary>
 
 - The final handoff comes with *"Max is home safe 🏠"*, then a **5-star review** request. The owner rates the sitter and can add them to favorites; the sitter reviews the owner (other sitters can read it) and gives each pet a medal.
+<p align="center">
+  <img src="docs/assets/readme/stage-5-review.png" alt="Home safe: a medal and a review for Max" width="240">
+  <img src="docs/assets/readme/stage-5-life-record.png" alt="Max's Life Record: potty, behavior, heads-up, sitter tips" width="240">
+</p>
+
 - Nemotron 3 Super turns the whole stay (check-ins, tasks, daily notes) into the pet's **Life Record**: eating habits, potty patterns, medication response, behavior, and cautions. Sentences with no recorded evidence are dropped.
 - The Life Record goes into a **RAG knowledge base** (Qwen3 Embedding 8B, pgvector). On the next stay, even with a **new sitter**, the chat drafts, the checklist, and the sitter's request card already know the pet.
 
 </details>
 
-<details>
+<details open>
 <summary><b>Sign-up by photo and voice, and the 8-bit pet</b> (owners and sitters)</summary>
 
 - One question per screen, with big buttons. A **pet photo** goes to Nemotron 3.5 Super VL, which reads up to three breed guesses and a coat color; the owner confirms them and adds the weight. Goldito then builds the **8-bit pet** from a library of breed presets: the breed picks the shape, the coat color paints it, and the weight sets the build. It lives on the owner's Home, and **Match colors from photo** can repaint it with the photo's own colors later.
 - **Speak instead of typing:** the recording becomes text (Groq Whisper), the owner can fix it, and Nemotron 3 Nano pulls out profile facts, each with the sentence it came from. The server drops any value without a matching quote, and safety answers are never pre-filled. Sitters can answer their onboarding questions the same way.
-- The pet gets an **at a glance** card (five traits, such as sociability and energy) and a **breed needs** line found with Tavily on trusted breed and vet sites.
+- The pet gets an **at a glance** card (five traits, such as sociability and energy) and, for 28 common breeds, a short **breed note** (exercise, grooming, what to watch). Those notes are a list we wrote ourselves, not text from any website.
 
 </details>
 
-<details>
+<details open>
 <summary><b>Snap tab: treat check, pet mood, stickers</b> (owners and sitters)</summary>
 
-- **Treat check:** pick the pet, snap the label. Nemotron 3.5 Super VL reads the ingredients; a rule table checks the pet's allergens and species toxins; Tavily searches trusted vet and FDA pages; Nemotron 3 Ultra reasons about hidden sources (for example, chicken in "animal fat"). The answer is **SAFE · WARNING · DANGER** with sources, never below what the rule table says.
+- **Treat check:** pick the pet, snap the label. Nemotron 3.5 Super VL reads the ingredients; a rule table checks the pet's allergens and species toxins; Tavily searches FDA pages; Nemotron 3 Ultra reasons about hidden sources (for example, chicken in "animal fat"). The answer is **SAFE · WARNING · DANGER** with sources, never below what the rule table says.
+<p align="center"><img src="docs/assets/readme/snap-mood.png" alt="Mood result for a dog photo: excited, happy, relaxed" width="240"></p>
+
 - **Mood** *(for fun only)*: MediaPipe finds each pet in the browser, the vision model picks only visible body-language tags, and a fixed server rule table turns them into eight emotion percentages, so the same photo always gives the same numbers. Nemotron 3 Nano writes one "seems" line.
 - **Sticker:** the pet is cut out in the browser (MediaPipe) into a transparent sticker with a white outline, ready to decorate a diary page.
 
@@ -281,7 +314,7 @@ Tap a stage for the details.
 ## Who it's for
 
 - **Independent pet sitters and the owners they care for, starting in Canada** (consent forms, holidays, and the quote follow Ontario first).
-- **What a sitter gets back:** in our own work, the 40 minutes a day of messages, updates, reports, and schedule checks drop by about 85% (our estimate).
+- **What a sitter gets back:** in our own work, the 40 minutes a day of messages, updates, reports, and schedule checks drop to about 13 minutes (our estimate).
 - **What an owner gets:** peace of mind, since the owner is the one who worries, not the pet. Updates and alerts arrive without asking, so the owner always knows how the pet is doing now. The sitter keeps checking the care checklist and the allergy check.
 <!-- TODO(Q8): what real owners and sitters said, once they have tried it. -->
 
@@ -307,12 +340,12 @@ Tap a stage for the details.
                  ▼
         FastAPI (Python 3.12) · Docker on Render
           ├── Nebius Token Factory
-          │     ├── Nemotron 3 Nano   → chat "yes", voice → profile facts, breed needs, mood line
+          │     ├── Nemotron 3 Nano   → chat "yes", voice → profile facts, mood line
           │     ├── Nemotron 3 Super  → chat chips and drafts, checklists, daily notes, Life Records
           │     ├── Nemotron 3 Ultra  → treat check reasoning
           │     ├── Nemotron 3.5 Super VL → labels, captions, album, photo chips, breed guess, mood tags
           │     └── Qwen3 Embedding   → RAG and tone examples
-          ├── Tavily       → trusted vet, FDA, and breed pages
+          ├── Tavily       → FDA pages
           ├── Groq Whisper → speech to text for voice sign-up
           ├── Supabase     → PostgreSQL + RLS · Auth · Realtime · pgvector
           ├── Cloudinary   → photo and video storage, compression, thumbnails
@@ -320,8 +353,8 @@ Tap a stage for the details.
           └── OpenStreetMap   → address lookup, a park to meet at, trip map tiles
 ```
 
-<details>
-<summary><b>Architecture diagram: who talks to what</b> (click to expand)</summary>
+<details open>
+<summary><b>Architecture diagram: who talks to what</b></summary>
 
 Dotted arrows are the memory loop and background calls.
 
@@ -353,7 +386,7 @@ subgraph group_ai["<b>AI And Memory</b>"]
   node_ai_caption["Photo Captions"]
   node_ai_safety["Treat Check"]
   node_ai_life["Life Record"]
-  node_ai_profile["Pet Profile And Breed Needs"]
+  node_ai_profile["Pet Profile"]
   node_ai_mood["Mood Meter"]
   node_rag["Pet Memory"]
 end
@@ -439,25 +472,87 @@ class node_nebius,node_tavily,node_groq,node_cloudinary,node_google_meet,node_os
 
 The live demo is the fastest way to see Goldito. To run your own copy you need a **Supabase** project, a **Nebius Token Factory** key, and a **Cloudinary** account. **Tavily**, **Groq**, and **Google OAuth** keys are optional: without them the treat check answers without sources, voice sign-up is unavailable, and an online Meet & Greet gets no automatic Meet link.
 
-<details>
-<summary><h3>Setup steps: run your own copy (click to expand)</h3></summary>
+<details open>
+<summary><h3>Setup steps: run your own copy</h3></summary>
+
+You need **Git**, **Python 3.12**, and **Node 20** or newer. Step 1 is the same on every OS; then pick yours.
+
+**1. Code and database**
 
 ```bash
-git clone https://github.com/minsikpaul92/Goldito.git && cd Goldito
-
-# 1. Database: run every file in supabase/migrations/ in name order (SQL Editor or psql; see supabase/README.md)
-
-# 2. Backend
-cd backend && cp .env.example .env            # fill SUPABASE_*, CLOUDINARY_*, NEBIUS_API_KEY, DEMO_PASSWORD
-python3.12 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python -m scripts.seed_demo                    # creates the demo owners and sitters (needs the keys above)
-uvicorn app.main:app --reload --port 8000
-
-# 3. Frontend (new terminal)
-cd frontend && cp .env.example .env            # fill EXPO_PUBLIC_SUPABASE_URL, _SUPABASE_ANON_KEY, _CLOUDINARY_CLOUD_NAME, _DEMO_PASSWORD (same value as the backend's)
-npm install && npx expo start --web --port 8081
+git clone https://github.com/minsikpaul92/Goldito.git
+cd Goldito
 ```
+
+Run every file in `supabase/migrations/` on your Supabase project, in name order (SQL Editor or psql; see [supabase/README.md](supabase/README.md)).
+
+**Keys to fill in** (everything else in `.env.example` has a default or is optional; the model IDs are pre-filled)
+
+| File | Keys | Where from |
+| :--- | :--- | :--- |
+| `backend/.env` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Supabase, Project Settings, API |
+| | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Cloudinary dashboard |
+| | `NEBIUS_API_KEY` | Nebius Token Factory |
+| | `DEMO_PASSWORD` | any value you choose |
+| `frontend/.env` | `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase, Project Settings, API |
+| | `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary dashboard |
+| | `EXPO_PUBLIC_DEMO_PASSWORD` | the same value as the backend's `DEMO_PASSWORD` |
+
+Details for each key: [docs/plan/env-setup.md](docs/plan/env-setup.md).
+
+<details open>
+<summary><b>macOS / Linux</b></summary>
+
+```bash
+# 2. Backend (fill backend/.env with the keys above)
+cd backend
+cp .env.example .env
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -m scripts.seed_demo        # creates the demo owners and sitters
+uvicorn app.main:app --reload --port 8000
+```
+
+```bash
+# 3. Frontend, in a new terminal from the repo root
+# (fill frontend/.env with the keys above)
+cd frontend
+cp .env.example .env
+npm install
+npx expo start --web --port 8081
+```
+
+On Ubuntu or Debian, install `python3.12-venv` first.
+
+</details>
+
+<details open>
+<summary><b>Windows (PowerShell)</b></summary>
+
+```powershell
+# 2. Backend (fill backend/.env with the keys above)
+cd backend
+Copy-Item .env.example .env
+py -3.12 -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python -m scripts.seed_demo        # creates the demo owners and sitters
+uvicorn app.main:app --reload --port 8000
+```
+
+```powershell
+# 3. Frontend, in a new terminal from the repo root
+# (fill frontend/.env with the keys above)
+cd frontend
+Copy-Item .env.example .env
+npm install
+npx expo start --web --port 8081
+```
+
+If PowerShell blocks the activate script, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once.
+
+</details>
 
 Open `http://localhost:8081` and use **Try the demo**. Tests: `pytest -q` in `backend/`, Playwright in `frontend/`.
 
@@ -487,23 +582,15 @@ Open `http://localhost:8081` and use **Try the demo**. Tests: `pytest -q` in `ba
 
 ## Sources and Credits
 
-**Pet safety and breed information** (what the treat check and breed needs read)
+**Pet safety information** (what the treat check reads)
 
 | Source | Used for |
 | :--- | :--- |
-| [ASPCA Animal Poison Control](https://www.aspca.org/pet-care/animal-poison-control) | The treat check's rule table (each toxic-ingredient rule links its ASPCA page) and live search |
 | [U.S. FDA](https://www.fda.gov) | Pet food recalls and ingredient safety, live search |
-| [AVMA](https://www.avma.org) | Veterinary guidance, live search |
-| [Pet Poison Helpline](https://www.petpoisonhelpline.com) | Toxins for dogs and cats, live search |
-| [VCA Animal Hospitals](https://vcahospitals.com) | Toxins and breed care, live search and the reviewed breed list |
-| [American Kennel Club](https://www.akc.org) | Dog breed needs, live search and the reviewed breed list |
-| [Merck Veterinary Manual](https://www.merckvetmanual.com) | Breed and care needs, live search |
-| [International Cat Care](https://icatcare.org) | Cat breed needs, live search |
-| [The Cat Fanciers' Association](https://cfa.org) | Cat breed needs, live search and the reviewed breed list |
 
-Goldito keeps only ingredient names, short excerpts, and links from these pages, and shows the link with every answer. AI output is not veterinary advice.
+Goldito reads short excerpts when it searches and does not store them. It keeps only ingredient names, its own short summary lines, and links, and shows the link with every answer. AI output is not veterinary advice.
 
-**Maps and models:** map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors (address lookup through Nominatim) · [MediaPipe](https://ai.google.dev/edge/mediapipe) object detector (EfficientDet-Lite0) and interactive segmenter (Magic Touch), running in the browser.
+**Maps and models:** map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors (address lookup through Nominatim) · Canadian postal areas from [GeoNames](https://www.geonames.org/postalcodes/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) · [MediaPipe](https://ai.google.dev/edge/mediapipe) object detector (EfficientDet-Lite0) and interactive segmenter (Magic Touch), running in the browser.
 
 **Design:** icons from [Lucide](https://lucide.dev) · fonts Fredoka and Plus Jakarta Sans from Google Fonts.
 

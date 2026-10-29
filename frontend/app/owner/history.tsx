@@ -1,21 +1,18 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { DiaryTimeline } from "../../components/DiaryTimeline";
 import { PetFace } from "../../components/PetFace";
-import { BackLink } from "../../components/ui/BackLink";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { Screen } from "../../components/ui/Screen";
-import { ScreenHeader } from "../../components/ui/ScreenHeader";
+import { ScreenSubtitle } from "../../components/ui/ScreenHeader";
 import { DIARY_DAYS, DiaryEntry, listDiary } from "../../features/diary/diaryApi";
 import { useMyPets } from "../../features/pets/useMyPets";
 import { useNotifications } from "../../providers/NotificationsProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
-
-const goBack = () => (router.canGoBack() ? router.back() : router.replace("/owner"));
 
 type State =
   | { status: "loading" }
@@ -75,7 +72,6 @@ export default function OwnerHistory() {
   if (petsStatus === "error" && pets.length === 0) {
     return (
       <Screen>
-        <BackLink onPress={goBack} testID="history-back" />
         <EmptyState
           icon="clock"
           title="Couldn't load your pets"
@@ -88,8 +84,7 @@ export default function OwnerHistory() {
   if (pets.length === 0) {
     return (
       <Screen>
-        <BackLink onPress={goBack} testID="history-back" />
-        <EmptyState icon="paw" title="No pets yet" message="Add a pet on Home first." />
+        <EmptyState emoji="🐾" title="No pets yet" message="Add a pet on Home first." />
       </Screen>
     );
   }
@@ -99,8 +94,7 @@ export default function OwnerHistory() {
 
   return (
     <Screen contentStyle={styles.content}>
-      <BackLink onPress={goBack} testID="history-back" />
-      <ScreenHeader title="History" subtitle={`What ${sitter ?? "your sitter"} did · today and the last ${DIARY_DAYS} days`} />
+      <ScreenSubtitle>{`What ${sitter ?? "your sitter"} did · today and the last ${DIARY_DAYS} days`}</ScreenSubtitle>
       {pets.length > 1 ? (
         <View style={styles.chips} accessibilityRole="radiogroup" testID="diary-pet">
           {pets.slice(0, 4).map((p) => {

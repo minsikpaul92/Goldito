@@ -1,18 +1,15 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { Stack, router, useLocalSearchParams } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
 import { Art } from "../../../components/art/Art";
 import { QuickCheckIn } from "../../../components/QuickCheckIn";
-import { BackLink } from "../../../components/ui/BackLink";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
-import { ScreenHeader } from "../../../components/ui/ScreenHeader";
+import { ScreenSubtitle } from "../../../components/ui/ScreenHeader";
 import { useCaringPets } from "../../../features/care/useCaringPets";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { Theme } from "../../../theme/themes";
-
-const goBack = () => (router.canGoBack() ? router.back() : router.replace("/sitter"));
 
 /** One pet's 5-second check-in (opened from the pet chips on Home); the check-in is the whole screen, with its dock. */
 export default function SitterCheckin() {
@@ -24,7 +21,6 @@ export default function SitterCheckin() {
   if (!pet) {
     return (
       <Screen>
-        <BackLink onPress={goBack} testID="checkin-back" />
         <EmptyState
           icon="paw"
           title={state.status === "error" ? "Couldn't load this pet" : "Not in your care right now"}
@@ -39,18 +35,15 @@ export default function SitterCheckin() {
       pet={pet}
       onPhotos={() => router.push(`/sitter/feed/${pet.id}`)}
       header={
-        <>
-          <BackLink onPress={goBack} testID="checkin-back" />
-          <ScreenHeader
-            title={`${pet.name} · Check-in`}
-            subtitle="Tap what happened, then Send"
-            right={
-              <View style={styles.face} aria-hidden>
-                <Art name={pet.species === "cat" ? "owner/pet-cat" : "owner/pet-dog"} size={36} />
-              </View>
-            }
-          />
-        </>
+        <View style={styles.head}>
+          <Stack.Screen options={{ title: `${pet.name} · Check-in` }} />
+          <View style={styles.subtitle}>
+            <ScreenSubtitle>Tap what happened, then Send</ScreenSubtitle>
+          </View>
+          <View style={styles.face} aria-hidden>
+            <Art name={pet.species === "cat" ? "owner/pet-cat" : "owner/pet-dog"} size={36} />
+          </View>
+        </View>
       }
     />
   );
@@ -58,6 +51,8 @@ export default function SitterCheckin() {
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
+    head: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
+    subtitle: { flex: 1, minWidth: 0 },
     face: {
       width: 48,
       height: 48,

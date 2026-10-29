@@ -231,7 +231,8 @@ test.describe("find a sitter", () => {
     await page.keyboard.press("PageUp");
     await expect(screen.getByTestId("radius-value")).toHaveText("31 km");
     await expect.poll(() => db.owner_profiles[0].search_radius_km).toBe(31);
-    expect(db.nearbySearches.at(-1)).toMatchObject({ p_radius_km: 31 });
+    // The list follows the slider a moment after the radius is saved (a slow CI run saw the old 20 km here).
+    await expect.poll(() => db.nearbySearches.at(-1)).toMatchObject({ p_radius_km: 31 });
   });
 
   test("5 km sits at 1/20 of the slider and a click on the track moves in whole km", async ({ page }) => {

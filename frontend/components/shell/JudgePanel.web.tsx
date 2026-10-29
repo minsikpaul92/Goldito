@@ -8,6 +8,7 @@ import { demoStates } from "../../lib/demoReset";
 import { Role } from "../../providers/SessionProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+import type { SettingUp } from "./DeviceFrame.web";
 import { FrameAccount } from "./accountMessage";
 import { JUDGE_COMMAND, JudgeCommand, isJudgeDone, isJudgePlayed, paneWindow } from "./judgeMessages";
 import type { ScriptStep } from "./judgeScript";
@@ -24,8 +25,8 @@ type Props = {
   panes: string[];
   /** Who is signed in to each phone, as the phones tell the page. */
   accounts: Record<string, FrameAccount>;
-  /** True while a scene resets the stay and opens its screens (the phones show the paw walk). */
-  onSettingUp?: (on: boolean) => void;
+  /** While a scene resets the demo ("reset"), then opens its screens ("opening"), the phones show the paw walk. */
+  onSettingUp?: (step: SettingUp) => void;
 };
 
 /** How long after a scene ends "Want to try it yourself?" comes up. */
@@ -140,11 +141,12 @@ export function JudgePanel({ panes, accounts, onSettingUp }: Props) {
     setPlaying(null);
     setAutoPlay(null);
     setActive(scene.key === RESET_SCENE.key ? null : scene);
-    if (scene.state) onSettingUp?.(true);
+    if (scene.state) onSettingUp?.("reset");
     try {
       if (scene.state) {
         const holder = panes.find((pane) => accounts[pane]?.judge === seat) ?? panes[0];
         await send(holder, { op: "reset", state: scene.state }, WAIT_MS.reset);
+        onSettingUp?.("opening");
       }
       const opens = split ? panes.map((pane) => ({ pane, role: roleOf(pane) })) : [{ pane: panes[0], role: scene.lead }];
       // With one phone only the lead side plays, so it never waits for the other.
@@ -183,7 +185,7 @@ export function JudgePanel({ panes, accounts, onSettingUp }: Props) {
       setError(failure instanceof Error ? failure.message : "Couldn't open it. Try again.");
     } finally {
       setBusy(null);
-      if (scene.state) setTimeout(() => onSettingUp?.(false), SETTLE_MS);
+      if (scene.state) setTimeout(() => onSettingUp?.(null), SETTLE_MS);
     }
   }
 
@@ -222,7 +224,7 @@ export function JudgePanel({ panes, accounts, onSettingUp }: Props) {
         {on ? (
           <View style={styles.sceneBody}>
             <Text style={styles.hint} testID="judge-hint">
-              {busy === scene.key ? "Getting it ready…" : scene.hint}
+              {busy === scene.key ? (scene.state && seat ? `Resetting ${demoSetFor(seat).label}'s demo…` : "Opening…") : scene.hint}
             </Text>
             {playing === scene.key ? (
               <View style={styles.playingRow}>

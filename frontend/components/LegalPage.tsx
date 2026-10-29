@@ -1,11 +1,10 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { LayoutRectangle, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { BackLink } from "./ui/BackLink";
 import { Collapsible } from "./ui/Collapsible";
 import { Screen } from "./ui/Screen";
-import { ScreenHeader } from "./ui/ScreenHeader";
+import { ScreenSubtitle } from "./ui/ScreenHeader";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
@@ -21,14 +20,8 @@ type Props = {
   testID: string;
 };
 
-/** Back to where the reader came from; a direct link goes to "/" (Welcome or the signed-in home). */
-function goBack() {
-  if (router.canGoBack()) router.back();
-  else router.replace("/");
-}
-
 /**
- * Privacy and Terms (10.11, #375): Back, the title with its date, then one card per section. Sections open one at a
+ * Privacy and Terms (10.11, #375): the title in the stack header, its date, then one card per section. Sections open one at a
  * time; closed ones stay in the page, hidden, so the text is still there for crawlers and tests.
  * `?open=<slug>` opens that section (the Google consent-screen reviewer lands on Google Calendar and Meet).
  */
@@ -58,8 +51,8 @@ export function LegalPage({ title, updated, sections, testID }: Props) {
 
   return (
     <Screen ref={scrollRef} contentStyle={styles.content} testID={testID}>
-      <BackLink onPress={goBack} testID={`${testID}-back`} />
-      <ScreenHeader title={title} subtitle={`Last updated ${updated}`} />
+      <Stack.Screen options={{ title }} />
+      <ScreenSubtitle>{`Last updated ${updated}`}</ScreenSubtitle>
       <View style={styles.sections}>
         {sections.map((section) => {
           const id = legalSlug(section.title);
