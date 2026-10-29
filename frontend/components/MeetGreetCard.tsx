@@ -6,6 +6,7 @@ import { MeetGreetSheet } from "./MeetGreetSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { CheckRow } from "./ui/CheckRow";
+import { Icon } from "./ui/Icon";
 import { LinkButton } from "./ui/LinkButton";
 import { Sheet } from "./ui/Sheet";
 import { TextButton } from "./ui/TextButton";
@@ -136,15 +137,30 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
   // "Met": the update line already says it was done, so the folded card adds nothing.
   if (status === "done" && inChat) return null;
   if (status === "done" || status === "skipped" || !open) {
+    const line =
+      status === "done"
+        ? `Met${summary ? ` · ${summary}` : ""}`
+        : status === "skipped"
+          ? "Meet skipped, you both agreed"
+          : `Meet: ${summary ?? "not scheduled"}`;
+    if (inChat) {
+      return (
+        <Card style={StyleSheet.flatten([styles.card, styles.folded])} tone="blush" testID="meet-greet">
+          <Text style={styles.foldedText}>{line}</Text>
+        </Card>
+      );
+    }
+    // On the booking pages it is information, not a button: a plain card with an icon and the line (polish B, Oct 28).
     return (
-      <Card style={StyleSheet.flatten([styles.card, inChat ? styles.folded : null])} tone="blush" testID="meet-greet">
-        <Text style={styles.foldedText}>
-          {status === "done"
-            ? `Met${summary ? ` · ${summary}` : ""}`
-            : status === "skipped"
-              ? "Meet skipped, you both agreed"
-              : `Meet: ${summary ?? "not scheduled"}`}
-        </Text>
+      <Card testID="meet-greet">
+        <View style={styles.infoRow}>
+          <Icon
+            name={status === "done" ? "selected" : status === "skipped" ? "skipped" : "calendar"}
+            size={20}
+            color={theme.color.textMuted}
+          />
+          <Text style={styles.infoText}>{line}</Text>
+        </View>
       </Card>
     );
   }
@@ -531,6 +547,8 @@ const makeStyles = (theme: Theme) =>
     // The folded one-line card matches "Booked, you both agreed": 92% wide, one size, centered.
     folded: { width: "92%", maxWidth: "92%", alignSelf: "center" },
     foldedText: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center" },
+    infoRow: { flexDirection: "row", alignItems: "flex-start", gap: theme.spacing.sm },
+    infoText: { flex: 1, fontSize: theme.fontSize.body, color: theme.color.text },
     muted: {
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,

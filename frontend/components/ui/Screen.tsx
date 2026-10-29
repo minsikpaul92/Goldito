@@ -41,7 +41,7 @@ export const Screen = forwardRef<ScrollView, Props>(function Screen({ children, 
     <SafeAreaView style={styles.safe}>
       <ScrollView
         ref={ref}
-        contentContainerStyle={[styles.content, contentStyle, footer ? { paddingBottom: footerHeight } : null]}
+        contentContainerStyle={[styles.content, contentStyle, footer ? { paddingBottom: footerHeight + (footerSolid ? theme.spacing.md : 0) } : null]}
         keyboardShouldPersistTaps="handled"
         {...(scrollbar && Platform.OS === "web" ? ({ dataSet: { scrollbar: "true" } } as object) : null)}
         testID={testID}

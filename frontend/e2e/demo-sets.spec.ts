@@ -17,7 +17,8 @@ test.describe("demo sets", () => {
     await page.goto("/login");
     const screen = app(page);
 
-    // The default set is Chloe's (the judges' pair).
+    // The default set is Chloe's (the judges' pair), under a label like the Email and Password fields.
+    await expect(screen.getByTestId("demo-block").getByText("Demo accounts", { exact: true })).toBeVisible();
     await expect(screen.getByTestId("demo-set")).toContainText("Chloe");
     await screen.getByTestId("demo-set").click();
     for (const key of ["chloe", "paul", "allen", "daniel"]) await expect(screen.getByTestId(`demo-set-${key}`)).toBeVisible();

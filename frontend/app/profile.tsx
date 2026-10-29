@@ -431,6 +431,7 @@ export default function ProfileScreen() {
   return (
     <Screen
       contentStyle={styles.content}
+      footerSolid
       footer={
         <>
           {saveError ? (
