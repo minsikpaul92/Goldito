@@ -7,8 +7,8 @@ Findings from the live check (2026-10-04):
 - Reasoning: Nemotron models think by default (the thinking arrives in a separate `reasoning`
   field, but it costs time). `extra_body={"chat_template_kwargs": {"enable_thinking": False}}`
   turns it off — Super answers in ~0.25 s instead of ~0.8 s. Pass `reasoning=True` to keep it
-  (the Phase 08 safety step). The MiniCPM vision model gets no such flag; the Nemotron vision model
-  (Super VL) does, and without it the thinking fills `max_tokens` before any answer (2026-10-27).
+  (the Phase 08 safety step). The vision model (Super VL) gets the flag too: without it the thinking
+  fills `max_tokens` before any answer (2026-10-27).
 - `response_format={"type": "json_object"}` works on Nano and Super; `chat_json` still extracts the
   first `{…}` block and validates it, because a model may wrap or pad its answer.
 - Streaming works, so TTFT (first content token) is measured; when streaming is refused the call
@@ -141,8 +141,7 @@ def chat(
         "temperature": temperature,
         "timeout": timeout,
     }
-    if not model.lower().startswith("openbmb/"):
-        kwargs["extra_body"] = {"chat_template_kwargs": {"enable_thinking": reasoning}}
+    kwargs["extra_body"] = {"chat_template_kwargs": {"enable_thinking": reasoning}}
     if json_mode:
         kwargs["response_format"] = {"type": "json_object"}
 
