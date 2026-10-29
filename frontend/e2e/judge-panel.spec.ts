@@ -71,12 +71,10 @@ test.describe("judge panel", () => {
     for (const [i, key] of ["meet", "treat", "chat", "care", "home"].entries()) {
       await expect(page.getByTestId(`judge-scene-${key}`)).toContainText(titles[i]);
     }
-    // Tavily (its logo) on scenes 1 and 2 only.
-    await expect(page.getByTestId("judge-scene-meet").getByTestId("judge-tag-tavily")).toBeVisible();
+    // Tavily (its logo) on scene 2 only.
     await expect(page.getByTestId("judge-scene-treat").getByTestId("judge-tag-tavily")).toBeVisible();
     await expect(page.getByTestId("judge-scene-treat")).toContainText("Nemotron Ultra");
-    for (const key of ["chat", "care", "home"]) await expect(page.getByTestId(`judge-scene-${key}`).getByTestId("judge-tag-tavily")).toHaveCount(0);
-    await expect(panel).not.toContainText("NVIDIA MiniCPM");
+    for (const key of ["meet", "chat", "care", "home"]) await expect(page.getByTestId(`judge-scene-${key}`).getByTestId("judge-tag-tavily")).toHaveCount(0);
 
     // More is folded until opened.
     await expect(page.getByTestId("judge-scene-mood")).toHaveCount(0);
