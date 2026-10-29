@@ -56,7 +56,7 @@ export default function SitterCalendarScreen() {
   if (sitter === null) {
     return (
       <Screen>
-        <EmptyState emoji="🐾" title="Sitter not found" message="This sitter may have left Goldito." />
+        <EmptyState icon="paw" title="Sitter not found" message="This sitter may have left Goldito." />
       </Screen>
     );
   }
@@ -96,7 +96,7 @@ export default function SitterCalendarScreen() {
           canGoPrev={month > monthStart(today)}
         />
         {error ? (
-          <EmptyState emoji="📅" title="Couldn't load the schedule" message={error} action={{ label: "Try again", onPress: () => void load() }} />
+          <EmptyState icon="calendar" title="Couldn't load the schedule" message={error} action={{ label: "Try again", onPress: () => void load() }} />
         ) : slots && monthStart(day) === month ? (
           <View style={styles.day} testID="sitter-day-hours">
             <Text accessibilityRole="header" style={styles.dayTitle}>

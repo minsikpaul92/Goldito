@@ -97,5 +97,6 @@ const makeStyles = (theme: Theme) =>
     name: { fontSize: HOME_TEXT.name, lineHeight: 23.8, fontWeight: theme.fontWeight.bold, letterSpacing: -0.17, color: theme.color.text },
     facts: { fontSize: HOME_TEXT.body, lineHeight: 17.5, color: theme.color.textMuted },
     allergy: { flexDirection: "row", alignItems: "center", gap: 3 },
-    allergyText: { flexShrink: 1, fontSize: HOME_TEXT.body, lineHeight: 17.5, fontWeight: theme.fontWeight.bold, color: theme.color.warning },
+    // Ink, not `warning`: the orange is under 4.5:1 on the blush and peach grounds; the icon keeps the warning color.
+    allergyText: { flexShrink: 1, fontSize: HOME_TEXT.body, lineHeight: 17.5, fontWeight: theme.fontWeight.bold, color: theme.color.text },
   });

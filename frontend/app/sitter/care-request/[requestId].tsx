@@ -52,7 +52,7 @@ export default function SitterCareRequest() {
   if (!request) {
     return (
       <Screen>
-        <EmptyState emoji="📋" title="Request not found" message="It may have been withdrawn." />
+        <EmptyState icon="request" title="Request not found" message="It may have been withdrawn." />
       </Screen>
     );
   }

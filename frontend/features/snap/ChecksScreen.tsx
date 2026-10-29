@@ -32,11 +32,11 @@ function List({ role, pets }: { role: Role; pets: PetOption[] }) {
     };
   }, [pet]);
 
-  if (!pet || checks === null) return pet ? <LoadingView /> : <Screen><EmptyState emoji="🐾" title="No pet yet" message="Add a pet on Home first." /></Screen>;
+  if (!pet || checks === null) return pet ? <LoadingView /> : <Screen><EmptyState icon="paw" title="No pet yet" message="Add a pet on Home first." /></Screen>;
   return (
     <Screen contentStyle={styles.content} testID="snap-checks">
       {checks.length === 0 ? (
-        <EmptyState emoji="🏷️" title="No checks yet" message={`Treat checks for ${pet.name} show up here.`} />
+        <EmptyState icon="label" title="No checks yet" message={`Treat checks for ${pet.name} show up here.`} />
       ) : (
         checks.map((c) => (
           <CheckRow key={c.id} check={c} petName={pet.name} onPress={() => router.push(`/${role}/snap/treat?check=${c.id}`)} testID="snap-checks-row" />

@@ -200,7 +200,7 @@ export default function CareRequestScreen() {
   if (!pet) {
     return (
       <Screen>
-        <EmptyState emoji="🐾" title="Pet not found" message="It may have been removed." />
+        <EmptyState icon="paw" title="Pet not found" message="It may have been removed." />
       </Screen>
     );
   }

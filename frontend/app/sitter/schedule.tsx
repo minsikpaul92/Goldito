@@ -245,7 +245,7 @@ export default function SitterSchedule() {
     return (
       <Screen>
         <EmptyState
-          emoji="📅"
+          icon="calendar"
           title="Couldn't load your schedule"
           message={loadError}
           action={{

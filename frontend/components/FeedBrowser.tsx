@@ -209,13 +209,13 @@ export function FeedBrowser({
   const empty = loading ? (
     <LoadingView />
   ) : error ? (
-    <EmptyState emoji="📸" title="Couldn't load Moments" message="Check your connection and try again." action={{ label: "Try again", onPress: error.onRetry }} />
+    <EmptyState icon="camera" title="Couldn't load Moments" message="Check your connection and try again." action={{ label: "Try again", onPress: error.onRetry }} />
   ) : showHidden ? (
-    <EmptyState emoji="📸" title="Nothing hidden" message="Photos you hide wait here." />
+    <EmptyState icon="camera" title="Nothing hidden" message="Photos you hide wait here." />
   ) : posts.length === 0 ? (
-    <EmptyState emoji="📸" title="No photos yet" message={emptyMessage} />
+    <EmptyState icon="camera" title="No photos yet" message={emptyMessage} />
   ) : (
-    <EmptyState emoji="📸" title={EMPTY_TITLE[filter as FeedFilterKey]} message="Photos with this tag show up here." />
+    <EmptyState icon="camera" title={EMPTY_TITLE[filter as FeedFilterKey]} message="Photos with this tag show up here." />
   );
 
   return (

@@ -129,7 +129,7 @@ test.describe("snap mood", () => {
       seed: (db) => caring(db, [{ id: MAX, name: "Max", species: "dog" }]),
     });
     const screen = app(page);
-    await expect(screen.getByTestId(`mood-pet-id-${MAX}`)).toHaveAttribute("aria-selected", "true");
+    await expect(screen.getByTestId(`mood-pet-id-${MAX}`)).toHaveAttribute("aria-pressed", "true");
     await pick(page, "mood_tongue");
     await expect(screen.getByTestId("mood-summary")).toHaveText("Max seems happy and a little relaxed.");
     expect(asked[0].pet_id).toBe(MAX);

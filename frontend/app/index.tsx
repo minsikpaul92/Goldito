@@ -25,7 +25,7 @@ function ProfileError() {
   return (
     <View style={styles.container}>
       <EmptyState
-        emoji="🐾"
+        icon="paw"
         title={error ?? "Something went wrong."}
         message="Check your connection and try again, or log out and log in again."
         action={{ label: "Try again", onPress: reload }}

@@ -62,7 +62,14 @@ export function StepFrame({ progress, title, hint, onBack, onSkipAll, onSkip, sk
         ) : (
           <View style={styles.back} />
         )}
-        <View style={styles.track} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100) }}>
+        <View
+          style={styles.track}
+          accessibilityRole="progressbar"
+          accessibilityLabel="Profile progress"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress * 100)}
+        >
           <View style={[styles.bar, { width: `${Math.max(4, Math.round(progress * 100))}%` }]} />
         </View>
       </View>

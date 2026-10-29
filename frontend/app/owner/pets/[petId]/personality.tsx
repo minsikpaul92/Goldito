@@ -34,7 +34,7 @@ export default function PetPersonality() {
   }, [petId]);
 
   if (pet === undefined) return <LoadingView />;
-  if (!pet) return <Screen><EmptyState emoji="🐾" title="Pet not found" message="It may have been removed." /></Screen>;
+  if (!pet) return <Screen><EmptyState icon="paw" title="Pet not found" message="It may have been removed." /></Screen>;
 
   const save = async () => {
     setSaving(true);

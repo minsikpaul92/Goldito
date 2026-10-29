@@ -127,8 +127,8 @@ test.describe("sitter schedule", () => {
     await page.mouse.move(to.x, to.y, { steps: 4 });
     await page.mouse.up();
     await expect(screen.getByTestId("schedule-summary")).toContainText("3 days");
-    await expect(screen.getByTestId(`day-${a}`)).toHaveAttribute("aria-selected", "true");
-    await expect(screen.getByTestId(`day-${b}`)).toHaveAttribute("aria-selected", "true");
+    await expect(screen.getByTestId(`day-${a}`)).toHaveAttribute("aria-pressed", "true");
+    await expect(screen.getByTestId(`day-${b}`)).toHaveAttribute("aria-pressed", "true");
 
     // Dragging backwards works too, and the click that ends a drag does not restart the selection.
     await page.mouse.move(to.x, to.y);

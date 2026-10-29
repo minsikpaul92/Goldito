@@ -209,7 +209,7 @@ function KitScreen() {
         <Skeleton kind="block" />
         <Button label="Play the booking flow" variant="secondary" onPress={() => router.push("/dev/booking-flow")} testID="kit-flow" />
         <View style={styles.card}>
-          <EmptyState emoji="📸" title="No posts yet" message="Your sitter will share photos here." action={{ label: "Open History", onPress: () => undefined }} />
+          <EmptyState icon="camera" title="No posts yet" message="Your sitter will share photos here." action={{ label: "Open History", onPress: () => undefined }} />
         </View>
       </Section>
 

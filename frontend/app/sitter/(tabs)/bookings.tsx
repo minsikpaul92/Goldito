@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 
 import { BookingCard } from "../../../components/BookingCard";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { IconName } from "../../../components/ui/Icon";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
 import { SegmentedControl } from "../../../components/ui/SegmentedControl";
@@ -20,24 +21,24 @@ type State =
   | { status: "ready"; bookings: BookingSummary[] }
   | { status: "error"; message: string };
 
-const EMPTY: Record<Bucket, { emoji: string; title: string; message: string }> = {
+const EMPTY: Record<Bucket, { icon: IconName; title: string; message: string }> = {
   requests: {
-    emoji: "📬",
+    icon: "calendar",
     title: "No requests yet",
     message: "Booking requests from owners will show here for you to accept.",
   },
   in_progress: {
-    emoji: "🐾",
+    icon: "paw",
     title: "Nothing in progress",
     message: "Meets, agreements and the stay itself show here.",
   },
   upcoming: {
-    emoji: "📅",
+    icon: "calendar",
     title: "No upcoming stays",
     message: "Paid stays show here until the pets arrive.",
   },
   past: {
-    emoji: "🐾",
+    icon: "clock",
     title: "No past stays",
     message: "Finished, declined and cancelled bookings show here.",
   },
@@ -91,7 +92,7 @@ export default function SitterBookings() {
     return (
       <Screen>
         <EmptyState
-          emoji="📬"
+          icon="calendar"
           title="Couldn't load your bookings"
           message={state.message}
           action={{ label: "Try again", onPress: () => void load() }}

@@ -22,7 +22,7 @@ export default function SitterCheckin() {
     return (
       <Screen>
         <EmptyState
-          emoji="🐾"
+          icon="paw"
           title={state.status === "error" ? "Couldn't load this pet" : "Not in your care right now"}
           message={state.status === "error" ? state.message : "Check-ins open while the stay is on."}
           action={state.status === "error" ? { label: "Try again", onPress: () => void reload() } : undefined}

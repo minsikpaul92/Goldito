@@ -80,7 +80,7 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
   if (error && !pages) {
     return (
       <Screen>
-        <EmptyState emoji="📔" title="Couldn't load the diary" message={error} action={{ label: "Try again", onPress: () => void load() }} />
+        <EmptyState icon="diary" title="Couldn't load the diary" message={error} action={{ label: "Try again", onPress: () => void load() }} />
       </Screen>
     );
   }
@@ -188,7 +188,7 @@ export function OwnerDiaryBook({ initialId, linked = false }: { initialId?: stri
       <Screen testID="owner-diary-screen" contentStyle={{ gap: 12 }} scrollbar>
         {picker}
         <EmptyState
-          emoji="📔"
+          icon="diary"
           title="No diary yet"
           message="Your sitter's pages show up here during a stay, one for each day."
         />

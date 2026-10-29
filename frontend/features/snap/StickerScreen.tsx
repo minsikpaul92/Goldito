@@ -55,7 +55,7 @@ export function StickerScreen({ role }: { role: Role }) {
   if (Platform.OS !== "web") {
     return (
       <Screen>
-        <EmptyState emoji="✂️" title="Sticker" message="Stickers work in the web app for now." />
+        <EmptyState icon="sticker" title="Sticker" message="Stickers work in the web app for now." />
       </Screen>
     );
   }
@@ -213,10 +213,10 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
       <Screen>
         <View testID="sticker-no-pets">
           {role === "sitter" ? (
-            <EmptyState emoji="✂️" title="No pet in your care right now" message="Make stickers of the pets you look after, while their stay is on." />
+            <EmptyState icon="sticker" title="No pet in your care right now" message="Make stickers of the pets you look after, while their stay is on." />
           ) : (
             <EmptyState
-              emoji="✂️"
+              icon="sticker"
               title="Add a pet first"
               message="Pick a photo of your pet and we'll cut them out as a sticker for the diary."
               action={{ label: "Add pet", onPress: () => router.push("/owner-onboarding?add=1") }}

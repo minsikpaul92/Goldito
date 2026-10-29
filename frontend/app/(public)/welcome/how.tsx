@@ -118,7 +118,15 @@ export default function HowItWorks() {
 
   const footer = (
     <View style={styles.footer}>
-      <View style={styles.dots} accessibilityLabel={`Page ${index + 1} of ${stories.length}`} testID="how-progress">
+      <View
+        style={styles.dots}
+        role="progressbar"
+        aria-label={`Page ${index + 1} of ${stories.length}`}
+        aria-valuemin={1}
+        aria-valuemax={stories.length}
+        aria-valuenow={index + 1}
+        testID="how-progress"
+      >
         {stories.map((_, k) => (
           <View key={k} style={[styles.dot, k === index && styles.dotOn]} />
         ))}
@@ -214,9 +222,9 @@ const makeStyles = (theme: Theme) => {
       paddingVertical: 4,
       borderRadius: 16,
       borderBottomRightRadius: 4,
-      backgroundColor: theme.color.primary,
-      color: theme.color.primaryText,
-      opacity: 0.6,
+      // Faded by color, not opacity: white on a see-through green fell under 4.5:1.
+      backgroundColor: theme.color.surface,
+      color: theme.color.textMuted,
       fontSize: theme.fontSize.small,
       fontWeight: theme.fontWeight.semibold,
       textDecorationLine: "line-through",

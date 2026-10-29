@@ -56,7 +56,7 @@ export default function PetProfileScreen() {
     return (
       <Screen>
         <EmptyState
-          emoji="🐾"
+          icon="paw"
           title={state.status === "missing" ? "Pet not found" : "Couldn't load this pet"}
           message={state.status === "error" ? state.error : "It may have been removed."}
           action={

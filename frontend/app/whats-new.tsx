@@ -45,7 +45,7 @@ export default function WhatsNewScreen() {
     <Screen contentStyle={styles.content} testID="whats-new">
       <ScreenSubtitle>Small updates, in plain words</ScreenSubtitle>
       {RELEASES.length === 0 ? (
-        <EmptyState emoji="📰" title="Nothing new yet" message="New features show here." />
+        <EmptyState icon="whatsNew" title="Nothing new yet" message="New features show here." />
       ) : (
         RELEASES.map((release, i) => (
           <Card key={`${release.version}-${release.title}`} tone={i === 0 ? "butter" : undefined} style={styles.release} testID={`release-${i}`}>

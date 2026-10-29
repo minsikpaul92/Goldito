@@ -102,6 +102,11 @@ export function Slider({ value, min, max, onChange, label, valueText, testID }: 
       accessibilityRole="adjustable"
       accessibilityLabel={label}
       accessibilityValue={{ min, max, now: value, text: valueText }}
+      // The web reads these, not accessibilityValue (axe: a slider needs aria-valuenow, min and max).
+      aria-valuemin={min}
+      aria-valuemax={max}
+      aria-valuenow={value}
+      aria-valuetext={valueText}
       accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
       onAccessibilityAction={(e) => set(value + (e.nativeEvent.actionName === "increment" ? 1 : -1))}
       {...(Platform.OS === "web"

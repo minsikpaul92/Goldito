@@ -184,7 +184,7 @@ function OwnerFeed() {
     return (
       <SafeAreaView style={styles.safe}>
         <EmptyState
-          emoji="📸"
+          icon="camera"
           title="Couldn't load your pets"
           message={petsError ?? "Try again."}
           action={{ label: "Try again", onPress: () => void reloadPets() }}
@@ -196,7 +196,7 @@ function OwnerFeed() {
   if (pets.length === 0) {
     return (
       <SafeAreaView style={styles.safe}>
-        <EmptyState emoji="🐾" title="No pets yet" message="Add a pet on Home first." />
+        <EmptyState icon="paw" title="No pets yet" message="Add a pet on Home first." />
       </SafeAreaView>
     );
   }
