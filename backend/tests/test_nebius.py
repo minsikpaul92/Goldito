@@ -68,7 +68,7 @@ def settings(monkeypatch):
     monkeypatch.setenv("NEBIUS_API_KEY", "test-key")
     monkeypatch.setenv("MODEL_REPORT", "nvidia/report-model")
     monkeypatch.setenv("MODEL_FAST", "nvidia/fast-model")
-    monkeypatch.setenv("MODEL_VISION", "openbmb/vision-model")
+    monkeypatch.setenv("MODEL_VISION", "nvidia/vision-model")
     get_settings.cache_clear()
     nebius._client.cache_clear()
     yield
@@ -117,21 +117,13 @@ def test_the_chat_ai_models_are_super_for_drafts_and_chips_unless_set(monkeypatc
     assert get_settings().model_chat_chips == "nvidia/chips-model"
 
 
-def test_reasoning_can_be_kept_on_and_vision_gets_no_flag(monkeypatch):
+def test_reasoning_can_be_kept_on_and_vision_gets_thinking_off(monkeypatch):
     completions, _ = install(monkeypatch, "a", "b")
     nebius.chat("report", [], reasoning=True)
     nebius.chat("vision", [])
     assert completions.calls[0]["extra_body"] == {"chat_template_kwargs": {"enable_thinking": True}}
-    assert "extra_body" not in completions.calls[1]
-    assert completions.calls[1]["model"] == "openbmb/vision-model"
-
-
-def test_a_nemotron_vision_model_gets_thinking_off_and_a_minicpm_one_does_not(monkeypatch):
-    completions, _ = install(monkeypatch, "a", "b")
-    nebius.chat("vision", [], model="nvidia/Nemotron-3.5-Super-VL")
-    nebius.chat("vision", [], model="openbmb/MiniCPM-V-4_5")
-    assert completions.calls[0]["extra_body"] == {"chat_template_kwargs": {"enable_thinking": False}}
-    assert "extra_body" not in completions.calls[1]
+    assert completions.calls[1]["extra_body"] == {"chat_template_kwargs": {"enable_thinking": False}}
+    assert completions.calls[1]["model"] == "nvidia/vision-model"
 
 
 def test_streaming_refused_falls_back_to_a_plain_call(monkeypatch):

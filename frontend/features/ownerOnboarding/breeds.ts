@@ -2,7 +2,7 @@ import type { Species } from "../../types/db";
 
 /**
  * The breeds with reviewed care needs (backend `app/data/breed_needs.json`; keep the two lists in step). Add pet offers
- * them as a searchable list; any other breed can still be typed (its needs then come from Tavily).
+ * them as a searchable list; any other breed can still be typed (it then has no needs card).
  */
 export const PRESET_BREEDS: Record<Species, string[]> = {
   dog: [

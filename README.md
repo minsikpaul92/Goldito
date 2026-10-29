@@ -21,13 +21,13 @@ the server owns every fact, and a person approves every word.
 
 <sub><i>Booking chat: reply chips, Meet &amp; Greet, quote, and payment in one thread</i></sub>
 
-**[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up) · **[Watch the video](https://youtu.be/hjruk-XOlJE?si=uVOkhnTdrsbyxrQl)** · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
+**[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up needed) · **[Watch the video](https://youtu.be/hjruk-XOlJE?si=uVOkhnTdrsbyxrQl)** · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
 
 </div>
 
 > The backend runs on a free plan, so the first load after a quiet spell can take 30 to 50 seconds.
 
-> **Judges:** tap **Try the demo**, then **Robert, the owner** or **Chloe, the sitter**, for a free Judge seat (Judge 1 to 4). A seat is yours alone: it starts from a clean stay and frees itself when you log out or leave for 10 minutes. On a computer, **[Show both phones](https://goldito-petcare.vercel.app/?view=split)** and use the panel left of the phones to run the five scenes. Demo accounts and pets are fictional.
+> **Judges:** tap **Try the demo**, then pick a free Judge seat (Judge 1 to 4). A seat is yours alone: it starts from a clean stay and frees itself when you log out or leave for 10 minutes. On a computer, both phones open side by side (owner left, sitter right); use the panel left of the phones to run the five scenes, and **Jump to** for the step you want. Demo accounts and pets are fictional.
 
 ---
 
@@ -124,7 +124,7 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 <details open>
 <summary><h3>Feedback log: Token Factory, AI Cloud, and each model</h3></summary>
 
-What we used, what worked, and what got in the way, written down as it happened. Details and numbers: [model-ids.md](docs/plan/phases/notes/model-ids.md) · [nebius-ai-cloud-feedback.md](docs/plan/phases/notes/nebius-ai-cloud-feedback.md).
+What we used, what worked, and what got in the way, written down as it happened. Details and numbers: [model-ids.md](docs/plan/phases/notes/model-ids.md).
 
 **Nebius Token Factory**
 - *Onboarding:* the catalog check and the first answers on the same day (2026-09-29): a Nano text call and a vision image call through the OpenAI SDK, with only the base URL and key changed.
@@ -144,7 +144,7 @@ What we used, what worked, and what got in the way, written down as it happened.
 
 **NVIDIA Nemotron 3 Ultra**
 - *Worked:* the treat check verdict in about 2.7 s with thinking on and JSON mode, 614 completion tokens, keeping both hidden sources in our test label. We also used it to rate whole simulated chats when choosing the chat model.
-- *Again?* Yes. It met the quality, speed, and JSON reliability we needed for its job, at a price that suits a small product. We will keep Nemotron as our default for text.
+- *Again?* Yes. It met the quality, speed, and JSON reliability we needed for safety reasoning, at a price that suits a small product. We will keep it for the treat check.
 
 **Nemotron 3.5 Super VL**
 - *Worked:* it read all six sample labels with no missed ingredient across blur, small size, rotation, and cut-off versions, and said "incomplete" on every cut-off label; about 1 to 1.4 s per photo.
@@ -157,7 +157,7 @@ What we used, what worked, and what got in the way, written down as it happened.
 
 **Nebius AI Cloud** (Serverless endpoint, tried and not used)
 - *Worked:* a clear endpoint form with a live cost estimate; a public GHCR image needs no registry credentials; a whole `.env` can be mounted as a file.
-- *Got in the way:* saving secret environment variables failed with a permission error and no hint on the missing role; no bulk env import; a $25 card top-up at Create while the event credit was not visible; the endpoint's Bearer token clashes with an app's own `Authorization` header; a 100 GiB minimum disk for a 300 MB image; no scale to zero, so staying up until judging ends would cost about $128 on the smallest CPU preset.
+- *Got in the way:* saving secret environment variables failed with a permission error and no hint on the missing role; no bulk env import; a $25 card top-up at Create while the event credit was not visible; the endpoint's Bearer token clashes with an app's own `Authorization` header; a 100 GiB minimum disk for a 300 MB image; no scale to zero, so staying up until judging ends (Dec 15) would cost about $128 on the smallest CPU preset.
 - *Again?* For GPU or model serving, yes: the form and the cost estimate are good. For a small always-on CPU API, the billing step and the secrets permission were the blockers.
 
 </details>
@@ -175,7 +175,7 @@ What we used, what worked, and what got in the way, written down as it happened.
 - **Example:** the search `xylitol toxic dogs` returned three fda.gov pages in 2.2 s.
 - **Fast and frugal:** basic depth (1 credit per search), every search in parallel under one 8-second budget. A search that fails or runs late is left out, and the check still answers from the label, the rules, and the model, and says that no sources were available.
 - **Danger is loud:** a DANGER verdict opens a red screen that only "I understand" closes, and a sitter's DANGER also notifies the owner.
-- Code: [`services/tavily.py`](backend/app/services/tavily.py) · [`services/breed_needs.py`](backend/app/services/breed_needs.py) · [`routers/ai_safety_check.py`](backend/app/routers/ai_safety_check.py)
+- Code: [`services/tavily.py`](backend/app/services/tavily.py) · [`routers/ai_safety_check.py`](backend/app/routers/ai_safety_check.py)
 
 <img src="docs/assets/readme/treat-check.gif" alt="The owner's phone: a treat label is checked for Max, who is allergic to chicken, and a red DANGER screen appears" width="340">
 
