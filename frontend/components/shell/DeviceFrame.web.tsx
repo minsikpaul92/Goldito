@@ -11,6 +11,9 @@ const PAGE_MARGIN = tokens.spacing.md;
 const MIN_SCALE = 0.5;
 const BODY_WIDTH = tokens.layout.frameWidth + BEZEL * 2;
 
+/** Where the judge panel is: resetting the demo (the server call), then opening the screens on the phones. */
+export type SettingUp = "reset" | "opening" | null;
+
 type Props = {
   /** The app screen (an iframe) shown between the status bar and home indicator. */
   children: ReactNode;
@@ -24,8 +27,8 @@ type Props = {
   reserve?: number;
   /** Split view: the phone sits at this edge of its column, half the gap away from the other phone. */
   hug?: "left" | "right";
-  /** Covers the screen with the paw walk (the judge panel resetting the stay). */
-  loading?: boolean;
+  /** Covers the screen with the paw walk while the judge panel resets the demo, then opens the screens. */
+  loading?: SettingUp;
 };
 
 // The gold coin of the app's boot screen (web: the master SVG).
@@ -50,7 +53,7 @@ function frameScale(windowWidth: number, windowHeight: number, columns: number, 
  * too narrow or too short scale the whole phone down, so it keeps a phone's shape
  * (safe because the app lives in an iframe with its own coordinates).
  */
-export function DeviceFrame({ children, columns = 1, label, footer, reserve = 0, hug, loading = false }: Props) {
+export function DeviceFrame({ children, columns = 1, label, footer, reserve = 0, hug, loading = null }: Props) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const extras = (label ? LABEL_HEIGHT : 0) + (footer ? FOOTER_HEIGHT : 0);
   const scale = frameScale(windowWidth, windowHeight, columns, reserve, extras);
@@ -73,7 +76,7 @@ export function DeviceFrame({ children, columns = 1, label, footer, reserve = 0,
               <StatusBar />
               <View style={styles.content}>
                 {children}
-                {loading ? <FrameLoading /> : null}
+                {loading ? <FrameLoading step={loading} /> : null}
               </View>
               <View style={styles.homeIndicatorArea}>
                 <View style={styles.homeIndicator} />
@@ -87,19 +90,31 @@ export function DeviceFrame({ children, columns = 1, label, footer, reserve = 0,
   );
 }
 
-/** The gold coin logo for a moment (as the app opens), then the paw walk while the stay resets. */
-function FrameLoading() {
+/** What the paw walk says while the server resets the demo, one after another (the last one stays until it is done). */
+const RESET_LINES = ["Clearing the last run…", "Adding fresh demo data…"];
+const RESET_LINE_MS = 2_500;
+
+/** The gold coin logo for a moment (as the app opens), then the paw walk while the demo resets. */
+function FrameLoading({ step }: { step: Exclude<SettingUp, null> }) {
   const [walking, setWalking] = useState(false);
+  const [line, setLine] = useState(0);
   useEffect(() => {
     const timer = setTimeout(() => setWalking(true), LOGO_MS);
     return () => clearTimeout(timer);
   }, []);
+  useEffect(() => {
+    if (!walking || line >= RESET_LINES.length - 1) return;
+    const timer = setTimeout(() => setLine((l) => l + 1), RESET_LINE_MS);
+    return () => clearTimeout(timer);
+  }, [walking, line]);
   return (
-    <View style={styles.loading} accessibilityLabel="Setting up the stay" testID="frame-loading">
+    <View style={styles.loading} accessibilityLabel="Resetting the demo" testID="frame-loading">
       {walking ? (
         <>
           <PawWalk loop />
-          <Text style={styles.loadingText}>Setting up the stay…</Text>
+          <Text style={styles.loadingText} testID="frame-loading-text">
+            {step === "opening" ? "Opening the screens…" : RESET_LINES[line]}
+          </Text>
         </>
       ) : (
         <Image source={SYMBOL} style={styles.coin} resizeMode="contain" testID="frame-loading-logo" />

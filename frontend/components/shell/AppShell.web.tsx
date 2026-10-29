@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { View, useWindowDimensions } from "react-native";
 
 import { tokens } from "../../theme/tokens";
-import { DeviceFrame, FrameLink } from "./DeviceFrame.web";
+import { DeviceFrame, FrameLink, SettingUp } from "./DeviceFrame.web";
 import {
   SPLIT_MIN_WIDTH,
   TOUCH_PRIMARY_QUERY,
@@ -87,8 +87,8 @@ export function AppShell({ children }: Props) {
   const [embedded] = useState(isEmbedded);
   const touchPrimary = useTouchPrimary();
   const { accounts, out } = useFrameAccounts();
-  // The judge panel is resetting the stay: both phones show the paw walk.
-  const [settingUp, setSettingUp] = useState(false);
+  // The judge panel is resetting the demo, then opening the screens: both phones show the paw walk.
+  const [settingUp, setSettingUp] = useState<SettingUp>(null);
   const { width: windowWidth } = useWindowDimensions();
   // Read once: while the window is too narrow the one-phone frame mirrors its own URL into the address bar,
   // and widening again must still bring both phones back.
@@ -135,7 +135,7 @@ export function AppShell({ children }: Props) {
   const judgeHere = useJudgeHere(accounts, out, panes);
   const showPanel = presentation !== "direct" && judgeHere;
   const reserve = showPanel ? JUDGE_PANEL_WIDTH : 0;
-  const loading = showPanel && settingUp;
+  const loading = showPanel ? settingUp : null;
 
   if (presentation === "split") {
     return (

@@ -10,7 +10,7 @@ import { NotificationsProvider } from "../providers/NotificationsProvider";
 import { SessionProvider } from "../providers/SessionProvider";
 import { TripProvider } from "../providers/TripProvider";
 import { ErrorDialogProvider } from "../providers/ErrorDialogProvider";
-import { headerOptions } from "../components/RoleTabs";
+import { headerBack, headerOptions } from "../components/RoleTabs";
 import { useDiaryFont } from "../features/snap/DecoratedReport";
 import { ThemeProvider, useTheme } from "../providers/ThemeProvider";
 import { ToastProvider } from "../providers/ToastProvider";
@@ -57,19 +57,20 @@ function RootStack() {
 
   return (
     <Stack
-      screenOptions={{
+      screenOptions={({ navigation, route }) => ({
         ...headerOptions(theme),
+        headerLeft: headerBack(theme, navigation, route.name),
         headerShown: false,
         contentStyle: { backgroundColor: theme.color.background },
-      }}
+      })}
     >
       <Stack.Screen name="profile" options={{ headerShown: true, title: "Profile" }} />
-      <Stack.Screen name="settings" options={{ headerShown: false }} />
+      <Stack.Screen name="settings" options={{ headerShown: true, title: "Settings" }} />
       <Stack.Screen name="sitter-onboarding" options={{ headerShown: false }} />
-      <Stack.Screen name="whats-new" options={{ headerShown: false }} />
+      <Stack.Screen name="whats-new" options={{ headerShown: true, title: "What's New" }} />
       <Stack.Screen name="chat/[threadId]" options={{ headerShown: true, title: "Chat" }} />
-      <Stack.Screen name="privacy" options={{ headerShown: false }} />
-      <Stack.Screen name="terms" options={{ headerShown: false }} />
+      <Stack.Screen name="privacy" options={{ headerShown: true }} />
+      <Stack.Screen name="terms" options={{ headerShown: true }} />
       <Stack.Screen name="dev/gestures" options={{ headerShown: true, title: "Gesture lab" }} />
       <Stack.Screen name="dev/health" options={{ headerShown: true, title: "API health" }} />
       <Stack.Screen name="dev/kit" options={{ headerShown: true, title: "Design kit" }} />

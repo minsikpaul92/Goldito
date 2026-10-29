@@ -38,11 +38,11 @@ export default function SitterLayout() {
         <Stack.Screen name="bookings/[bookingId]/index" options={{ title: "Booking details" }} />
         <Stack.Screen name="bookings/[bookingId]/trip" options={{ title: "Trip" }} />
         <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
-        <Stack.Screen name="tasks" options={{ headerShown: false }} />
+        <Stack.Screen name="tasks" options={{ title: "Tasks" }} />
         <Stack.Screen name="diary" options={{ headerShown: false }} />
-        <Stack.Screen name="checkin/[petId]" options={{ headerShown: false }} />
+        <Stack.Screen name="checkin/[petId]" options={{ title: "Check-in" }} />
         <Stack.Screen name="care-request/[requestId]" options={{ title: "Care request" }} />
-        <Stack.Screen name="history" options={{ headerShown: false }} />
+        <Stack.Screen name="history" options={{ title: "History" }} />
         <Stack.Screen name="snap/treat" options={{ title: "Treat check" }} />
         <Stack.Screen name="snap/checks" options={{ title: "Recent checks" }} />
         <Stack.Screen name="snap/mood" options={{ title: "Mood" }} />

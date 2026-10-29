@@ -70,7 +70,7 @@ def model(monkeypatch):
         state["sent"] = {"role": role, "messages": messages, **kw}
         if state["error"]:
             raise state["error"]
-        return state["answer"], SimpleNamespace(model="minicpm", latency_ms=900)
+        return state["answer"], SimpleNamespace(model="vision-model", latency_ms=900)
 
     monkeypatch.setattr(cloudinary_service, "fetch_as_data_url", fetch)
     monkeypatch.setattr(nebius, "chat_json", chat_json)
@@ -84,7 +84,7 @@ def test_the_owner_gets_breed_guesses_and_a_coat(client, model) -> None:
         "species_match": True,
         "breeds": ["Maltese", "Poodle mix"],
         "coat_color": "white",
-        "model": "minicpm",
+        "model": "vision-model",
         "latency_ms": 900,
     }
     assert model["sent"]["role"] == "vision"

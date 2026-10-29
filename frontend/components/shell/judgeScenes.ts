@@ -410,7 +410,7 @@ export const SCENES: Scene[] = [
     // Add pet is the sign-up questions for one pet (#367): voice, photo, breed and coat, then breed needs.
     owner: { path: "/owner-onboarding?add=1", highlight: "own-species-dog", script: MEET_SCRIPT },
     sitter: SITTER_HOME,
-    tags: [{ label: "Groq Whisper" }, NANO, VISION, TAVILY],
+    tags: [{ label: "Groq Whisper" }, NANO, VISION],
   },
   {
     key: "treat",
