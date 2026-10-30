@@ -17,9 +17,9 @@ the server owns every fact, and a person approves every word.
 [![Tavily](https://img.shields.io/badge/search-Tavily-4f46e5?style=flat-square)](#tavily-live-answers-from-trusted-sites)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-<a href="https://youtu.be/xYXCgrPbBbU"><img src="https://img.youtube.com/vi/xYXCgrPbBbU/maxresdefault.jpg" alt="Watch the Goldito demo video" width="560"></a>
+**▼ Click to watch the demo video ▼**
 
-<sub><i>Demo video (YouTube)</i></sub>
+<a href="https://youtu.be/xYXCgrPbBbU"><img src="https://img.youtube.com/vi/xYXCgrPbBbU/maxresdefault.jpg" alt="Watch the Goldito demo video" width="560"></a>
 
 **[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up needed) · **[Watch the video](https://youtu.be/xYXCgrPbBbU)** · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
 
