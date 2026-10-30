@@ -95,7 +95,7 @@ curl -s localhost:8000/api/me -H "Authorization: Bearer $TOKEN"
 | Daniel | `demo-owner-daniel@goldito.test` (David) | `demo-sitter-daniel@goldito.test` (Daniel) |
 | Judge 1 to 4 | `demo-owner-judgeN@goldito.test` (Robert) | `demo-sitter-judgeN@goldito.test` (Chloe) |
 
-The password is `DEMO_PASSWORD` in `backend/.env` (same value as `EXPO_PUBLIC_DEMO_PASSWORD` in `frontend/.env`). It is a demo-only value that is bundled in the web app — never reuse a real password. `.test` addresses never receive mail.
+The password is `DEMO_PASSWORD` in `backend/.env` (same value as `EXPO_PUBLIC_DEMO_PASSWORD` in `frontend/.env`). It is a demo-only value that is bundled in the web app, so never reuse a real password. `.test` addresses never receive mail.
 
 ```bash
 cd backend
