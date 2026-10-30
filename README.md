@@ -21,7 +21,11 @@ the server owns every fact, and a person approves every word.
 
 <sub><i>Booking chat: reply chips, Meet &amp; Greet, quote, and payment in one thread</i></sub>
 
-**[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up needed) · **[Watch the video]([https://youtu.be/hjruk-XOlJE?si=uVOkhnTdrsbyxrQl](https://youtu.be/xYXCgrPbBbU))** · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
+**[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up needed) · **[Watch the video](https://youtu.be/xYXCgrPbBbU)** · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
+
+<a href="https://youtu.be/xYXCgrPbBbU"><img src="https://img.youtube.com/vi/xYXCgrPbBbU/maxresdefault.jpg" alt="Watch the Goldito demo video" width="560"></a>
+
+<sub><i>Demo video (YouTube)</i></sub>
 
 </div>
 
