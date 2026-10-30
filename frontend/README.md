@@ -20,11 +20,11 @@ npm install
 npx expo start --web
 ```
 
-Start the backend on port 8000 first, then open `/dev/health` (needs `EXPO_PUBLIC_DEV_ROUTES=1` in `.env`) and tap **Check API** (`GET /health` → "API OK ✅"). `/` is the sign-in gate: it sends you to `/login`, or to `/owner` / `/sitter` once signed in. Sign in needs `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` in `.env`.
+Start the backend on port 8000 first, then open `/dev/health` (needs `EXPO_PUBLIC_DEV_ROUTES=1` in `.env`) and tap **Check API** (`GET /health` → "API OK ✅"). `/` sends you to `/welcome`, or to `/owner` / `/sitter` once signed in. Sign in needs `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` in `.env`.
 
 ## Planned layout
 
-See [architecture §2](../docs/plan/phases/architecture.md#2-리포-구조-최종-형태): role areas `app/owner/` · `app/sitter/` (URL prefixes, architecture D26), `lib/supabase.ts`, `lib/api.ts`, UI kit under `components/ui/`.
+See [architecture §2](../docs/plan/phases/architecture.md#2-repo-layout-final-shape): role areas `app/owner/` · `app/sitter/` (URL prefixes, architecture D26), `lib/supabase.ts`, `lib/api.ts`, UI kit under `components/ui/`.
 
 Design values come from `useTheme()` / `useThemedStyles()` (`providers/ThemeProvider.tsx`): base values in `theme/tokens.ts`, skin presets in `theme/themes.ts` (only `default` until Phase 11.10). See [DESIGN.md](../DESIGN.md) "For AI agents".
 
@@ -44,7 +44,7 @@ On a computer (mouse / trackpad) the app renders inside a **402 × 874 phone fra
 
 ```bash
 npx playwright install chromium firefox webkit   # once
-EXPO_PUBLIC_DEV_ROUTES=1 EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:4173/supabase-mock EXPO_PUBLIC_SUPABASE_ANON_KEY=e2e-anon-key npx expo export -p web
+EXPO_PUBLIC_DEV_ROUTES=1 EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:4173/supabase-mock EXPO_PUBLIC_SUPABASE_ANON_KEY=e2e-anon-key EXPO_PUBLIC_DEMO_PASSWORD=e2e-demo-password EXPO_PUBLIC_API_URL=http://127.0.0.1:4173/api-mock EXPO_PUBLIC_DEMO_TOOLS=1 EXPO_PUBLIC_ADMIN_EMAILS=admin@goldito.test npx expo export -p web
 npm run test:e2e
 ```
 
@@ -58,4 +58,4 @@ Projects: Chromium · Firefox · WebKit × 1366×768 · 1440×900 · 1920×1080 
 
 Muk's Figma [Goldito-Design](https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Goldito-Design) is the source of truth for the look. Where each Figma variable, component and screen lives in this code, the sync steps, and how to move / merge / remove buttons: **[DESIGN.md §0](../DESIGN.md#0-figma--code-read-first)**. Every screen and button with its ID and line: the screen map, built with `node scripts/screen-map.mjs` into `docs/design/screen-map.md` (git-ignored, not committed; CI builds it and attaches it to the run).
 
-To see changes while you work: `npm ci`, `npx expo start --web`, sign in with **Demo owner** / **Demo sitter** (`frontend/.env` needs the Supabase URL + anon key); `http://localhost:8081/?view=split` shows both phones.
+To see changes while you work: `npm ci`, `npx expo start --web` (`frontend/.env` needs the Supabase URL, the anon key and `EXPO_PUBLIC_DEMO_PASSWORD`), then **Try the demo** and pick a Judge seat: on a computer both phones open side by side with the Judge panel on the left.

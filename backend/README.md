@@ -7,7 +7,7 @@ FastAPI (Python 3.12): Cloudinary signing, JWT-protected routes, Nemotron via Ne
 ## Environment
 
 1. Copy [`.env.example`](.env.example) → `.env` (gitignored).
-2. Variable names match [architecture §4](../docs/plan/phases/architecture.md#4-환경-변수-마스터-목록).
+2. Variable names match [architecture §4](../docs/plan/phases/architecture.md#4-environment-variable-master-list).
 3. Secrets setup: [docs/plan/env-setup.md](../docs/plan/env-setup.md).
 
 ## Run
@@ -85,7 +85,7 @@ curl -s localhost:8000/api/me -H "Authorization: Bearer $TOKEN"
 
 ## Demo accounts
 
-`scripts/seed_demo.py` creates (or refreshes) the demo accounts: one owner and one sitter per teammate (`DEMO_SETS` in `app/services/demo_accounts.py`, kept in sync with `frontend/lib/demo.ts`). Judges and **Try demo** use the first set.
+`scripts/seed_demo.py` creates (or refreshes) the demo accounts: one owner and one sitter per set (`DEMO_SETS` in `app/services/demo_accounts.py`, kept in sync with `frontend/lib/demo.ts`). The first set is the default pair. **Try the demo** hands a judge one of four **Judge seats** (`judge1` to `judge4`, #411): each seat is held by one browser at a time and frees itself on log out or after 10 minutes without use. Every seat has the story names (Robert, Chloe, Max, Mochi) and starts from a clean stay.
 
 | Set | Owner | Sitter |
 | :--- | :--- | :--- |
@@ -93,8 +93,9 @@ curl -s localhost:8000/api/me -H "Authorization: Bearer $TOKEN"
 | Paul | `demo-owner-paul@goldito.test` (Peter) | `demo-sitter-paul@goldito.test` (Paul) |
 | Allen | `demo-owner-allen@goldito.test` (Alex) | `demo-sitter-allen@goldito.test` (Allen) |
 | Daniel | `demo-owner-daniel@goldito.test` (David) | `demo-sitter-daniel@goldito.test` (Daniel) |
+| Judge 1 to 4 | `demo-owner-judgeN@goldito.test` (Robert) | `demo-sitter-judgeN@goldito.test` (Chloe) |
 
-The password is `DEMO_PASSWORD` in `backend/.env` (same value as `EXPO_PUBLIC_DEMO_PASSWORD` in `frontend/.env`). It is a demo-only value that will be shared with judges — never reuse a real password. `.test` addresses never receive mail.
+The password is `DEMO_PASSWORD` in `backend/.env` (same value as `EXPO_PUBLIC_DEMO_PASSWORD` in `frontend/.env`). It is a demo-only value that is bundled in the web app — never reuse a real password. `.test` addresses never receive mail.
 
 ```bash
 cd backend
@@ -102,7 +103,7 @@ cd backend
 .venv/Scripts/python -m scripts.seed_demo --check  # read-only report
 ```
 
-It uses the Admin API with the service role (architecture D19); the signup trigger creates `profiles` + `owner_profiles` / `sitter_profiles`, and the script checks those rows. Pets, bookings, and tasks join it in Phase 10.1.
+It uses the Admin API with the service role (architecture D19); the signup trigger creates `profiles` + `owner_profiles` / `sitter_profiles`, and the script checks those rows. Each set's pets (`pets` on `DemoSet`) are part of the seed; the demo stay is reset from the app (Profile → Demo tools, `POST /api/demo/reset`) or when a different browser takes a Judge seat.
 
 ## Supabase service role usage
 
@@ -119,9 +120,9 @@ The service role key bypasses RLS. FastAPI uses it only for the writes below, an
 
 Policies and grants: [`supabase/migrations/002_rls_policies.sql`](../supabase/migrations/002_rls_policies.sql).
 
-## Planned layout
+## Layout
 
-See [architecture §2](../docs/plan/phases/architecture.md#2-리포-구조-최종-형태): `app/main.py`, `routers/`, `services/nebius.py`, `ai/prompts/`, etc.
+See [architecture §2](../docs/plan/phases/architecture.md#2-repo-layout-final-shape): `app/main.py`, `routers/`, `services/nebius.py`, `ai/prompts/`, etc.
 
 ## Data sources
 
