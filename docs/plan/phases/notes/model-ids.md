@@ -109,7 +109,7 @@ Direct HTTP calls with the keys in local `backend/.env` (the same prompts and pa
 | Step | Result |
 | :--- | :--- |
 | **Vision** (an earlier vision model, `vision_system.md`, JSON mode, temperature 0) on the four made-up sample labels | All four `readable: true`, product name and every ingredient right, in order — **0.9–1.4 s** each. Bracketed text stays on the ingredient (`"animal fat (preserved with mixed tocopherols)"`, `"mixed tocopherols (preservative)"`) instead of being split as the prompt asks; the rule table still matches `animal fat` (whole word). |
-| **Tavily** (`search_depth: basic`, 3 results, the five trusted domains) — `xylitol toxic dogs` | 3 results (petpoisonhelpline.com · vcahospitals.com · fda.gov) in **2.9 s** |
+| **Tavily** (`search_depth: basic`, 3 results, FDA pages) — `xylitol toxic dogs` | 3 results from fda.gov in about **2 to 3 s** |
 | **Ultra** (thinking on, `reasoning_system.md`, JSON mode, `max_tokens` 2000) — Max (chicken allergy) + the animal-fat biscuit with the rule findings and one excerpt | **WARNING** (matches the rules), both hidden sources kept, message names Max and the chicken risk — **2.7 s**, 614 completion tokens, `finish_reason: stop` (2000 is enough) |
 
 Estimated route total ≈ vision 1.4 s + Tavily ≤ 3 s (parallel, 8 s cap) + Ultra ≈ 3 s → **about 7–8 s**, so the app's "Checking for {name}…" (switches at 8 s) rarely shows. Still to do: the full route on the hosted DB once `013` is applied (Cloudinary fetch, all four labels, DANGER notice to the owner).

@@ -1,6 +1,6 @@
 """Tavily web search for the treat check (Phase 12.1, D59 · D61).
 
-Every check searches, and only on trusted veterinary and government sites — no retry without the domain filter. The
+Every check searches, and only on FDA pages, with no retry without the domain filter. The
 searches run together under one time limit; a search that fails or is late is simply left out, and an unset key means
 no search at all (the check still answers from the label, the rules and the model).
 """
@@ -32,7 +32,7 @@ def _domain(url: str) -> str:
 def search(
     query: Query, *, api_key: str, timeout: float, domains: list[str] | None = None, excerpt_chars: int = EXCERPT_CHARS
 ) -> list[dict]:
-    """One basic search (1 credit) on the trusted domains (the treat check's, or `domains`): [{title, url, domain, content}]."""
+    """One basic search (1 credit) on the given domains (the treat check's FDA pages, or `domains`): [{title, url, domain, content}]."""
     domains = domains or TRUSTED_DOMAINS
     payload: dict = {
         "query": query.text,
@@ -49,7 +49,7 @@ def search(
     for item in response.json().get("results") or []:
         url = str(item.get("url") or "")
         domain = _domain(url)
-        # The filter is Tavily's; keep only what really is on a trusted site.
+        # The filter is Tavily's; keep only what really is on one of the given domains.
         if not url or not any(domain == d or domain.endswith(f".{d}") for d in domains):
             continue
         hits.append({

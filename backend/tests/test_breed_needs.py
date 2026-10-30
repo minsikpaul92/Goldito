@@ -31,7 +31,7 @@ client = base.client
 NOW = datetime(2026, 10, 21, 12, 0, tzinfo=UTC)
 HITS = [
     {"title": "Poodle", "url": "https://allowed.example/poodle", "domain": "allowed.example", "content": "The Poodle needs about an hour of exercise every day. Brush the coat daily."},
-    {"title": "Poodle care", "url": "https://vcahospitals.com/poodle", "domain": "vcahospitals.com", "content": "Poodles can be prone to hip problems in later life."},
+    {"title": "Poodle care", "url": "https://vet.example/poodle", "domain": "vet.example", "content": "Poodles can be prone to hip problems in later life."},
 ]
 
 
@@ -71,7 +71,7 @@ def test_lines_with_a_real_quote_are_kept_and_only_their_pages_are_listed():
     )
     assert [(c.kind, c.source) for c in chips] == [("exercise", 0), ("care", 1)]
     assert chips[0].quote is None  # the quote proves the line, and is not kept
-    assert [s.url for s in sources] == ["https://allowed.example/poodle", "https://vcahospitals.com/poodle"]
+    assert [s.url for s in sources] == ["https://allowed.example/poodle", "https://vet.example/poodle"]
 
 
 def test_a_line_that_the_page_does_not_say_is_dropped():
@@ -118,7 +118,7 @@ def test_a_kind_is_used_once_and_there_are_at_most_three_lines():
 @pytest.fixture
 def listing(tmp_path, monkeypatch):
     data = {
-        "dog": {"maltese": {"name": "Maltese", "aliases": ["maltese dog"], "chips": [{"kind": "grooming", "text": "Brush daily", "source": 0}], "sources": [{"title": "VCA", "url": "https://vcahospitals.com/m"}], "reviewed": True}},
+        "dog": {"maltese": {"name": "Maltese", "aliases": ["maltese dog"], "chips": [{"kind": "grooming", "text": "Brush daily", "source": 0}], "sources": [{"title": "Vet guide", "url": "https://vet.example/m"}], "reviewed": True}},
         "cat": {},
     }
     path = tmp_path / "breed_needs.json"
@@ -178,7 +178,7 @@ def test_a_breed_in_the_list_is_answered_without_a_search_or_the_cache(listing):
 
 def test_a_new_breed_is_searched_once_and_then_comes_from_the_cache(listing):
     notes = Notes()
-    found = ([Chip(kind="grooming", text="Brush daily", source=0)], [rules.Source(title="VCA", url="https://vcahospitals.com/p")])
+    found = ([Chip(kind="grooming", text="Brush daily", source=0)], [rules.Source(title="Vet guide", url="https://vet.example/p")])
     calls = []
 
     def searcher(species, breed):
@@ -291,7 +291,7 @@ def api(monkeypatch, listing):
 
     def search_needs(species, breed):
         state["searches"] += 1
-        return [Chip(kind="grooming", text="Brush daily", source=0)], [rules.Source(title="VCA", url="https://vcahospitals.com/p")]
+        return [Chip(kind="grooming", text="Brush daily", source=0)], [rules.Source(title="Vet guide", url="https://vet.example/p")]
 
     monkeypatch.setattr(breed_needs, "search_needs", search_needs)
     return state
