@@ -17,15 +17,11 @@ the server owns every fact, and a person approves every word.
 [![Tavily](https://img.shields.io/badge/search-Tavily-4f46e5?style=flat-square)](#tavily-live-answers-from-trusted-sites)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-<img src="docs/assets/readme/chat-draft.gif" alt="The sitter's phone in the booking chat with owner Robert: reply chips draft a message, then a Meet & Greet, the final quote, and payment" width="340">
-
-<sub><i>Booking chat: reply chips, Meet &amp; Greet, quote, and payment in one thread</i></sub>
-
-**[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up needed) · **[Watch the video](https://youtu.be/xYXCgrPbBbU)** · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
-
 <a href="https://youtu.be/xYXCgrPbBbU"><img src="https://img.youtube.com/vi/xYXCgrPbBbU/maxresdefault.jpg" alt="Watch the Goldito demo video" width="560"></a>
 
 <sub><i>Demo video (YouTube)</i></sub>
+
+**[Try the demo](https://goldito-petcare.vercel.app)** (no sign-up needed) · **[Watch the video](https://youtu.be/xYXCgrPbBbU)** · [Nemotron](#powered-by-nvidia-nemotron-on-nebius-token-factory) · [Tavily](#tavily-live-answers-from-trusted-sites) · [How it works](#how-goldito-works) · [Run it](#run-it-yourself)
 
 </div>
 
@@ -209,6 +205,10 @@ What we used, what worked, and what got in the way, written down as it happened.
 | **③ Booking** | Both agree, the sitter sends the final quote, the owner signs and pays (demo); door codes unlock 2 hours before the visit | Stays out of the way on purpose: quotes, consents, and unlocks are fixed rules |
 | **④ Care & Pet Transit** | Live trip with ETA, tasks and check-ins, the 8-bit pet room, photo requests, the album | Photo chips, captions, and the daily note in the sitter's voice |
 | **⑤ Completion** | Home safe, reviews both ways, a medal for each pet | The Life Record, indexed for the next stay |
+
+<img src="docs/assets/readme/chat-draft.gif" alt="The sitter's phone in the booking chat with owner Robert: reply chips draft a message, then a Meet & Greet, the final quote, and payment" width="340">
+
+<sub><i>Booking chat: reply chips, Meet &amp; Greet, quote, and payment in one thread</i></sub>
 
 Tap a stage for the details.
 
