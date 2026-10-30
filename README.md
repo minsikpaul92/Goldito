@@ -17,7 +17,7 @@ the server owns every fact, and a person approves every word.
 [![Tavily](https://img.shields.io/badge/search-Tavily-4f46e5?style=flat-square)](#tavily-live-answers-from-trusted-sites)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-<a href="https://youtu.be/xYXCgrPbBbU"><img src="https://img.youtube.com/vi/xYXCgrPbBbU/maxresdefault.jpg" alt="Watch the Goldito demo video" width="560"></a>
+<a href="https://youtu.be/xYXCgrPbBbU"><img src="docs/assets/readme/demo-video.jpg" alt="Watch the Goldito demo video" width="560"></a>
 
 <sub><i>Demo video (YouTube)</i></sub>
 
@@ -90,9 +90,13 @@ Each event in a stay triggers the agent. It answers only from the facts the serv
 | A treat label is photographed | Reads it, applies the rule table, searches FDA pages (Tavily), and reasons about hidden sources | Nemotron 3.5 **Super VL** → Nemotron 3 **Ultra** | Danger needs an explicit "I understand" |
 | The stay ends | Writes the pet's Life Record and indexes it | Nemotron 3 **Super** + Qwen3 Embedding | The owner reads it |
 
+<div align="center">
+
 <img src="docs/assets/readme/hero-pet-maker.gif" alt="An owner picks a photo of Max and answers a few questions by voice or text, then Goldito builds Max as an 8-bit pet" width="340">
 
 <sub><i>Sign-up: a photo and a few answers become your pet as an 8-bit character</i></sub>
+
+</div>
 
 **Guardrails.** The model never writes a price, a date, or an entry code (a draft whose numbers do not match the server is rewritten once, then falls back to plain words). Entry codes never enter a prompt or the RAG index. Life Records and spoken profile facts need recorded evidence or a matching quote, and safety answers are never pre-filled. The treat verdict is never below the rule table. If a model is slow or down, the screen shows fixed chips or a plain list, never an error.
 
@@ -177,9 +181,13 @@ What we used, what worked, and what got in the way, written down as it happened.
 - **Danger is loud:** a DANGER verdict opens a red screen that only "I understand" closes, and a sitter's DANGER also notifies the owner.
 - Code: [`services/tavily.py`](backend/app/services/tavily.py) · [`routers/ai_safety_check.py`](backend/app/routers/ai_safety_check.py)
 
+<div align="center">
+
 <img src="docs/assets/readme/treat-check.gif" alt="The owner's phone: a treat label is checked for Max, who is allergic to chicken, and a red DANGER screen appears" width="340">
 
 <sub><i>Treat check: chicken on the label gets a red DANGER</i></sub>
+
+</div>
 
 ---
 
@@ -206,9 +214,13 @@ What we used, what worked, and what got in the way, written down as it happened.
 | **④ Care & Pet Transit** | Live trip with ETA, tasks and check-ins, the 8-bit pet room, photo requests, the album | Photo chips, captions, and the daily note in the sitter's voice |
 | **⑤ Completion** | Home safe, reviews both ways, a medal for each pet | The Life Record, indexed for the next stay |
 
+<div align="center">
+
 <img src="docs/assets/readme/chat-draft.gif" alt="The sitter's phone in the booking chat with owner Robert: reply chips draft a message, then a Meet & Greet, the final quote, and payment" width="340">
 
 <sub><i>Booking chat: reply chips, Meet &amp; Greet, quote, and payment in one thread</i></sub>
+
+</div>
 
 Tap a stage for the details.
 
@@ -250,19 +262,31 @@ Tap a stage for the details.
 
 **Uber-style trips, inside the chat.** Whoever drives taps **Start trip**, and the other side gets a live map and ETA.
 
+<div align="center">
+
 <img src="docs/assets/readme/trip-live.gif" alt="Live trip on both phones: the map and ETA count down until Robert has arrived at Chloe's place" width="560">
 
 <sub><i>Live trip: the owner's map and ETA until the sitter arrives</i></sub>
 
+</div>
+
 **Care, snap, tap.** The sitter ticks tasks and taps meal, walk, potty, or nap on the pet's 8-bit room, and the owner sees each update live.
+
+<div align="center">
 
 <img src="docs/assets/readme/care-room.gif" alt="The sitter taps quick check-ins, then Feed, Walk, Poop, and Nap on Max's 8-bit room; the pet eats, walks, and sleeps, and each tap tells the owner" width="320">
 
 <sub><i>The 8-bit care room: the sitter taps Feed, Walk, Poop, or Nap</i></sub>
 
+</div>
+
+<div align="center">
+
 <img src="docs/assets/readme/care-checkin.gif" alt="The sitter taps check-ins, adds a photo, and makes a sticker for Max while the owner's Home updates live" width="560">
 
 <sub><i>Check-ins and photos: the sitter taps, the owner's Home updates live</i></sub>
+
+</div>
 
 **5-second check.** In the evening Goldito suggests chips from the day's check-ins and photos, and Nemotron 3 Super writes the daily note in the sitter's voice once the sitter approves them.
 
@@ -273,9 +297,13 @@ Tap a stage for the details.
 
 **Album and diary.** Every photo gets an AI caption, and the daily notes form a diary both sides can decorate with pet stickers.
 
+<div align="center">
+
 <img src="docs/assets/readme/diary-page.gif" alt="The sitter adds a photo and a line to the diary page, the AI writes it from the day's chips, and stickers decorate it before it goes to the owner" width="320">
 
 <sub><i>Diary: a page written from the day's chips and a photo, with stickers</i></sub>
+
+</div>
 
 </details>
 
