@@ -170,7 +170,7 @@ What we used, what worked, and what got in the way, written down as it happened.
 
 ## Tavily: live answers from trusted sites
 
-**Why live search?** Hidden ingredients and recalls change, and no fixed list covers every brand. Our rule table is the floor (it can only make a verdict stricter); **Tavily** adds current pages and recalls, with sources the user can open. Goldito calls the Tavily Search API at runtime, **only on these trusted domains** (`include_domains`), never the open web:
+**Why live search?** Hidden ingredients and recalls change, and no fixed list covers every brand. Our rule table is the floor (it can only make a verdict stricter); **Tavily** adds current pages and recalls, with sources the user can open. Goldito calls the Tavily Search API at runtime, **only on FDA pages** (`include_domains: fda.gov`), never the open web:
 
 | Feature | What Tavily searches | Trusted domains |
 | :--- | :--- | :--- |
