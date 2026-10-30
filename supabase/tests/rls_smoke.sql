@@ -6648,7 +6648,7 @@ declare
 begin
   perform _t_as(null);
   insert into public.breed_notes (species, breed_key, chips, sources, found)
-    values ('dog', 'maltese', '["Brush daily"]', '[{"title":"VCA","url":"https://vcahospitals.com/x"}]', true);
+    values ('dog', 'maltese', '["Brush daily"]', '[{"title":"Vet guide","url":"https://vet.example/x"}]', true);
   perform _t_ok((select b.found from public.breed_notes b where b.breed_key = 'maltese'), '014w: the backend writes and reads a breed note');
   begin
     insert into public.breed_notes (species, breed_key, found) values ('dog', 'maltese', false);

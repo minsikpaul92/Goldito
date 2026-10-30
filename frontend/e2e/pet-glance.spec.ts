@@ -35,7 +35,7 @@ test.describe("pet at a glance", () => {
           ],
           sources: [
             { title: "Maltese | Example", url: "https://petcare.example/dog-breeds/maltese/" },
-            { title: "Maltese | VCA", url: "https://vcahospitals.com/know-your-pet/maltese" },
+            { title: "Maltese | Vet guide", url: "https://vet.example/know-your-pet/maltese" },
           ],
           origin: "list",
           basis: null,
@@ -65,7 +65,7 @@ test.describe("pet at a glance", () => {
     await expect(needs).toContainText("Grooming: Brush daily");
     await expect(needs).toContainText("Watch for: Prone to hip problems");
     await expect(needs).toContainText("Source: petcare.example");
-    await expect(needs).toContainText("Source: vcahospitals.com");
+    await expect(needs).toContainText("Source: vet.example");
     expect(asked).toEqual({ species: "dog", breed: "Maltese" });
     await expect(card).toContainText("Owner's description, not an assessment.");
     await expect(card).not.toContainText("%");

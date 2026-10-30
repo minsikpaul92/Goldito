@@ -170,7 +170,7 @@ What we used, what worked, and what got in the way, written down as it happened.
 
 ## Tavily: live answers from trusted sites
 
-**Why live search?** Hidden ingredients and recalls change, and no fixed list covers every brand. Our rule table is the floor (it can only make a verdict stricter); **Tavily** adds current pages and recalls, with sources the user can open. Goldito calls the Tavily Search API at runtime, **only on these trusted domains** (`include_domains`), never the open web:
+**Why live search?** Hidden ingredients and recalls change, and no fixed list covers every brand. Our rule table is the floor (it can only make a verdict stricter); **Tavily** adds current pages and recalls, with sources the user can open. Goldito calls the Tavily Search API at runtime, **only on FDA pages** (`include_domains: fda.gov`), never the open web:
 
 | Feature | What Tavily searches | Trusted domains |
 | :--- | :--- | :--- |
@@ -290,7 +290,11 @@ Tap a stage for the details.
 
 **5-second check.** In the evening Goldito suggests chips from the day's check-ins and photos, and Nemotron 3 Super writes the daily note in the sitter's voice once the sitter approves them.
 
+<div align="center">
+
 <img src="docs/assets/readme/stage-4-daily-note.png" alt="The diary page the AI wrote from the day's chips, with stickers" width="240">
+
+</div>
 
 > *"Max took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited. It was adorable. Her potty was perfectly healthy, too. 🐶"*
 > From an AI daily note built from a few chips, two photos, and one short line from the sitter

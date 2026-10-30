@@ -29,7 +29,11 @@ The code reads `.env` from Phase 1 on. **If you fill in the values now**, they c
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary dashboard Product Environment |
 | `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | API Keys |
 | `NEBIUS_API_KEY` | Nebius Token Factory (inference API) |
-| `TAVILY_API_KEY` | [Tavily](https://tavily.com) dashboard. Builders & Brews Toronto **8,000 credits** |
+| `TAVILY_API_KEY` | [Tavily](https://tavily.com) dashboard. Builders & Brews Toronto **8,000 credits**. Used by the treat check only (FDA pages) |
+| `GROQ_API_KEY` | [Groq console](https://console.groq.com) → API keys. Speech to text for voice input in onboarding (`whisper-large-v3-turbo`, free plan); `GROQ_STT_MODEL` can override the model. |
+| `MODEL_*` and `MODEL_*_BASE_URL` | Which model each role uses (`MODEL_FAST`, `MODEL_REPORT`, `MODEL_SAFETY`, `MODEL_VISION`, `MODEL_CHAT_OWNER` · `MODEL_CHAT_SITTER` · `MODEL_CHAT_CHIPS`, `MODEL_EMBED` + `MODEL_EMBED_DIM`). The defaults in `backend/.env.example` are the ones we run; the roles and the reason for each are in [model-ids.md](phases/notes/model-ids.md). Vision, fast and embeddings use the global Token Factory URL, safety and report use us-central1 |
+| `DEMO_PASSWORD` | A demo-only value, the same as `EXPO_PUBLIC_DEMO_PASSWORD`; `scripts/seed_demo.py` sets it on the demo accounts |
+| `DISCORD_BOT_TOKEN` | Only for the Discord MCP in Claude Code (QA channel); the API never reads it |
 
 ### Deployed backend: Render (U0, 2026-10-09)
 
@@ -71,6 +75,8 @@ After you change a value, check Render → Environment → Save → **Manual Dep
 | `EXPO_PUBLIC_API_URL` | Local: `http://localhost:8000` · production (Vercel): `https://goldito-backend.onrender.com` |
 | `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
 | `EXPO_PUBLIC_APP_TIMEZONE` | `America/Toronto` |
+| `EXPO_PUBLIC_DEMO_PASSWORD` | The same demo-only value as the backend's `DEMO_PASSWORD` (the Try the demo buttons sign in with it) |
+| `EXPO_PUBLIC_ADMIN_EMAILS` | Team emails (comma separated) who may edit a pet's look. Empty = nobody |
 
 **Do not put** **service_role**, the Cloudinary secret, the Nebius key, or **TAVILY_API_KEY** in the frontend.
 
@@ -87,7 +93,7 @@ The build settings live in [`frontend/vercel.json`](../../frontend/vercel.json):
 | Variable | Value |
 | :--- | :--- |
 | `EXPO_PUBLIC_SUPABASE_URL` · `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Same as the local `frontend/.env` (anon/publishable only) |
-| `EXPO_PUBLIC_APP_TIMEZONE` | `America/Toronto` |
+| `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` · `EXPO_PUBLIC_APP_TIMEZONE` | The cloud name · `America/Toronto` |
 | `EXPO_PUBLIC_DEMO_PASSWORD` | Demo account password (a demo-only value) |
 | `EXPO_PUBLIC_API_URL` | `https://goldito-backend.onrender.com` (U0, 2026-10-09). If it is empty, uploads, AI, and demo reset do not work |
 | `EXPO_PUBLIC_DEMO_TOOLS` | `1` only during the test period (together with the backend `DEMO_RESET_ENABLED=1`: Profile → Demo tools). **Remove before judging** |
@@ -132,6 +138,6 @@ The DB function `sweep_stale_bookings()` does this job: if there is still no mee
 
 ## Quick check
 
-- [ ] `backend/.env` Supabase + Cloudinary + Nebius (+ Tavily if you have the key)
+- [ ] `backend/.env` Supabase + Cloudinary + Nebius (+ Tavily and Groq if you have the keys)
 - [ ] `frontend/.env` URL + anon (+ cloud name)
 - [ ] Back up secrets only in a keychain or password app

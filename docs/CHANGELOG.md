@@ -49,7 +49,7 @@ The in-app **Menu → What's new** screen (Phase 11.11) shows the released entri
 
 ### Added
 
-- Snap tab: Treat check reads a treat label and checks it against your pet's allergies and foods toxic to its species, with sources from trusted vet sites; Mood reads your pet's body language for fun; Sticker cuts your pet out of a photo, and stickers decorate the daily diary page.
+- Snap tab: Treat check reads a treat label and checks it against your pet's allergies and foods toxic to its species, with sources from FDA pages; Mood reads your pet's body language for fun; Sticker cuts your pet out of a photo, and stickers decorate the daily diary page.
 
 ## [0.2.0] — 2026-10-12
 

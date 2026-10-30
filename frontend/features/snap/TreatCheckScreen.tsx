@@ -28,7 +28,7 @@ const UNREADABLE = "Couldn't read the label. Try a closer, well-lit photo.";
 
 /**
  * Snap → Treat check (Phase 12.1c, D61, the Phase 08 design): pick the pet → snap the label → the server reads it,
- * checks the rule table, asks trusted vet sites and the reasoning model → DANGER / WARNING / SAFE with sources.
+ * checks the rule table, asks FDA pages and the reasoning model → DANGER / WARNING / SAFE with sources.
  * DANGER is a red full-screen modal that closes only through "I understand, don't feed" (DESIGN.md §7.4).
  * Owners check their own pets; a sitter only the pets in their care right now (the API enforces both).
  */

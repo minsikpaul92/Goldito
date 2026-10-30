@@ -88,7 +88,7 @@ test.describe("owner onboarding", () => {
         contentType: "application/json",
         body: JSON.stringify({
           chips: [{ kind: "grooming", text: "Brush daily", source: 0 }],
-          sources: [{ title: "VCA", url: "https://vcahospitals.com/know-your-pet/maltese" }],
+          sources: [{ title: "Vet guide", url: "https://vet.example/know-your-pet/maltese" }],
           origin: "list",
           basis: null,
         }),

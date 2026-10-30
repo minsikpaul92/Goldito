@@ -130,7 +130,7 @@ class Query:
 def search_queries(
     ingredients: list[str], allergens: list[str], species: str, product: str | None, findings: RuleFindings
 ) -> list[Query]:
-    """Up to four keyword searches for every check (D61: Tavily always, trusted sites only).
+    """Up to four keyword searches for every check (D61: Tavily always, FDA pages only).
 
     Hidden allergen sources first, then toxic ingredients, then a recall check for the product; whatever room is left
     goes to the first ingredients. What the searches find is evidence for the model; a page is shown to the owner only

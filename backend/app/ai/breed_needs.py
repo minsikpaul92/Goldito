@@ -1,8 +1,5 @@
-"""Breed needs for the sitter's card (11.15 S4): three short lines per breed, each from a trusted site.
-
-Two paths end in the same shape: the reviewed list (`app/data/breed_needs.json`, built by `scripts/build_breed_needs.py` and
-checked by a person) and, for a breed not in it, a search on trusted sites summarized by the model. In both the model only
-rephrases what the excerpt says, and the server keeps a line only when its quote is really in that excerpt.
+"""Breed needs for the sitter's card (11.15 S4): short lines per breed from the list we wrote ourselves
+(`app/data/breed_needs.json`). No website is read.
 """
 
 import json
@@ -21,8 +18,8 @@ MAX_CHIPS = 3
 MAX_TEXT = 60
 DATA = Path(__file__).resolve().parent.parent / "data" / "breed_needs.json"
 
-# Sites the breed needs may be searched on, per species. Empty on purpose: the sites we read before (VCA, Merck) forbid
-# reuse of their content, so nothing is searched until a site that allows it is added here.
+# Sites the breed needs may be searched on, per species. Empty on purpose: nothing is searched; the notes come from our
+# own list.
 DOMAINS: dict[str, list[str]] = {"dog": [], "cat": []}
 
 

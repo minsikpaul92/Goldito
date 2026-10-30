@@ -1,7 +1,7 @@
 """POST /api/ai/safety-check — Snap → Treat check (Phase 12.1, the Phase 08 design, D61).
 
 A treat label photo → the vision model copies out the ingredients → the server's rule table (allergens, species
-toxins, hidden allergen sources) → Tavily on trusted vet / government sites, every time → Nemotron Ultra decides once
+toxins, hidden allergen sources) → Tavily on FDA pages, every time → Nemotron Ultra decides once
 with that evidence → the final status is never lower than the rules'. The pet's owner and the sitter on duty may check.
 A DANGER found by the sitter tells the owner (013 trigger).
 """
@@ -248,7 +248,7 @@ def safety_check(body: SafetyCheckRequest, user: CurrentUser = Depends(get_curre
     if label.complete is None:
         log.info("safety-check: vision did not say whether the list is complete")
 
-    # 2. The rule table, then 3. the trusted sites.
+    # 2. The rule table, then 3. the FDA pages.
     rules =safety.check_rules(label.ingredients, allergens, pet["species"])
     queries = safety.search_queries(label.ingredients, allergens, pet["species"], label.product_name, rules)
     hits, searched = tavily.search_many(queries)

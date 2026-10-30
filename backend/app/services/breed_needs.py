@@ -1,7 +1,4 @@
-"""Breed needs lookup (11.15 S4): the reviewed list first, then the cache, then one search on trusted sites.
-
-A breed is searched once: the answer (or "found nothing") is cached in `breed_notes` (014w). A failure (no key, a slow
-site, the model down) answers "none" and is not cached, so the next card tries again.
+"""Breed needs lookup (11.15 S4): answered from the list we wrote ourselves (`app/data/breed_needs.json`), no website is read.
 """
 
 import json
@@ -37,9 +34,8 @@ EXCERPT_CHARS = 1500
 MODEL_TIMEOUT_S = 20.0
 
 
-# Since 2026-10-28 no website is read for breed needs: the old text came from VCA (its terms forbid reuse and derivative
-# works) and Merck (its terms forbid scraping, data mining and AI use, and are for US residents). While this is False
-# the lookup answers only from the list we wrote ourselves (`app/data/breed_needs.json`) and touches no search or DB.
+# While this is False the lookup answers only from the list we wrote ourselves (`app/data/breed_needs.json`) and touches
+# no search or DB.
 ENABLED = False
 
 
